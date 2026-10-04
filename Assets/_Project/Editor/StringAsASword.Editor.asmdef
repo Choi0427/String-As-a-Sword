@@ -1,0 +1,5 @@
+{
+  "name": "StringAsASword.Editor",
+  "references": ["StringAsASword.Runtime", "Unity.TextMeshPro"],
+  "includePlatforms": ["Editor"]
+}
