@@ -1,0 +1,5 @@
+{
+  "name": "StringAsASword.Runtime",
+  "rootNamespace": "StringAsASword",
+  "references": ["Unity.InputSystem", "Unity.TextMeshPro", "Unity.ugui"]
+}
