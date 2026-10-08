@@ -15,6 +15,6 @@ MonoBehaviour:
   noiseSeed: 87
   noiseSpawnInterval: 8
   maxActiveNoise: 2
-  initialNoiseTarget: 3
+  noiseTargets: 030000000400000005000000
   healthSegments: 06000000060000000600000006000000
   attackDamage: 1

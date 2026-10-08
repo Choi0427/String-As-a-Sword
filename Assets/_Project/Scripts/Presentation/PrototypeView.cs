@@ -26,6 +26,7 @@ namespace StringAsASword.Presentation
         private PrototypeGlyph slash;
         private float attackAge = 10;
         private readonly TMP_Text[] healthSlots = new TMP_Text[4];
+        private TMP_Text phaseLabel;
         private UnityEngine.UI.Image pulseLine;
         private float feedbackAge = 10, pulseAge = 10;
 
@@ -47,7 +48,7 @@ namespace StringAsASword.Presentation
             root = MakeRect((RectTransform)transform, "Content", Vector2.zero, new Vector2(1600,900));
             Label("PROJECT  /  01", new Vector2(-660,394), new Vector2(200,30), 16, Muted);
             Label("GEOM EUL HYEON", new Vector2(0,385), new Vector2(650,50), 34, InkWhite);
-            Label("GET OFF THE CHESSBOARD", new Vector2(0,343), new Vector2(550,30), 14, Muted);
+            phaseLabel = Label("", new Vector2(0,343), new Vector2(650,30), 14, Muted);
             Label("RHYTHM PROTOTYPE", new Vector2(655,394), new Vector2(220,30), 14, Muted);
             Bar("HeaderRule", 0, 317, 1460, 1, new Color(.23f,.26f,.29f));
             BuildBoard();
@@ -160,6 +161,12 @@ namespace StringAsASword.Presentation
         {
             timing.text = damage > 0 ? $"BOSS HP  -{damage}" : game.Health.CurrentDepleted ? "HP FLOOR / COLLECT NOISE" : "SWING / 0 DAMAGE";
         }
+        public void ShowPhase(int phase)
+        {
+            feedbackAge = 0; feedback.color = Accent;
+            feedback.text = $"PHASE {phase} OPEN";
+            timing.text = $"MELODY STOLEN  {phase - 1} / 3";
+        }
         public void Render()
         {
             feedbackAge+=Time.unscaledDeltaTime; pulseAge+=Time.unscaledDeltaTime;
@@ -175,6 +182,7 @@ namespace StringAsASword.Presentation
             knight.anchoredPosition=Vector2.Lerp(knight.anchoredPosition,target,1-Mathf.Exp(-30*Time.unscaledDeltaTime));
             knight.localScale=Vector3.one*(1+.08f*Mathf.Exp(-10*feedbackAge));
             combo.text=game.Session.Combo.ToString("000");
+            phaseLabel.text = game.Phases.Completed ? "FOUR SEGMENTS CLEARED" : $"PHASE {game.Phases.PhaseId} / 4     -     MELODY STOLEN  {game.Phases.Steals} / 3";
             for (int i = 0; i < healthSlots.Length; i++)
             {
                 bool active = i == game.Health.ActiveSegment;
@@ -188,7 +196,7 @@ namespace StringAsASword.Presentation
             pulseLine.color=new Color(Accent.r,Accent.g,Accent.b,.15f+.85f*Mathf.Exp(-8*pulseAge));
             notes.Render(game);
             noisePresenter.Render(game.Noise);
-            noiseLabel.text = $"NOISE  {game.Noise.Collected} / {game.Noise.Required}" + (game.Noise.GoalReached ? "\nCOLLECTION COMPLETE" : "\nLAND ON A WAVE TO COLLECT");
+            noiseLabel.text = game.Phases.PhaseId == 4 ? "FINAL PHASE\nALL MELODIES RECOVERED" : $"NOISE  {game.Noise.Collected} / {game.Noise.Required}" + (game.Noise.GoalReached ? "\nEMPTY HP TO UNLOCK" : game.Health.CurrentDepleted ? "\nCOLLECT TO UNLOCK NEXT HP" : "\nLAND ON A WAVE TO COLLECT");
             countIn.text=game.State==PrototypeState.CountIn?$"GET READY  {Mathf.Clamp((int)Math.Ceiling(-game.SongTime/game.Timeline.SecondsPerBeat),1,game.Song.CountInBeats)}": "TWO NOTES. ONE BEAT. ONE MOVE.";
             bool show=game.State==PrototypeState.Ready||game.State==PrototypeState.Paused||game.State==PrototypeState.Finished;
             overlay.SetActive(show);
