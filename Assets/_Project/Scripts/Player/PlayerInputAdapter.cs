@@ -30,6 +30,7 @@ namespace StringAsASword.Player
             BindMove("w", MoveDirection.Up); BindMove("a", MoveDirection.Left);
             BindMove("s", MoveDirection.Down); BindMove("d", MoveDirection.Right);
             BindGameplay("j", PlayerActionKind.Attack);
+            BindGameplay("k", PlayerActionKind.Guard);
             BindCommand("space", "start"); BindCommand("enter", "start");
             BindCommand("r", "restart"); BindCommand("escape", "pause"); BindCommand("m", "mute");
         }
@@ -52,7 +53,7 @@ namespace StringAsASword.Player
         public void Drain()
         {
             while (commands.Count > 0) CommandPressed?.Invoke(commands.Dequeue());
-            // Original timestamps first, then J before movement. Never synthesize a diagonal.
+            // Original timestamps first. Ties use J -> K -> W -> A -> S -> D.
             requests.Sort((a, b) =>
             {
                 int time = a.InputEventTime.CompareTo(b.InputEventTime);

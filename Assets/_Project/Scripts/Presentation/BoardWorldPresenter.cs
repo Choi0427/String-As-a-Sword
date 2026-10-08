@@ -12,7 +12,7 @@ namespace StringAsASword.Presentation
     {
         private PrototypeGame game;
         private GameObject world;
-        private Transform player, knightBody, selection, sword;
+        private Transform player, knightBody, selection, sword, shield;
         private Transform[] pickups;
         private Renderer[][] pickupRenderers;
         private Material noiseMaterial, dormantMaterial;
@@ -22,7 +22,7 @@ namespace StringAsASword.Presentation
         private Mesh box;
         private Material edgeMaterial;
         private Vector3 moveFrom, moveTarget;
-        private float moveAge = 1, attackAge = 1;
+        private float moveAge = 1, attackAge = 1, guardAge = 1;
         private int lastSession = -1;
         public Camera BoardCamera { get; private set; }
         public RenderTexture Texture { get; private set; }
@@ -78,6 +78,7 @@ namespace StringAsASword.Presentation
                 arc.SetPosition(i, new Vector3(Mathf.Sin(angle) * .72f, .52f + i * .022f, Mathf.Cos(angle) * .68f));
             }
             sword.gameObject.SetActive(false);
+            BuildShield();
             ResetVisuals();
         }
         public static Vector3 CellPosition(GridPosition cell) => new Vector3(cell.X - 3.5f, 0, cell.Y - 3.5f);
@@ -88,7 +89,7 @@ namespace StringAsASword.Presentation
         }
         public void ResetVisuals()
         {
-            moveAge = attackAge = 1;
+            moveAge = attackAge = guardAge = 1;
             moveFrom = moveTarget = CellPosition(game.Session.Position);
             player.localPosition = moveTarget; selection.localPosition = moveTarget;
             lastSession = game.SessionId;
@@ -97,6 +98,7 @@ namespace StringAsASword.Presentation
         {
             if (!result.Accepted) return;
             if (result.Kind == PlayerActionKind.Attack) attackAge = 0;
+            if (result.Kind == PlayerActionKind.Guard) guardAge = 0;
         }
         public void Render()
         {
@@ -104,12 +106,15 @@ namespace StringAsASword.Presentation
             float dt = Time.unscaledDeltaTime;
             Vector3 target = CellPosition(game.Session.Position);
             if (target != moveTarget) { moveFrom = player.localPosition; moveTarget = target; moveAge = 0; }
-            moveAge += dt; attackAge += dt;
+            moveAge += dt; attackAge += dt; guardAge += dt;
             float t = Mathf.Clamp01(moveAge / .13f);
             player.localPosition = Vector3.Lerp(moveFrom, moveTarget, Mathf.SmoothStep(0, 1, t)) + Vector3.up * (Mathf.Sin(t * Mathf.PI) * .13f);
             selection.localPosition = target;
             sword.gameObject.SetActive(attackAge < .23f);
             sword.localRotation = Quaternion.Euler(0, -80 + attackAge / .23f * 125, 0);
+            shield.gameObject.SetActive(guardAge < .34f);
+            shield.localScale = Vector3.one * (.85f + .15f * Mathf.Sin(Mathf.Clamp01(guardAge / .34f) * Mathf.PI));
+            player.localScale = new Vector3(1, guardAge < .18f ? .9f : 1, 1);
             for (int i = 0; i < pickups.Length; i++)
             {
                 if (lastNoiseDormant != game.Noise.GoalReached)
@@ -157,6 +162,20 @@ namespace StringAsASword.Presentation
                 foreach (var renderer in pickupRenderers[i]) renderer.sharedMaterials = activeNoiseMaterials;
                 item.gameObject.SetActive(false);
             }
+        }
+        private void BuildShield()
+        {
+            // Visual only: no collider, invulnerability flag, holding timer or damage modifier.
+            shield = new GameObject("Guard Pose").transform; shield.SetParent(player, false);
+            shield.localPosition = new Vector3(.13f, .22f, -.32f);
+            shield.localRotation = Quaternion.Euler(game.Stage.CameraElevation, 0, 0);
+            var outline = shield.gameObject.AddComponent<LineRenderer>();
+            outline.useWorldSpace = false; outline.loop = true; outline.positionCount = 5;
+            outline.sharedMaterial = Material(new Color(.45f, .85f, 1f));
+            outline.startWidth = outline.endWidth = .045f; outline.numCornerVertices = 3;
+            outline.SetPositions(new[] { new Vector3(-.34f,.64f,0),new Vector3(.34f,.64f,0),new Vector3(.29f,.22f,0),new Vector3(0,0,0),new Vector3(-.29f,.22f,0) });
+            Box("Shield Center", shield, new Vector3(0,.33f,0),new Vector3(.055f,.30f,.035f),outline.sharedMaterial);
+            shield.gameObject.SetActive(false);
         }
         private void Frame(Transform parent, float width, float height, float thickness, Material material)
         {

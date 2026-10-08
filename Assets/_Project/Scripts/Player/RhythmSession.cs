@@ -4,7 +4,7 @@ using StringAsASword.Rhythm;
 
 namespace StringAsASword.Player
 {
-    public enum PlayerActionKind { Attack = 0, Move = 2 }
+    public enum PlayerActionKind { Attack = 0, Guard = 1, Move = 2 }
     public enum ActionRejection { None, OutsideWindow, OutsideBoard, BeatAlreadyUsed, BeatExpired }
 
     public readonly struct ActionResult
@@ -34,6 +34,7 @@ namespace StringAsASword.Player
         public int MissCount { get; private set; }
         public int AcceptedMoves { get; private set; }
         public int AcceptedAttacks { get; private set; }
+        public int AcceptedGuards { get; private set; }
         public event Action<ActionResult> ActionEvaluated;
         public event Action<int> NoteMissed;
         public event Action<int> BeatClosed;
@@ -48,12 +49,14 @@ namespace StringAsASword.Player
         {
             Position = start; Combo = BestCombo = PerfectCount = GoodCount = MissCount = nextUnresolvedBeat = 0;
             Gate.Reset();
-            AcceptedMoves = AcceptedAttacks = 0;
+            AcceptedMoves = AcceptedAttacks = AcceptedGuards = 0;
         }
         public ActionResult RequestMove(MoveDirection direction, double songTime)
             => RequestAction(PlayerActionKind.Move, direction, songTime);
         public ActionResult RequestAttack(double songTime)
             => RequestAction(PlayerActionKind.Attack, MoveDirection.Up, songTime);
+        public ActionResult RequestGuard(double songTime)
+            => RequestAction(PlayerActionKind.Guard, MoveDirection.Up, songTime);
         public ActionResult RequestAction(PlayerActionKind kind, MoveDirection direction, double inputSongTime)
         {
             if (!Enum.IsDefined(typeof(PlayerActionKind), kind)) throw new ArgumentOutOfRangeException(nameof(kind));
@@ -71,6 +74,7 @@ namespace StringAsASword.Player
                 Gate.TryConsume(timing.BeatId);
                 if (kind == PlayerActionKind.Move) { Position = destination; AcceptedMoves++; }
                 if (kind == PlayerActionKind.Attack) AcceptedAttacks++;
+                if (kind == PlayerActionKind.Guard) AcceptedGuards++;
                 Combo++;
                 BestCombo = Math.Max(Combo, BestCombo);
                 if (timing.Grade == Judgement.Perfect) PerfectCount++; else GoodCount++;

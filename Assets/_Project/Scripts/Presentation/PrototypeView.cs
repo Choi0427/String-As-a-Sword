@@ -62,7 +62,7 @@ namespace StringAsASword.Presentation
             Label("A", new Vector2(-625,-240), new Vector2(44,44), 22, InkWhite, true);
             Label("S", new Vector2(-573,-240), new Vector2(44,44), 22, InkWhite, true);
             Label("D", new Vector2(-521,-240), new Vector2(44,44), 22, InkWhite, true);
-            Label("WASD  MOVE     J  ATTACK\nOne action per beat.", new Vector2(-573,-311), new Vector2(320,55), 15, Muted);
+            Label("WASD  MOVE    J  ATTACK    K  GUARD\nOne action per beat.", new Vector2(-573,-311), new Vector2(380,55), 14, Muted);
 
             Label("COMBO", new Vector2(573,235), new Vector2(250,30), 14, Muted);
             combo = Label("000", new Vector2(573,181), new Vector2(300,80), 64, InkWhite);
@@ -136,6 +136,7 @@ namespace StringAsASword.Presentation
                 {
                     timing.text = game.Attacks.IsInRange(result.Position) ? "ATTACK / TOP ROW" : "SWING / OUT OF RANGE";
                 }
+                if (result.Kind == PlayerActionKind.Guard) timing.text = "GUARD / POSE ONLY";
             }
             else
             {
@@ -146,7 +147,7 @@ namespace StringAsASword.Presentation
         public void ShowMiss(int beat) { feedbackAge=0; feedback.text="MISS"; feedback.color=Muted; timing.text="Listen. Reset. Find the next beat."; }
         public void ShowDamage(int damage)
         {
-            timing.text = damage > 0 ? $"BOSS HP  -{damage}" : game.Health.CurrentDepleted ? "HP FLOOR / COLLECT NOISE" : "SWING / 0 DAMAGE";
+            timing.text = damage > 0 ? $"BOSS HP  -{damage}" : game.Health.Defeated ? "ALL FOUR SEGMENTS CLEARED" : game.Health.CurrentDepleted ? "HP FLOOR / COLLECT NOISE" : "SWING / 0 DAMAGE";
         }
         public void ShowPhase(int phase)
         {
@@ -159,7 +160,7 @@ namespace StringAsASword.Presentation
             feedbackAge+=Time.unscaledDeltaTime; pulseAge+=Time.unscaledDeltaTime;
             var cell=game.Session.Position;
             boardWorld.Render();
-            attackHint.text = game.Attacks.IsInRange(cell) ? "J / IN ATTACK RANGE" : "J / SWING ONLY - DAMAGE FROM ROW 8";
+            attackHint.text = !game.Attacks.IsInRange(cell) ? "J / SWING ONLY - DAMAGE FROM ROW 8" : game.Health.Defeated ? "J / SWING - ALL HP CLEARED" : game.Health.CurrentDepleted ? "J / 0 DAMAGE - COLLECT NOISE" : "J / ATTACK - DAMAGE ENABLED";
             combo.text=game.Session.Combo.ToString("000");
             phaseLabel.text = game.Phases.Completed ? "FOUR SEGMENTS CLEARED" : $"PHASE {game.Phases.PhaseId} / 4     -     MELODY STOLEN  {game.Phases.Steals} / 3";
             for (int i = 0; i < healthSlots.Length; i++)
@@ -175,13 +176,13 @@ namespace StringAsASword.Presentation
             pulseLine.color=new Color(Accent.r,Accent.g,Accent.b,.15f+.85f*Mathf.Exp(-8*pulseAge));
             notes.Render(game);
             noiseLabel.text = game.Phases.PhaseId == 4 ? "FINAL PHASE\nALL MELODIES RECOVERED" : $"NOISE  {game.Noise.Collected} / {game.Noise.Required}" + (game.Noise.GoalReached ? "\nEMPTY HP TO UNLOCK" : game.Health.CurrentDepleted ? "\nCOLLECT TO UNLOCK NEXT HP" : "\nLAND ON A WAVE TO COLLECT");
-            countIn.text=game.State==PrototypeState.CountIn?$"GET READY  {Mathf.Clamp((int)Math.Ceiling(-game.SongTime/game.Timeline.SecondsPerBeat),1,game.Song.CountInBeats)}": "TWO NOTES. ONE BEAT. ONE MOVE.";
+            countIn.text=game.State==PrototypeState.CountIn?$"GET READY  {Mathf.Clamp((int)Math.Ceiling(-game.SongTime/game.Timeline.SecondsPerBeat),1,game.Song.CountInBeats)}": "TWO NOTES. ONE BEAT. ONE ACTION.";
             bool show=game.State==PrototypeState.Ready||game.State==PrototypeState.Paused||game.State==PrototypeState.Finished;
             overlay.SetActive(show);
             if(show)
             {
                 overlayTitle.text=game.State==PrototypeState.Paused?"SESSION PAUSED":game.State==PrototypeState.Finished?"SESSION COMPLETE":"FIND YOUR RHYTHM";
-                overlayBody.text=game.State==PrototypeState.Ready?"87 BPM / Four beats to get ready.\nTap W A S D as notes reach the white markers.\nA successful tap moves the knight one square.":$"Perfect {game.Session.PerfectCount}    Good {game.Session.GoodCount}    Miss {game.Session.MissCount}\nBest combo {game.Session.BestCombo}\nStart again with a fresh four-beat count-in.";
+                overlayBody.text=game.State==PrototypeState.Ready?"87 BPM / WASD move / J attack / K guard pose\nAttack from row 8. Land on waves to collect noise.\nEmpty HP + noise goal unlocks the next phase.":$"Perfect {game.Session.PerfectCount}    Good {game.Session.GoodCount}    Miss {game.Session.MissCount}\nPhase {game.Phases.PhaseId} / 4    Melody stolen {game.Phases.Steals} / 3\nStart again with a fresh four-beat count-in.";
                 buttonLabel.text=game.State==PrototypeState.Ready?"START / SPACE":"RESTART / R OR SPACE";
             }
         }

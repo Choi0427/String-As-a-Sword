@@ -34,5 +34,19 @@ namespace StringAsASword.Tests
             Assert.That(attack.Accepted, Is.False);
             Assert.That(new AttackResolver(board).DamageRequested(attack, 1), Is.Zero);
         }
+        [Test] public void GuardUsesTheSameGateWithoutMovingOrRequestingDamage()
+        {
+            var board = new BoardState(); var session = new RhythmSession(board, new RhythmJudge(new ConstantBeatTimeline(87)), new GridPosition(3, 7));
+            var result = session.RequestGuard(0);
+            Assert.That(result.Accepted, Is.True);
+            Assert.That(session.AcceptedGuards, Is.EqualTo(1));
+            Assert.That(session.Position, Is.EqualTo(new GridPosition(3, 7)));
+            Assert.That(new AttackResolver(board).DamageRequested(result, 1), Is.Zero);
+            Assert.That(session.RequestAttack(.01).Accepted, Is.False);
+            Assert.That(session.RequestMove(MoveDirection.Left, .02).Accepted, Is.False);
+            session.Reset();
+            Assert.That(session.AcceptedGuards, Is.Zero);
+            Assert.That(session.RequestGuard(.25).Accepted, Is.False);
+        }
     }
 }

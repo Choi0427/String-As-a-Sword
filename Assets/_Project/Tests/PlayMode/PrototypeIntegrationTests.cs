@@ -25,7 +25,7 @@ namespace StringAsASword.Tests
             Application.runInBackground=true;
             InputSystem.settings.backgroundBehavior=InputSettings.BackgroundBehavior.IgnoreFocus;
             yield return SceneManager.LoadSceneAsync("RhythmPrototype");
-            game=Object.FindFirstObjectByType<PrototypeGame>();
+            game=Object.FindAnyObjectByType<PrototypeGame>();
             keyboard=InputSystem.AddDevice<Keyboard>();
             yield return null;
         }
@@ -104,7 +104,7 @@ namespace StringAsASword.Tests
             game.StartSession();
             yield return UntilSongTime(-1);
             Canvas.ForceUpdateCanvases();
-            var glyphs=Object.FindObjectsByType<PrototypeGlyph>(FindObjectsSortMode.None);
+            var glyphs=Object.FindObjectsByType<PrototypeGlyph>();
             int left=0,right=0;
             foreach(var glyph in glyphs)
             {
@@ -116,13 +116,77 @@ namespace StringAsASword.Tests
                 if(glyph.name.StartsWith("Note_1_")) right++;
             }
             Assert.That(left,Is.GreaterThan(0)); Assert.That(right,Is.EqualTo(left));
-            var board = Object.FindFirstObjectByType<BoardWorldPresenter>();
+            var board = Object.FindAnyObjectByType<BoardWorldPresenter>();
             Assert.That(board.TileCount, Is.EqualTo(64));
             Assert.That(board.BoardCamera.orthographic, Is.True);
             Assert.That(board.BoardCamera.transform.eulerAngles.x, Is.EqualTo(60).Within(.01));
             Assert.That(board.Texture.IsCreated(), Is.True);
             Assert.That(board.PlayerTransform.GetComponentsInChildren<MeshRenderer>().Length, Is.GreaterThan(4));
             Assert.That(board.PlayerTransform.localPosition.x, Is.EqualTo(-.5f).Within(.01));
+            LogAssert.NoUnexpectedReceived();
+        }
+        private IEnumerator TapAtBeat(Key key, int beat)
+        {
+            yield return UntilSongTime(game.Timeline.TimeOf(beat));
+            Queue(key,game.Timeline.TimeOf(beat),true);
+            yield return UntilSongTime(game.Timeline.TimeOf(beat)+.05);
+            Queue(key,game.SongTime,false);
+            yield return UntilSongTime(game.Timeline.TimeOf(beat)+.16);
+        }
+        [UnityTest] public IEnumerator AttackGuardAndMovementRespectTiePriorityAndHoldEdges()
+        {
+            game.StartSession(); yield return UntilSongTime(0);
+            InputSystem.QueueStateEvent(keyboard,new KeyboardState(Key.W,Key.K,Key.J),InputState.currentTime-game.SongTime);
+            yield return UntilSongTime(.16);
+            Assert.That(game.Session.AcceptedAttacks,Is.EqualTo(1));
+            Assert.That(game.Session.AcceptedGuards,Is.Zero);
+            Assert.That(game.Session.AcceptedMoves,Is.Zero);
+            Assert.That(game.Health.TotalHp,Is.EqualTo(24),"Out-of-range swing is allowed but harmless.");
+            InputSystem.QueueStateEvent(keyboard,new KeyboardState());
+            yield return UntilSongTime(game.Timeline.TimeOf(1));
+            InputSystem.QueueStateEvent(keyboard,new KeyboardState(Key.W,Key.K),InputState.currentTime+game.Timeline.TimeOf(1)-game.SongTime);
+            yield return UntilSongTime(game.Timeline.TimeOf(3)+.16);
+            Assert.That(game.Session.AcceptedGuards,Is.EqualTo(1),"Holding K must not repeat.");
+            Assert.That(game.Session.AcceptedMoves,Is.Zero);
+            Assert.That(game.Health.TotalHp,Is.EqualTo(24));
+            Assert.That(game.Noise.Collected,Is.Zero);
+            LogAssert.NoUnexpectedReceived();
+        }
+        [UnityTest] public IEnumerator TopRowAttacksStopAtHealthFloorUntilNoiseGoalIsMet()
+        {
+            game.StartSession();
+            for(int beat=0;beat<4;beat++) yield return TapAtBeat(Key.W,beat);
+            Assert.That(game.Session.Position,Is.EqualTo(new GridPosition(3,7)));
+            for(int beat=4;beat<11;beat++) yield return TapAtBeat(Key.J,beat);
+            Assert.That(game.Health.CurrentHp,Is.Zero);
+            Assert.That(game.Health.TotalHp,Is.EqualTo(18));
+            Assert.That(game.Phases.PhaseId,Is.EqualTo(1));
+            yield return TapAtBeat(Key.K,11);
+            Assert.That(game.Health.TotalHp,Is.EqualTo(18));
+            Assert.That(game.Session.AcceptedGuards,Is.EqualTo(1));
+            LogAssert.NoUnexpectedReceived();
+        }
+        [UnityTest] public IEnumerator LandingCollectsNoiseAndRestartClearsIt()
+        {
+            game.StartSession(); yield return UntilSongTime(.05);
+            Assert.That(game.Noise.Pickups.Count,Is.EqualTo(1));
+            var target = game.Noise.Pickups[0].Cell;
+            int beat=1;
+            while(!game.Session.Position.Equals(target))
+            {
+                var cell=game.Session.Position;
+                Key direction=cell.X<target.X?Key.D:cell.X>target.X?Key.A:cell.Y<target.Y?Key.W:Key.S;
+                yield return TapAtBeat(direction,beat++);
+            }
+            Assert.That(game.Noise.Collected,Is.EqualTo(1));
+            foreach(var pickup in game.Noise.Pickups) Assert.That(pickup.Cell,Is.Not.EqualTo(target));
+            int oldSession=game.SessionId;
+            game.StartSession();
+            Assert.That(game.Noise.Collected,Is.Zero);
+            Assert.That(game.Noise.Pickups,Is.Empty);
+            Assert.That(game.Noise.SessionId,Is.EqualTo(oldSession+1));
+            Assert.That(game.Phases.PhaseId,Is.EqualTo(1));
+            Assert.That(game.Health.TotalHp,Is.EqualTo(24));
             LogAssert.NoUnexpectedReceived();
         }
     }
