@@ -16,15 +16,13 @@ namespace StringAsASword.Presentation
         private static readonly Color Accent = new Color(.78f, .91f, .86f);
         [SerializeField] private TMP_FontAsset font;
         private PrototypeGame game;
-        private RectTransform root, knight, selection;
+        private RectTransform root;
         private TMP_Text feedback, timing, combo, stats, beatLabel, position, mode, overlayTitle, overlayBody, buttonLabel, countIn;
         private GameObject overlay;
         private NotePresenter notes;
-        private NoisePresenter noisePresenter;
+        private BoardWorldPresenter boardWorld;
         private TMP_Text noiseLabel;
         private TMP_Text attackHint;
-        private PrototypeGlyph slash;
-        private float attackAge = 10;
         private readonly TMP_Text[] healthSlots = new TMP_Text[4];
         private TMP_Text phaseLabel;
         private UnityEngine.UI.Image pulseLine;
@@ -85,29 +83,18 @@ namespace StringAsASword.Presentation
         }
         private void BuildBoard()
         {
-            var board = MakeRect(root,"Board",new Vector2(0,-4),new Vector2(544,544));
-            Image(board, new Color(.30f,.33f,.35f));
-            for (int y = 0; y < 8; y++) for (int x = 0; x < 8; x++)
+            Vector2 size = new Vector2(600,550);
+            var board = MakeRect(root,"Board View",new Vector2(0,-4),size);
+            var output = board.gameObject.AddComponent<UnityEngine.UI.RawImage>(); output.raycastTarget = false;
+            boardWorld = board.gameObject.AddComponent<BoardWorldPresenter>(); boardWorld.Initialize(game, output);
+            for (int i = 0; i < 8; i++)
             {
-                var cell = MakeRect(board,$"Cell_{x}_{y}",new Vector2((x-3.5f)*66,(y-3.5f)*66),new Vector2(64,64));
-                Image(cell, (x+y)%2 == 0 ? new Color(.14f,.17f,.19f) : new Color(.64f,.65f,.63f));
+                Vector2 column = boardWorld.ProjectToBoard(new Vector3(i-3.5f,0,-4.43f),size);
+                Vector2 row = boardWorld.ProjectToBoard(new Vector3(-4.43f,0,i-3.5f),size);
+                Text(board,"Column",((char)('A'+i)).ToString(),column,new Vector2(22,22),12,Muted);
+                Text(board,"Row",(i+1).ToString(),row,new Vector2(22,22),12,Muted);
             }
-            for (int i=0;i<8;i++)
-            {
-                Label(((char)('A'+i)).ToString(),new Vector2((i-3.5f)*66,-293),new Vector2(25,22),12,Muted);
-                Label((i+1).ToString(),new Vector2(-292,(i-3.5f)*66-4),new Vector2(25,22),12,Muted);
-            }
-            selection = MakeRect(board,"PlayerCell",Vector2.zero,new Vector2(60,60));
-            Image(selection,new Color(.12f,.25f,.24f));
-            var outline=selection.gameObject.AddComponent<UnityEngine.UI.Outline>(); outline.effectColor=Accent; outline.effectDistance=new Vector2(2,2);
-            knight=MakeRect(board,"Knight",Vector2.zero,new Vector2(45,50));
-            var shadow=knight.gameObject.AddComponent<UnityEngine.UI.Shadow>(); shadow.effectColor=new Color(0,0,0,.75f); shadow.effectDistance=new Vector2(2,-3);
-            var glyph=knight.gameObject.AddComponent<PrototypeGlyph>(); glyph.SetShape(PrototypeGlyph.Shape.Knight); glyph.color=InkWhite;
-            noisePresenter = new NoisePresenter(board, game.Stage.MaxActiveNoise);
-            knight.SetAsLastSibling();
-            var slashRect = MakeRect(board,"SwordSwing",Vector2.zero,new Vector2(82,82));
-            slash = slashRect.gameObject.AddComponent<PrototypeGlyph>(); slash.SetShape(PrototypeGlyph.Shape.Slash);
-            slash.gameObject.SetActive(false);
+            Label("ATTACK ZONE / ROW 8",new Vector2(0,248),new Vector2(400,24),12,new Color(.84f,.70f,.40f));
         }
         private void BuildLanes()
         {
@@ -134,10 +121,11 @@ namespace StringAsASword.Presentation
             button.onClick.AddListener(()=>game.StartSession());
             buttonLabel=Text(buttonRect,"Label","START / SPACE",Vector2.zero,new Vector2(330,50),17,new Color(.06f,.08f,.09f));
         }
-        public void ResetFeedback() { feedback.text="FIND YOUR RHYTHM"; timing.text="Follow the two mirrored notes"; feedbackAge=10; pulseAge=10; attackAge=10; }
+        public void ResetFeedback() { feedback.text="FIND YOUR RHYTHM"; timing.text="Follow the two mirrored notes"; feedbackAge=10; pulseAge=10; boardWorld.ResetVisuals(); }
         public void Pulse() => pulseAge=0;
         public void ShowAction(ActionResult result)
         {
+            boardWorld.ShowAction(result);
             feedbackAge=0;
             feedback.color=result.Accepted?Accent:InkWhite;
             if(result.Accepted)
@@ -146,7 +134,6 @@ namespace StringAsASword.Presentation
                 timing.text=$"{result.Timing.ErrorSeconds*1000:+0;-0;0} ms  /  {(result.Timing.ErrorSeconds<0?"EARLY":"LATE")}";
                 if (result.Kind == PlayerActionKind.Attack)
                 {
-                    attackAge = 0;
                     timing.text = game.Attacks.IsInRange(result.Position) ? "ATTACK / TOP ROW" : "SWING / OUT OF RANGE";
                 }
             }
@@ -171,16 +158,8 @@ namespace StringAsASword.Presentation
         {
             feedbackAge+=Time.unscaledDeltaTime; pulseAge+=Time.unscaledDeltaTime;
             var cell=game.Session.Position;
-            var target=new Vector2((cell.X-3.5f)*66,(cell.Y-3.5f)*66);
-            attackAge += Time.unscaledDeltaTime;
-            slash.gameObject.SetActive(attackAge < .25f);
-            slash.rectTransform.anchoredPosition = target + new Vector2(0, 27);
-            slash.rectTransform.localRotation = Quaternion.Euler(0, 0, -65 * attackAge / .25f);
-            slash.color = new Color(1, .94f, .72f, Mathf.Clamp01(1 - attackAge / .25f));
+            boardWorld.Render();
             attackHint.text = game.Attacks.IsInRange(cell) ? "J / IN ATTACK RANGE" : "J / SWING ONLY - DAMAGE FROM ROW 8";
-            selection.anchoredPosition=target;
-            knight.anchoredPosition=Vector2.Lerp(knight.anchoredPosition,target,1-Mathf.Exp(-30*Time.unscaledDeltaTime));
-            knight.localScale=Vector3.one*(1+.08f*Mathf.Exp(-10*feedbackAge));
             combo.text=game.Session.Combo.ToString("000");
             phaseLabel.text = game.Phases.Completed ? "FOUR SEGMENTS CLEARED" : $"PHASE {game.Phases.PhaseId} / 4     -     MELODY STOLEN  {game.Phases.Steals} / 3";
             for (int i = 0; i < healthSlots.Length; i++)
@@ -195,7 +174,6 @@ namespace StringAsASword.Presentation
             mode.text=game.Song.Music!=null?"SONG AUDIO":game.MetronomeMuted?"METRONOME / MUTED":"METRONOME / ON";
             pulseLine.color=new Color(Accent.r,Accent.g,Accent.b,.15f+.85f*Mathf.Exp(-8*pulseAge));
             notes.Render(game);
-            noisePresenter.Render(game.Noise);
             noiseLabel.text = game.Phases.PhaseId == 4 ? "FINAL PHASE\nALL MELODIES RECOVERED" : $"NOISE  {game.Noise.Collected} / {game.Noise.Required}" + (game.Noise.GoalReached ? "\nEMPTY HP TO UNLOCK" : game.Health.CurrentDepleted ? "\nCOLLECT TO UNLOCK NEXT HP" : "\nLAND ON A WAVE TO COLLECT");
             countIn.text=game.State==PrototypeState.CountIn?$"GET READY  {Mathf.Clamp((int)Math.Ceiling(-game.SongTime/game.Timeline.SecondsPerBeat),1,game.Song.CountInBeats)}": "TWO NOTES. ONE BEAT. ONE MOVE.";
             bool show=game.State==PrototypeState.Ready||game.State==PrototypeState.Paused||game.State==PrototypeState.Finished;

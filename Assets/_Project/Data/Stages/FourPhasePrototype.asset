@@ -18,3 +18,4 @@ MonoBehaviour:
   noiseTargets: 030000000400000005000000
   healthSegments: 06000000060000000600000006000000
   attackDamage: 1
+  cameraElevation: 60

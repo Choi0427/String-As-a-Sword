@@ -116,6 +116,13 @@ namespace StringAsASword.Tests
                 if(glyph.name.StartsWith("Note_1_")) right++;
             }
             Assert.That(left,Is.GreaterThan(0)); Assert.That(right,Is.EqualTo(left));
+            var board = Object.FindFirstObjectByType<BoardWorldPresenter>();
+            Assert.That(board.TileCount, Is.EqualTo(64));
+            Assert.That(board.BoardCamera.orthographic, Is.True);
+            Assert.That(board.BoardCamera.transform.eulerAngles.x, Is.EqualTo(60).Within(.01));
+            Assert.That(board.Texture.IsCreated(), Is.True);
+            Assert.That(board.PlayerTransform.GetComponentsInChildren<MeshRenderer>().Length, Is.GreaterThan(4));
+            Assert.That(board.PlayerTransform.localPosition.x, Is.EqualTo(-.5f).Within(.01));
             LogAssert.NoUnexpectedReceived();
         }
     }
