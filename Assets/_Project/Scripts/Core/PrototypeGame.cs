@@ -3,6 +3,7 @@ using StringAsASword.Player;
 using StringAsASword.Presentation;
 using StringAsASword.Rhythm;
 using StringAsASword.Stage;
+using StringAsASword.Combat;
 using UnityEngine;
 
 namespace StringAsASword.Core
@@ -26,6 +27,7 @@ namespace StringAsASword.Core
         public RhythmSession Session { get; private set; }
         public NoisePickupSystem Noise { get; private set; }
         public StageDefinition Stage => stage;
+        public AttackResolver Attacks { get; private set; }
         public PrototypeState State { get; private set; } = PrototypeState.Ready;
         public double SongTime => clock?.SongTime ?? 0;
         public int CurrentBeat { get; private set; } = -1;
@@ -40,13 +42,14 @@ namespace StringAsASword.Core
             scheduler = new BeatScheduler(Timeline);
             if (stage == null) stage = ScriptableObject.CreateInstance<StageDefinition>();
             Noise = new NoisePickupSystem(new BoardState(), stage.NoiseSpawnInterval, stage.MaxActiveNoise);
+            Attacks = new AttackResolver(new BoardState());
             Session = new RhythmSession(new BoardState(), new RhythmJudge(Timeline, song.PerfectWindow, song.GoodWindow, song.InputOffset), new GridPosition(3, 3));
             input = GetComponent<PlayerInputAdapter>(); audioPlayer = GetComponent<ScheduledSongAudio>();
             view = GetComponentInChildren<PrototypeView>(true);
             if (view == null) { Debug.LogError("Prototype view is missing.", this); enabled = false; return; }
             view.Initialize(this);
-            input.MovePressed += OnMove; input.CommandPressed += OnCommand;
-            Session.MoveEvaluated += view.ShowMove; Session.NoteMissed += view.ShowMiss;
+            input.ActionPressed += OnAction; input.CommandPressed += OnCommand;
+            Session.ActionEvaluated += view.ShowAction; Session.NoteMissed += view.ShowMiss;
         }
         public void StartSession()
         {
@@ -69,14 +72,15 @@ namespace StringAsASword.Core
             else if (command == "pause") PauseSession();
             else if (command == "mute") audioPlayer.ToggleMute();
         }
-        private void OnMove(PlayerInputAdapter.TimedMove move)
+        private void OnAction(PlayerInputAdapter.TimedAction request)
         {
             if (!clock.Running) return;
-            double time = clock.ToSongTime(move.DspTime);
+            double time = clock.ToSongTime(request.DspTime);
             // The first note has the same early Good window as all later notes.
             if (time < -song.GoodWindow + song.InputOffset) return;
-            var result = Session.RequestMove(move.Direction, time);
-            if (result.Accepted) Noise.TryCollect(result.Position, SessionId, Noise.PhaseId);
+            var result = Session.RequestAction(request.Kind, request.Direction, time);
+            if (result.Accepted && result.Kind == PlayerActionKind.Move)
+                Noise.TryCollect(result.Position, SessionId, Noise.PhaseId);
         }
         private void Update()
         {
@@ -101,8 +105,8 @@ namespace StringAsASword.Core
         private void OnApplicationPause(bool paused) { if (paused && clock != null) PauseSession(); }
         private void OnDestroy()
         {
-            if (input != null) { input.MovePressed -= OnMove; input.CommandPressed -= OnCommand; }
-            if (Session != null && view != null) { Session.MoveEvaluated -= view.ShowMove; Session.NoteMissed -= view.ShowMiss; }
+            if (input != null) { input.ActionPressed -= OnAction; input.CommandPressed -= OnCommand; }
+            if (Session != null && view != null) { Session.ActionEvaluated -= view.ShowAction; Session.NoteMissed -= view.ShowMiss; }
             clock?.Stop(); if (audioPlayer != null) audioPlayer.Stop();
         }
     }

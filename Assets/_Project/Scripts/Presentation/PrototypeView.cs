@@ -22,6 +22,9 @@ namespace StringAsASword.Presentation
         private NotePresenter notes;
         private NoisePresenter noisePresenter;
         private TMP_Text noiseLabel;
+        private TMP_Text attackHint;
+        private PrototypeGlyph slash;
+        private float attackAge = 10;
         private UnityEngine.UI.Image pulseLine;
         private float feedbackAge = 10, pulseAge = 10;
 
@@ -59,7 +62,7 @@ namespace StringAsASword.Presentation
             Label("A", new Vector2(-625,-240), new Vector2(44,44), 22, InkWhite, true);
             Label("S", new Vector2(-573,-240), new Vector2(44,44), 22, InkWhite, true);
             Label("D", new Vector2(-521,-240), new Vector2(44,44), 22, InkWhite, true);
-            Label("Tap a key. Move one square.\nOne action per beat. No diagonals.", new Vector2(-573,-311), new Vector2(320,55), 15, Muted);
+            Label("WASD  MOVE     J  ATTACK\nOne action per beat.", new Vector2(-573,-311), new Vector2(320,55), 15, Muted);
 
             Label("COMBO", new Vector2(573,235), new Vector2(250,30), 14, Muted);
             combo = Label("000", new Vector2(573,181), new Vector2(300,80), 64, InkWhite);
@@ -71,6 +74,7 @@ namespace StringAsASword.Presentation
             beatLabel = Label("BEAT  --", new Vector2(0,285), new Vector2(260,30), 15, Accent);
             countIn = Label("", new Vector2(0,-319), new Vector2(430,40), 21, InkWhite);
             position = Label("D4", new Vector2(0,-367), new Vector2(400,30), 14, Muted);
+            attackHint = Label("", new Vector2(0,-342), new Vector2(600,25), 13, Accent);
             Bar("FooterRule", 0,-397,1460,1,new Color(.23f,.26f,.29f));
             Label("SPACE  START     R  RESTART     ESC  PAUSE     M  CLICK SOUND", new Vector2(0,-423), new Vector2(1200,30), 14, Muted);
             BuildOverlay();
@@ -97,6 +101,9 @@ namespace StringAsASword.Presentation
             var glyph=knight.gameObject.AddComponent<PrototypeGlyph>(); glyph.SetShape(PrototypeGlyph.Shape.Knight); glyph.color=InkWhite;
             noisePresenter = new NoisePresenter(board, game.Stage.MaxActiveNoise);
             knight.SetAsLastSibling();
+            var slashRect = MakeRect(board,"SwordSwing",Vector2.zero,new Vector2(82,82));
+            slash = slashRect.gameObject.AddComponent<PrototypeGlyph>(); slash.SetShape(PrototypeGlyph.Shape.Slash);
+            slash.gameObject.SetActive(false);
         }
         private void BuildLanes()
         {
@@ -125,7 +132,7 @@ namespace StringAsASword.Presentation
         }
         public void ResetFeedback() { feedback.text="FIND YOUR RHYTHM"; timing.text="Follow the two mirrored notes"; feedbackAge=10; pulseAge=10; }
         public void Pulse() => pulseAge=0;
-        public void ShowMove(MoveResult result)
+        public void ShowAction(ActionResult result)
         {
             feedbackAge=0;
             feedback.color=result.Accepted?Accent:InkWhite;
@@ -133,11 +140,16 @@ namespace StringAsASword.Presentation
             {
                 feedback.text=result.Timing.Grade.ToString().ToUpperInvariant();
                 timing.text=$"{result.Timing.ErrorSeconds*1000:+0;-0;0} ms  /  {(result.Timing.ErrorSeconds<0?"EARLY":"LATE")}";
+                if (result.Kind == PlayerActionKind.Attack)
+                {
+                    attackAge = 0;
+                    timing.text = game.Attacks.IsInRange(result.Position) ? "ATTACK / TOP ROW" : "SWING / OUT OF RANGE";
+                }
             }
             else
             {
-                feedback.text=result.Rejection==MoveRejection.OutsideBoard?"BOARD EDGE":result.Rejection==MoveRejection.BeatAlreadyUsed?"BEAT USED":"OFF BEAT";
-                timing.text=result.Rejection==MoveRejection.OutsideBoard?"Try another direction on this beat":result.Rejection==MoveRejection.BeatAlreadyUsed?"Wait for the next note":"Move when notes reach the markers";
+                feedback.text=result.Rejection==ActionRejection.OutsideBoard?"BOARD EDGE":result.Rejection==ActionRejection.BeatAlreadyUsed?"BEAT USED":"OFF BEAT";
+                timing.text=result.Rejection==ActionRejection.OutsideBoard?"Try another direction on this beat":result.Rejection==ActionRejection.BeatAlreadyUsed?"Wait for the next note":"Act when notes reach the markers";
             }
         }
         public void ShowMiss(int beat) { feedbackAge=0; feedback.text="MISS"; feedback.color=Muted; timing.text="Listen. Reset. Find the next beat."; }
@@ -146,6 +158,12 @@ namespace StringAsASword.Presentation
             feedbackAge+=Time.unscaledDeltaTime; pulseAge+=Time.unscaledDeltaTime;
             var cell=game.Session.Position;
             var target=new Vector2((cell.X-3.5f)*66,(cell.Y-3.5f)*66);
+            attackAge += Time.unscaledDeltaTime;
+            slash.gameObject.SetActive(attackAge < .25f);
+            slash.rectTransform.anchoredPosition = target + new Vector2(0, 27);
+            slash.rectTransform.localRotation = Quaternion.Euler(0, 0, -65 * attackAge / .25f);
+            slash.color = new Color(1, .94f, .72f, Mathf.Clamp01(1 - attackAge / .25f));
+            attackHint.text = game.Attacks.IsInRange(cell) ? "J / IN ATTACK RANGE" : "J / SWING ONLY - DAMAGE FROM ROW 8";
             selection.anchoredPosition=target;
             knight.anchoredPosition=Vector2.Lerp(knight.anchoredPosition,target,1-Mathf.Exp(-30*Time.unscaledDeltaTime));
             knight.localScale=Vector3.one*(1+.08f*Mathf.Exp(-10*feedbackAge));

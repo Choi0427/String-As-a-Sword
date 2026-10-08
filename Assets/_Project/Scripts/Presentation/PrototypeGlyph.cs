@@ -6,12 +6,17 @@ namespace StringAsASword.Presentation
     [RequireComponent(typeof(CanvasRenderer))]
     public sealed class PrototypeGlyph : UnityEngine.UI.MaskableGraphic
     {
-        public enum Shape { Knight, Note, Noise }
+        public enum Shape { Knight, Note, Noise, Slash }
         [SerializeField] private Shape shape;
         public void SetShape(Shape value) { shape = value; raycastTarget = false; SetVerticesDirty(); }
         protected override void OnPopulateMesh(UnityEngine.UI.VertexHelper vh)
         {
             vh.Clear();
+            if (shape == Shape.Slash)
+            {
+                Polygon(vh, color, new Vector2(.05f,.15f), new Vector2(.75f,.9f), new Vector2(1,.95f), new Vector2(.4f,.35f));
+                return;
+            }
             if (shape == Shape.Noise)
             {
                 Quad(vh, 0, .43f, 1, .55f, color);

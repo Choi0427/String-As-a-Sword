@@ -32,16 +32,16 @@ namespace StringAsASword.Tests
         [Test] public void OffBeatDoesNotMoveOrUseAction()
         {
             var session = new RhythmSession(new BoardState(), judge, new GridPosition(3, 3));
-            Assert.That(session.RequestMove(MoveDirection.Up, .25).Rejection, Is.EqualTo(MoveRejection.OutsideWindow));
+            Assert.That(session.RequestMove(MoveDirection.Up, .25).Rejection, Is.EqualTo(ActionRejection.OutsideWindow));
             Assert.That(session.Position, Is.EqualTo(new GridPosition(3, 3)));
             Assert.That(session.Gate.LastConsumedBeat, Is.EqualTo(-1));
         }
         [Test] public void InvalidBoundaryAllowsRetryWithinSameBeat()
         {
             var session = new RhythmSession(new BoardState(), judge, new GridPosition(0, 0));
-            Assert.That(session.RequestMove(MoveDirection.Left, 0).Rejection, Is.EqualTo(MoveRejection.OutsideBoard));
+            Assert.That(session.RequestMove(MoveDirection.Left, 0).Rejection, Is.EqualTo(ActionRejection.OutsideBoard));
             Assert.That(session.RequestMove(MoveDirection.Up, .04).Accepted, Is.True);
-            Assert.That(session.RequestMove(MoveDirection.Right, .05).Rejection, Is.EqualTo(MoveRejection.BeatAlreadyUsed));
+            Assert.That(session.RequestMove(MoveDirection.Right, .05).Rejection, Is.EqualTo(ActionRejection.BeatAlreadyUsed));
         }
         [Test] public void TopAndRightBoundsAreRejected()
         {
@@ -62,7 +62,7 @@ namespace StringAsASword.Tests
         {
             var session = new RhythmSession(new BoardState(), judge, new GridPosition(3, 3));
             session.Advance(1);
-            Assert.That(session.RequestMove(MoveDirection.Up, 0).Rejection, Is.EqualTo(MoveRejection.BeatExpired));
+            Assert.That(session.RequestMove(MoveDirection.Up, 0).Rejection, Is.EqualTo(ActionRejection.BeatExpired));
         }
         [Test] public void SchedulerCatchesUpWithoutDuplicates()
         {
