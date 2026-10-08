@@ -16,3 +16,5 @@ MonoBehaviour:
   noiseSpawnInterval: 8
   maxActiveNoise: 2
   initialNoiseTarget: 3
+  healthSegments: 06000000060000000600000006000000
+  attackDamage: 1

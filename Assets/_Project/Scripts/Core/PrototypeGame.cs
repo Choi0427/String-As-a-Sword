@@ -28,6 +28,8 @@ namespace StringAsASword.Core
         public NoisePickupSystem Noise { get; private set; }
         public StageDefinition Stage => stage;
         public AttackResolver Attacks { get; private set; }
+        public BossHealthGate Health { get; private set; }
+        public CombatResolver Combat { get; private set; }
         public PrototypeState State { get; private set; } = PrototypeState.Ready;
         public double SongTime => clock?.SongTime ?? 0;
         public int CurrentBeat { get; private set; } = -1;
@@ -43,18 +45,23 @@ namespace StringAsASword.Core
             if (stage == null) stage = ScriptableObject.CreateInstance<StageDefinition>();
             Noise = new NoisePickupSystem(new BoardState(), stage.NoiseSpawnInterval, stage.MaxActiveNoise);
             Attacks = new AttackResolver(new BoardState());
+            Health = new BossHealthGate(stage.HealthSegments);
+            Combat = new CombatResolver(Attacks, Health, stage.AttackDamage);
             Session = new RhythmSession(new BoardState(), new RhythmJudge(Timeline, song.PerfectWindow, song.GoodWindow, song.InputOffset), new GridPosition(3, 3));
             input = GetComponent<PlayerInputAdapter>(); audioPlayer = GetComponent<ScheduledSongAudio>();
             view = GetComponentInChildren<PrototypeView>(true);
             if (view == null) { Debug.LogError("Prototype view is missing.", this); enabled = false; return; }
             view.Initialize(this);
             input.ActionPressed += OnAction; input.CommandPressed += OnCommand;
-            Session.ActionEvaluated += view.ShowAction; Session.NoteMissed += view.ShowMiss;
+            Session.ActionEvaluated += OnActionEvaluated; Session.NoteMissed += view.ShowMiss;
+            Session.BeatClosed += OnBeatClosed;
+            Combat.DamageResolved += view.ShowDamage;
         }
         public void StartSession()
         {
             input.Clear(); audioPlayer.Stop(); Session.Reset(); scheduler.Reset();
             CurrentBeat = -1; SessionId++;
+            Health.Reset(); Combat.Reset();
             Noise.Reset(SessionId, stage.NoiseSeed, stage.InitialNoiseTarget);
             clock.Start(.30 + song.CountInBeats * Timeline.SecondsPerBeat + song.AudioStartOffset);
             previousTime = SongTime;
@@ -78,10 +85,16 @@ namespace StringAsASword.Core
             double time = clock.ToSongTime(request.DspTime);
             // The first note has the same early Good window as all later notes.
             if (time < -song.GoodWindow + song.InputOffset) return;
-            var result = Session.RequestAction(request.Kind, request.Direction, time);
+            Session.RequestAction(request.Kind, request.Direction, time);
+        }
+        private void OnActionEvaluated(ActionResult result)
+        {
             if (result.Accepted && result.Kind == PlayerActionKind.Move)
                 Noise.TryCollect(result.Position, SessionId, Noise.PhaseId);
+            Combat.Submit(result);
+            view.ShowAction(result);
         }
+        private void OnBeatClosed(int beat) => Combat.ResolveBeat(beat);
         private void Update()
         {
             if (clock == null) return;
@@ -106,7 +119,11 @@ namespace StringAsASword.Core
         private void OnDestroy()
         {
             if (input != null) { input.ActionPressed -= OnAction; input.CommandPressed -= OnCommand; }
-            if (Session != null && view != null) { Session.ActionEvaluated -= view.ShowAction; Session.NoteMissed -= view.ShowMiss; }
+            if (Session != null && view != null)
+            {
+                Session.ActionEvaluated -= OnActionEvaluated; Session.NoteMissed -= view.ShowMiss;
+                Session.BeatClosed -= OnBeatClosed; Combat.DamageResolved -= view.ShowDamage;
+            }
             clock?.Stop(); if (audioPlayer != null) audioPlayer.Stop();
         }
     }

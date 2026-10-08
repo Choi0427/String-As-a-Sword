@@ -25,6 +25,7 @@ namespace StringAsASword.Presentation
         private TMP_Text attackHint;
         private PrototypeGlyph slash;
         private float attackAge = 10;
+        private readonly TMP_Text[] healthSlots = new TMP_Text[4];
         private UnityEngine.UI.Image pulseLine;
         private float feedbackAge = 10, pulseAge = 10;
 
@@ -71,7 +72,9 @@ namespace StringAsASword.Presentation
             stats = Label("", new Vector2(573,-190), new Vector2(300,130), 18, Muted);
             Label("PERFECT  +/-70 ms\nGOOD  +/-140 ms", new Vector2(573,-298), new Vector2(300,55), 15, Muted);
 
-            beatLabel = Label("BEAT  --", new Vector2(0,285), new Vector2(260,30), 15, Accent);
+            for (int i = 0; i < 4; i++)
+                healthSlots[i] = Label("", new Vector2((i-1.5f)*136,285), new Vector2(130,45), 16, InkWhite, true);
+            beatLabel = Label("BEAT  --", new Vector2(0,-292), new Vector2(320,26), 13, Accent);
             countIn = Label("", new Vector2(0,-319), new Vector2(430,40), 21, InkWhite);
             position = Label("D4", new Vector2(0,-367), new Vector2(400,30), 14, Muted);
             attackHint = Label("", new Vector2(0,-342), new Vector2(600,25), 13, Accent);
@@ -130,7 +133,7 @@ namespace StringAsASword.Presentation
             button.onClick.AddListener(()=>game.StartSession());
             buttonLabel=Text(buttonRect,"Label","START / SPACE",Vector2.zero,new Vector2(330,50),17,new Color(.06f,.08f,.09f));
         }
-        public void ResetFeedback() { feedback.text="FIND YOUR RHYTHM"; timing.text="Follow the two mirrored notes"; feedbackAge=10; pulseAge=10; }
+        public void ResetFeedback() { feedback.text="FIND YOUR RHYTHM"; timing.text="Follow the two mirrored notes"; feedbackAge=10; pulseAge=10; attackAge=10; }
         public void Pulse() => pulseAge=0;
         public void ShowAction(ActionResult result)
         {
@@ -153,6 +156,10 @@ namespace StringAsASword.Presentation
             }
         }
         public void ShowMiss(int beat) { feedbackAge=0; feedback.text="MISS"; feedback.color=Muted; timing.text="Listen. Reset. Find the next beat."; }
+        public void ShowDamage(int damage)
+        {
+            timing.text = damage > 0 ? $"BOSS HP  -{damage}" : game.Health.CurrentDepleted ? "HP FLOOR / COLLECT NOISE" : "SWING / 0 DAMAGE";
+        }
         public void Render()
         {
             feedbackAge+=Time.unscaledDeltaTime; pulseAge+=Time.unscaledDeltaTime;
@@ -168,6 +175,12 @@ namespace StringAsASword.Presentation
             knight.anchoredPosition=Vector2.Lerp(knight.anchoredPosition,target,1-Mathf.Exp(-30*Time.unscaledDeltaTime));
             knight.localScale=Vector3.one*(1+.08f*Mathf.Exp(-10*feedbackAge));
             combo.text=game.Session.Combo.ToString("000");
+            for (int i = 0; i < healthSlots.Length; i++)
+            {
+                bool active = i == game.Health.ActiveSegment;
+                healthSlots[i].text = i > game.Health.ActiveSegment ? $"{i+1} / LOCKED" : game.Health.Remaining(i) == 0 ? $"{i+1} / EMPTY" : $"{i+1} / {game.Health.Remaining(i)} HP";
+                healthSlots[i].color = active ? Accent : Muted;
+            }
             stats.text=$"PERFECT     {game.Session.PerfectCount:000}\nGOOD            {game.Session.GoodCount:000}\nMISS              {game.Session.MissCount:000}\nBEST              {game.Session.BestCombo:000}";
             position.text=$"POSITION  {(char)('A'+cell.X)}{cell.Y+1}     /     8 x 8";
             beatLabel.text=game.CurrentBeat<0?"PREPARE":$"BEAT  {game.CurrentBeat+1:0000}   /   {game.CurrentBeat%4+1}:4";
