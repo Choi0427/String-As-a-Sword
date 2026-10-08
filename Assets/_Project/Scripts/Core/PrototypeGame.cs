@@ -2,6 +2,7 @@ using StringAsASword.Board;
 using StringAsASword.Player;
 using StringAsASword.Presentation;
 using StringAsASword.Rhythm;
+using StringAsASword.Stage;
 using UnityEngine;
 
 namespace StringAsASword.Core
@@ -12,6 +13,7 @@ namespace StringAsASword.Core
     public sealed class PrototypeGame : MonoBehaviour
     {
         [SerializeField] private SongDefinition song;
+        [SerializeField] private StageDefinition stage;
         [SerializeField] private bool pauseOnFocusLoss = true;
         private SongClock clock;
         private BeatScheduler scheduler;
@@ -22,6 +24,8 @@ namespace StringAsASword.Core
         public SongDefinition Song => song;
         public IBeatTimeline Timeline { get; private set; }
         public RhythmSession Session { get; private set; }
+        public NoisePickupSystem Noise { get; private set; }
+        public StageDefinition Stage => stage;
         public PrototypeState State { get; private set; } = PrototypeState.Ready;
         public double SongTime => clock?.SongTime ?? 0;
         public int CurrentBeat { get; private set; } = -1;
@@ -34,6 +38,8 @@ namespace StringAsASword.Core
             Timeline = new ConstantBeatTimeline(song.Bpm);
             clock = new SongClock(() => AudioSettings.dspTime);
             scheduler = new BeatScheduler(Timeline);
+            if (stage == null) stage = ScriptableObject.CreateInstance<StageDefinition>();
+            Noise = new NoisePickupSystem(new BoardState(), stage.NoiseSpawnInterval, stage.MaxActiveNoise);
             Session = new RhythmSession(new BoardState(), new RhythmJudge(Timeline, song.PerfectWindow, song.GoodWindow, song.InputOffset), new GridPosition(3, 3));
             input = GetComponent<PlayerInputAdapter>(); audioPlayer = GetComponent<ScheduledSongAudio>();
             view = GetComponentInChildren<PrototypeView>(true);
@@ -46,6 +52,7 @@ namespace StringAsASword.Core
         {
             input.Clear(); audioPlayer.Stop(); Session.Reset(); scheduler.Reset();
             CurrentBeat = -1; SessionId++;
+            Noise.Reset(SessionId, stage.NoiseSeed, stage.InitialNoiseTarget);
             clock.Start(.30 + song.CountInBeats * Timeline.SecondsPerBeat + song.AudioStartOffset);
             previousTime = SongTime;
             State = PrototypeState.CountIn; view.ResetFeedback();
@@ -68,7 +75,8 @@ namespace StringAsASword.Core
             double time = clock.ToSongTime(move.DspTime);
             // The first note has the same early Good window as all later notes.
             if (time < -song.GoodWindow + song.InputOffset) return;
-            Session.RequestMove(move.Direction, time);
+            var result = Session.RequestMove(move.Direction, time);
+            if (result.Accepted) Noise.TryCollect(result.Position, SessionId, Noise.PhaseId);
         }
         private void Update()
         {
@@ -81,7 +89,7 @@ namespace StringAsASword.Core
                 double time = SongTime;
                 if (time >= 0) State = PrototypeState.Playing;
                 audioPlayer.Schedule();
-                scheduler.Advance(time, beat => { CurrentBeat = beat; view.Pulse(); });
+                scheduler.Advance(time, beat => { CurrentBeat = beat; Noise.AdvanceToBeat(beat, Session.Position); view.Pulse(); });
                 Session.Advance(time);
                 if (song.Music != null && time >= song.Music.length - song.AudioStartOffset)
                 { clock.Stop(); audioPlayer.Stop(); State = PrototypeState.Finished; }

@@ -20,6 +20,8 @@ namespace StringAsASword.Presentation
         private TMP_Text feedback, timing, combo, stats, beatLabel, position, mode, overlayTitle, overlayBody, buttonLabel, countIn;
         private GameObject overlay;
         private NotePresenter notes;
+        private NoisePresenter noisePresenter;
+        private TMP_Text noiseLabel;
         private UnityEngine.UI.Image pulseLine;
         private float feedbackAge = 10, pulseAge = 10;
 
@@ -51,6 +53,7 @@ namespace StringAsASword.Presentation
             Label($"{game.Song.Bpm:0} <size=18>BPM</size>", new Vector2(-573,187), new Vector2(250,65), 52, InkWhite);
             Label($"ONE NOTE / {(60f / game.Song.Bpm):0.000} SEC", new Vector2(-573,139), new Vector2(300,26), 13, Muted);
             mode = Label("", new Vector2(-573,-16), new Vector2(300,30), 13, Muted);
+            noiseLabel = Label("", new Vector2(-573,-71), new Vector2(330,65), 18, Accent);
             Label("MOVE ON THE BEAT", new Vector2(-573,-132), new Vector2(300,30), 17, InkWhite);
             Label("W", new Vector2(-573,-190), new Vector2(44,44), 22, InkWhite, true);
             Label("A", new Vector2(-625,-240), new Vector2(44,44), 22, InkWhite, true);
@@ -92,6 +95,8 @@ namespace StringAsASword.Presentation
             knight=MakeRect(board,"Knight",Vector2.zero,new Vector2(45,50));
             var shadow=knight.gameObject.AddComponent<UnityEngine.UI.Shadow>(); shadow.effectColor=new Color(0,0,0,.75f); shadow.effectDistance=new Vector2(2,-3);
             var glyph=knight.gameObject.AddComponent<PrototypeGlyph>(); glyph.SetShape(PrototypeGlyph.Shape.Knight); glyph.color=InkWhite;
+            noisePresenter = new NoisePresenter(board, game.Stage.MaxActiveNoise);
+            knight.SetAsLastSibling();
         }
         private void BuildLanes()
         {
@@ -151,6 +156,8 @@ namespace StringAsASword.Presentation
             mode.text=game.Song.Music!=null?"SONG AUDIO":game.MetronomeMuted?"METRONOME / MUTED":"METRONOME / ON";
             pulseLine.color=new Color(Accent.r,Accent.g,Accent.b,.15f+.85f*Mathf.Exp(-8*pulseAge));
             notes.Render(game);
+            noisePresenter.Render(game.Noise);
+            noiseLabel.text = $"NOISE  {game.Noise.Collected} / {game.Noise.Required}" + (game.Noise.GoalReached ? "\nCOLLECTION COMPLETE" : "\nLAND ON A WAVE TO COLLECT");
             countIn.text=game.State==PrototypeState.CountIn?$"GET READY  {Mathf.Clamp((int)Math.Ceiling(-game.SongTime/game.Timeline.SecondsPerBeat),1,game.Song.CountInBeats)}": "TWO NOTES. ONE BEAT. ONE MOVE.";
             bool show=game.State==PrototypeState.Ready||game.State==PrototypeState.Paused||game.State==PrototypeState.Finished;
             overlay.SetActive(show);

@@ -243,6 +243,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: StringAsASword.Runtime::StringAsASword.Core.PrototypeGame
   song: {fileID: 11400000, guid: 471055e6527b95340a30db110bb25db1, type: 2}
+  stage: {fileID: 11400000, guid: 76381148bcab5114fbf53ff30fe4ab9c, type: 2}
   pauseOnFocusLoss: 1
 --- !u!114 &906325868
 MonoBehaviour:
