@@ -21,6 +21,7 @@ namespace StringAsASword.Presentation
         private readonly List<Object> resources = new List<Object>();
         private Mesh box;
         private Material edgeMaterial;
+        private Material materialTemplate;
         private Vector3 moveFrom, moveTarget;
         private float moveAge = 1, attackAge = 1, guardAge = 1;
         private int lastSession = -1;
@@ -29,8 +30,11 @@ namespace StringAsASword.Presentation
         public Transform PlayerTransform => player;
         public int TileCount { get; private set; }
 
-        public void Initialize(PrototypeGame owner, RawImage output)
+        public void Initialize(PrototypeGame owner, RawImage output, Material template)
         {
+            if (template == null || template.shader == null)
+                throw new System.InvalidOperationException("Assign the board material to PrototypeView before building. Use String As a Sword > Prepare Windows Build.");
+            materialTemplate = template;
             game = owner;
             world = new GameObject("Board World");
             // A separate render target keeps the board projection independent of HUD/screen aspect ratio.
@@ -187,8 +191,8 @@ namespace StringAsASword.Presentation
         }
         private Material Material(Color color)
         {
-            var shader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Color");
-            var material = new Material(shader) { name = "Prototype " + color, color = color };
+            // A serialized material reference keeps the shader and its used variant in standalone builds.
+            var material = new Material(materialTemplate) { name = "Prototype " + color, color = color };
             if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", color);
             resources.Add(material); return material;
         }

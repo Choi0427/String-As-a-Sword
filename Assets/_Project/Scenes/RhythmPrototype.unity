@@ -334,6 +334,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: StringAsASword.Runtime::StringAsASword.Presentation.PrototypeView
   font: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  boardMaterial: {fileID: 2100000, guid: db9cf3e35aee5f94cb01cab7d6bb5b0a, type: 2}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -117,6 +117,9 @@ namespace StringAsASword.Tests
             }
             Assert.That(left,Is.GreaterThan(0)); Assert.That(right,Is.EqualTo(left));
             var board = Object.FindAnyObjectByType<BoardWorldPresenter>();
+            var view = Object.FindAnyObjectByType<PrototypeView>();
+            Assert.That(view.BoardMaterial, Is.Not.Null, "Builds must retain a serialized shader dependency.");
+            Assert.That(view.BoardMaterial.shader.isSupported, Is.True);
             Assert.That(board.TileCount, Is.EqualTo(64));
             Assert.That(board.BoardCamera.orthographic, Is.True);
             Assert.That(board.BoardCamera.transform.eulerAngles.x, Is.EqualTo(60).Within(.01));

@@ -15,6 +15,8 @@ namespace StringAsASword.Presentation
         private static readonly Color Muted = new Color(.58f, .62f, .66f);
         private static readonly Color Accent = new Color(.78f, .91f, .86f);
         [SerializeField] private TMP_FontAsset font;
+        [SerializeField] private Material boardMaterial;
+        public Material BoardMaterial => boardMaterial;
         private PrototypeGame game;
         private RectTransform root;
         private TMP_Text feedback, timing, combo, stats, beatLabel, position, mode, overlayTitle, overlayBody, buttonLabel, countIn;
@@ -86,7 +88,7 @@ namespace StringAsASword.Presentation
             Vector2 size = new Vector2(600,550);
             var board = MakeRect(root,"Board View",new Vector2(0,-4),size);
             var output = board.gameObject.AddComponent<UnityEngine.UI.RawImage>(); output.raycastTarget = false;
-            boardWorld = board.gameObject.AddComponent<BoardWorldPresenter>(); boardWorld.Initialize(game, output);
+            boardWorld = board.gameObject.AddComponent<BoardWorldPresenter>(); boardWorld.Initialize(game, output, boardMaterial);
             for (int i = 0; i < 8; i++)
             {
                 Vector2 column = boardWorld.ProjectToBoard(new Vector3(i-3.5f,0,-4.43f),size);

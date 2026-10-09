@@ -16,6 +16,20 @@ namespace StringAsASword.Editor
         public const string ScenePath = "Assets/_Project/Scenes/RhythmPrototype.unity";
         public const string SongPath = "Assets/_Project/Data/Songs/GeomEulHyeon87.asset";
         public const string StagePath = "Assets/_Project/Data/Stages/FourPhasePrototype.asset";
+        public const string BoardMaterialPath = "Assets/_Project/Art/Materials/PrototypeBoard.mat";
+
+        public static Material EnsureBoardMaterial()
+        {
+            var material = AssetDatabase.LoadAssetAtPath<Material>(BoardMaterialPath);
+            if (material != null) return material;
+            Directory.CreateDirectory("Assets/_Project/Art/Materials");
+            AssetDatabase.Refresh();
+            var shader = Shader.Find("Universal Render Pipeline/Unlit");
+            if (shader == null) throw new System.InvalidOperationException("URP Unlit shader is unavailable. Resolve the render pipeline before building.");
+            material = new Material(shader) { name = "PrototypeBoard" };
+            AssetDatabase.CreateAsset(material, BoardMaterialPath);
+            return material;
+        }
 
         [MenuItem("String As a Sword/Open Rhythm Prototype")]
         public static void OpenOrCreate()
@@ -48,6 +62,7 @@ namespace StringAsASword.Editor
             viewObject.transform.SetParent(root.transform,false);
             var viewData = new SerializedObject(viewObject.GetComponent<PrototypeView>());
             viewData.FindProperty("font").objectReferenceValue = font; viewData.ApplyModifiedPropertiesWithoutUndo();
+            viewData.FindProperty("boardMaterial").objectReferenceValue = EnsureBoardMaterial(); viewData.ApplyModifiedPropertiesWithoutUndo();
             EditorSceneManager.SaveScene(scene,ScenePath);
             EditorBuildSettings.scenes = new[] {new EditorBuildSettingsScene(ScenePath,true)}
                 .Concat(EditorBuildSettings.scenes.Where(s=>s.path!=ScenePath)).ToArray();
