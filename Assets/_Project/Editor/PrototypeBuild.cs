@@ -62,7 +62,7 @@ namespace StringAsASword.Editor
                 errors = summary.totalErrors, warnings = summary.totalWarnings,
                 seconds = summary.totalTime.TotalSeconds, bytes = summary.totalSize, messages = messages
             }, true));
-            if (summary.result != BuildResult.Succeeded)
+            if (summary.result != BuildResult.Succeeded || summary.totalErrors != 0)
                 throw new BuildFailedException($"Windows build failed with {summary.totalErrors} errors. See Logs/Build/windows-build-report.json.");
             Debug.Log($"Windows build succeeded: {summary.outputPath} ({summary.totalErrors} errors, {summary.totalWarnings} warnings)");
             return summary.outputPath;

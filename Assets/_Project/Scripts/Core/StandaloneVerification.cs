@@ -84,7 +84,7 @@ namespace StringAsASword.Core
             yield return UntilTime(game.Timeline.TimeOf(beat));
             Queue(Key.K, game.Timeline.TimeOf(beat));
             yield return UntilTime(game.Timeline.TimeOf(beat) + .08);
-            CaptureBoard(board.Texture);
+            if (!CaptureBoard(board)) yield break;
             yield return UntilTime(game.Timeline.TimeOf(beat + 2) + .16);
             Release();
             if (!Check(game.Session.AcceptedGuards == 1 && game.Health.TotalHp == hp, "Guard changed HP or repeated while held.")) yield break;
@@ -120,9 +120,13 @@ namespace StringAsASword.Core
             if (condition && errors.Count == 0) return true;
             Finish(condition ? "Runtime errors occurred during verification." : message); return false;
         }
-        private void CaptureBoard(RenderTexture target)
+        private bool CaptureBoard(BoardWorldPresenter board)
         {
-            // Read the board render target directly: hidden QA windows cannot capture the desktop backbuffer.
+            // Hidden windows may skip normal frame rendering. Explicitly render through the active SRP.
+            var target = board.Texture;
+            var request = new UnityEngine.Rendering.RenderPipeline.StandardRequest { destination = target };
+            if (!Check(UnityEngine.Rendering.RenderPipeline.SupportsRenderRequest(board.BoardCamera, request), "Render pipeline cannot render the board camera.")) return false;
+            UnityEngine.Rendering.RenderPipeline.SubmitRenderRequest(board.BoardCamera, request);
             var previous = RenderTexture.active;
             var image = new Texture2D(target.width, target.height, TextureFormat.RGB24, false);
             try
@@ -131,6 +135,14 @@ namespace StringAsASword.Core
                 image.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
                 image.Apply();
                 File.WriteAllBytes(Path.Combine(output, "standalone-board.png"), image.EncodeToPNG());
+                int bright = 0, magenta = 0;
+                var pixels = image.GetPixels32();
+                foreach (var pixel in pixels)
+                {
+                    if (pixel.r > 80 && pixel.g > 80 && pixel.b > 80) bright++;
+                    if (pixel.r > 200 && pixel.b > 200 && pixel.g < 50) magenta++;
+                }
+                return Check(bright > pixels.Length / 20 && magenta < pixels.Length / 100, "Board rendered black or with missing-shader magenta pixels.");
             }
             finally { RenderTexture.active = previous; Destroy(image); }
         }

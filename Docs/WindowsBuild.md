@@ -31,12 +31,14 @@
 
 자동화에서는 `StringAsASword.Editor.PrototypeBuild.BuildWindows(outputDirectory)`를 에디터에서 호출할 수 있다. 배치 실행 진입점은 `BuildFromCommandLine`, 출력 인자는 `-prototypeBuildOutput <directory>`다.
 
+라이브 CLI에서 빌드 메서드를 호출할 때는 `unity command eval ... --detach`로 실행하고 반환된 작업 ID를 `unity job wait <id>`로 기다린다. 일반 동기 호출은 Pipeline의 메인 스레드 제한 시간보다 빌드가 길어지면 도구 오류를 남길 수 있다. 빌드 도구는 성공 상태뿐 아니라 오류 수 0건도 요구한다.
+
 ## 검증 결과
 
 - 보드·노트 렌더링 및 직렬화 셰이더 참조 PlayMode 회귀 테스트 1개 통과.
 - 실제 v1 실행 파일의 진단 실행 종료 코드 0, 검증 결과 passed=true, 런타임 오류 0건.
 - 시작 화면, 64칸 보드와 셰이더, Space 시작, 카운트인·비트 진행, 음악 재생, WASD 착지 수집, 최상단 J 공격·HP 하한, K 홀드 반복 방지, R 초기화, Start 버튼을 검증했다.
-- 보드 RenderTexture를 실행 파일에서 PNG로 저장해 확인했다. 화면을 숨긴 진단 실행에서도 보드가 렌더링됐다.
+- 보드 카메라에 SRP 렌더 요청을 보내 RenderTexture를 PNG로 저장하고 확인했다. 밝은 체스 칸이 실제로 존재하고 누락된 셰이더의 자홍색 픽셀이 없는지도 검사한다. 숨겨진 창의 일반 렌더링이나 화면 캡처 여부에 의존하지 않는다.
 - 최종 BuildReport: Succeeded, 오류 0건, 약 111.8MB.
 - 경고 1건: Pipeline 패키지가 런타임 MCP 비활성 설정을 경고로 알린다. 게임 실행 실패를 뜻하지 않으며 일반 빌드에 MCP 서버를 켜지 않았다.
 
@@ -50,3 +52,5 @@
 같은 실행 파일에 `--verify-prototype --verification-output <directory>`를 전달하면 로컬 입력 이벤트를 생성해 위 흐름을 검증하고 자동 종료한다. 옵션 없이 실행하면 일반 게임이 시작된다. 진단은 지정 폴더에 결과를 기록하며, 게임 진행 확인을 위해 음원을 약 20초 재생한다.
 
 빌드 오류 수정 커밋 메시지: `fix: retain board shader dependencies and verify Windows player builds`
+
+검증 보강 커밋 메시지: `test: verify standalone board rendering and require zero build errors`
