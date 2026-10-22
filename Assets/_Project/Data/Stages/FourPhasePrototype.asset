@@ -16,7 +16,7 @@ MonoBehaviour:
   noiseSpawnInterval: 8
   maxActiveNoise: 2
   noiseTargets: 030000000400000005000000
-  healthSegments: 3e0000000c000000180000005e000000
+  healthSegments: 1f000000060000000c0000002f000000
   cameraElevation: 60
   playerMaxHp: 3
   maxCollectionCost: 12
