@@ -12,6 +12,8 @@ namespace StringAsASword.Combat
     {
         public string type, detail, cells;
         public int noteIndex, musicBeat, phase, id, impactNote, x, y;
+        public int warningNotes, requiredDodgeActions, selectedInterval, actualInterval;
+        public string reason, kind;
     }
     [Serializable] public sealed class NoteRecord
     {
@@ -98,10 +100,12 @@ namespace StringAsASword.Combat
             Session.Reset(); music.Reset(); Combat.Reset(); Phases.Reset(sessionId, seed);
             PlayerHp = Settings.PlayerMaxHp; Outcome = BattleOutcome.Running;
             LastClosedNote = CurrentMusicBeat = -1; advancedTime = double.NegativeInfinity; before = Session.Position;
-            Patterns = new BossPatternSystem(Settings.Patterns);
+            Patterns = new BossPatternSystem(Settings.Patterns, Settings.Schedule, seed);
             Patterns.Changed += (type, a) => Events.Add(new BattleEvent { type = "pattern-" + type,
                 noteIndex = LastClosedNote, musicBeat = CurrentMusicBeat, phase = Phases.PhaseId,
-                id = a.Id, impactNote = a.ImpactNote, cells = a.Cells.ToString("X16"), detail = a.Name });
+                id = a.Id, impactNote = a.ImpactNote, cells = a.Cells.ToString("X16"), detail = a.Name,
+                warningNotes = a.WarningNotes, requiredDodgeActions = a.RequiredDodgeActions,
+                selectedInterval = a.SelectedInterval, actualInterval = a.ActualInterval, reason = a.Reason, kind = a.Kind.ToString() });
             Patterns.CanPublish = CanPublish;
             Patterns.BeginPhase(1, 0); Patterns.Publish(-1, Session.Position, Settings.NoteCount, false);
         }

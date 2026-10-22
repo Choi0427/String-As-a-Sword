@@ -20,35 +20,46 @@ MonoBehaviour:
   cameraElevation: 60
   playerMaxHp: 3
   maxCollectionCost: 12
-  combatVersion: battle-2
+  combatVersion: battle-3
   patterns:
   - Name: Row
     Kind: 0
     Coordinate: 6
     FirstColumn: 0
     ColumnCount: 4
-    TelegraphNotes: 3
+    TelegraphNotes: 2
     FirstImpact: 7
     RepeatNotes: 24
     PhaseMask: 15
+    SelectionWeight: 1
     Enabled: 1
   - Name: Lock
     Kind: 2
     Coordinate: 6
     FirstColumn: 0
     ColumnCount: 4
-    TelegraphNotes: 2
+    TelegraphNotes: 1
     FirstImpact: 15
     RepeatNotes: 24
     PhaseMask: 15
+    SelectionWeight: 1
     Enabled: 1
   - Name: Top
     Kind: 3
     Coordinate: 6
     FirstColumn: 0
     ColumnCount: 4
-    TelegraphNotes: 4
+    TelegraphNotes: 3
     FirstImpact: 23
     RepeatNotes: 24
     PhaseMask: 14
+    SelectionWeight: 1
     Enabled: 1
+  attackSchedule:
+    Enabled: 1
+    MinInterval: 4
+    IntervalWeights: 01000000010000000500000005000000050000000100000001000000010000000100000001000000010000000100000001000000
+    MinWarning: 1
+    MaxWarning: 3
+    CandidateAttempts: 16
+    MaxDeferrals: 8

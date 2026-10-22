@@ -11,7 +11,7 @@ namespace StringAsASword.Combat
 {
     public static class BattleLog
     {
-        private const string RuntimeVersion = "battle-2/xorshift32-v1";
+        private const string RuntimeVersion = "battle-3/xorshift32-v1";
         [Serializable] private sealed class Line
         {
             public string type, chartHash, configHash, runtimeVersion = RuntimeVersion;
@@ -82,16 +82,23 @@ namespace StringAsASword.Combat
             }
             var footer = JsonUtility.FromJson<Line>(lines[lines.Length - 1]);
             battle.Advance(ExactDouble(lines[lines.Length - 1], "endTime"));
-            int notes = 0;
+            int notes = 0, events = 0;
             foreach (string text in lines)
             {
                 var line = JsonUtility.FromJson<Line>(text);
+                if (line.type == "event")
+                {
+                    if (events >= battle.Events.Count || JsonUtility.ToJson(line.battleEvent) != JsonUtility.ToJson(battle.Events[events]))
+                        throw new InvalidDataException("Replay diverged at event " + (events + 1));
+                    events++;
+                }
                 if (line.type != "note") continue;
                 if (notes >= battle.Records.Count || JsonUtility.ToJson(line.note) != JsonUtility.ToJson(battle.Records[notes]))
                     throw new InvalidDataException("Replay diverged at note " + (notes + 1));
                 notes++;
             }
             if (notes != battle.Records.Count) throw new InvalidDataException("Replay note count mismatch.");
+            if (events != battle.Events.Count) throw new InvalidDataException("Replay event count mismatch.");
             if (footer.processedNotes != notes || footer.remainingNotes != header.settings.NoteCount - notes ||
                 footer.type != battle.Outcome.ToString() || footer.finalStateHash != StateHash(battle))
                 throw new InvalidDataException("Replay final state mismatch.");

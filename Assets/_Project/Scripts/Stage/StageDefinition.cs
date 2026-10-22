@@ -14,8 +14,10 @@ namespace StringAsASword.Stage
         [SerializeField, Range(45, 80)] private float cameraElevation = 60;
         [SerializeField, Min(1)] private int playerMaxHp = 3;
         [SerializeField, Min(2)] private int maxCollectionCost = 12;
-        [SerializeField] private string combatVersion = "battle-2";
+        [SerializeField] private string combatVersion = "battle-3";
         [SerializeField] private PatternDefinition[] patterns = PatternDefinition.Defaults();
+        [SerializeField] private RandomAttackSchedule attackSchedule = new RandomAttackSchedule();
+        public RandomAttackSchedule AttackSchedule => attackSchedule;
         public int PlayerMaxHp => playerMaxHp;
         public int MaxCollectionCost => maxCollectionCost;
         public string CombatVersion => combatVersion;
