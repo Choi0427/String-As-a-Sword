@@ -1,0 +1,5 @@
+Initial phase 1: P10=71, HP=62 (floor(P10 * .875)).
+Initial phase 2: P10=14, HP=12 (floor(P10 * .875)).
+Initial phase 3: P10=28, HP=24 (floor(P10 * .875)).
+Initial phase 4: P10=108, HP=94 (floor(P10 * .875)).
+Iteration 1: HP=[62,12,24,94], actual clear=100.00 %.

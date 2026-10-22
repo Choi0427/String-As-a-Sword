@@ -16,6 +16,39 @@ MonoBehaviour:
   noiseSpawnInterval: 8
   maxActiveNoise: 2
   noiseTargets: 030000000400000005000000
-  healthSegments: 06000000060000000600000006000000
-  attackDamage: 1
+  healthSegments: 3e0000000c000000180000005e000000
   cameraElevation: 60
+  playerMaxHp: 3
+  maxCollectionCost: 12
+  combatVersion: battle-1
+  patterns:
+  - Name: Row
+    Kind: 0
+    Coordinate: 6
+    FirstColumn: 0
+    ColumnCount: 4
+    TelegraphNotes: 3
+    FirstImpact: 7
+    RepeatNotes: 24
+    PhaseMask: 15
+    Enabled: 1
+  - Name: Lock
+    Kind: 2
+    Coordinate: 6
+    FirstColumn: 0
+    ColumnCount: 4
+    TelegraphNotes: 2
+    FirstImpact: 15
+    RepeatNotes: 24
+    PhaseMask: 15
+    Enabled: 1
+  - Name: Top
+    Kind: 3
+    Coordinate: 6
+    FirstColumn: 0
+    ColumnCount: 4
+    TelegraphNotes: 4
+    FirstImpact: 23
+    RepeatNotes: 24
+    PhaseMask: 14
+    Enabled: 1
