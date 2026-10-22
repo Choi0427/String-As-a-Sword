@@ -1,0 +1,72 @@
+[
+  {
+    "path": "BattlePacingComparison.md",
+    "bytes": 5467,
+    "sha256": "6f70988a38fcd90c4d71b301fad7ffce494c788272c1c390d995d87a14201843"
+  },
+  {
+    "path": "distributions.csv",
+    "bytes": 161069,
+    "sha256": "343249b5508e0f7e6ac6e0083e4c265c4a159b498f53138e85162dbe313980f4"
+  },
+  {
+    "path": "events.csv.gz",
+    "bytes": 18250809,
+    "sha256": "bfdcdf4d3965b9dadaabe22c772da1d88e7c55859e1721fdb167f76bbe5f5487"
+  },
+  {
+    "path": "frequencies.csv",
+    "bytes": 785576,
+    "sha256": "cff7d34326d107fedbfda84628258b0c50a6863570c961ee406519f6feba6a72"
+  },
+  {
+    "path": "logs/holdout-C-random-half-hp-AttackHold-100000.jsonl.gz",
+    "bytes": 19942,
+    "sha256": "ec1631f5d6c5a5a1ec3b15cae78c997ec4e6f22974301e15dae186c9ff4803d9"
+  },
+  {
+    "path": "logs/holdout-C-random-half-hp-CollectFirst-100000.jsonl.gz",
+    "bytes": 20979,
+    "sha256": "cbda724aaa949fef1e4eaa7ff726f30cb039c1bf95d8afcc08a2f329460aaf33"
+  },
+  {
+    "path": "logs/holdout-C-random-half-hp-MovementUse-100000.jsonl.gz",
+    "bytes": 20569,
+    "sha256": "034488cea28f2855e59b30820e7f5e7167409e9d001ce7cb69efc5e4b8ae0030"
+  },
+  {
+    "path": "logs/miss5-C-random-half-hp-AttackHold-100066.jsonl.gz",
+    "bytes": 22074,
+    "sha256": "c8c9bf9eab288a53a903a62657e03bb5d95feb0de1d9dc09eae961ca79cfdca8"
+  },
+  {
+    "path": "logs/miss5-C-random-half-hp-CollectFirst-100069.jsonl.gz",
+    "bytes": 25351,
+    "sha256": "6dcee35971c99a65d404a1a95ede06434c66269e9fcfe4b4b1e443b2312551c2"
+  },
+  {
+    "path": "logs/miss5-C-random-half-hp-MovementUse-100045.jsonl.gz",
+    "bytes": 11316,
+    "sha256": "80f12994545c6addc3d2ba96ba801e90f33d37a0414e1261c536455a7b812955"
+  },
+  {
+    "path": "phases.csv.gz",
+    "bytes": 857773,
+    "sha256": "b12232427e11226ba9e66bff0305e671810dc1fd76b75268cdd335b453757360"
+  },
+  {
+    "path": "position-sample.json",
+    "bytes": 5852,
+    "sha256": "359d532f4231b66da297077d8d8a741b5ba44d4ae2290dc74559fc5fa3cd1b81"
+  },
+  {
+    "path": "runs.csv.gz",
+    "bytes": 437057,
+    "sha256": "b891d0412eca3c6fbcaea6f73970d6e1729d4966edd0fc889a13f3cd08e4d881"
+  },
+  {
+    "path": "summary.json",
+    "bytes": 758968,
+    "sha256": "9b2741c5777ea905e13e6cedcd3f21bda7dbf2cac894ed923e5a94d2da465f5d"
+  }
+]

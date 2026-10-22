@@ -1,5 +1,7 @@
 # 보스 공격 간격 비교 도구
 
+2026-10-23 기본 27,000회 실행을 완료했다. [결과·평가·원자료](BattlePacing/Results.md)를 참조한다.
+
 `Assets/_Project/Editor/BattlePacingComparison.cs`는 실제 전투와 같은 `BattleSimulator.Run` → `BattleSession`을 실행합니다. 독립적인 간이 전투 모델을 만들지 않으며, 기존 관찰 전용 세 전략을 그대로 사용합니다. HP 보정과 설정 저장은 수행하지 않습니다.
 
 ## 비교 구성과 표본
