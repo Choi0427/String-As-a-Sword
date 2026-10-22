@@ -229,6 +229,25 @@ namespace StringAsASword.Tests
         }
 
         [Test]
+        public void NeverSafeNoiseCandidateStopsRetryAndKeepsTheMusicGrid()
+        {
+            var noise = new StringAsASword.Stage.NoisePickupSystem(new BoardState());
+            var events = new System.Collections.Generic.List<string>();
+            noise.CandidateAllowed = (cell, fallback) => false;
+            noise.SpawnStatus += (reason, beat) => events.Add(reason + ":" + beat);
+            noise.Reset(1, 1, 3);
+            noise.AdvanceToBeat(10, new GridPosition(3, 3));
+            Assert.That(events.Count, Is.EqualTo(11));
+            Assert.That(events.Last(), Is.EqualTo("no-safe-candidate:10"));
+            Assert.That(noise.WaitingForSafeSpawn, Is.False);
+            noise.AdvanceToBeat(15, new GridPosition(3, 3));
+            Assert.That(events.Count, Is.EqualTo(11));
+            noise.AdvanceToBeat(16, new GridPosition(3, 3));
+            Assert.That(events.Last(), Is.EqualTo("deferred:16"));
+            Assert.That(noise.Pickups, Is.Empty);
+        }
+
+        [Test]
         public void SameSeedProducesTheSameSerializedBattleLogHash()
         {
             string directory = Path.Combine(Path.GetTempPath(), "string-sword-log-tests-" + Guid.NewGuid().ToString("N"));
