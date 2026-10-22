@@ -1,5 +1,11 @@
 # Windows 빌드 및 실행 검증
 
+## 2026-10-22 보스 전투 빌드
+
+현재 실행 파일은 `Builds/BossCombat/String As a Sword.exe`다. 보스 HP62/12/24/94를 적용한 Unity 6000.5.5f1 Windows x64 일반 빌드가 성공했다(오류0, 경고1, 36.44초). 경고는 배포용 MCP 서버 비활성 안내다. `--verify-prototype` 진단도 종료코드0·passed=true·오류0으로 완료했다. 해당 opt-in 진단은 보스 패턴만 테스트 세션에서 끄고 기존 입력/HP 하한 흐름을 검사한다. 보스 전투·예고의 추가 검증과 측정 결과는 [BossCombat.md](BossCombat.md)를 따른다.
+
+현재 보고서와 렌더 자료는 [BattleValidation](BattleValidation/windows-build-report.json), [실행 파일 진단](BattleValidation/standalone-verification.json), [보드 렌더](BattleVisual/standalone-board.png)에 보존했다. 다음 내용은 10월9일의 이전 빌드 기록이다.
+
 2026년 10월 9일, Unity 6000.5.5f1 / Windows x64 / 일반 빌드(BuildOptions.None).
 
 ## 실행 파일
