@@ -24,7 +24,7 @@ namespace StringAsASword.Combat
     [Serializable]
     public sealed class BattleSettings
     {
-        public string Version = "battle-1", ChartId = "EvenNotes";
+        public string Version = "battle-2", ChartId = "EvenNotes";
         public int NoteCount;
         public double Bpm, PerfectWindow = .07, GoodWindow = .14, InputOffset;
         public int PlayerMaxHp = 3, SpawnInterval = 8, MaxNoise = 2, MaxCollectionCost = 12;

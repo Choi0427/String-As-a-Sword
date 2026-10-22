@@ -201,7 +201,8 @@ namespace StringAsASword.Combat
             // Future positions are unknown. Reserve the advertised per-pickup service bound, not lucky RNG.
             int attackBudget = analysisEnds == null ? Health.TotalHp : 0;
             int reserve = route.Cost + (otherGoals + FutureGoals()) * Settings.MaxCollectionCost + attackBudget;
-            return reserve <= remaining;
+            // A pessimistic whole-song estimate must not starve a locally safe fallback after a slow phase.
+            return fallback || reserve <= remaining;
         }
         private bool CanPublish(BossTelegraph proposal)
         {

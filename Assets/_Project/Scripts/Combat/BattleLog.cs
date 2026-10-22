@@ -11,9 +11,10 @@ namespace StringAsASword.Combat
 {
     public static class BattleLog
     {
+        private const string RuntimeVersion = "battle-2/xorshift32-v1";
         [Serializable] private sealed class Line
         {
-            public string type, chartHash, configHash, runtimeVersion = "battle-1/xorshift32-v1";
+            public string type, chartHash, configHash, runtimeVersion = RuntimeVersion;
             public int seed, processedNotes, remainingNotes;
             public double endTime;
             public string termination, finalStateHash;
@@ -70,7 +71,7 @@ namespace StringAsASword.Combat
             header.settings.PerfectWindow = ExactDouble(lines[0], "PerfectWindow");
             header.settings.GoodWindow = ExactDouble(lines[0], "GoodWindow");
             header.settings.InputOffset = ExactDouble(lines[0], "InputOffset");
-            if (header.type != "header" || header.runtimeVersion != "battle-1/xorshift32-v1" ||
+            if (header.type != "header" || header.runtimeVersion != RuntimeVersion ||
                 header.chartHash != ChartHash(header.settings) || header.configHash != Hash(JsonUtility.ToJson(header.settings)))
                 throw new InvalidDataException("Replay version or content hash mismatch.");
             var battle = new BattleSession(header.settings, header.seed, header.analysisEnds == null || header.analysisEnds.Length == 0 ? null : header.analysisEnds);

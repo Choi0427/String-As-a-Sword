@@ -16,6 +16,48 @@ namespace StringAsASword.Tests
         private static readonly GridPosition Player = new GridPosition(3, 3);
 
         [Test]
+        public void LatePhaseTwoStillSpawnsReachableNoiseAcrossOneThousandSeeds()
+        {
+            for (int seed = 0; seed < 1000; seed++)
+            {
+                var settings = new BattleSettings { Bpm = 87, NoteCount = 344,
+                    Health = new[] { 62, 12, 24, 94 }, Patterns = Array.Empty<PatternDefinition>() };
+                var battle = new BattleSession(settings, seed);
+                int note = 0, delay = 60;
+                for (; note < 220 && battle.Phases.PhaseId == 1; note++)
+                {
+                    double time = note * 60.0 / settings.Bpm;
+                    battle.Advance(time);
+                    var decision = BattleStrategies.Decide(StrategyKind.CollectFirst, battle.Observe());
+                    if (battle.Noise.GoalReached && delay > 0)
+                    { decision = new BattleDecision(PlayerActionKind.Guard); delay--; }
+                    battle.Request(decision.Kind, decision.Direction, time);
+                    battle.Advance(time + settings.GoodWindow + .000001);
+                }
+                Assert.That(battle.Phases.PhaseId, Is.EqualTo(2), "Late transition fixture, seed " + seed);
+                Assert.That(delay, Is.Zero);
+                for (int attempt = 0; attempt < 3; attempt++)
+                    battle.Advance((note + attempt) * 60.0 / settings.Bpm + settings.GoodWindow + .000001);
+                Assert.That(battle.Noise.Pickups, Is.Not.Empty, "Reachable fallback must spawn, seed " + seed);
+                Assert.That(battle.Events.Any(e => e.phase == 2 && e.type == "noise-fallback"), Is.True);
+                foreach (var pickup in battle.Noise.Pickups)
+                    Assert.That(SafeRoutePlanner.Find(battle.Session.Position, pickup.Cell,
+                        battle.LastClosedNote + 1, battle.Patterns.Active, settings.MaxCollectionCost, true).Found, Is.True);
+            }
+        }
+
+        [Test]
+        public void FallbackStillRejectsACollectionRouteThatCannotFinishBeforeTheLastNote()
+        {
+            var settings = new BattleSettings { Bpm = 87, NoteCount = 3, Patterns = Array.Empty<PatternDefinition>() };
+            var battle = new BattleSession(settings, 0);
+            battle.Advance(2 * 60.0 / settings.Bpm + settings.GoodWindow + .000001);
+            Assert.That(battle.Noise.Pickups, Is.Empty);
+            Assert.That(battle.Events.Any(e => e.type == "noise-fallback-deferred"), Is.True);
+            Assert.That(battle.Outcome, Is.EqualTo(BattleOutcome.Timeout));
+        }
+
+        [Test]
         public void SafeRouteMovesAroundDangerOnTheExactImpactNote()
         {
             var danger = new[] { new BossTelegraph(1, "Block", SafeRoutePlanner.Bit(new GridPosition(1, 0)), 0) };

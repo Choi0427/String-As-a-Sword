@@ -20,7 +20,7 @@ MonoBehaviour:
   cameraElevation: 60
   playerMaxHp: 3
   maxCollectionCost: 12
-  combatVersion: battle-1
+  combatVersion: battle-2
   patterns:
   - Name: Row
     Kind: 0
