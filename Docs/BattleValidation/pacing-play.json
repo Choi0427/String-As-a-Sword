@@ -1,0 +1,62 @@
+{
+  "status": "completed",
+  "duration": 59.59,
+  "summary": {
+    "total": 7,
+    "passed": 7,
+    "failed": 0,
+    "skipped": 0,
+    "inconclusive": 0
+  },
+  "results": [
+    {
+      "FullName": "StringAsASword.Tests.PrototypeIntegrationTests.AttackGuardAndMovementRespectTiePriorityAndHoldEdges",
+      "Status": "Passed",
+      "Duration": 7.3928422,
+      "Message": null,
+      "StackTrace": null
+    },
+    {
+      "FullName": "StringAsASword.Tests.PrototypeIntegrationTests.LandingCollectsNoiseAndRestartClearsIt",
+      "Status": "Passed",
+      "Duration": 5.6355497,
+      "Message": null,
+      "StackTrace": null
+    },
+    {
+      "FullName": "StringAsASword.Tests.PrototypeIntegrationTests.MirroredNotesAndKnightHaveRenderableGeometry",
+      "Status": "Passed",
+      "Duration": 3.7636935,
+      "Message": null,
+      "StackTrace": null
+    },
+    {
+      "FullName": "StringAsASword.Tests.PrototypeIntegrationTests.QuitButtonIsAvailableOnReadyPausedAndFinishedMenus",
+      "Status": "Passed",
+      "Duration": 0.2643672,
+      "Message": null,
+      "StackTrace": null
+    },
+    {
+      "FullName": "StringAsASword.Tests.PrototypeIntegrationTests.RealKeyboardMovesFourDirectionsAndHoldDoesNotRepeat",
+      "Status": "Passed",
+      "Duration": 7.7012059,
+      "Message": null,
+      "StackTrace": null
+    },
+    {
+      "FullName": "StringAsASword.Tests.PrototypeIntegrationTests.SimultaneousKeysUseOneActionAndPauseRestartClearsSession",
+      "Status": "Passed",
+      "Duration": 5.0426831,
+      "Message": null,
+      "StackTrace": null
+    },
+    {
+      "FullName": "StringAsASword.Tests.PrototypeIntegrationTests.TopRowAttacksStopAtHealthFloorUntilNoiseGoalIsMet",
+      "Status": "Passed",
+      "Duration": 29.7605474,
+      "Message": null,
+      "StackTrace": null
+    }
+  ]
+}

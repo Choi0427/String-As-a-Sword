@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using NUnit.Framework;
 using StringAsASword.Board;
 using StringAsASword.Core;
@@ -15,6 +16,7 @@ namespace StringAsASword.Tests
     {
         private PrototypeGame game;
         private Keyboard keyboard;
+        private readonly List<Keyboard> externalKeyboards = new List<Keyboard>();
         private bool originalBackground;
         private InputSettings.BackgroundBehavior originalInputBackground;
 #if UNITY_EDITOR
@@ -23,6 +25,11 @@ namespace StringAsASword.Tests
 
         [UnitySetUp] public IEnumerator SetUp()
         {
+            // Desktop typing must not enter the synthetic keyboard's gameplay test.
+            externalKeyboards.Clear();
+            foreach (var device in InputSystem.devices)
+                if (device is Keyboard existing && existing.enabled)
+                { externalKeyboards.Add(existing); InputSystem.DisableDevice(existing); }
             originalBackground=Application.runInBackground;
             originalInputBackground=InputSystem.settings.backgroundBehavior;
             Application.runInBackground=true;
@@ -43,6 +50,8 @@ namespace StringAsASword.Tests
         {
             if(game!=null) game.PauseSession();
             if(keyboard!=null) InputSystem.RemoveDevice(keyboard);
+            foreach (var existing in externalKeyboards) if (existing.added) InputSystem.EnableDevice(existing);
+            externalKeyboards.Clear();
             InputSystem.settings.backgroundBehavior=originalInputBackground;
 #if UNITY_EDITOR
             InputSystem.settings.editorInputBehaviorInPlayMode = originalEditorInput;
