@@ -1,5 +1,7 @@
 # 보스 전투와 행동 예산 측정
 
+**2026-10-23 현재 설정은 battle-3, HP 31/6/12/47 및 랜덤 전역 공격이다.** 새 설정·예고·공정성 규칙은 [RandomBossCombat.md](RandomBossCombat.md), A/B/C 비교 방법은 [BattlePacingComparison.md](BattlePacingComparison.md)를 따른다. 아래 HP62/12/24/94와 12,000회 측정은 이전 battle-1/2의 기록이며 새 설정의 검증으로 혼동하지 않는다.
+
 2026-10-22. Unity 6000.5.5f1, Pipeline 0.8.0-exp.1, Unity CLI 1.0.0-beta.14, Codex Unity 플러그인 0.1.8-beta.
 
 ## 조사 결과와 적용 범위

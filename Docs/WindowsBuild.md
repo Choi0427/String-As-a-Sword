@@ -1,5 +1,11 @@
 # Windows 빌드 및 실행 검증
 
+## 2026-10-23 랜덤 전투 빌드
+
+현재 `Builds/BossCombat/String As a Sword.exe`는 battle-3, HP31/6/12/47, 가중 4~16노트 전역 스케줄과 랜덤 공격 위치를 포함한다. 빌드 성공(오류0, 경고1, 17.16초). 경고는 배포용 Pipeline MCP 비활성 안내다. [빌드 보고서](BattleValidation/pacing-build.json), [실행 진단](BattleValidation/pacing-standalone.json).
+
+실제 exe의 opt-in `--verify-prototype` 진단은 passed=true, 오류0, 종료 버튼 콜백으로 프로세스 종료코드0을 확인했다. 이 진단은 입력/수집/공격 HP 하한/홀드/재시작/메뉴를 검사하고 패턴은 해당 세션에서 비활성화한다. 랜덤 전투는 공유 전투 로직의 자동 테스트·비교 실행과 [실제 Game View](BattleVisual/Pacing/Verification.md)로 별도 검증했다. 다음 절들은 과거 빌드 기록이다.
+
 ## 2026-10-22 보스 전투 빌드
 
 후속 수정 최신 빌드에는 2페이즈 잡음 대체 생성 수정과 QUIT GAME 버튼이 포함된다(battle-2, HP 유지). 오류0·경고1로 빌드 성공, 실행 파일의 종료 버튼 콜백으로 프로세스 종료 코드0을 확인했다. 최신 [빌드 보고서](BattleValidation/noise-quit-build.json)와 [실행·종료 진단](BattleValidation/noise-quit-standalone.json)을 참고한다. 다음 수치는 후속 수정 전 최초 보스 전투 빌드 기록이다.
