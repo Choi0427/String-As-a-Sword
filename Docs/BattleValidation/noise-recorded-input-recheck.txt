@@ -1,0 +1,1 @@
+Same recorded inputs under battle-2: phase-two spawns=3, fallbacks=1 (old run: zero spawns).

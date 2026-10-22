@@ -2,6 +2,8 @@
 
 ## 2026-10-22 보스 전투 빌드
 
+후속 수정 최신 빌드에는 2페이즈 잡음 대체 생성 수정과 QUIT GAME 버튼이 포함된다(battle-2, HP 유지). 오류0·경고1로 빌드 성공, 실행 파일의 종료 버튼 콜백으로 프로세스 종료 코드0을 확인했다. 최신 [빌드 보고서](BattleValidation/noise-quit-build.json)와 [실행·종료 진단](BattleValidation/noise-quit-standalone.json)을 참고한다. 다음 수치는 후속 수정 전 최초 보스 전투 빌드 기록이다.
+
 현재 실행 파일은 `Builds/BossCombat/String As a Sword.exe`다. 보스 HP62/12/24/94를 적용한 Unity 6000.5.5f1 Windows x64 일반 빌드가 성공했다(오류0, 경고1, 36.44초). 경고는 배포용 MCP 서버 비활성 안내다. `--verify-prototype` 진단도 종료코드0·passed=true·오류0으로 완료했다. 해당 opt-in 진단은 보스 패턴만 테스트 세션에서 끄고 기존 입력/HP 하한 흐름을 검사한다. 보스 전투·예고의 추가 검증과 측정 결과는 [BossCombat.md](BossCombat.md)를 따른다.
 
 현재 보고서와 렌더 자료는 [BattleValidation](BattleValidation/windows-build-report.json), [실행 파일 진단](BattleValidation/standalone-verification.json), [보드 렌더](BattleVisual/standalone-board.png)에 보존했다. 다음 내용은 10월9일의 이전 빌드 기록이다.

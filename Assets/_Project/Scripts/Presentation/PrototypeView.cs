@@ -151,11 +151,16 @@ namespace StringAsASword.Presentation
             var card=MakeRect(dim,"MenuCard",Vector2.zero,new Vector2(660,365)); Image(card,new Color(.07f,.085f,.10f));
             overlayTitle=Text(card,"Title","FIND YOUR RHYTHM",new Vector2(0,110),new Vector2(610,55),32,InkWhite);
             overlayBody=Text(card,"Instructions","",new Vector2(0,22),new Vector2(590,115),18,Muted);
-            var buttonRect=MakeRect(card,"StartButton",new Vector2(0,-105),new Vector2(340,55));
+            var buttonRect=MakeRect(card,"StartButton",new Vector2(-150,-105),new Vector2(280,55));
             var buttonImage=Image(buttonRect,InkWhite); buttonImage.raycastTarget=true;
             var button=buttonRect.gameObject.AddComponent<UnityEngine.UI.Button>(); button.targetGraphic=buttonImage;
             button.onClick.AddListener(()=>game.StartSession());
-            buttonLabel=Text(buttonRect,"Label","START / SPACE",Vector2.zero,new Vector2(330,50),17,new Color(.06f,.08f,.09f));
+            buttonLabel=Text(buttonRect,"Label","START / SPACE",Vector2.zero,new Vector2(270,50),17,new Color(.06f,.08f,.09f));
+            var quitRect=MakeRect(card,"QuitButton",new Vector2(150,-105),new Vector2(280,55));
+            var quitImage=Image(quitRect,new Color(.17f,.20f,.23f)); quitImage.raycastTarget=true;
+            var quit=quitRect.gameObject.AddComponent<UnityEngine.UI.Button>(); quit.targetGraphic=quitImage;
+            quit.onClick.AddListener(game.QuitGame);
+            Text(quitRect,"Label","QUIT GAME",Vector2.zero,new Vector2(270,50),17,InkWhite);
         }
         public void ResetFeedback()
         {

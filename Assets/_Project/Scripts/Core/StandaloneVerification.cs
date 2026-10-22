@@ -98,10 +98,14 @@ namespace StringAsASword.Core
             if (!Check(game.SessionId == session + 1 && game.Noise.Collected == 0 && game.Noise.Pickups.Count == 0 && game.Phases.PhaseId == 1 && game.Health.TotalHp == Sum(game.Stage.HealthSegments), "Restart did not reset gameplay.")) yield break;
             game.PauseSession();
             yield return null;
-            var button = game.GetComponentInChildren<UnityEngine.UI.Button>();
+            var button = Array.Find(game.GetComponentsInChildren<UnityEngine.UI.Button>(true), b => b.name == "StartButton");
             if (!Check(button != null, "Start button is missing.")) yield break;
             button.onClick.Invoke();
             if (!Check(game.SessionId == session + 2 && game.State == PrototypeState.CountIn, "Start button did not restart the session.")) yield break;
+            game.PauseSession();
+            yield return null;
+            var quit = Array.Find(game.GetComponentsInChildren<UnityEngine.UI.Button>(true), b => b.name == "QuitButton");
+            if (!Check(quit != null && quit.gameObject.activeInHierarchy, "Quit button is missing from the menu.")) yield break;
             Finish(null);
         }
         private IEnumerator UntilTime(double target)
@@ -157,11 +161,13 @@ namespace StringAsASword.Core
             if (failure != null) errors.Add(failure);
             bool passed = errors.Count == 0;
             var result = new VerificationResult { passed = passed, errors = errors.ToArray(), unityVersion = Application.unityVersion,
-                executableData = Application.dataPath, checks = new[] { "startup", "64 tiles and shaders", "Space input", "count-in and beat clock", "music playback", "WASD landing collection", "J damage and HP floor", "K pose and hold", "R reset", "Start button" } };
+                executableData = Application.dataPath, checks = new[] { "startup", "64 tiles and shaders", "Space input", "count-in and beat clock", "music playback", "WASD landing collection", "J damage and HP floor", "K pose and hold", "R reset", "Start button", "Quit button and process exit" } };
             File.WriteAllText(Path.Combine(output, "standalone-verification.json"), JsonUtility.ToJson(result, true));
             Application.logMessageReceived -= CaptureError;
             if (keyboard != null) InputSystem.RemoveDevice(keyboard);
-            Application.Quit(passed ? 0 : 1);
+            if (passed)
+                Array.Find(game.GetComponentsInChildren<UnityEngine.UI.Button>(true), b => b.name == "QuitButton").onClick.Invoke();
+            else Application.Quit(1);
         }
         [Serializable] private sealed class VerificationResult
         {

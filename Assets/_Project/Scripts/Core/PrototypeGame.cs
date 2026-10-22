@@ -74,6 +74,16 @@ namespace StringAsASword.Core
             if (State != PrototypeState.Playing && State != PrototypeState.CountIn) return;
             clock.Stop(); audioPlayer.Stop(); input.Clear(); State = PrototypeState.Paused;
         }
+        public void QuitGame()
+        {
+            PauseSession();
+            SaveRun("Quit");
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
+        }
         private void OnCommand(string command)
         {
             if (command == "restart" || command == "start" && State != PrototypeState.Playing && State != PrototypeState.CountIn) StartSession();

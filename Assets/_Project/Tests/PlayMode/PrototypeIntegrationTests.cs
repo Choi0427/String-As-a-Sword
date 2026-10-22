@@ -187,6 +187,27 @@ namespace StringAsASword.Tests
             Assert.That(game.Session.AcceptedGuards,Is.EqualTo(1));
             LogAssert.NoUnexpectedReceived();
         }
+        [UnityTest] public IEnumerator QuitButtonIsAvailableOnReadyPausedAndFinishedMenus()
+        {
+            var buttons = game.GetComponentsInChildren<UnityEngine.UI.Button>(true);
+            var start = System.Array.Find(buttons, b => b.name == "StartButton");
+            var quit = System.Array.Find(buttons, b => b.name == "QuitButton");
+            Assert.That(start, Is.Not.Null);
+            Assert.That(quit, Is.Not.Null);
+            Assert.That(quit.gameObject.activeInHierarchy, Is.True);
+            start.onClick.Invoke();
+            yield return null;
+            Assert.That(quit.gameObject.activeInHierarchy, Is.False);
+            game.PauseSession();
+            yield return null;
+            Assert.That(quit.gameObject.activeInHierarchy, Is.True);
+            game.StartSession();
+            game.Battle.Advance(game.Timeline.TimeOf(game.Song.NoteCount - 1) + game.Song.GoodWindow + .001);
+            yield return null;
+            Assert.That(game.State, Is.EqualTo(PrototypeState.Finished));
+            Assert.That(quit.gameObject.activeInHierarchy, Is.True);
+            LogAssert.NoUnexpectedReceived();
+        }
         [UnityTest] public IEnumerator LandingCollectsNoiseAndRestartClearsIt()
         {
             game.StartSession(); yield return UntilSongTime(.05);

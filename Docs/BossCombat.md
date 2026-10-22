@@ -14,6 +14,8 @@
 
 `Assets/_Project/Scenes/RhythmPrototype.unity`를 열고 Play → Space/Enter 또는 Start. WASD 한 칸 이동, J 공격, K 방어, R 재시작, Esc 정지, M 클릭음 전환. 홀드는 연속 입력을 만들지 않는다. 시작 위치 D4=(3,3), 공격 행은 최상단 y=7이다.
 
+시작·정지·결과 메뉴의 **QUIT GAME** 버튼으로 종료한다. 플레이 중에는 Esc로 메뉴를 연다. 실행 기록을 `Quit` 사유로 저장하고 Windows 빌드의 프로세스를 종료한다. Unity Editor에서는 Play 모드만 종료한다.
+
 `Assets/_Project/Data/Songs/GeomEulHyeon87.asset`에서 BPM, Note Count, 음악, Audio Start Offset, 입력·표시 오프셋, Perfect/Good 창과 카운트인을 편집한다. 이번 측정은 87 BPM, 344노트, Perfect ±70ms, Good ±140ms를 사용했다. 공용 전투 코드에 87/344를 고정하지 않았다. 판정창은 기존처럼 박 간격의 45% 이내로 제한한다. 좌우 음표는 같은 한 노트의 거울 표시다.
 
 `Assets/_Project/Data/Stages/FourPhasePrototype.asset` 설정:
@@ -100,7 +102,7 @@ HP가 아직 정해지지 않은 분석 모드에서는 마지막 보스 HP 항�
 - input: 원본 노래 시각과 행동/방향. 거부된 입력도 보존.
 - event: 예고 공개·연기·취소·발동, 범위의 64비트 16진수 마스크, 음악 박자, 잡음 생성/수집/연기/대체, 피격·방어·페이즈·종료.
 - note: 0기반 인덱스, 음악 박자, 행동 전후 위치, 판정, 피해, HP, 수집, 원인, 상호 배타적 분류와 누계, 상태 해시.
-- footer: 결과, 처리/남은 노트 수, 정확한 끝 시각, `Completed/Restarted/Interrupted` 사유, 최종 상태 해시. 중단된 실행의 게임 결과는 Running으로 남아 승리/패배와 구분된다.
+- footer: 결과, 처리/남은 노트 수, 정확한 끝 시각, `Completed/Restarted/Interrupted/Quit` 사유, 최종 상태 해시. 중단된 실행의 게임 결과는 Running으로 남아 승리/패배와 구분된다.
 
 `처리 노트 = Move + Guard + EffectiveAttack + Other`. Other에는 Miss/대기(`MissOrWait`), 헛공격(`OutOfRange`), HP 하한 공격(`HpFloor`)이 들어간다. 피해와 `attackOpportunity`를 따로 기록하여 HP가 0이라 피해를 주지 못한 공격도 공격 능력에 포함할 수 있다. 자연 대기와 입력 누락은 게임 입장에서는 동일한 무입력이므로 함께 분류하고, 시뮬레이션의 입력 누락 모형은 별도 카운터를 가진다. 끝까지 처리하면 344, 조기 승리/사망/중단이면 실제 처리 수만 센다.
 
@@ -225,6 +227,12 @@ Windows x64 일반 빌드 **Succeeded, 오류 0, 경고 1, 36.44초, 111,830,521
 ## 기능별 커밋
 
 2026-10-22 후속 수정: 실제 플레이에서 123번째 노트에 2페이즈로 진입한 실행은 안전한 칸이 있어도 전곡 최대 비용 예약 때문에 잡음 생성이 전부 거부됐다. 두 번 연기 후에는 위의 인접 안전 경로 조건으로 대체하여 해결했다. 수정 전 seed0 재현 실패를 확인했고, 수정 후 늦은 전환 1,000개 시드 및 시간 부족 경로 거부를 포함한 공정성 테스트 11/11이 통과했다. HP62/12/24/94는 유지했다. 규칙/로그 버전을 battle-2로 올렸으므로 battle-1 로그는 이전 버전에서 재현해야 한다.
+
+잡음 수정 커밋: `4d4f553` — `fix: keep reachable noise spawning after late phase transitions`.
+
+후속 통합 검증: **EditMode79/79, PlayMode7/7**. 새 PlayMode 테스트는 시작·정지·시간 초과 결과 메뉴의 종료 버튼 표시와 실제 게임의 Finished 전환을 확인한다. 시작·정지 메뉴를 1600×900 실제 Game View에서 읽었고 종료 버튼을 눌러 Editor Play 모드 종료와 `Quit` 로그를 확인했다. Windows 빌드는 오류0·경고1로 성공(10.75초)했고, 실행 파일 진단도 종료 버튼의 실제 콜백으로 프로세스가 종료 코드0으로 끝났다. 런타임 오류0이며 종료 로그는 battle-2다. 기존 입력 기록을 새 규칙으로 다시 실행하면 문제 실행의 2페이즈 잡음은 0개→3개 생성된다. 이 재실행은 규칙 변경 전 로그와 같은 결과를 검증하는 리플레이와 구분한다.
+
+자료: [EditMode](BattleValidation/noise-quit-edit.json), [PlayMode](BattleValidation/noise-quit-play.json), [빌드](BattleValidation/noise-quit-build.json), [실행·종료 진단](BattleValidation/noise-quit-standalone.json), [문제 입력 재실행](BattleValidation/noise-recorded-input-recheck.txt), [시작 메뉴](BattleVisual/quit-ready.png), [정지 메뉴](BattleVisual/quit-paused.png). ponytail full·unity(CLI/UI/uGUI)로 기존 코드에 최소 변경을 적용했고, ponytail-review로 변경 함수의 호출부·설정·테스트를 검토했다. 이 후속 수정에서는 HP를 다시 산정하거나 전체 12,000회 분석을 재실행하지 않았다.
 
 | 기능 | 커밋 | 메시지 | 검증 결과 |
 |---|---|---|---|
