@@ -55,6 +55,9 @@ namespace StringAsASword.Core
                 foreach (var material in renderer.sharedMaterials)
                     if (!Check(material != null && material.shader != null && material.shader.isSupported, "Player material is missing or unsupported.")) yield break;
             keyboard = InputSystem.AddDevice<Keyboard>();
+            // This opt-in smoke test isolates the existing input/HP-floor scenario.
+            // Boss patterns are exercised by BattleRuleTests and the live visual fixture.
+            foreach (var pattern in game.Battle.Settings.Patterns) pattern.Enabled = false;
             Queue(Key.Space, game.SongTime);
             yield return null; yield return null;
             Release();
