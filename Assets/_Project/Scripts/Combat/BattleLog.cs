@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace StringAsASword.Combat
@@ -63,6 +64,12 @@ namespace StringAsASword.Combat
             using (var stream = path.EndsWith(".gz", StringComparison.OrdinalIgnoreCase) ? (Stream)new GZipStream(file, CompressionMode.Decompress) : file)
             using (var reader = new StreamReader(stream)) lines = reader.ReadToEnd().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
             var header = JsonUtility.FromJson<Line>(lines[0]);
+            // Unity's native JSON double reader can shift a beat-boundary time by one ULP.
+            // Restore timing scalars from the round-trip decimal text with the managed parser.
+            header.settings.Bpm = ExactDouble(lines[0], "Bpm");
+            header.settings.PerfectWindow = ExactDouble(lines[0], "PerfectWindow");
+            header.settings.GoodWindow = ExactDouble(lines[0], "GoodWindow");
+            header.settings.InputOffset = ExactDouble(lines[0], "InputOffset");
             if (header.type != "header" || header.runtimeVersion != "battle-1/xorshift32-v1" ||
                 header.chartHash != ChartHash(header.settings) || header.configHash != Hash(JsonUtility.ToJson(header.settings)))
                 throw new InvalidDataException("Replay version or content hash mismatch.");
@@ -70,10 +77,10 @@ namespace StringAsASword.Combat
             foreach (string text in lines)
             {
                 var line = JsonUtility.FromJson<Line>(text);
-                if (line.type == "input") battle.Request(line.input.action, line.input.direction, line.input.time);
+                if (line.type == "input") battle.Request(line.input.action, line.input.direction, ExactDouble(text, "time"));
             }
             var footer = JsonUtility.FromJson<Line>(lines[lines.Length - 1]);
-            battle.Advance(footer.endTime);
+            battle.Advance(ExactDouble(lines[lines.Length - 1], "endTime"));
             int notes = 0;
             foreach (string text in lines)
             {
@@ -88,6 +95,12 @@ namespace StringAsASword.Combat
                 footer.type != battle.Outcome.ToString() || footer.finalStateHash != StateHash(battle))
                 throw new InvalidDataException("Replay final state mismatch.");
             return battle;
+        }
+        private static double ExactDouble(string json, string field)
+        {
+            var match = Regex.Match(json, "\"" + field + "\"\\s*:\\s*([-+0-9.eE]+)");
+            if (!match.Success) throw new InvalidDataException("Missing replay timing field: " + field);
+            return double.Parse(match.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture);
         }
     }
 }
