@@ -21,6 +21,7 @@ namespace StringAsASword.Core
         private ScheduledSongAudio audioPlayer;
         private PrototypeView view;
         private double previousTime;
+        private bool runSaved;
         public SongDefinition Song => song;
         public IBeatTimeline Timeline { get; private set; }
         public RhythmSession Session { get; private set; }
@@ -58,8 +59,10 @@ namespace StringAsASword.Core
         }
         public void StartSession()
         {
+            SaveRun("Restarted");
             input.Clear(); audioPlayer.Stop();
             CurrentBeat = -1; SessionId++;
+            runSaved = false;
             Battle.Reset(SessionId, stage.NoiseSeed);
             clock.Start(.30 + song.CountInBeats * Timeline.SecondsPerBeat + song.AudioStartOffset);
             previousTime = SongTime;
@@ -108,7 +111,7 @@ namespace StringAsASword.Core
                 if (Battle.Outcome != BattleOutcome.Running)
                 {
                     clock.Stop(); audioPlayer.Stop(); State = PrototypeState.Finished;
-                    BattleLog.Write(System.IO.Path.Combine(Application.persistentDataPath, "BattleLogs", $"battle-{System.DateTime.UtcNow:yyyyMMdd-HHmmss}-{SessionId}.jsonl"), Battle);
+                    SaveRun("Completed");
                 }
                 previousTime = time;
             }
@@ -116,8 +119,21 @@ namespace StringAsASword.Core
         }
         private void OnApplicationFocus(bool focused) { if (!focused && pauseOnFocusLoss && clock != null) PauseSession(); }
         private void OnApplicationPause(bool paused) { if (paused && clock != null) PauseSession(); }
+        private void SaveRun(string termination)
+        {
+            if (Battle == null || SessionId == 0 || runSaved) return;
+            try
+            {
+                BattleLog.Write(System.IO.Path.Combine(Application.persistentDataPath, "BattleLogs",
+                    $"battle-{System.DateTime.UtcNow:yyyyMMdd-HHmmss-fffffff}-{SessionId}.jsonl"), Battle, termination);
+                runSaved = true;
+            }
+            catch (System.IO.IOException error) { Debug.LogError("Could not write battle log: " + error.Message); }
+            catch (System.UnauthorizedAccessException error) { Debug.LogError("Could not write battle log: " + error.Message); }
+        }
         private void OnDestroy()
         {
+            SaveRun("Interrupted");
             if (input != null) { input.ActionPressed -= OnAction; input.CommandPressed -= OnCommand; }
             if (Session != null && view != null)
             {

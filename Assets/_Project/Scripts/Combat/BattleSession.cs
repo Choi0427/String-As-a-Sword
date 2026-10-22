@@ -70,6 +70,8 @@ namespace StringAsASword.Combat
         private ActionResult? accepted;
         private GridPosition before;
         private double advancedTime = double.NegativeInfinity;
+        // Also records a stopped/partial run without inventing unplayed notes during replay.
+        public double AdvancedTime => double.IsNegativeInfinity(advancedTime) ? -1e9 : advancedTime;
         public BattleSession(BattleSettings settings, int seed, int[] analysisEnds = null)
         {
             settings.Validate(); settings = settings.Copy(); Settings = settings; this.analysisEnds = analysisEnds == null ? null : (int[])analysisEnds.Clone();

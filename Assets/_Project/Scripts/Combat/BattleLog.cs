@@ -14,6 +14,8 @@ namespace StringAsASword.Combat
         {
             public string type, chartHash, configHash, runtimeVersion = "battle-1/xorshift32-v1";
             public int seed, processedNotes, remainingNotes;
+            public double endTime;
+            public string termination, finalStateHash;
             public int[] analysisEnds;
             public BattleSettings settings;
             public BattleInput input;
@@ -37,7 +39,7 @@ namespace StringAsASword.Combat
             foreach (var p in b.Patterns.Active) text.Append('|').Append(p.Id).Append(':').Append(p.Cells).Append(':').Append(p.ImpactNote);
             return Hash(text.ToString());
         }
-        public static void Write(string path, BattleSession battle)
+        public static void Write(string path, BattleSession battle, string termination = "Completed")
         {
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path)));
             using (var file = File.Create(path))
@@ -50,7 +52,8 @@ namespace StringAsASword.Combat
                 foreach (var e in battle.Events) writer.WriteLine(JsonUtility.ToJson(new Line { type = "event", battleEvent = e }));
                 foreach (var n in battle.Records) writer.WriteLine(JsonUtility.ToJson(new Line { type = "note", note = n }));
                 writer.WriteLine(JsonUtility.ToJson(new Line { type = battle.Outcome.ToString(), processedNotes = battle.Records.Count,
-                    remainingNotes = battle.Settings.NoteCount - battle.Records.Count }));
+                    remainingNotes = battle.Settings.NoteCount - battle.Records.Count, endTime = battle.AdvancedTime,
+                    termination = termination, finalStateHash = StateHash(battle) }));
             }
         }
         public static BattleSession Replay(string path)
@@ -69,17 +72,21 @@ namespace StringAsASword.Combat
                 var line = JsonUtility.FromJson<Line>(text);
                 if (line.type == "input") battle.Request(line.input.action, line.input.direction, line.input.time);
             }
-            battle.Advance((header.settings.NoteCount - 1) * 60.0 / header.settings.Bpm + header.settings.GoodWindow + header.settings.InputOffset + .001);
+            var footer = JsonUtility.FromJson<Line>(lines[lines.Length - 1]);
+            battle.Advance(footer.endTime);
             int notes = 0;
             foreach (string text in lines)
             {
                 var line = JsonUtility.FromJson<Line>(text);
                 if (line.type != "note") continue;
-                if (notes >= battle.Records.Count || line.note.stateHash != battle.Records[notes].stateHash)
+                if (notes >= battle.Records.Count || JsonUtility.ToJson(line.note) != JsonUtility.ToJson(battle.Records[notes]))
                     throw new InvalidDataException("Replay diverged at note " + (notes + 1));
                 notes++;
             }
             if (notes != battle.Records.Count) throw new InvalidDataException("Replay note count mismatch.");
+            if (footer.processedNotes != notes || footer.remainingNotes != header.settings.NoteCount - notes ||
+                footer.type != battle.Outcome.ToString() || footer.finalStateHash != StateHash(battle))
+                throw new InvalidDataException("Replay final state mismatch.");
             return battle;
         }
     }

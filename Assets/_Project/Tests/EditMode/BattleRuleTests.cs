@@ -166,6 +166,69 @@ namespace StringAsASword.Tests
         }
 
         [Test]
+        public void LegacyStageCapacityIsClampedToTwoAndSettingsAreCopied()
+        {
+            var stage = UnityEngine.ScriptableObject.CreateInstance<StringAsASword.Stage.StageDefinition>();
+            try
+            {
+                typeof(StringAsASword.Stage.StageDefinition).GetField("maxActiveNoise",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).SetValue(stage, 8);
+                Assert.That(stage.MaxActiveNoise, Is.EqualTo(2));
+                var settings = Settings(8);
+                var battle = new BattleSession(settings, 1);
+                settings.Health[0] = 999; settings.NoiseTargets[0] = 999;
+                Assert.That(battle.Settings.Health[0], Is.EqualTo(6));
+                Assert.That(battle.Settings.NoiseTargets[0], Is.EqualTo(3));
+            }
+            finally { UnityEngine.Object.DestroyImmediate(stage); }
+        }
+
+        [Test]
+        public void GuardExpiresWithItsNoteAndMissStillClosesCountdown()
+        {
+            var settings = Settings(8);
+            settings.Patterns = new[] { new PatternDefinition { Name = "Repeated lock", Kind = PatternKind.LockedCell,
+                TelegraphNotes = 1, FirstImpact = 2, RepeatNotes = 1 } };
+            var battle = new BattleSession(settings, 2);
+            battle.Noise.BeginPhase(1, 0, 0);
+            battle.Advance(CloseTime(settings, 0));
+            battle.Request(PlayerActionKind.Guard, MoveDirection.Up, NoteTime(settings, 1));
+            battle.Advance(CloseTime(settings, 1));
+            Assert.That(battle.Records[1].guardSuccess, Is.True);
+            // No Advance while paused: the same observation cannot consume a note.
+            var remaining = battle.Patterns.Active.Select(p => p.Remaining(battle.LastClosedNote)).ToArray();
+            battle.Observe(); battle.Observe();
+            Assert.That(battle.Patterns.Active.Select(p => p.Remaining(battle.LastClosedNote)), Is.EqualTo(remaining));
+            battle.Advance(CloseTime(settings, 2));
+            Assert.That(battle.Records[2].hit, Is.True);
+            Assert.That(battle.PlayerHp, Is.EqualTo(2));
+            Assert.That(battle.Records[2].judgement, Is.EqualTo("Miss"));
+            battle.Reset(2, 2);
+            Assert.That(battle.LastClosedNote, Is.EqualTo(-1));
+            Assert.That(battle.Records, Is.Empty);
+        }
+
+        [Test]
+        public void PartialCompressedLogReplaysOnlyProcessedNotesAndAcceptedMovement()
+        {
+            string path = Path.Combine(Path.GetTempPath(), "partial-battle-" + Guid.NewGuid().ToString("N") + ".jsonl.gz");
+            try
+            {
+                var settings = Settings(16);
+                var live = new BattleSession(settings, 123);
+                live.Advance(CloseTime(settings, 0));
+                live.Request(PlayerActionKind.Move, MoveDirection.Up, NoteTime(settings, 1));
+                BattleLog.Write(path, live, "Restarted");
+                var replay = BattleLog.Replay(path);
+                Assert.That(replay.Records.Count, Is.EqualTo(1));
+                Assert.That(replay.Outcome, Is.EqualTo(BattleOutcome.Running));
+                Assert.That(replay.Session.Position, Is.EqualTo(live.Session.Position));
+                Assert.That(replay.Session.AcceptedMoves, Is.EqualTo(1));
+            }
+            finally { if (File.Exists(path)) File.Delete(path); }
+        }
+
+        [Test]
         public void SameSeedProducesTheSameSerializedBattleLogHash()
         {
             string directory = Path.Combine(Path.GetTempPath(), "string-sword-log-tests-" + Guid.NewGuid().ToString("N"));
