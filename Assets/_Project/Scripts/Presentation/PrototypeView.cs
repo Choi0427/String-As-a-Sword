@@ -1,4 +1,6 @@
 using System;
+using System.Text;
+using StringAsASword.Combat;
 using StringAsASword.Core;
 using StringAsASword.Player;
 using StringAsASword.Rhythm;
@@ -25,6 +27,19 @@ namespace StringAsASword.Presentation
         private BoardWorldPresenter boardWorld;
         private TMP_Text noiseLabel;
         private TMP_Text attackHint;
+        private TMP_Text playerHp, patternList;
+        private readonly TMP_Text[] dangerLabels = new TMP_Text[64];
+        private readonly GameObject[] dangerBadges = new GameObject[64];
+        private readonly Vector2[] dangerPoints = new Vector2[64];
+        private readonly RectTransform[] dangerConnectors = new RectTransform[64];
+        private readonly Rect[] badgeBounds = new Rect[64];
+        private readonly bool[] badgePlaced = new bool[64];
+        private readonly int[] dangerCounts = new int[64];
+        private readonly int[] dangerRemaining = new int[64];
+        private readonly StringBuilder patternText = new StringBuilder(256);
+        private int lastClosedNote = -1;
+        private float impactAge = 1;
+        private ulong impactCells;
         private readonly TMP_Text[] healthSlots = new TMP_Text[4];
         private TMP_Text phaseLabel;
         private UnityEngine.UI.Image pulseLine;
@@ -57,7 +72,8 @@ namespace StringAsASword.Presentation
             Label("TEMPO", new Vector2(-573,235), new Vector2(250,30), 14, Muted);
             Label($"{game.Song.Bpm:0} <size=18>BPM</size>", new Vector2(-573,187), new Vector2(250,65), 52, InkWhite);
             Label($"ONE NOTE / {(60f / game.Song.Bpm):0.000} SEC", new Vector2(-573,139), new Vector2(300,26), 13, Muted);
-            mode = Label("", new Vector2(-573,-16), new Vector2(300,30), 13, Muted);
+            mode = Label("", new Vector2(-573,105), new Vector2(300,30), 13, Muted);
+            playerHp = Label("", new Vector2(-573,-16), new Vector2(330,36), 24, InkWhite);
             noiseLabel = Label("", new Vector2(-573,-71), new Vector2(330,65), 18, Accent);
             Label("MOVE ON THE BEAT", new Vector2(-573,-132), new Vector2(300,30), 17, InkWhite);
             Label("W", new Vector2(-573,-190), new Vector2(44,44), 22, InkWhite, true);
@@ -70,8 +86,12 @@ namespace StringAsASword.Presentation
             combo = Label("000", new Vector2(573,181), new Vector2(300,80), 64, InkWhite);
             feedback = Label("FIND YOUR RHYTHM", new Vector2(573,-35), new Vector2(330,45), 23, InkWhite);
             timing = Label("Follow the two mirrored notes", new Vector2(573,-78), new Vector2(330,40), 14, Muted);
-            stats = Label("", new Vector2(573,-190), new Vector2(300,130), 18, Muted);
-            Label("PERFECT  +/-70 ms\nGOOD  +/-140 ms", new Vector2(573,-298), new Vector2(300,55), 15, Muted);
+            Label("BOSS TELEGRAPHS", new Vector2(573,-118), new Vector2(330,25), 13, Muted);
+            patternList = Label("", new Vector2(573,-198), new Vector2(330,130), 15, InkWhite);
+            patternList.alignment = TextAlignmentOptions.TopLeft;
+            stats = Label("", new Vector2(573,-318), new Vector2(330,85), 14, Muted);
+            Label("PERFECT +/-70 ms   /   GOOD +/-140 ms", new Vector2(573,-375), new Vector2(370,22), 12, Muted);
+            Label("/// WARNING   /   X IMPACT\nNUMBER = NOTES LEFT   /   +N = EXTRA ATTACKS", new Vector2(-573,-365), new Vector2(400,45), 12, Muted);
 
             for (int i = 0; i < 4; i++)
                 healthSlots[i] = Label("", new Vector2((i-1.5f)*136,285), new Vector2(130,45), 16, InkWhite, true);
@@ -89,6 +109,20 @@ namespace StringAsASword.Presentation
             var board = MakeRect(root,"Board View",new Vector2(0,-4),size);
             var output = board.gameObject.AddComponent<UnityEngine.UI.RawImage>(); output.raycastTarget = false;
             boardWorld = board.gameObject.AddComponent<BoardWorldPresenter>(); boardWorld.Initialize(game, output, boardMaterial);
+            var connectors = MakeRect(board, "DangerConnectors", Vector2.zero, size);
+            for (int i = 0; i < 64; i++)
+            {
+                Vector2 point = boardWorld.ProjectToBoard(new Vector3(i % 8 - 3.5f, .035f, i / 8 - 3.80f), size);
+                dangerPoints[i] = point;
+                dangerConnectors[i] = MakeRect(connectors, "CellConnector", point, Vector2.one);
+                Image(dangerConnectors[i], new Color(.94f,.93f,.88f,.65f));
+                dangerConnectors[i].gameObject.SetActive(false);
+                var badge = MakeRect(board, $"DangerBadge_{i % 8}_{i / 8}", point, new Vector2(40,20));
+                Image(badge, new Color(.025f,.035f,.045f,.97f)); dangerBadges[i] = badge.gameObject;
+                dangerLabels[i] = Text(badge, "Countdown", "", Vector2.zero, new Vector2(40,20), 17, InkWhite);
+                dangerLabels[i].fontStyle = FontStyles.Bold;
+                badge.gameObject.SetActive(false);
+            }
             for (int i = 0; i < 8; i++)
             {
                 Vector2 column = boardWorld.ProjectToBoard(new Vector3(i-3.5f,0,-4.43f),size);
@@ -123,7 +157,15 @@ namespace StringAsASword.Presentation
             button.onClick.AddListener(()=>game.StartSession());
             buttonLabel=Text(buttonRect,"Label","START / SPACE",Vector2.zero,new Vector2(330,50),17,new Color(.06f,.08f,.09f));
         }
-        public void ResetFeedback() { feedback.text="FIND YOUR RHYTHM"; timing.text="Follow the two mirrored notes"; feedbackAge=10; pulseAge=10; boardWorld.ResetVisuals(); }
+        public void ResetFeedback()
+        {
+            feedback.text="FIND YOUR RHYTHM"; timing.text="Follow the two mirrored notes";
+            feedbackAge=10; pulseAge=10; impactAge=1; impactCells=0; lastClosedNote=-1;
+            Array.Clear(dangerCounts, 0, dangerCounts.Length);
+            for (int i = 0; i < dangerBadges.Length; i++)
+            { dangerBadges[i].SetActive(false); dangerConnectors[i].gameObject.SetActive(false); }
+            boardWorld.ResetVisuals();
+        }
         public void Pulse() => pulseAge=0;
         public void ShowAction(ActionResult result)
         {
@@ -138,7 +180,7 @@ namespace StringAsASword.Presentation
                 {
                     timing.text = game.Attacks.IsInRange(result.Position) ? "ATTACK / TOP ROW" : "SWING / OUT OF RANGE";
                 }
-                if (result.Kind == PlayerActionKind.Guard) timing.text = "GUARD / POSE ONLY";
+                if (result.Kind == PlayerActionKind.Guard) timing.text = "GUARD / THIS NOTE ONLY";
             }
             else
             {
@@ -162,17 +204,21 @@ namespace StringAsASword.Presentation
             feedbackAge+=Time.unscaledDeltaTime; pulseAge+=Time.unscaledDeltaTime;
             var cell=game.Session.Position;
             boardWorld.Render();
+            RenderTelegraphs();
+            playerHp.text = $"PLAYER HP  {game.Battle.PlayerHp} / {game.Stage.PlayerMaxHp}";
             attackHint.text = !game.Attacks.IsInRange(cell) ? "J / SWING ONLY - DAMAGE FROM ROW 8" : game.Health.Defeated ? "J / SWING - ALL HP CLEARED" : game.Health.CurrentDepleted ? "J / 0 DAMAGE - COLLECT NOISE" : "J / ATTACK - DAMAGE ENABLED";
             combo.text=game.Session.Combo.ToString("000");
             phaseLabel.text = game.Phases.Completed ? "FOUR SEGMENTS CLEARED" : $"PHASE {game.Phases.PhaseId} / 4     -     MELODY STOLEN  {game.Phases.Steals} / 3";
             for (int i = 0; i < healthSlots.Length; i++)
             {
                 bool active = i == game.Health.ActiveSegment;
-                healthSlots[i].text = i > game.Health.ActiveSegment ? $"{i+1} / LOCKED" : game.Health.Remaining(i) == 0 ? $"{i+1} / EMPTY" : $"{i+1} / {game.Health.Remaining(i)} HP";
+                healthSlots[i].text = $"P{i+1} {game.Health.Remaining(i)}/{game.Health.Maximum(i)}" +
+                    (i > game.Health.ActiveSegment ? "<size=11> LOCKED</size>" : game.Health.Remaining(i) == 0 ? "<size=11> EMPTY</size>" : "");
                 healthSlots[i].color = active ? Accent : Muted;
             }
             stats.text=$"PERFECT     {game.Session.PerfectCount:000}\nGOOD            {game.Session.GoodCount:000}\nMISS              {game.Session.MissCount:000}\nBEST              {game.Session.BestCombo:000}";
-            position.text=$"POSITION  {(char)('A'+cell.X)}{cell.Y+1}     /     8 x 8";
+            int cellIndex = cell.Y * 8 + cell.X;
+            position.text=$"POSITION  {(char)('A'+cell.X)}{cell.Y+1}     /     " + (dangerCounts[cellIndex] > 0 ? $"DANGER IN {dangerRemaining[cellIndex]} NOTES" : "SAFE");
             beatLabel.text=game.CurrentBeat<0?"PREPARE":$"BEAT  {game.CurrentBeat+1:0000}   /   {game.CurrentBeat%4+1}:4";
             mode.text=game.Song.Music!=null?"SONG AUDIO":game.MetronomeMuted?"METRONOME / MUTED":"METRONOME / ON";
             pulseLine.color=new Color(Accent.r,Accent.g,Accent.b,.15f+.85f*Mathf.Exp(-8*pulseAge));
@@ -183,10 +229,93 @@ namespace StringAsASword.Presentation
             overlay.SetActive(show);
             if(show)
             {
-                overlayTitle.text=game.State==PrototypeState.Paused?"SESSION PAUSED":game.State==PrototypeState.Finished?"SESSION COMPLETE":"FIND YOUR RHYTHM";
-                overlayBody.text=game.State==PrototypeState.Ready?"87 BPM / WASD move / J attack / K guard pose\nAttack from row 8. Land on waves to collect noise.\nEmpty HP + noise goal unlocks the next phase.":$"Perfect {game.Session.PerfectCount}    Good {game.Session.GoodCount}    Miss {game.Session.MissCount}\nPhase {game.Phases.PhaseId} / 4    Melody stolen {game.Phases.Steals} / 3\nStart again with a fresh four-beat count-in.";
+                string result = game.Battle.Outcome == BattleOutcome.Won ? "WON / BOSS DEFEATED" : game.Battle.Outcome == BattleOutcome.Dead ? "DEAD / PLAYER HP EMPTY" : "TIMEOUT / NOTES EXHAUSTED";
+                overlayTitle.text=game.State==PrototypeState.Paused?"SESSION PAUSED":game.State==PrototypeState.Finished?result:"FIND YOUR RHYTHM";
+                overlayBody.text=game.State==PrototypeState.Ready?"WASD move / J attack / K guard this note\nHatched cells are dangerous. Numbers count down to impact.\nAttack from row 8. Collect waves to unlock each phase.":$"Player HP {game.Battle.PlayerHp} / {game.Stage.PlayerMaxHp}    Phase {game.Phases.PhaseId} / 4\nPerfect {game.Session.PerfectCount}    Good {game.Session.GoodCount}    Miss {game.Session.MissCount}\nStart again with a fresh four-beat count-in.";
                 buttonLabel.text=game.State==PrototypeState.Ready?"START / SPACE":"RESTART / R OR SPACE";
             }
+        }
+        private void RenderTelegraphs()
+        {
+            var battle = game.Battle;
+            if (battle.LastClosedNote != lastClosedNote)
+            {
+                lastClosedNote = battle.LastClosedNote; impactCells = 0;
+                foreach (var fired in battle.Patterns.LastFired) impactCells |= fired.Cells;
+                impactAge = 0;
+            }
+            if (game.State != PrototypeState.Paused) impactAge += Time.unscaledDeltaTime;
+            Array.Clear(dangerCounts, 0, dangerCounts.Length);
+            for (int i = 0; i < dangerRemaining.Length; i++) dangerRemaining[i] = int.MaxValue;
+            patternText.Clear();
+            int shown = 0;
+            bool flashing = impactAge < .3f;
+            if (flashing)
+                foreach (var fired in battle.Patterns.LastFired)
+                {
+                    if (shown++ < 5) patternText.Append("X  ").Append(fired.Name).Append("  /  IMPACT\n");
+                }
+            foreach (var pattern in battle.Patterns.Active)
+            {
+                int remaining = pattern.Remaining(battle.LastClosedNote);
+                if (shown++ < 5) patternText.Append("/// ").Append(pattern.Name).Append("  /  ").Append(remaining).Append(" NOTES\n");
+                for (int i = 0; i < 64; i++)
+                {
+                    if ((pattern.Cells & (1UL << i)) == 0) continue;
+                    dangerCounts[i]++;
+                    dangerRemaining[i] = Math.Min(dangerRemaining[i], remaining);
+                }
+            }
+            if (shown > 5) patternText.Append('+').Append(shown - 5).Append(" patterns");
+            patternList.text = patternText.Length == 0 ? "CLEAR / NO ATTACK QUEUED" : patternText.ToString();
+            Vector2 knightPoint = boardWorld.ProjectToBoard(boardWorld.PlayerTransform.localPosition, new Vector2(600,550));
+            var knightBounds = new Rect(knightPoint.x - 26, knightPoint.y + 5, 52, 76);
+            for (int i = 0; i < 64; i++)
+            {
+                bool fired = flashing && (impactCells & (1UL << i)) != 0;
+                bool active = fired || dangerCounts[i] > 0;
+                dangerBadges[i].SetActive(active);
+                badgeBounds[i] = new Rect(dangerPoints[i] - new Vector2(20,10), new Vector2(40,20));
+                badgePlaced[i] = active && !knightBounds.Overlaps(badgeBounds[i]);
+                if (dangerCounts[i] > 0)
+                    dangerLabels[i].text = dangerRemaining[i] + (dangerCounts[i] > 1 ? $"<size=11> +{dangerCounts[i] - 1}</size>" : "") + (fired ? "<size=11> X</size>" : "");
+                else if (fired) dangerLabels[i].text = "X";
+            }
+            for (int i = 0; i < 64; i++)
+            {
+                bool active = dangerBadges[i].activeSelf;
+                Vector2 point = dangerPoints[i];
+                if (active && !badgePlaced[i]) point = PlaceCountdown(i, knightBounds);
+                ((RectTransform)dangerBadges[i].transform).anchoredPosition = point;
+                Vector2 delta = point - dangerPoints[i];
+                var line = dangerConnectors[i]; line.gameObject.SetActive(active && delta.sqrMagnitude > 1);
+                if (!line.gameObject.activeSelf) continue;
+                line.anchoredPosition = (point + dangerPoints[i]) * .5f;
+                line.sizeDelta = new Vector2(delta.magnitude, 1);
+                line.localRotation = Quaternion.Euler(0, 0, Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg);
+            }
+        }
+        private Vector2 PlaceCountdown(int index, Rect knightBounds)
+        {
+            Vector2 origin = dangerPoints[index], best = origin;
+            float bestDistance = float.MaxValue;
+            // Keep every countdown readable: move only badges crossing the knight, with a line back to the cell.
+            for (int y = -6; y <= 6; y++) for (int x = -6; x <= 6; x++)
+            {
+                Vector2 offset = new Vector2(x * 48, y * 24);
+                if (offset.sqrMagnitude >= bestDistance) continue;
+                Vector2 point = origin + offset;
+                var candidate = new Rect(point - new Vector2(20,10), new Vector2(40,20));
+                if (candidate.xMin < -290 || candidate.xMax > 290 || candidate.yMin < -265 || candidate.yMax > 265 || candidate.Overlaps(knightBounds)) continue;
+                bool free = true;
+                for (int i = 0; i < 64; i++)
+                    if (badgePlaced[i] && candidate.Overlaps(badgeBounds[i])) { free = false; break; }
+                if (!free) continue;
+                best = point; bestDistance = offset.sqrMagnitude;
+            }
+            Debug.Assert(bestDistance < float.MaxValue, "Danger countdown needs a free label position.");
+            badgeBounds[index] = new Rect(best - new Vector2(20,10), new Vector2(40,20));
+            badgePlaced[index] = true; return best;
         }
         public static RectTransform MakeRect(Transform parent,string name,Vector2 position,Vector2 size)
         {

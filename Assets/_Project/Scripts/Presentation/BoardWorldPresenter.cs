@@ -3,7 +3,6 @@ using StringAsASword.Board;
 using StringAsASword.Core;
 using StringAsASword.Player;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace StringAsASword.Presentation
 {
@@ -22,15 +21,21 @@ namespace StringAsASword.Presentation
         private Mesh box;
         private Material edgeMaterial;
         private Material materialTemplate;
+        private readonly GameObject[] warnings = new GameObject[64];
+        private readonly GameObject[] impacts = new GameObject[64];
+        private int lastClosedNote = -1;
+        private float impactAge = 1;
+        private ulong impactCells;
         private Vector3 moveFrom, moveTarget;
         private float moveAge = 1, attackAge = 1, guardAge = 1;
+        private int guardNote = -1;
         private int lastSession = -1;
         public Camera BoardCamera { get; private set; }
         public RenderTexture Texture { get; private set; }
         public Transform PlayerTransform => player;
         public int TileCount { get; private set; }
 
-        public void Initialize(PrototypeGame owner, RawImage output, Material template)
+        public void Initialize(PrototypeGame owner, UnityEngine.UI.RawImage output, Material template)
         {
             if (template == null || template.shader == null)
                 throw new System.InvalidOperationException("Assign the board material to PrototypeView before building. Use String As a Sword > Prepare Windows Build.");
@@ -72,6 +77,7 @@ namespace StringAsASword.Presentation
             Frame(selection, .91f, .026f, .042f, accent);
             BuildPlayer();
             BuildNoise();
+            BuildTelegraphs();
             sword = new GameObject("Sword Swing").transform; sword.SetParent(player, false);
             var arc = sword.gameObject.AddComponent<LineRenderer>();
             arc.useWorldSpace = false; arc.sharedMaterial = gold; arc.startWidth = .10f; arc.endWidth = .018f;
@@ -94,20 +100,25 @@ namespace StringAsASword.Presentation
         public void ResetVisuals()
         {
             moveAge = attackAge = guardAge = 1;
+            guardNote = -1;
             moveFrom = moveTarget = CellPosition(game.Session.Position);
             player.localPosition = moveTarget; selection.localPosition = moveTarget;
+            player.localScale = Vector3.one; sword.gameObject.SetActive(false); shield.gameObject.SetActive(false);
+            impactAge = 1; impactCells = 0; lastClosedNote = -1;
+            for (int i = 0; i < warnings.Length; i++) { warnings[i].SetActive(false); impacts[i].SetActive(false); }
             lastSession = game.SessionId;
         }
         public void ShowAction(ActionResult result)
         {
             if (!result.Accepted) return;
             if (result.Kind == PlayerActionKind.Attack) attackAge = 0;
-            if (result.Kind == PlayerActionKind.Guard) guardAge = 0;
+            if (result.Kind == PlayerActionKind.Guard) { guardAge = 0; guardNote = result.Timing.BeatId; }
         }
         public void Render()
         {
             if (lastSession != game.SessionId) ResetVisuals();
             float dt = Time.unscaledDeltaTime;
+            RenderTelegraphs(dt);
             Vector3 target = CellPosition(game.Session.Position);
             if (target != moveTarget) { moveFrom = player.localPosition; moveTarget = target; moveAge = 0; }
             moveAge += dt; attackAge += dt; guardAge += dt;
@@ -116,9 +127,10 @@ namespace StringAsASword.Presentation
             selection.localPosition = target;
             sword.gameObject.SetActive(attackAge < .23f);
             sword.localRotation = Quaternion.Euler(0, -80 + attackAge / .23f * 125, 0);
-            shield.gameObject.SetActive(guardAge < .34f);
+            bool guarding = guardAge < .34f && game.Battle.LastClosedNote < guardNote;
+            shield.gameObject.SetActive(guarding);
             shield.localScale = Vector3.one * (.85f + .15f * Mathf.Sin(Mathf.Clamp01(guardAge / .34f) * Mathf.PI));
-            player.localScale = new Vector3(1, guardAge < .18f ? .9f : 1, 1);
+            player.localScale = new Vector3(1, guarding && guardAge < .18f ? .9f : 1, 1);
             for (int i = 0; i < pickups.Length; i++)
             {
                 if (lastNoiseDormant != game.Noise.GoalReached)
@@ -129,6 +141,83 @@ namespace StringAsASword.Presentation
                 pickups[i].localPosition = CellPosition(game.Noise.Pickups[i].Cell) + Vector3.up * (.12f + .025f * Mathf.Sin(Time.unscaledTime * 3 + i));
             }
             lastNoiseDormant = game.Noise.GoalReached;
+        }
+        private void BuildTelegraphs()
+        {
+            var dark = Material(new Color(.045f, .055f, .065f));
+            var white = Material(new Color(.97f, .97f, .94f));
+            Mesh warning = TelegraphMesh(false), impact = TelegraphMesh(true);
+            resources.Add(warning); resources.Add(impact);
+            var materials = new[] { dark, white };
+            for (int i = 0; i < 64; i++)
+            {
+                warnings[i] = TelegraphCell("Warning", i, warning, materials);
+                impacts[i] = TelegraphCell("Impact", i, impact, materials);
+            }
+        }
+        private GameObject TelegraphCell(string name, int index, Mesh mesh, Material[] materials)
+        {
+            var item = new GameObject($"{name}_{index % 8}_{index / 8}", typeof(MeshFilter), typeof(MeshRenderer));
+            item.transform.SetParent(world.transform, false);
+            item.transform.localPosition = CellPosition(new GridPosition(index % 8, index / 8));
+            item.GetComponent<MeshFilter>().sharedMesh = mesh;
+            item.GetComponent<MeshRenderer>().sharedMaterials = materials;
+            item.SetActive(false); return item;
+        }
+        private void RenderTelegraphs(float dt)
+        {
+            var battle = game.Battle;
+            if (battle.LastClosedNote != lastClosedNote)
+            {
+                lastClosedNote = battle.LastClosedNote; impactCells = 0;
+                foreach (var fired in battle.Patterns.LastFired) impactCells |= fired.Cells;
+                impactAge = 0;
+            }
+            if (game.State != PrototypeState.Paused) impactAge += dt;
+            ulong active = 0;
+            foreach (var pattern in battle.Patterns.Active) active |= pattern.Cells;
+            for (int i = 0; i < 64; i++)
+            {
+                ulong bit = 1UL << i;
+                bool fired = impactAge < .3f && (impactCells & bit) != 0;
+                warnings[i].SetActive(!fired && (active & bit) != 0);
+                impacts[i].SetActive(fired);
+            }
+        }
+        private static Mesh TelegraphMesh(bool impact)
+        {
+            var vertices = new List<Vector3>();
+            var underlay = new List<int>(); var markings = new List<int>();
+            void Quad(float x1, float z1, float x2, float z2, float height, List<int> triangles)
+            {
+                int start = vertices.Count;
+                vertices.Add(new Vector3(x1, height, z1)); vertices.Add(new Vector3(x1, height, z2));
+                vertices.Add(new Vector3(x2, height, z2)); vertices.Add(new Vector3(x2, height, z1));
+                triangles.AddRange(new[] { start, start + 1, start + 2, start, start + 2, start + 3 });
+            }
+            void Stripe(float intercept, float slope, float width)
+            {
+                float low = Mathf.Max(-.43f, slope > 0 ? -.43f - intercept : intercept - .43f);
+                float high = Mathf.Min(.43f, slope > 0 ? .43f - intercept : intercept + .43f);
+                if (high <= low) return;
+                int start = vertices.Count;
+                vertices.Add(new Vector3(low, .023f, slope * low + intercept));
+                vertices.Add(new Vector3(low, .023f, Mathf.Min(.43f, slope * low + intercept + width)));
+                vertices.Add(new Vector3(high, .023f, Mathf.Min(.43f, slope * high + intercept + width)));
+                vertices.Add(new Vector3(high, .023f, slope * high + intercept));
+                markings.AddRange(new[] { start, start + 1, start + 2, start, start + 2, start + 3 });
+            }
+            Quad(-.46f, -.46f, .46f, .46f, .015f, underlay);
+            foreach (float side in new[] { -.45f, .45f })
+            {
+                Quad(-.46f, side - .012f, .46f, side + .012f, .024f, markings);
+                Quad(side - .012f, -.46f, side + .012f, .46f, .024f, markings);
+            }
+            if (impact) { Stripe(-.035f, 1, .07f); Stripe(-.035f, -1, .07f); }
+            else for (int stripe = -3; stripe <= 3; stripe++) Stripe(stripe * .22f, 1, .035f);
+            var mesh = new Mesh { name = impact ? "Impact Cross" : "Warning Hatching", subMeshCount = 2 };
+            mesh.SetVertices(vertices); mesh.SetTriangles(underlay, 0); mesh.SetTriangles(markings, 1);
+            mesh.RecalculateNormals(); mesh.RecalculateBounds(); return mesh;
         }
         private void BuildPlayer()
         {
@@ -169,7 +258,7 @@ namespace StringAsASword.Presentation
         }
         private void BuildShield()
         {
-            // Visual only: no collider, invulnerability flag, holding timer or damage modifier.
+            // The domain resolves note-based guarding; this shield only presents the accepted guard action.
             shield = new GameObject("Guard Pose").transform; shield.SetParent(player, false);
             shield.localPosition = new Vector3(.13f, .22f, -.32f);
             shield.localRotation = Quaternion.Euler(game.Stage.CameraElevation, 0, 0);
