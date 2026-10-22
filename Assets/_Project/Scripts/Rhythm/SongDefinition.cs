@@ -6,6 +6,8 @@ namespace StringAsASword.Rhythm
     public sealed class SongDefinition : ScriptableObject
     {
         [SerializeField, Min(1)] private float bpm = 87;
+        [SerializeField, Min(1)] private int noteCount = 1;
+        public int NoteCount => Mathf.Max(1, noteCount);
         [SerializeField] private AudioClip music;
         [SerializeField, Min(0)] private float audioStartOffset;
         [SerializeField, Range(-.2f, .2f)] private float inputOffset;

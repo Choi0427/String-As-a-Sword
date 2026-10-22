@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: GeomEulHyeon87
   m_EditorClassIdentifier: StringAsASword.Runtime::StringAsASword.Rhythm.SongDefinition
   bpm: 87
+  noteCount: 344
   music: {fileID: 0}
   audioStartOffset: 0
   inputOffset: 0

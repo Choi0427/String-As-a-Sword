@@ -53,7 +53,7 @@ namespace StringAsASword.Presentation
         {
             if (clock == null || !clock.Running) return;
             double now = AudioSettings.dspTime;
-            while (clock.Origin + timeline.TimeOf(nextClick) <= now + .20)
+            while (nextClick < song.NoteCount && clock.Origin + timeline.TimeOf(nextClick) <= now + .20)
             {
                 double target = clock.Origin + timeline.TimeOf(nextClick);
                 if (target >= now + .005 && (song.Music == null || nextClick < 0))

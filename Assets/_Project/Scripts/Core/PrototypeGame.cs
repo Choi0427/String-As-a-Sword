@@ -17,7 +17,6 @@ namespace StringAsASword.Core
         [SerializeField] private StageDefinition stage;
         [SerializeField] private bool pauseOnFocusLoss = true;
         private SongClock clock;
-        private BeatScheduler scheduler;
         private PlayerInputAdapter input;
         private ScheduledSongAudio audioPlayer;
         private PrototypeView view;
@@ -31,6 +30,7 @@ namespace StringAsASword.Core
         public BossHealthGate Health { get; private set; }
         public CombatResolver Combat { get; private set; }
         public PhaseController Phases { get; private set; }
+        public BattleSession Battle { get; private set; }
         public PrototypeState State { get; private set; } = PrototypeState.Ready;
         public double SongTime => clock?.SongTime ?? 0;
         public int CurrentBeat { get; private set; } = -1;
@@ -42,29 +42,25 @@ namespace StringAsASword.Core
             if (song == null) { Debug.LogError("Assign a SongDefinition to PrototypeGame.", this); enabled = false; return; }
             Timeline = new ConstantBeatTimeline(song.Bpm);
             clock = new SongClock(() => AudioSettings.dspTime);
-            scheduler = new BeatScheduler(Timeline);
             if (stage == null) stage = ScriptableObject.CreateInstance<StageDefinition>();
-            Noise = new NoisePickupSystem(new BoardState(), stage.NoiseSpawnInterval, stage.MaxActiveNoise);
-            Attacks = new AttackResolver(new BoardState());
-            Health = new BossHealthGate(stage.HealthSegments);
-            Combat = new CombatResolver(Attacks, Health, stage.AttackDamage);
-            Phases = new PhaseController(Health, Noise, stage.NoiseTargets);
-            Session = new RhythmSession(new BoardState(), new RhythmJudge(Timeline, song.PerfectWindow, song.GoodWindow, song.InputOffset), new GridPosition(3, 3));
+            Battle = new BattleSession(BattleSettings.From(song, stage), stage.NoiseSeed);
+            Noise = Battle.Noise; Attacks = Battle.Attacks; Health = Battle.Health; Combat = Battle.Combat;
+            Phases = Battle.Phases; Session = Battle.Session;
+            Battle.MusicBeat += beat => { CurrentBeat = beat; view.Pulse(); };
             input = GetComponent<PlayerInputAdapter>(); audioPlayer = GetComponent<ScheduledSongAudio>();
             view = GetComponentInChildren<PrototypeView>(true);
             if (view == null) { Debug.LogError("Prototype view is missing.", this); enabled = false; return; }
             view.Initialize(this);
             input.ActionPressed += OnAction; input.CommandPressed += OnCommand;
             Session.ActionEvaluated += OnActionEvaluated; Session.NoteMissed += view.ShowMiss;
-            Session.BeatClosed += OnBeatClosed;
             Combat.DamageResolved += view.ShowDamage;
             Phases.PhaseUnlocked += view.ShowPhase;
         }
         public void StartSession()
         {
-            input.Clear(); audioPlayer.Stop(); Session.Reset(); scheduler.Reset();
+            input.Clear(); audioPlayer.Stop();
             CurrentBeat = -1; SessionId++;
-            Phases.Reset(SessionId, stage.NoiseSeed); Combat.Reset();
+            Battle.Reset(SessionId, stage.NoiseSeed);
             clock.Start(.30 + song.CountInBeats * Timeline.SecondsPerBeat + song.AudioStartOffset);
             previousTime = SongTime;
             State = PrototypeState.CountIn; view.ResetFeedback();
@@ -87,32 +83,15 @@ namespace StringAsASword.Core
             double time = clock.ToSongTime(request.DspTime);
             // The first note has the same early Good window as all later notes.
             if (time < -song.GoodWindow + song.InputOffset) return;
-            AdvanceWorld(time);
-            Session.RequestAction(request.Kind, request.Direction, time);
+            Battle.Request(request.Kind, request.Direction, time);
         }
         private void OnActionEvaluated(ActionResult result)
         {
-            if (result.Accepted && result.Kind == PlayerActionKind.Move)
-                Noise.TryCollect(result.Position, SessionId, Noise.PhaseId);
-            Combat.Submit(result);
             view.ShowAction(result);
-        }
-        private void OnBeatClosed(int beat)
-        {
-            Combat.ResolveBeat(beat);
-            Phases.ResolveBeat(beat);
         }
         private void AdvanceWorld(double time)
         {
-            // Preserve chronological order after a slow frame: close old beat, spawn, then accept input.
-            scheduler.Advance(time, beat =>
-            {
-                Session.Advance(Timeline.TimeOf(beat));
-                CurrentBeat = beat;
-                Noise.AdvanceToBeat(beat, Session.Position);
-                view.Pulse();
-            });
-            Session.Advance(time);
+            Battle.Advance(time);
         }
         private void Update()
         {
@@ -126,8 +105,11 @@ namespace StringAsASword.Core
                 if (time >= 0) State = PrototypeState.Playing;
                 audioPlayer.Schedule();
                 AdvanceWorld(time);
-                if (song.Music != null && time >= song.Music.length - song.AudioStartOffset)
-                { clock.Stop(); audioPlayer.Stop(); State = PrototypeState.Finished; }
+                if (Battle.Outcome != BattleOutcome.Running)
+                {
+                    clock.Stop(); audioPlayer.Stop(); State = PrototypeState.Finished;
+                    BattleLog.Write(System.IO.Path.Combine(Application.persistentDataPath, "BattleLogs", $"battle-{System.DateTime.UtcNow:yyyyMMdd-HHmmss}-{SessionId}.jsonl"), Battle);
+                }
                 previousTime = time;
             }
             view.Render();
@@ -140,7 +122,7 @@ namespace StringAsASword.Core
             if (Session != null && view != null)
             {
                 Session.ActionEvaluated -= OnActionEvaluated; Session.NoteMissed -= view.ShowMiss;
-                Session.BeatClosed -= OnBeatClosed; Combat.DamageResolved -= view.ShowDamage;
+                Combat.DamageResolved -= view.ShowDamage;
                 Phases.PhaseUnlocked -= view.ShowPhase;
             }
             clock?.Stop(); if (audioPlayer != null) audioPlayer.Stop();

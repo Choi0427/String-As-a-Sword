@@ -30,7 +30,7 @@ namespace StringAsASword.Presentation
             {
                 int beat = first + i;
                 double remaining = game.Timeline.TimeOf(beat) - time;
-                bool visible = active && remaining >= -.14 && remaining <= approach && beat != game.Session.Gate.LastConsumedBeat;
+                bool visible = active && beat < game.Song.NoteCount && remaining >= -.14 && remaining <= approach && beat != game.Session.Gate.LastConsumedBeat;
                 float distance = Mathf.LerpUnclamped(targetX, spawnX, (float)(remaining / approach));
                 for (int side = 0; side < 2; side++)
                 {

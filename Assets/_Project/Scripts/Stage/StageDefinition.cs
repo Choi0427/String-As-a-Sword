@@ -1,4 +1,5 @@
 using UnityEngine;
+using StringAsASword.Combat;
 
 namespace StringAsASword.Stage
 {
@@ -12,6 +13,14 @@ namespace StringAsASword.Stage
         [SerializeField] private int[] healthSegments = { 6, 6, 6, 6 };
         [SerializeField, Min(1)] private int attackDamage = 1;
         [SerializeField, Range(45, 80)] private float cameraElevation = 60;
+        [SerializeField, Min(1)] private int playerMaxHp = 3;
+        [SerializeField, Min(2)] private int maxCollectionCost = 12;
+        [SerializeField] private string combatVersion = "battle-1";
+        [SerializeField] private PatternDefinition[] patterns = PatternDefinition.Defaults();
+        public int PlayerMaxHp => playerMaxHp;
+        public int MaxCollectionCost => maxCollectionCost;
+        public string CombatVersion => combatVersion;
+        public PatternDefinition[] Patterns => patterns;
         public int NoiseSeed => noiseSeed;
         public int NoiseSpawnInterval => Mathf.Max(1, noiseSpawnInterval);
         public int MaxActiveNoise => Mathf.Clamp(maxActiveNoise, 1, 8);

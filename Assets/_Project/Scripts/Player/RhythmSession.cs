@@ -25,6 +25,9 @@ namespace StringAsASword.Player
         private readonly RhythmJudge judge;
         private readonly GridPosition start;
         private int nextUnresolvedBeat;
+        private readonly int noteCount;
+        public bool Stopped { get; set; }
+        public int ClosedNotes => nextUnresolvedBeat;
         public ActionGate Gate { get; } = new ActionGate();
         public GridPosition Position { get; private set; }
         public int Combo { get; private set; }
@@ -39,16 +42,17 @@ namespace StringAsASword.Player
         public event Action<int> NoteMissed;
         public event Action<int> BeatClosed;
 
-        public RhythmSession(BoardState board, RhythmJudge judge, GridPosition start)
+        public RhythmSession(BoardState board, RhythmJudge judge, GridPosition start, int noteCount = int.MaxValue)
         {
             if (!board.Contains(start)) throw new ArgumentOutOfRangeException(nameof(start));
-            this.board = board; this.judge = judge; this.start = start;
+            this.board = board; this.judge = judge; this.start = start; this.noteCount = noteCount;
             Reset();
         }
         public void Reset()
         {
             Position = start; Combo = BestCombo = PerfectCount = GoodCount = MissCount = nextUnresolvedBeat = 0;
             Gate.Reset();
+            Stopped = false;
             AcceptedMoves = AcceptedAttacks = AcceptedGuards = 0;
         }
         public ActionResult RequestMove(MoveDirection direction, double songTime)
@@ -64,7 +68,8 @@ namespace StringAsASword.Player
             var timing = judge.Evaluate(inputSongTime);
             var rejection = ActionRejection.None;
             GridPosition destination = Position;
-            if (!timing.IsHit) rejection = ActionRejection.OutsideWindow;
+            if (Stopped || timing.BeatId >= noteCount) rejection = ActionRejection.BeatExpired;
+            else if (!timing.IsHit) rejection = ActionRejection.OutsideWindow;
             else if (timing.BeatId < nextUnresolvedBeat) rejection = ActionRejection.BeatExpired;
             else if (!Gate.CanConsume(timing.BeatId)) rejection = ActionRejection.BeatAlreadyUsed;
             else if (kind == PlayerActionKind.Move && !board.TryGetDestination(Position, direction, out destination)) rejection = ActionRejection.OutsideBoard;
@@ -87,7 +92,7 @@ namespace StringAsASword.Player
         public void Advance(double songTime)
         {
             // Every closed beat resolves once, including frames spanning multiple beats.
-            while (judge.CloseTime(nextUnresolvedBeat) < songTime - 1e-9)
+            while (!Stopped && nextUnresolvedBeat < noteCount && judge.CloseTime(nextUnresolvedBeat) < songTime - 1e-9)
             {
                 int beat = nextUnresolvedBeat++;
                 if (Gate.LastConsumedBeat != beat)

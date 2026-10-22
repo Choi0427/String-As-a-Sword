@@ -24,15 +24,23 @@ namespace StringAsASword.Stage
         {
             health.Reset(); noise.Reset(sessionId, seed, targets[0]); lastResolvedBeat = -1;
         }
-        public bool ResolveBeat(int beat)
+        public bool ResolveBeat(int beat, int nextMusicBeat = -1)
         {
             if (beat <= lastResolvedBeat) return false;
             lastResolvedBeat = beat;
             if (PhaseId >= 4 || !health.CurrentDepleted || !noise.GoalReached) return false;
             health.UnlockNext();
-            noise.BeginPhase(PhaseId, PhaseId < 4 ? targets[PhaseId - 1] : 0, beat + 1);
+            noise.BeginPhase(PhaseId, PhaseId < 4 ? targets[PhaseId - 1] : 0, nextMusicBeat >= 0 ? nextMusicBeat : beat + 1);
             PhaseUnlocked?.Invoke(PhaseId);
             return true;
+        }
+        internal void AdvanceAnalysisPhase(int nextMusicBeat)
+        {
+            if (PhaseId >= 4) return;
+            health.ApplyDamage(health.CurrentHp, health.ActiveSegment);
+            health.UnlockNext();
+            noise.BeginPhase(PhaseId, PhaseId < 4 ? targets[PhaseId - 1] : 0, nextMusicBeat);
+            PhaseUnlocked?.Invoke(PhaseId);
         }
     }
 }
