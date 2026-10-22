@@ -17,6 +17,9 @@ namespace StringAsASword.Tests
         private Keyboard keyboard;
         private bool originalBackground;
         private InputSettings.BackgroundBehavior originalInputBackground;
+#if UNITY_EDITOR
+        private InputSettings.EditorInputBehaviorInPlayMode originalEditorInput;
+#endif
 
         [UnitySetUp] public IEnumerator SetUp()
         {
@@ -24,8 +27,15 @@ namespace StringAsASword.Tests
             originalInputBackground=InputSystem.settings.backgroundBehavior;
             Application.runInBackground=true;
             InputSystem.settings.backgroundBehavior=InputSettings.BackgroundBehavior.IgnoreFocus;
+#if UNITY_EDITOR
+            originalEditorInput = InputSystem.settings.editorInputBehaviorInPlayMode;
+            InputSystem.settings.editorInputBehaviorInPlayMode = InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
+#endif
             yield return SceneManager.LoadSceneAsync("RhythmPrototype");
             game=Object.FindAnyObjectByType<PrototypeGame>();
+            // The test runner changes Editor windows. Test focus loss explicitly, not accidentally.
+            SetFocusPause(false);
+            foreach (var pattern in game.Battle.Settings.Patterns) pattern.Enabled = false;
             keyboard=InputSystem.AddDevice<Keyboard>();
             yield return null;
         }
@@ -34,6 +44,9 @@ namespace StringAsASword.Tests
             if(game!=null) game.PauseSession();
             if(keyboard!=null) InputSystem.RemoveDevice(keyboard);
             InputSystem.settings.backgroundBehavior=originalInputBackground;
+#if UNITY_EDITOR
+            InputSystem.settings.editorInputBehaviorInPlayMode = originalEditorInput;
+#endif
             Application.runInBackground=originalBackground;
             yield return null;
         }
@@ -41,6 +54,8 @@ namespace StringAsASword.Tests
         {
             InputSystem.QueueStateEvent(keyboard,down?new KeyboardState(key):new KeyboardState(),InputState.currentTime+songTime-game.SongTime);
         }
+        private void SetFocusPause(bool value) => typeof(PrototypeGame).GetField("pauseOnFocusLoss",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).SetValue(game, value);
         private IEnumerator UntilSongTime(double target)
         {
             double timeout=Time.realtimeSinceStartupAsDouble+8;
@@ -84,7 +99,9 @@ namespace StringAsASword.Tests
             yield return UntilSongTime(.15);
             Assert.That(game.Session.AcceptedMoves,Is.EqualTo(1));
             Assert.That(game.Session.Position,Is.EqualTo(new GridPosition(3,4)),"Equal timestamps use W before D.");
+            SetFocusPause(true);
             game.SendMessage("OnApplicationFocus",false);
+            SetFocusPause(false);
             Assert.That(game.State,Is.EqualTo(PrototypeState.Paused));
             double stopped=game.SongTime;
             yield return new WaitForSecondsRealtime(.1f);
@@ -144,14 +161,14 @@ namespace StringAsASword.Tests
             Assert.That(game.Session.AcceptedAttacks,Is.EqualTo(1));
             Assert.That(game.Session.AcceptedGuards,Is.Zero);
             Assert.That(game.Session.AcceptedMoves,Is.Zero);
-            Assert.That(game.Health.TotalHp,Is.EqualTo(24),"Out-of-range swing is allowed but harmless.");
+            Assert.That(game.Health.TotalHp,Is.EqualTo(System.Linq.Enumerable.Sum(game.Stage.HealthSegments)),"Out-of-range swing is allowed but harmless.");
             InputSystem.QueueStateEvent(keyboard,new KeyboardState());
             yield return UntilSongTime(game.Timeline.TimeOf(1));
             InputSystem.QueueStateEvent(keyboard,new KeyboardState(Key.W,Key.K),InputState.currentTime+game.Timeline.TimeOf(1)-game.SongTime);
             yield return UntilSongTime(game.Timeline.TimeOf(3)+.16);
             Assert.That(game.Session.AcceptedGuards,Is.EqualTo(1),"Holding K must not repeat.");
             Assert.That(game.Session.AcceptedMoves,Is.Zero);
-            Assert.That(game.Health.TotalHp,Is.EqualTo(24));
+            Assert.That(game.Health.TotalHp,Is.EqualTo(System.Linq.Enumerable.Sum(game.Stage.HealthSegments)));
             Assert.That(game.Noise.Collected,Is.Zero);
             LogAssert.NoUnexpectedReceived();
         }
@@ -160,12 +177,13 @@ namespace StringAsASword.Tests
             game.StartSession();
             for(int beat=0;beat<4;beat++) yield return TapAtBeat(Key.W,beat);
             Assert.That(game.Session.Position,Is.EqualTo(new GridPosition(3,7)));
-            for(int beat=4;beat<11;beat++) yield return TapAtBeat(Key.J,beat);
+            int afterAttacks = 5 + game.Health.Maximum(0);
+            for(int beat=4;beat<afterAttacks;beat++) yield return TapAtBeat(Key.J,beat);
             Assert.That(game.Health.CurrentHp,Is.Zero);
-            Assert.That(game.Health.TotalHp,Is.EqualTo(18));
+            Assert.That(game.Health.TotalHp,Is.EqualTo(System.Linq.Enumerable.Sum(game.Stage.HealthSegments) - game.Health.Maximum(0)));
             Assert.That(game.Phases.PhaseId,Is.EqualTo(1));
-            yield return TapAtBeat(Key.K,11);
-            Assert.That(game.Health.TotalHp,Is.EqualTo(18));
+            yield return TapAtBeat(Key.K,afterAttacks);
+            Assert.That(game.Health.TotalHp,Is.EqualTo(System.Linq.Enumerable.Sum(game.Stage.HealthSegments) - game.Health.Maximum(0)));
             Assert.That(game.Session.AcceptedGuards,Is.EqualTo(1));
             LogAssert.NoUnexpectedReceived();
         }
@@ -177,6 +195,7 @@ namespace StringAsASword.Tests
             int beat=1;
             while(!game.Session.Position.Equals(target))
             {
+                Assert.That(beat, Is.LessThan(30), "Input-driven collection must finish in a bounded number of notes.");
                 var cell=game.Session.Position;
                 Key direction=cell.X<target.X?Key.D:cell.X>target.X?Key.A:cell.Y<target.Y?Key.W:Key.S;
                 yield return TapAtBeat(direction,beat++);
@@ -189,7 +208,7 @@ namespace StringAsASword.Tests
             Assert.That(game.Noise.Pickups,Is.Empty);
             Assert.That(game.Noise.SessionId,Is.EqualTo(oldSession+1));
             Assert.That(game.Phases.PhaseId,Is.EqualTo(1));
-            Assert.That(game.Health.TotalHp,Is.EqualTo(24));
+            Assert.That(game.Health.TotalHp,Is.EqualTo(System.Linq.Enumerable.Sum(game.Stage.HealthSegments)));
             LogAssert.NoUnexpectedReceived();
         }
     }
