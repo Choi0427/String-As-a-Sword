@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
 using StringAsASword.Board;
+using StringAsASword.Combat;
 using StringAsASword.Core;
 using StringAsASword.Presentation;
 using UnityEngine;
@@ -161,6 +162,98 @@ namespace StringAsASword.Tests
             yield return UntilSongTime(game.Timeline.TimeOf(beat)+.05);
             Queue(key,game.SongTime,false);
             yield return UntilSongTime(game.Timeline.TimeOf(beat)+.16);
+        }
+        // Impact is note 2 and publishes when note 0 closes. Settings are this session's copy, not the stage asset.
+        private const int ImpactNote = 2;
+        private static PatternDefinition RequiredGuard() => new PatternDefinition { Name = "Guard Fixture", Kind = PatternKind.FullBoard,
+            Response = AttackResponse.GuardOnly, FirstImpact = ImpactNote + 1, TelegraphNotes = ImpactNote, RepeatNotes = 1000 };
+        private static PatternDefinition RequiredDodge() => new PatternDefinition { Name = "Dodge Fixture", Kind = PatternKind.Row, Coordinate = 3,
+            Response = AttackResponse.DodgeOnly, FirstImpact = ImpactNote + 1, TelegraphNotes = ImpactNote, RepeatNotes = 1000 };
+        private IEnumerator StartWith(PatternDefinition pattern, AttackResponse response)
+        {
+            game.Battle.Settings.Schedule.Enabled = false;
+            game.Battle.Settings.Patterns = new[] { pattern };
+            game.StartSession();
+            yield return UntilSongTime(game.Timeline.TimeOf(0)+.16);
+            yield return null;
+            Assert.That(game.Battle.Patterns.Active.Count, Is.EqualTo(1), "The fixture attack must be published before anyone responds.");
+            Assert.That(game.Battle.Patterns.Active[0].Response, Is.EqualTo(response));
+        }
+        private IEnumerator UntilImpactResolved()
+        {
+            yield return UntilSongTime(game.Timeline.TimeOf(ImpactNote)+.16);
+            yield return null;
+            Assert.That(game.Battle.LastClosedNote, Is.GreaterThanOrEqualTo(ImpactNote));
+            Assert.That(game.Battle.Patterns.Active, Is.Empty);
+        }
+        private int EventCount(string type)
+        {
+            int count = 0;
+            foreach (var entry in game.Battle.Events) if (entry.type == type) count++;
+            return count;
+        }
+        private string ActiveOutcome => Object.FindAnyObjectByType<PrototypeView>().ActiveOutcome;
+        [UnityTest] public IEnumerator GuardOnlyAttackIsBlockedByARealGuardKey()
+        {
+            yield return StartWith(RequiredGuard(), AttackResponse.GuardOnly);
+            yield return TapAtBeat(Key.K, ImpactNote);
+            yield return UntilImpactResolved();
+            Assert.That(game.Session.AcceptedGuards, Is.EqualTo(1));
+            Assert.That(game.Battle.PlayerHp, Is.EqualTo(game.Stage.PlayerMaxHp));
+            Assert.That(EventCount("guard-success"), Is.EqualTo(1));
+            Assert.That(EventCount("player-hit"), Is.Zero);
+            Assert.That(ActiveOutcome, Is.EqualTo("BLOCKED"));
+            LogAssert.NoUnexpectedReceived();
+        }
+        [UnityTest] public IEnumerator GuardOnlyAttackHitsWithoutAGuard()
+        {
+            yield return StartWith(RequiredGuard(), AttackResponse.GuardOnly);
+            yield return UntilImpactResolved();
+            Assert.That(game.Session.AcceptedGuards, Is.Zero);
+            Assert.That(game.Battle.PlayerHp, Is.EqualTo(game.Stage.PlayerMaxHp - 1));
+            Assert.That(EventCount("player-hit"), Is.EqualTo(1));
+            Assert.That(EventCount("guard-success"), Is.Zero);
+            Assert.That(ActiveOutcome, Is.EqualTo("HIT"));
+            LogAssert.NoUnexpectedReceived();
+        }
+        [UnityTest] public IEnumerator DodgeOnlyAttackBreaksARealGuardKey()
+        {
+            yield return StartWith(RequiredDodge(), AttackResponse.DodgeOnly);
+            yield return TapAtBeat(Key.K, ImpactNote);
+            yield return UntilImpactResolved();
+            Assert.That(game.Session.AcceptedGuards, Is.EqualTo(1));
+            Assert.That(game.Battle.PlayerHp, Is.EqualTo(game.Stage.PlayerMaxHp - 1));
+            Assert.That(EventCount("guard-broken"), Is.EqualTo(1));
+            Assert.That(EventCount("player-hit"), Is.EqualTo(1));
+            Assert.That(EventCount("guard-success"), Is.Zero);
+            Assert.That(ActiveOutcome, Is.EqualTo("GUARD BROKEN"));
+            LogAssert.NoUnexpectedReceived();
+        }
+        [UnityTest] public IEnumerator DodgeOnlyAttackMissesAfterARealMoveKey()
+        {
+            yield return StartWith(RequiredDodge(), AttackResponse.DodgeOnly);
+            yield return TapAtBeat(Key.W, 1);
+            Assert.That(game.Session.Position, Is.EqualTo(new GridPosition(3,4)));
+            yield return UntilImpactResolved();
+            Assert.That(game.Battle.PlayerHp, Is.EqualTo(game.Stage.PlayerMaxHp));
+            Assert.That(EventCount("player-hit"), Is.Zero);
+            Assert.That(EventCount("guard-broken"), Is.Zero);
+            Assert.That(ActiveOutcome, Is.Empty, "Nothing happened to the player, so nothing flashes.");
+            LogAssert.NoUnexpectedReceived();
+        }
+        [UnityTest] public IEnumerator OutcomeFlashExpiresAndRestartClearsIt()
+        {
+            yield return StartWith(RequiredGuard(), AttackResponse.GuardOnly);
+            yield return UntilImpactResolved();
+            Assert.That(ActiveOutcome, Is.EqualTo("HIT"));
+            game.StartSession();
+            Assert.That(ActiveOutcome, Is.Empty, "A restart must not carry the last run's outcome.");
+            yield return UntilSongTime(game.Timeline.TimeOf(0)+.16);
+            yield return UntilImpactResolved();
+            Assert.That(ActiveOutcome, Is.EqualTo("HIT"));
+            yield return new WaitForSecondsRealtime(.7f);
+            Assert.That(ActiveOutcome, Is.Empty, "The flash is short-lived.");
+            LogAssert.NoUnexpectedReceived();
         }
         [UnityTest] public IEnumerator AttackGuardAndMovementRespectTiePriorityAndHoldEdges()
         {
