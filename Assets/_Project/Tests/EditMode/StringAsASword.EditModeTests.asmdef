@@ -1,6 +1,6 @@
 {
   "name": "StringAsASword.EditModeTests",
-  "references": ["StringAsASword.Runtime"],
+  "references": ["StringAsASword.Runtime", "StringAsASword.Editor"],
   "includePlatforms": ["Editor"],
   "optionalUnityReferences": ["TestAssemblies"]
 }
