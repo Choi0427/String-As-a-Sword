@@ -4,7 +4,7 @@ using StringAsASword.Stage;
 
 namespace StringAsASword.Combat
 {
-    public enum PatternKind { Row, Column, LockedCell, TopPressure }
+    public enum PatternKind { Row, Column, LockedCell, TopPressure, Cross, FullBoard, UpperHalf, Checker, Ring }
     // Either: guard or leave. GuardOnly: dodge-route checks are skipped. DodgeOnly: a guard does not protect.
     public enum AttackResponse { Either, GuardOnly, DodgeOnly }
     [Serializable]
@@ -16,6 +16,10 @@ namespace StringAsASword.Combat
         public int Coordinate = 6, FirstColumn, ColumnCount = 4;
         public int TelegraphNotes = 3, FirstImpact = 7, RepeatNotes = 24;
         public int PhaseMask = 15, SelectionWeight = 1;
+        // Random schedules publish every hit together; fixed mode fires the first hit of each repeat only.
+        public int Hits = 1, HitSpacing = 1;
+        public const int MaxHits = 8, MaxHitSpacing = 4;
+        public int Span => (Hits - 1) * HitSpacing;
         public bool Enabled = true;
         public PatternDefinition Copy() => (PatternDefinition)MemberwiseClone();
         public static PatternDefinition[] Defaults() => new[] {
@@ -30,12 +34,13 @@ namespace StringAsASword.Combat
         public bool Enabled;
         public int MinInterval = 4;
         public int[] IntervalWeights = { 1, 1, 5, 5, 5, 1, 1, 1, 1, 1, 1, 1, 1 };
+        public const int WarningCeiling = 4;
         public int MinWarning = 1, MaxWarning = 3, CandidateAttempts = 16, MaxDeferrals = 8;
         public RandomAttackSchedule Copy()
         { var copy = (RandomAttackSchedule)MemberwiseClone(); copy.IntervalWeights = (int[])IntervalWeights.Clone(); return copy; }
         public void Validate()
         {
-            if (MinWarning < 1 || MaxWarning > 3 || MinWarning > MaxWarning || MinInterval < 4 ||
+            if (MinWarning < 1 || MaxWarning > WarningCeiling || MinWarning > MaxWarning || MinInterval < 4 ||
                 IntervalWeights == null || IntervalWeights.Length < 1 || MinInterval + IntervalWeights.Length - 1 > 16 ||
                 CandidateAttempts < 1 || CandidateAttempts > 64 || MaxDeferrals < 0 || MaxDeferrals > 64)
                 throw new ArgumentException("Invalid random attack schedule bounds.");
@@ -87,7 +92,8 @@ namespace StringAsASword.Combat
                 if (p == null || p.TelegraphNotes < 1 || p.FirstImpact <= p.TelegraphNotes || p.RepeatNotes < 1 ||
                     p.Coordinate < 0 || p.Coordinate > 7 || p.FirstColumn < 0 || p.ColumnCount < 1 || p.FirstColumn + p.ColumnCount > 8 ||
                     p.SelectionWeight < 0 || p.SelectionWeight > 10000 || !Enum.IsDefined(typeof(PatternKind), p.Kind) ||
-                    !Enum.IsDefined(typeof(AttackResponse), p.Response) ||
+                    !Enum.IsDefined(typeof(AttackResponse), p.Response) || p.Hits < 1 || p.Hits > PatternDefinition.MaxHits ||
+                    p.HitSpacing < 1 || p.HitSpacing > PatternDefinition.MaxHitSpacing || p.Kind == PatternKind.FullBoard && p.Response != AttackResponse.GuardOnly ||
                     Schedule.Enabled && p.Kind == PatternKind.TopPressure && p.ColumnCount >= 8 && p.Response != AttackResponse.DodgeOnly)
                     throw new ArgumentException("Invalid pattern range, warning or schedule.");
         }

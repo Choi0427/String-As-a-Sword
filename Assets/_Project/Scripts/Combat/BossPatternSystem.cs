@@ -17,13 +17,14 @@ namespace StringAsASword.Combat
         public int ActualInterval { get; }
         public string Reason { get; }
         public AttackResponse Response { get; }
+        public int Hit { get; }
         public BossTelegraph(int id, string name, ulong cells, int impactNote, PatternKind kind = PatternKind.Row,
             int warningNotes = 0, int requiredDodgeActions = 0, int selectedInterval = 0, int actualInterval = 0, string reason = "",
-            AttackResponse response = AttackResponse.Either)
+            AttackResponse response = AttackResponse.Either, int hit = 0)
         {
             Id = id; Name = name; Cells = cells; ImpactNote = impactNote; Kind = kind;
             WarningNotes = warningNotes; RequiredDodgeActions = requiredDodgeActions;
-            SelectedInterval = selectedInterval; ActualInterval = actualInterval; Reason = reason; Response = response;
+            SelectedInterval = selectedInterval; ActualInterval = actualInterval; Reason = reason; Response = response; Hit = hit;
         }
         public int Remaining(int lastClosed) => ImpactNote - lastClosed;
     }
@@ -35,12 +36,12 @@ namespace StringAsASword.Combat
         private readonly List<BossTelegraph> active = new List<BossTelegraph>(), fired = new List<BossTelegraph>();
         private int[] nextImpact;
         private int phase, nextId;
-        private PatternDefinition pending;
+        private PatternDefinition pending, previous;
         private int targetImpact, warning, selectedInterval, deferrals, lastImpact = -1;
         public IReadOnlyList<BossTelegraph> Active => active.AsReadOnly();
         public IReadOnlyList<BossTelegraph> LastFired => fired.AsReadOnly();
         public ulong LastFiredUnblockable { get; private set; }
-        public Func<BossTelegraph, bool> CanPublish;
+        public Func<IReadOnlyList<BossTelegraph>, bool> CanPublish;
         public event Action<string, BossTelegraph> Changed;
         public BossPatternSystem(PatternDefinition[] definitions, RandomAttackSchedule schedule = null, int seed = 0)
         {
@@ -71,7 +72,7 @@ namespace StringAsASword.Combat
                         invalidates = true;
                 bool noDodge = (p.Kind == PatternKind.TopPressure || p.Response == AttackResponse.DodgeOnly) && p.Response != AttackResponse.GuardOnly &&
                     !CanDodge(player, proposal, lastClosed + 1);
-                if (hold || invalidates || noDodge || CanPublish != null && !CanPublish(proposal))
+                if (hold || invalidates || noDodge || CanPublish != null && !CanPublish(new[] { proposal }))
                 { nextImpact[i]++; Changed?.Invoke("defer", proposal); continue; }
                 active.Add(proposal); nextId++; Changed?.Invoke("publish", proposal);
                 nextImpact[i] += p.RepeatNotes;
@@ -80,12 +81,16 @@ namespace StringAsASword.Combat
         private void Plan(int anchor, int lastClosed)
         {
             pending = null; deferrals = 0;
-            int total = 0;
-            foreach (var p in definitions) if (Eligible(p)) total += p.SelectionWeight;
-            if (total == 0) return;
-            int pick = random.Next(total);
+            int total = 0, others = 0;
             foreach (var p in definitions)
-                if (Eligible(p)) { pick -= p.SelectionWeight; if (pick < 0) { pending = p; break; } }
+                if (Eligible(p)) { total += p.SelectionWeight; if (p != previous) others += p.SelectionWeight; }
+            if (total == 0) return;
+            // The previous pattern only repeats when nothing else is eligible.
+            var excluded = others > 0 ? previous : null;
+            int pick = random.Next(others > 0 ? others : total);
+            foreach (var p in definitions)
+                if (Eligible(p) && p != excluded) { pick -= p.SelectionWeight; if (pick < 0) { pending = p; break; } }
+            previous = pending;
             total = 0; foreach (int weight in schedule.IntervalWeights) total += weight;
             pick = random.Next(total); selectedInterval = schedule.MinInterval;
             foreach (int weight in schedule.IntervalWeights)
@@ -97,19 +102,40 @@ namespace StringAsASword.Combat
             => p.Enabled && p.SelectionWeight > 0 && (p.PhaseMask & (1 << (phase - 1))) != 0;
 
         private BossTelegraph Proposal(PatternDefinition p, GridPosition player, int required = -1, string reason = "")
-            => new BossTelegraph(nextId + 1, p.Name, Cells(p, player), targetImpact, p.Kind,
-                warning, required, selectedInterval, lastImpact < 0 ? 0 : targetImpact - lastImpact, reason, p.Response);
+            => Telegraph(p, player, 0, targetImpact, warning, required, reason);
+
+        // Later hits count their gap from the hit before, so a countdown and an interval read the same on every hit.
+        private BossTelegraph Telegraph(PatternDefinition p, GridPosition player, int hit, int first, int warn, int required, string reason)
+        {
+            int offset = hit * p.HitSpacing;
+            return new BossTelegraph(nextId + 1 + hit, p.Name, Cells(p, player, hit), first + offset, p.Kind, warn + offset, required,
+                hit == 0 ? selectedInterval : p.HitSpacing, hit > 0 ? p.HitSpacing : lastImpact < 0 ? 0 : first - lastImpact, reason, p.Response, hit);
+        }
+        private BossTelegraph[] Sequence(PatternDefinition p, GridPosition player, int first, int warn, int required = -1, string reason = "")
+        {
+            var hits = new BossTelegraph[p.Hits];
+            for (int i = 0; i < hits.Length; i++) hits[i] = Telegraph(p, player, i, first, warn, required, reason);
+            return hits;
+        }
+        // Earlier hits are disclosed to the check on the last, so the route has to survive every hit.
+        private int SequenceActions(PatternDefinition p, GridPosition player, BossTelegraph[] hits, int lastClosed)
+        {
+            if (p.Response == AttackResponse.GuardOnly) return 0;
+            var disclosed = new List<BossTelegraph>(active);
+            for (int i = 0; i < hits.Length - 1; i++) disclosed.Add(hits[i]);
+            return DodgeActions(player, hits[hits.Length - 1], lastClosed, disclosed);
+        }
 
         private void PublishRandom(int lastClosed, GridPosition player, int noteCount, bool hold)
         {
             if (pending != null && !Eligible(pending)) Plan(lastImpact < 0 ? lastClosed : lastImpact, lastClosed);
             if (pending == null) return;
-            if (targetImpact >= noteCount)
+            if (targetImpact + pending.Span >= noteCount)
             { Changed?.Invoke("skip", Proposal(pending, player, reason: "chart-end")); pending = null; return; }
             if (lastClosed < targetImpact - warning) return;
             // Late callers still receive the full warning; live sessions visit every note in order.
             targetImpact = Math.Max(targetImpact, lastClosed + warning);
-            if (targetImpact >= noteCount)
+            if (targetImpact + pending.Span >= noteCount)
             { Changed?.Invoke("skip", Proposal(pending, player, reason: "chart-end")); pending = null; return; }
             string reason = "noise-wait";
             if (!hold)
@@ -123,41 +149,44 @@ namespace StringAsASword.Combat
                         p.Name = p.Kind == PatternKind.Row ? "ROW " + (p.Coordinate + 1) : "COLUMN " + (char)('A' + p.Coordinate);
                     }
                     else if (p.Kind == PatternKind.TopPressure) p.FirstColumn = random.Next(9 - p.ColumnCount);
-                    var candidate = Proposal(p, player);
-                    int required = p.Response == AttackResponse.GuardOnly ? 0 : DodgeActions(player, candidate, lastClosed, active);
-                    while (required < 0 && candidate.WarningNotes < schedule.MaxWarning)
+                    int warn = warning, first = targetImpact;
+                    var hits = Sequence(p, player, first, warn);
+                    int required = SequenceActions(p, player, hits, lastClosed);
+                    while (required < 0 && warn < schedule.MaxWarning)
                     {
-                        int longer = candidate.WarningNotes + 1, impact = lastClosed + longer;
-                        candidate = new BossTelegraph(nextId + 1, p.Name, candidate.Cells, impact, p.Kind,
-                            longer, -1, selectedInterval, lastImpact < 0 ? 0 : impact - lastImpact, "", p.Response);
-                        required = DodgeActions(player, candidate, lastClosed, active);
+                        warn++; first = lastClosed + warn;
+                        hits = Sequence(p, player, first, warn);
+                        required = SequenceActions(p, player, hits, lastClosed);
                     }
-                    reason = candidate.ImpactNote >= noteCount ? "chart-end" : required < 0 ? "no-dodge-within-warning" : Invalidates(candidate) ? "disclosed-route" :
-                        CanPublish != null && !CanPublish(candidate) ? "pickup-route" : "";
-                    candidate = new BossTelegraph(candidate.Id, candidate.Name, candidate.Cells, candidate.ImpactNote, candidate.Kind,
-                        candidate.WarningNotes, required, selectedInterval, candidate.ActualInterval, reason, p.Response);
-                    if (reason.Length != 0) { Changed?.Invoke("reject", candidate); continue; }
-                    active.Add(candidate); nextId++; pending = null; Changed?.Invoke("publish", candidate); return;
+                    reason = first + p.Span >= noteCount ? "chart-end" : required < 0 ? "no-dodge-within-warning" : Invalidates(hits) ? "disclosed-route" :
+                        CanPublish != null && !CanPublish(hits) ? "pickup-route" : "";
+                    hits = Sequence(p, player, first, warn, required, reason);
+                    if (reason.Length != 0) { Changed?.Invoke("reject", hits[0]); continue; }
+                    active.AddRange(hits); nextId += hits.Length; pending = null;
+                    foreach (var hit in hits) Changed?.Invoke("publish", hit);
+                    return;
                 }
             }
             if (deferrals >= schedule.MaxDeferrals)
             { Changed?.Invoke("skip", Proposal(pending, player, reason: "retry-limit:" + reason)); Plan(lastClosed, lastClosed); }
             else { Changed?.Invoke("defer", Proposal(pending, player, reason: reason)); deferrals++; targetImpact++; }
         }
-        private bool Invalidates(BossTelegraph proposal)
+        private bool Invalidates(BossTelegraph[] proposal)
         {
-            foreach (var a in active)
-                if (proposal.ImpactNote <= a.ImpactNote && (proposal.Cells & ~SafeRoutePlanner.Danger(active, proposal.ImpactNote)) != 0)
-                    return true;
+            foreach (var hit in proposal)
+                foreach (var a in active)
+                    if (hit.ImpactNote <= a.ImpactNote && (hit.Cells & ~SafeRoutePlanner.Danger(active, hit.ImpactNote)) != 0)
+                        return true;
             return false;
         }
 
-        // At most three time layers and 64 cells. Waiting/guarding costs a note, except that a disclosed
-        // DodgeOnly attack removes its cells from waiting too; the final cell must dodge.
+        // Bounded by the warning ceiling plus the longest sequence, over 64 cells. Waiting/guarding costs a note,
+        // except that a disclosed DodgeOnly attack removes its cells from waiting too; the final cell must dodge.
+        // For a sequence, pass the last hit as the proposal and the earlier hits as disclosed.
         public static int DodgeActions(GridPosition player, BossTelegraph proposal, int lastClosed, IReadOnlyList<BossTelegraph> disclosed)
         {
             int length = proposal.ImpactNote - lastClosed;
-            if (length < 1 || length > 3) return -1;
+            if (length < 1 || length > RandomAttackSchedule.WarningCeiling + (PatternDefinition.MaxHits - 1) * PatternDefinition.MaxHitSpacing) return -1;
             ulong reachable = SafeRoutePlanner.Bit(player);
             for (int step = 0; step <= length; step++)
             {
@@ -187,13 +216,17 @@ namespace StringAsASword.Combat
                     return true;
             return false;
         }
-        public static ulong Cells(PatternDefinition p, GridPosition player)
+        public static ulong Cells(PatternDefinition p, GridPosition player, int hit = 0)
         {
             if (p.Kind == PatternKind.LockedCell) return SafeRoutePlanner.Bit(player);
+            if (p.Kind == PatternKind.FullBoard) return ulong.MaxValue;
             ulong result = 0;
             for (int y = 0; y < 8; y++) for (int x = 0; x < 8; x++)
                 if (p.Kind == PatternKind.Row && y == p.Coordinate || p.Kind == PatternKind.Column && x == p.Coordinate ||
-                    p.Kind == PatternKind.TopPressure && y == 7 && x >= p.FirstColumn && x < p.FirstColumn + p.ColumnCount)
+                    p.Kind == PatternKind.TopPressure && y == 7 && x >= p.FirstColumn && x < p.FirstColumn + p.ColumnCount ||
+                    p.Kind == PatternKind.Cross && (x == player.X || y == player.Y) || p.Kind == PatternKind.UpperHalf && y >= 4 ||
+                    p.Kind == PatternKind.Checker && (x + y + hit) % 2 == 0 ||
+                    p.Kind == PatternKind.Ring && Math.Min(Math.Min(x, y), Math.Min(7 - x, 7 - y)) == hit % 4)
                     result |= 1UL << (y * 8 + x);
             return result;
         }
@@ -207,7 +240,9 @@ namespace StringAsASword.Combat
                     if (a.Response == AttackResponse.DodgeOnly) LastFiredUnblockable |= a.Cells;
                     Changed?.Invoke("fire", a);
                 }
-            if (schedule.Enabled && fired.Count > 0) Plan(note, note);
+            // Only one sequence is ever active, so an empty list means its last hit fired. A cancelled
+            // sequence empties the list without firing and BeginPhase plans the replacement.
+            if (schedule.Enabled && fired.Count > 0 && active.Count == 0) Plan(note, note);
             return cells;
         }
     }

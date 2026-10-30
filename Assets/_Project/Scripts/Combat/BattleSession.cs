@@ -12,7 +12,7 @@ namespace StringAsASword.Combat
     {
         public string type, detail, cells;
         public int noteIndex, musicBeat, phase, id, impactNote, x, y;
-        public int warningNotes, requiredDodgeActions, selectedInterval, actualInterval;
+        public int warningNotes, requiredDodgeActions, selectedInterval, actualInterval, hit;
         public string reason, kind, response;
     }
     [Serializable] public sealed class NoteRecord
@@ -105,7 +105,7 @@ namespace StringAsASword.Combat
                 noteIndex = LastClosedNote, musicBeat = CurrentMusicBeat, phase = Phases.PhaseId,
                 id = a.Id, impactNote = a.ImpactNote, cells = a.Cells.ToString("X16"), detail = a.Name,
                 warningNotes = a.WarningNotes, requiredDodgeActions = a.RequiredDodgeActions,
-                selectedInterval = a.SelectedInterval, actualInterval = a.ActualInterval, reason = a.Reason, kind = a.Kind.ToString(), response = a.Response.ToString() });
+                selectedInterval = a.SelectedInterval, actualInterval = a.ActualInterval, reason = a.Reason, kind = a.Kind.ToString(), response = a.Response.ToString(), hit = a.Hit });
             Patterns.CanPublish = CanPublish;
             Patterns.BeginPhase(1, 0); Patterns.Publish(-1, Session.Position, Settings.NoteCount, false);
         }
@@ -213,9 +213,9 @@ namespace StringAsASword.Combat
             // A pessimistic whole-song estimate must not starve a locally safe fallback after a slow phase.
             return fallback || reserve <= remaining;
         }
-        private bool CanPublish(BossTelegraph proposal)
+        private bool CanPublish(IReadOnlyList<BossTelegraph> proposal)
         {
-            var all = new List<BossTelegraph>(Patterns.Active) { proposal };
+            var all = new List<BossTelegraph>(Patterns.Active); all.AddRange(proposal);
             var targets = new List<GridPosition>(); foreach (var n in Noise.Pickups) targets.Add(n.Cell);
             if (targets.Count == 0) return true;
             return SafeRoutePlanner.FindAll(Session.Position, targets, NextAvailable, all,
