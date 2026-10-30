@@ -27,13 +27,33 @@ namespace StringAsASword.Simulation
 
         public static BattleDecision Decide(StrategyKind kind, BattleObservation view)
         {
+            var decision = Choose(kind, view);
+            // Waiting out a required response is not a guard. Standing still is the same either way, so an unthreatened
+            // cell spends the note on an attack; from below row 8 that is a miss rather than an inflated guard count.
+            if (decision.Kind == PlayerActionKind.Guard && !Threatened(view.Position, view.NoteIndex, view.Telegraphs) &&
+                Array.Exists(view.Telegraphs, t => t.Response != AttackResponse.Either))
+                return new BattleDecision(PlayerActionKind.Attack);
+            return decision;
+        }
+
+        private static BattleDecision Choose(StrategyKind kind, BattleObservation view)
+        {
             bool danger = Threatened(view.Position, view.NoteIndex, view.Telegraphs);
+            if (GuardRequired(view))
+                return new BattleDecision(PlayerActionKind.Guard);
             bool urgent = view.RemainingNotes <= CollectionBudget(view);
             bool collect = view.GoalRemaining > 0 &&
                 (kind == StrategyKind.CollectFirst || urgent || view.CurrentHp <= 0);
             var pickup = collect || kind == StrategyKind.MovementUse ? BestPickup(view) : default;
             if (kind == StrategyKind.MovementUse && pickup.Found && pickup.Cost <= view.MaxCollectionCost / 2)
                 collect = true;
+            if (Array.Exists(view.Telegraphs, t => t.Response == AttackResponse.DodgeOnly))
+            {
+                // Every planner route outlives the pending DodgeOnly hits, so a useful pickup trip is also a dodge.
+                if (pickup.Found && (collect || danger && kind == StrategyKind.MovementUse))
+                    return new BattleDecision(pickup.FirstAction, pickup.FirstDirection);
+                if (TryDodge(kind, view, danger, out var dodge)) return dodge;
+            }
             if (danger && kind == StrategyKind.AttackHold)
                 return new BattleDecision(PlayerActionKind.Guard);
             if (danger && kind == StrategyKind.MovementUse && pickup.Found && pickup.FirstAction == PlayerActionKind.Move)
@@ -70,6 +90,49 @@ namespace StringAsASword.Simulation
             int goals = view.GoalRemaining + view.FutureNoiseGoals;
             return view.RemainingBossHp + goals * view.MaxCollectionCost +
                 Math.Max(0, goals - view.Pickups.Length) * view.SpawnInterval;
+        }
+
+        // Decides only what a pending DodgeOnly sequence forces; false leaves the note to the strategy's normal work.
+        private static bool TryDodge(StrategyKind kind, BattleObservation view, bool danger, out BattleDecision decision)
+        {
+            var at = view.Position;
+            int note = view.NoteIndex;
+            var telegraphs = view.Telegraphs;
+            int impact = int.MaxValue, last = note;
+            foreach (var t in telegraphs)
+                if (t.Response == AttackResponse.DodgeOnly) { impact = Math.Min(impact, t.ImpactNote); last = Math.Max(last, t.ImpactNote); }
+            ulong next = SafeRoutePlanner.Unblockable(telegraphs, impact);
+            // After the last hit a route walks back from anywhere, so it exists exactly when the hits can be survived.
+            int horizon = last - note + 17;
+            bool Outlives(GridPosition cell) =>
+                SafeRoutePlanner.Find(cell, new GridPosition(cell.X, 7), note + 1, telegraphs, horizon, returnToTop: true).Found;
+
+            if (kind == StrategyKind.MovementUse && (next & SafeRoutePlanner.Bit(at)) != 0)
+                foreach (var direction in Directions)
+                    if (Board.TryGetDestination(at, direction, out var cell) && (next & SafeRoutePlanner.Bit(cell)) == 0 &&
+                        !Threatened(cell, note, telegraphs) && Outlives(cell))
+                    { decision = new BattleDecision(PlayerActionKind.Move, direction); return true; }
+
+            if ((SafeRoutePlanner.Unblockable(telegraphs, note) & SafeRoutePlanner.Bit(at)) != 0 || !Outlives(at))
+            {
+                // Not staying is the latest safe departure. No route remains only after a missed input.
+                var route = SafeRoutePlanner.Find(at, new GridPosition(at.X, 7), note, telegraphs, horizon, returnToTop: true);
+                decision = new BattleDecision(route.FirstAction, route.FirstDirection);
+                return route.Found;
+            }
+            decision = new BattleDecision(danger ? PlayerActionKind.Guard : PlayerActionKind.Attack);
+            if (danger) return true;
+            // Climbing into the next hit is pointless when no attack fits before leaving again; MovementUse never does.
+            return at.Y < 7 && (next & SafeRoutePlanner.Bit(new GridPosition(at.X, at.Y + 1))) != 0 &&
+                (kind == StrategyKind.MovementUse || impact <= note + 7 - at.Y);
+        }
+
+        private static bool GuardRequired(BattleObservation view)
+        {
+            ulong bit = SafeRoutePlanner.Bit(view.Position);
+            foreach (var t in view.Telegraphs)
+                if (t.Response == AttackResponse.GuardOnly && t.ImpactNote == view.NoteIndex && (t.Cells & bit) != 0) return true;
+            return false;
         }
 
         private static RouteResult BestPickup(BattleObservation view)
