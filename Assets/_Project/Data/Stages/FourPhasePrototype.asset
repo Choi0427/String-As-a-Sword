@@ -15,15 +15,16 @@ MonoBehaviour:
   noiseSeed: 87
   noiseSpawnInterval: 8
   maxActiveNoise: 2
-  noiseTargets: 030000000400000005000000
-  healthSegments: 1f000000060000000c0000002f000000
+  noiseTargets: 040000000500000006000000
+  healthSegments: 2a000000080000001000000040000000
   cameraElevation: 60
-  playerMaxHp: 3
+  playerMaxHp: 5
   maxCollectionCost: 12
-  combatVersion: battle-3
+  combatVersion: battle-4
   patterns:
-  - Name: Row
+  - Name: Line
     Kind: 0
+    Response: 0
     Coordinate: 6
     FirstColumn: 0
     ColumnCount: 4
@@ -31,35 +32,169 @@ MonoBehaviour:
     FirstImpact: 7
     RepeatNotes: 24
     PhaseMask: 15
-    SelectionWeight: 1
+    SelectionWeight: 6
+    Hits: 1
+    HitSpacing: 1
     Enabled: 1
   - Name: Lock
     Kind: 2
+    Response: 0
     Coordinate: 6
     FirstColumn: 0
     ColumnCount: 4
     TelegraphNotes: 1
-    FirstImpact: 15
+    FirstImpact: 7
     RepeatNotes: 24
     PhaseMask: 15
-    SelectionWeight: 1
+    SelectionWeight: 4
+    Hits: 1
+    HitSpacing: 1
     Enabled: 1
   - Name: Top
     Kind: 3
+    Response: 0
     Coordinate: 6
     FirstColumn: 0
     ColumnCount: 4
     TelegraphNotes: 3
-    FirstImpact: 23
+    FirstImpact: 7
     RepeatNotes: 24
     PhaseMask: 14
-    SelectionWeight: 1
+    SelectionWeight: 2
+    Hits: 1
+    HitSpacing: 1
+    Enabled: 1
+  - Name: Cross
+    Kind: 4
+    Response: 0
+    Coordinate: 6
+    FirstColumn: 0
+    ColumnCount: 4
+    TelegraphNotes: 2
+    FirstImpact: 7
+    RepeatNotes: 24
+    PhaseMask: 14
+    SelectionWeight: 2
+    Hits: 1
+    HitSpacing: 1
+    Enabled: 1
+  - Name: Chord
+    Kind: 5
+    Response: 1
+    Coordinate: 6
+    FirstColumn: 0
+    ColumnCount: 4
+    TelegraphNotes: 2
+    FirstImpact: 7
+    RepeatNotes: 24
+    PhaseMask: 15
+    SelectionWeight: 3
+    Hits: 2
+    HitSpacing: 1
+    Enabled: 1
+  - Name: Tremolo
+    Kind: 5
+    Response: 1
+    Coordinate: 6
+    FirstColumn: 0
+    ColumnCount: 4
+    TelegraphNotes: 3
+    FirstImpact: 7
+    RepeatNotes: 24
+    PhaseMask: 14
+    SelectionWeight: 3
+    Hits: 3
+    HitSpacing: 1
+    Enabled: 1
+  - Name: Tremolo Long
+    Kind: 5
+    Response: 1
+    Coordinate: 6
+    FirstColumn: 0
+    ColumnCount: 4
+    TelegraphNotes: 3
+    FirstImpact: 7
+    RepeatNotes: 24
+    PhaseMask: 12
+    SelectionWeight: 2
+    Hits: 4
+    HitSpacing: 1
+    Enabled: 1
+  - Name: Syncopation
+    Kind: 5
+    Response: 1
+    Coordinate: 6
+    FirstColumn: 0
+    ColumnCount: 4
+    TelegraphNotes: 3
+    FirstImpact: 7
+    RepeatNotes: 24
+    PhaseMask: 12
+    SelectionWeight: 2
+    Hits: 4
+    HitSpacing: 2
+    Enabled: 1
+  - Name: Top Wipe
+    Kind: 3
+    Response: 2
+    Coordinate: 6
+    FirstColumn: 0
+    ColumnCount: 8
+    TelegraphNotes: 2
+    FirstImpact: 7
+    RepeatNotes: 24
+    PhaseMask: 15
+    SelectionWeight: 3
+    Hits: 1
+    HitSpacing: 1
+    Enabled: 1
+  - Name: Upper Crush
+    Kind: 6
+    Response: 2
+    Coordinate: 6
+    FirstColumn: 0
+    ColumnCount: 4
+    TelegraphNotes: 4
+    FirstImpact: 7
+    RepeatNotes: 24
+    PhaseMask: 14
+    SelectionWeight: 3
+    Hits: 1
+    HitSpacing: 1
+    Enabled: 1
+  - Name: Checker
+    Kind: 7
+    Response: 2
+    Coordinate: 6
+    FirstColumn: 0
+    ColumnCount: 4
+    TelegraphNotes: 2
+    FirstImpact: 7
+    RepeatNotes: 24
+    PhaseMask: 12
+    SelectionWeight: 2
+    Hits: 2
+    HitSpacing: 1
+    Enabled: 1
+  - Name: Ring
+    Kind: 8
+    Response: 2
+    Coordinate: 6
+    FirstColumn: 0
+    ColumnCount: 4
+    TelegraphNotes: 3
+    FirstImpact: 7
+    RepeatNotes: 24
+    PhaseMask: 12
+    SelectionWeight: 2
+    Hits: 2
+    HitSpacing: 1
     Enabled: 1
   attackSchedule:
     Enabled: 1
     MinInterval: 4
-    IntervalWeights: 01000000010000000500000005000000050000000100000001000000010000000100000001000000010000000100000001000000
+    IntervalWeights: 0300000005000000040000000200000001000000
     MinWarning: 1
-    MaxWarning: 3
+    MaxWarning: 4
     CandidateAttempts: 16
     MaxDeferrals: 8
