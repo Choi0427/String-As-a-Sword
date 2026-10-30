@@ -248,6 +248,120 @@ namespace StringAsASword.Tests
         }
 
         [Test]
+        public void GuardOnUnblockableCellTakesDamageAndLogsGuardBroken()
+        {
+            var settings = TopWipe();
+            var battle = WalkToTopRow(settings);
+            Assert.That(battle.Request(PlayerActionKind.Guard, MoveDirection.Up, NoteTime(settings, 6)).Accepted, Is.True);
+            battle.Advance(CloseTime(settings, 6));
+
+            var record = battle.Records.Single(r => r.noteIndex == 6);
+            Assert.That(record.hit, Is.True);
+            Assert.That(record.guardSuccess, Is.False);
+            Assert.That(battle.PlayerHp, Is.EqualTo(settings.PlayerMaxHp - 1));
+            Assert.That(battle.Patterns.LastFiredUnblockable, Is.EqualTo(0xFFUL << 56));
+            Assert.That(battle.Events.Count(e => e.type == "guard-success"), Is.Zero);
+            Assert.That(battle.Events.Single(e => e.type == "guard-broken").response, Is.EqualTo("DodgeOnly"));
+            Assert.That(battle.Events.Single(e => e.type == "player-hit").response, Is.EqualTo("DodgeOnly"));
+            Assert.That(battle.Events.Single(e => e.type == "pattern-fire").response, Is.EqualTo("DodgeOnly"));
+        }
+
+        [Test]
+        public void LeavingAnUnblockableCellOnItsImpactNoteTakesNoDamage()
+        {
+            var settings = TopWipe();
+            var battle = WalkToTopRow(settings);
+            Assert.That(battle.Request(PlayerActionKind.Move, MoveDirection.Down, NoteTime(settings, 6)).Accepted, Is.True);
+            battle.Advance(CloseTime(settings, 6));
+
+            Assert.That(battle.Records.Single(r => r.noteIndex == 6).hit, Is.False);
+            Assert.That(battle.PlayerHp, Is.EqualTo(settings.PlayerMaxHp));
+            Assert.That(battle.Events.Any(e => e.type == "guard-broken" || e.type == "player-hit"), Is.False);
+        }
+
+        [Test]
+        public void GuardOutsideAnUnblockableAttackNeitherBreaksNorCountsAsABlock()
+        {
+            var settings = TopWipe();
+            var battle = new BattleSession(settings, 87);
+            battle.Noise.BeginPhase(1, 0, 0);
+            battle.Advance(CloseTime(settings, 5));
+            Assert.That(battle.Request(PlayerActionKind.Guard, MoveDirection.Up, NoteTime(settings, 6)).Accepted, Is.True);
+            battle.Advance(CloseTime(settings, 6));
+
+            var record = battle.Records.Single(r => r.noteIndex == 6);
+            Assert.That(record.hit, Is.False);
+            Assert.That(record.guardSuccess, Is.False);
+            Assert.That(battle.Events.Any(e => e.type == "guard-broken"), Is.False);
+        }
+
+        [Test]
+        public void EitherResponseGuardStillBlocksAndLogsItsResponse()
+        {
+            var settings = Settings(8);
+            settings.Patterns = new[] { new PatternDefinition { Name = "Lock", Kind = PatternKind.LockedCell,
+                TelegraphNotes = 1, FirstImpact = 2, RepeatNotes = 24 } };
+            var battle = new BattleSession(settings, 87);
+            battle.Noise.BeginPhase(1, 0, 0);
+            battle.Advance(CloseTime(settings, 0));
+            battle.Request(PlayerActionKind.Guard, MoveDirection.Up, NoteTime(settings, 1));
+            battle.Advance(CloseTime(settings, 1));
+
+            Assert.That(battle.Records.Single(r => r.noteIndex == 1).guardSuccess, Is.True);
+            Assert.That(battle.Patterns.LastFiredUnblockable, Is.Zero);
+            Assert.That(battle.Events.Single(e => e.type == "guard-success").response, Is.EqualTo("Either"));
+            Assert.That(battle.Events.Any(e => e.type == "guard-broken"), Is.False);
+        }
+
+        [TestCase(1, "81909ba551a95177cdaa142cba66f7157e5d3b81bbda89b913bf213a26bf18a0")]
+        [TestCase(87, "6e79bc817e5ec1a2adbfb9f91d522b4b580da2cedd637d531b95bc75c687b5d8")]
+        [TestCase(4242, "924d1206ef0fb8cc55ae064e453b1ee9016e3cbcac02ea8e8c6f420c82a84728")]
+        public void FixedModeDefaultsReproduceTheirPreResponseEventsAndStateHashes(int seed, string expected)
+        {
+            // Captured from the build before attack responses existed; only pre-existing event fields are hashed.
+            var settings = new BattleSettings { Bpm = 87, NoteCount = 128, PlayerMaxHp = 1000 };
+            var battle = new BattleSession(settings, seed);
+            for (int note = 0; note < settings.NoteCount && battle.Outcome == BattleOutcome.Running; note++)
+            {
+                battle.Advance(NoteTime(settings, note));
+                int step = note % 5;
+                var kind = step == 0 ? PlayerActionKind.Guard : step < 3 ? PlayerActionKind.Move : PlayerActionKind.Attack;
+                battle.Request(kind, (MoveDirection)(note / 5 % 4), NoteTime(settings, note));
+                battle.Advance(CloseTime(settings, note));
+            }
+            var text = new System.Text.StringBuilder();
+            foreach (var e in battle.Events)
+                text.Append(e.type).Append('|').Append(e.noteIndex).Append('|').Append(e.id).Append('|').Append(e.impactNote).Append('|').Append(e.cells).Append('|')
+                    .Append(e.kind).Append('|').Append(e.warningNotes).Append('|').Append(e.requiredDodgeActions).Append('|').Append(e.selectedInterval).Append('|')
+                    .Append(e.actualInterval).Append('|').Append(e.reason).Append('|').Append(e.detail).Append('|').Append(e.x).Append('|').Append(e.y).Append('\n');
+            foreach (var r in battle.Records) text.Append(r.stateHash).Append('\n');
+            Assert.That(BattleLog.Hash(text.ToString()), Is.EqualTo(expected));
+        }
+
+        private static BattleSettings TopWipe()
+        {
+            var settings = Settings(12);
+            settings.Patterns = new[] { new PatternDefinition { Name = "Top Wipe", Kind = PatternKind.TopPressure, ColumnCount = 8,
+                Response = AttackResponse.DodgeOnly, TelegraphNotes = 1, FirstImpact = 7, RepeatNotes = 24 } };
+            return settings;
+        }
+
+        private static BattleSession WalkToTopRow(BattleSettings settings)
+        {
+            var battle = new BattleSession(settings, 87);
+            battle.Noise.BeginPhase(1, 0, 0);
+            for (int note = 0; note < 4; note++)
+            {
+                Assert.That(battle.Request(PlayerActionKind.Move, MoveDirection.Up, NoteTime(settings, note)).Accepted, Is.True);
+                battle.Advance(CloseTime(settings, note));
+            }
+            battle.Advance(CloseTime(settings, 5));
+            Assert.That(battle.Session.Position, Is.EqualTo(new GridPosition(3, 7)));
+            Assert.That(battle.Patterns.Active.Single().Response, Is.EqualTo(AttackResponse.DodgeOnly));
+            return battle;
+        }
+
+        [Test]
         public void SameSeedProducesTheSameSerializedBattleLogHash()
         {
             string directory = Path.Combine(Path.GetTempPath(), "string-sword-log-tests-" + Guid.NewGuid().ToString("N"));

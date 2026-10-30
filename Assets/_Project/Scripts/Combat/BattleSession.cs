@@ -13,7 +13,7 @@ namespace StringAsASword.Combat
         public string type, detail, cells;
         public int noteIndex, musicBeat, phase, id, impactNote, x, y;
         public int warningNotes, requiredDodgeActions, selectedInterval, actualInterval;
-        public string reason, kind;
+        public string reason, kind, response;
     }
     [Serializable] public sealed class NoteRecord
     {
@@ -105,7 +105,7 @@ namespace StringAsASword.Combat
                 noteIndex = LastClosedNote, musicBeat = CurrentMusicBeat, phase = Phases.PhaseId,
                 id = a.Id, impactNote = a.ImpactNote, cells = a.Cells.ToString("X16"), detail = a.Name,
                 warningNotes = a.WarningNotes, requiredDodgeActions = a.RequiredDodgeActions,
-                selectedInterval = a.SelectedInterval, actualInterval = a.ActualInterval, reason = a.Reason, kind = a.Kind.ToString() });
+                selectedInterval = a.SelectedInterval, actualInterval = a.ActualInterval, reason = a.Reason, kind = a.Kind.ToString(), response = a.Response.ToString() });
             Patterns.CanPublish = CanPublish;
             Patterns.BeginPhase(1, 0); Patterns.Publish(-1, Session.Position, Settings.NoteCount, false);
         }
@@ -143,8 +143,11 @@ namespace StringAsASword.Combat
             bool opportunity = has && action.Kind == PlayerActionKind.Attack && Attacks.IsInRange(action.Position);
             int damage = analysisEnds == null ? Combat.ResolveBeat(note) : opportunity ? 1 : 0;
             ulong danger = Patterns.Resolve(note);
-            bool threatened = (danger & SafeRoutePlanner.Bit(Session.Position)) != 0;
-            bool guard = threatened && has && action.Kind == PlayerActionKind.Guard;
+            ulong cell = SafeRoutePlanner.Bit(Session.Position);
+            bool threatened = (danger & cell) != 0;
+            bool guarded = threatened && has && action.Kind == PlayerActionKind.Guard;
+            bool broken = guarded && (Patterns.LastFiredUnblockable & cell) != 0;
+            bool guard = guarded && !broken;
             bool hit = threatened && !guard;
             if (hit) PlayerHp = Math.Max(0, PlayerHp - 1);
             LastClosedNote = note;
@@ -161,7 +164,9 @@ namespace StringAsASword.Combat
             record.guards = (previous?.guards ?? 0) + (record.category == "Guard" ? 1 : 0);
             record.effectiveAttacks = (previous?.effectiveAttacks ?? 0) + (record.category == "EffectiveAttack" ? 1 : 0);
             record.others = (previous?.others ?? 0) + (record.category == "Other" ? 1 : 0);
-            if (hit || guard) AddEvent(hit ? "player-hit" : "guard-success", danger.ToString("X16"), Session.Position);
+            // player-hit stays one event per lost HP; guard-broken only adds why the guard did not count.
+            if (broken) AddResponseEvent("guard-broken", danger, cell);
+            if (hit || guard) AddResponseEvent(hit ? "player-hit" : "guard-success", danger, cell);
             bool transition = false;
             if (analysisEnds == null)
             {
@@ -219,6 +224,14 @@ namespace StringAsASword.Combat
         private void AddEvent(string type, string detail, GridPosition cell, int id = 0)
             => Events.Add(new BattleEvent { type = type, detail = detail, noteIndex = LastClosedNote,
                 musicBeat = CurrentMusicBeat, phase = Phases.PhaseId, x = cell.X, y = cell.Y, id = id });
+        // Overlapping fixed patterns report the strictest response that reached the player's cell.
+        private void AddResponseEvent(string type, ulong danger, ulong cell)
+        {
+            var response = AttackResponse.Either;
+            foreach (var f in Patterns.LastFired) if ((f.Cells & cell) != 0 && f.Response > response) response = f.Response;
+            AddEvent(type, danger.ToString("X16"), Session.Position);
+            Events[Events.Count - 1].response = response.ToString();
+        }
         public BattleObservation Observe()
         {
             var pickups = new NoisePickup[Noise.Pickups.Count]; for (int i = 0; i < pickups.Length; i++) pickups[i] = Noise.Pickups[i];

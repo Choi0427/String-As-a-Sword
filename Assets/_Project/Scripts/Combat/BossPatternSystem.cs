@@ -16,12 +16,14 @@ namespace StringAsASword.Combat
         public int SelectedInterval { get; }
         public int ActualInterval { get; }
         public string Reason { get; }
+        public AttackResponse Response { get; }
         public BossTelegraph(int id, string name, ulong cells, int impactNote, PatternKind kind = PatternKind.Row,
-            int warningNotes = 0, int requiredDodgeActions = 0, int selectedInterval = 0, int actualInterval = 0, string reason = "")
+            int warningNotes = 0, int requiredDodgeActions = 0, int selectedInterval = 0, int actualInterval = 0, string reason = "",
+            AttackResponse response = AttackResponse.Either)
         {
             Id = id; Name = name; Cells = cells; ImpactNote = impactNote; Kind = kind;
             WarningNotes = warningNotes; RequiredDodgeActions = requiredDodgeActions;
-            SelectedInterval = selectedInterval; ActualInterval = actualInterval; Reason = reason;
+            SelectedInterval = selectedInterval; ActualInterval = actualInterval; Reason = reason; Response = response;
         }
         public int Remaining(int lastClosed) => ImpactNote - lastClosed;
     }
@@ -37,6 +39,7 @@ namespace StringAsASword.Combat
         private int targetImpact, warning, selectedInterval, deferrals, lastImpact = -1;
         public IReadOnlyList<BossTelegraph> Active => active.AsReadOnly();
         public IReadOnlyList<BossTelegraph> LastFired => fired.AsReadOnly();
+        public ulong LastFiredUnblockable { get; private set; }
         public Func<BossTelegraph, bool> CanPublish;
         public event Action<string, BossTelegraph> Changed;
         public BossPatternSystem(PatternDefinition[] definitions, RandomAttackSchedule schedule = null, int seed = 0)
@@ -60,13 +63,14 @@ namespace StringAsASword.Combat
                 if (!p.Enabled || (p.PhaseMask & (1 << (phase - 1))) == 0 || nextImpact[i] >= noteCount ||
                     lastClosed < nextImpact[i] - p.TelegraphNotes) continue;
                 var proposal = new BossTelegraph(nextId + 1, p.Name, Cells(p, player), nextImpact[i], p.Kind,
-                    p.TelegraphNotes, 0, p.RepeatNotes, lastImpact < 0 ? 0 : nextImpact[i] - lastImpact);
+                    p.TelegraphNotes, 0, p.RepeatNotes, lastImpact < 0 ? 0 : nextImpact[i] - lastImpact, "", p.Response);
                 // Preserve every already disclosed safe cell at an existing deadline, not just one lucky route.
                 bool invalidates = false;
                 foreach (var a in active)
                     if (proposal.ImpactNote <= a.ImpactNote && (proposal.Cells & ~SafeRoutePlanner.Danger(active, proposal.ImpactNote)) != 0)
                         invalidates = true;
-                bool noDodge = p.Kind == PatternKind.TopPressure && !CanDodge(player, proposal, lastClosed + 1);
+                bool noDodge = (p.Kind == PatternKind.TopPressure || p.Response == AttackResponse.DodgeOnly) && p.Response != AttackResponse.GuardOnly &&
+                    !CanDodge(player, proposal, lastClosed + 1);
                 if (hold || invalidates || noDodge || CanPublish != null && !CanPublish(proposal))
                 { nextImpact[i]++; Changed?.Invoke("defer", proposal); continue; }
                 active.Add(proposal); nextId++; Changed?.Invoke("publish", proposal);
@@ -94,7 +98,7 @@ namespace StringAsASword.Combat
 
         private BossTelegraph Proposal(PatternDefinition p, GridPosition player, int required = -1, string reason = "")
             => new BossTelegraph(nextId + 1, p.Name, Cells(p, player), targetImpact, p.Kind,
-                warning, required, selectedInterval, lastImpact < 0 ? 0 : targetImpact - lastImpact, reason);
+                warning, required, selectedInterval, lastImpact < 0 ? 0 : targetImpact - lastImpact, reason, p.Response);
 
         private void PublishRandom(int lastClosed, GridPosition player, int noteCount, bool hold)
         {
@@ -120,18 +124,18 @@ namespace StringAsASword.Combat
                     }
                     else if (p.Kind == PatternKind.TopPressure) p.FirstColumn = random.Next(9 - p.ColumnCount);
                     var candidate = Proposal(p, player);
-                    int required = DodgeActions(player, candidate, lastClosed, active);
+                    int required = p.Response == AttackResponse.GuardOnly ? 0 : DodgeActions(player, candidate, lastClosed, active);
                     while (required < 0 && candidate.WarningNotes < schedule.MaxWarning)
                     {
                         int longer = candidate.WarningNotes + 1, impact = lastClosed + longer;
                         candidate = new BossTelegraph(nextId + 1, p.Name, candidate.Cells, impact, p.Kind,
-                            longer, -1, selectedInterval, lastImpact < 0 ? 0 : impact - lastImpact);
+                            longer, -1, selectedInterval, lastImpact < 0 ? 0 : impact - lastImpact, "", p.Response);
                         required = DodgeActions(player, candidate, lastClosed, active);
                     }
                     reason = candidate.ImpactNote >= noteCount ? "chart-end" : required < 0 ? "no-dodge-within-warning" : Invalidates(candidate) ? "disclosed-route" :
                         CanPublish != null && !CanPublish(candidate) ? "pickup-route" : "";
                     candidate = new BossTelegraph(candidate.Id, candidate.Name, candidate.Cells, candidate.ImpactNote, candidate.Kind,
-                        candidate.WarningNotes, required, selectedInterval, candidate.ActualInterval, reason);
+                        candidate.WarningNotes, required, selectedInterval, candidate.ActualInterval, reason, p.Response);
                     if (reason.Length != 0) { Changed?.Invoke("reject", candidate); continue; }
                     active.Add(candidate); nextId++; pending = null; Changed?.Invoke("publish", candidate); return;
                 }
@@ -148,7 +152,8 @@ namespace StringAsASword.Combat
             return false;
         }
 
-        // At most three time layers and 64 cells. Waiting/guarding costs a note; the final cell must dodge.
+        // At most three time layers and 64 cells. Waiting/guarding costs a note, except that a disclosed
+        // DodgeOnly attack removes its cells from waiting too; the final cell must dodge.
         public static int DodgeActions(GridPosition player, BossTelegraph proposal, int lastClosed, IReadOnlyList<BossTelegraph> disclosed)
         {
             int length = proposal.ImpactNote - lastClosed;
@@ -161,7 +166,7 @@ namespace StringAsASword.Combat
                 if ((reachable & ~futureDanger) != 0) return step;
                 if (step == length) break;
                 int note = lastClosed + step + 1;
-                ulong danger = SafeRoutePlanner.Danger(disclosed, note), next = reachable;
+                ulong danger = SafeRoutePlanner.Danger(disclosed, note), next = reachable & ~SafeRoutePlanner.Unblockable(disclosed, note);
                 for (int cell = 0; cell < 64; cell++)
                 {
                     if ((reachable & (1UL << cell)) == 0) continue;
@@ -194,10 +199,14 @@ namespace StringAsASword.Combat
         }
         public ulong Resolve(int note)
         {
-            fired.Clear(); ulong cells = 0;
+            fired.Clear(); ulong cells = 0; LastFiredUnblockable = 0;
             for (int i = active.Count - 1; i >= 0; i--)
                 if (active[i].ImpactNote == note)
-                { var a = active[i]; fired.Add(a); cells |= a.Cells; active.RemoveAt(i); lastImpact = note; Changed?.Invoke("fire", a); }
+                {
+                    var a = active[i]; fired.Add(a); cells |= a.Cells; active.RemoveAt(i); lastImpact = note;
+                    if (a.Response == AttackResponse.DodgeOnly) LastFiredUnblockable |= a.Cells;
+                    Changed?.Invoke("fire", a);
+                }
             if (schedule.Enabled && fired.Count > 0) Plan(note, note);
             return cells;
         }

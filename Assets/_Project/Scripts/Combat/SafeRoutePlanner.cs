@@ -20,11 +20,15 @@ namespace StringAsASword.Combat
         public static ulong Bit(GridPosition p) => 1UL << (p.Y * 8 + p.X);
         public static ulong Danger(IReadOnlyList<BossTelegraph> attacks, int note)
         { ulong mask = 0; foreach (var a in attacks) if (a.ImpactNote == note) mask |= a.Cells; return mask; }
+        public static ulong Unblockable(IReadOnlyList<BossTelegraph> attacks, int note)
+        { ulong mask = 0; foreach (var a in attacks) if (a.ImpactNote == note && a.Response == AttackResponse.DodgeOnly) mask |= a.Cells; return mask; }
         public static RouteResult Find(GridPosition start, GridPosition target, int nextNote,
             IReadOnlyList<BossTelegraph> attacks, int maxSteps = 32, bool returnToTop = false)
             => FindAll(start, new[] { target }, nextNote, attacks, maxSteps, returnToTop);
 
-        // Time-expanded BFS counts a dodge that lands on a pickup only once. Guard can wait safely.
+        // Time-expanded BFS counts a dodge that lands on a pickup only once. Guard can wait safely, except on
+        // a cell a DodgeOnly attack fires at. A route must also outlive those attacks: guarding cannot rescue
+        // whoever reaches the goal just before one lands there.
         public static RouteResult FindAll(GridPosition start, IReadOnlyList<GridPosition> targets, int nextNote,
             IReadOnlyList<BossTelegraph> attacks, int maxSteps, bool returnToTop = true)
         {
@@ -33,6 +37,9 @@ namespace StringAsASword.Combat
             bool danger = false;
             foreach (var a in attacks) if (a.ImpactNote >= nextNote && a.ImpactNote < nextNote + maxSteps) { danger = true; break; }
             if (!danger) return OpenRoute(start, targets, maxSteps, returnToTop);
+            int outlive = 0;
+            foreach (var a in attacks)
+                if (a.Response == AttackResponse.DodgeOnly && a.ImpactNote >= nextNote) outlive = Math.Max(outlive, Math.Min(maxSteps, a.ImpactNote - nextNote + 1));
             int masks = 1 << targets.Count, goal = masks - 1;
             var visited = new bool[(maxSteps + 1) * 64 * masks];
             var queue = new Queue<Node>();
@@ -42,17 +49,17 @@ namespace StringAsASword.Combat
             {
                 var n = queue.Dequeue();
                 if (++expanded > 100000) return new RouteResult(false, 0, 0, 0, true);
-                if (n.Mask == goal && (!returnToTop || n.Cell / 8 == 7))
+                if (n.Mask == goal && n.Cost >= outlive && (!returnToTop || n.Cell / 8 == 7))
                     return new RouteResult(true, n.Cost, n.First, n.Direction);
                 if (n.Cost == maxSteps) continue;
-                ulong dangerMask = Danger(attacks, nextNote + n.Cost);
+                ulong dangerMask = Danger(attacks, nextNote + n.Cost), unblockable = Unblockable(attacks, nextNote + n.Cost);
                 for (int action = 0; action < 5; action++)
                 {
                     int x = n.Cell % 8, y = n.Cell / 8;
                     if (action == 0) y++; else if (action == 1) x--; else if (action == 2) y--; else if (action == 3) x++;
                     if (x < 0 || y < 0 || x > 7 || y > 7) continue;
                     int cell = y * 8 + x;
-                    if (action < 4 && (dangerMask & (1UL << cell)) != 0) continue;
+                    if (((action < 4 ? dangerMask : unblockable) & (1UL << cell)) != 0) continue;
                     int mask = n.Mask;
                     if (action < 4) for (int i = 0; i < targets.Count; i++)
                         if (targets[i].X == x && targets[i].Y == y) mask |= 1 << i;

@@ -405,6 +405,71 @@ namespace StringAsASword.Tests
         }
 
         [Test]
+        public void PlannerSidestepsAnUnblockableCellInsteadOfWaitingOnIt()
+        {
+            var start = new GridPosition(3, 3); var target = new GridPosition(3, 4);
+            BossTelegraph[] Attacks(AttackResponse response) => new[] {
+                new BossTelegraph(1, "Target", SafeRoutePlanner.Bit(target), 0),
+                new BossTelegraph(2, "Start", SafeRoutePlanner.Bit(start), 0, response: response) };
+            var guarded = SafeRoutePlanner.Find(start, target, 0, Attacks(AttackResponse.Either));
+            Assert.That(guarded.Cost, Is.EqualTo(2));
+            Assert.That(guarded.FirstAction, Is.EqualTo(PlayerActionKind.Guard));
+            var dodged = SafeRoutePlanner.Find(start, target, 0, Attacks(AttackResponse.DodgeOnly));
+            Assert.That(dodged.Found, Is.True);
+            Assert.That(dodged.Cost, Is.EqualTo(3));
+            Assert.That(dodged.FirstAction, Is.EqualTo(PlayerActionKind.Move));
+        }
+
+        [Test]
+        public void PlannerFindsNoRouteWhenEveryChoiceLandsOnAnUnblockableCell()
+        {
+            var start = new GridPosition(3, 3);
+            ulong star = SafeRoutePlanner.Bit(start) | Neighbors(start);
+            var attacks = new[] { new BossTelegraph(1, "Star", star, 0, response: AttackResponse.DodgeOnly) };
+            Assert.That(SafeRoutePlanner.Find(start, new GridPosition(0, 0), 0, attacks).Found, Is.False);
+            Assert.That(SafeRoutePlanner.Find(start, new GridPosition(0, 0), 0, new[] { new BossTelegraph(1, "Star", star, 0) }).Found, Is.True);
+        }
+
+        [Test]
+        public void RouteThatArrivesBeforeAnUnblockableImpactMustOutliveIt()
+        {
+            var start = new GridPosition(3, 6);
+            BossTelegraph[] Wipe(AttackResponse response) => new[] { new BossTelegraph(1, "Top Wipe", 0xFFUL << 56, 2, response: response) };
+            Assert.That(SafeRoutePlanner.Find(start, new GridPosition(3, 7), 0, Wipe(AttackResponse.Either), returnToTop: true).Cost, Is.EqualTo(1));
+            Assert.That(SafeRoutePlanner.Find(start, new GridPosition(3, 7), 0, Wipe(AttackResponse.DodgeOnly), returnToTop: true).Cost, Is.EqualTo(4),
+                "Row 8 is forbidden on the impact note, so the route may only finish a note later.");
+        }
+
+        [Test]
+        public void DodgeCheckCannotWaitThroughADisclosedUnblockableAttack()
+        {
+            var player = new GridPosition(3, 3);
+            ulong star = SafeRoutePlanner.Bit(player) | Neighbors(player);
+            var far = new BossTelegraph(2, "Far row", 0xFFUL, 2);
+            Assert.That(BossPatternSystem.DodgeActions(player, far, 0, new[] { new BossTelegraph(1, "Star", star, 1) }), Is.EqualTo(1),
+                "One guarded wait is enough: the far row misses the player's cell.");
+            Assert.That(BossPatternSystem.DodgeActions(player, far, 0, new[] { new BossTelegraph(1, "Star", star, 1, response: AttackResponse.DodgeOnly) }), Is.EqualTo(-1));
+        }
+
+        [Test]
+        public void TopWipeIsOnlyValidUnderAScheduleWhenUnblockableAndAlwaysLeavesARoute()
+        {
+            var settings = Settings();
+            settings.Patterns = new[] { new PatternDefinition { Name = "Top Wipe", Kind = PatternKind.TopPressure, ColumnCount = 8, TelegraphNotes = 1 } };
+            Assert.Throws<ArgumentException>(settings.Validate);
+            settings.Patterns[0].Response = AttackResponse.GuardOnly;
+            Assert.Throws<ArgumentException>(settings.Validate);
+            settings.Patterns[0].Response = AttackResponse.DodgeOnly;
+            Assert.DoesNotThrow(settings.Validate);
+            var attacks = Published(SystemFor(settings, 5), settings.NoteCount);
+            Assert.That(attacks, Is.Not.Empty);
+            Assert.That(attacks.All(a => a.Response == AttackResponse.DodgeOnly && a.Cells == 0xFFUL << 56 && a.RequiredDodgeActions == 1), Is.True);
+        }
+
+        private static ulong Neighbors(GridPosition p) => SafeRoutePlanner.Bit(new GridPosition(p.X, p.Y + 1)) | SafeRoutePlanner.Bit(new GridPosition(p.X - 1, p.Y)) |
+            SafeRoutePlanner.Bit(new GridPosition(p.X, p.Y - 1)) | SafeRoutePlanner.Bit(new GridPosition(p.X + 1, p.Y));
+
+        [Test]
         public void BattleOwnsItsScheduleWeightsAndObservationDoesNotExposeFutureChoices()
         {
             var settings = Settings();

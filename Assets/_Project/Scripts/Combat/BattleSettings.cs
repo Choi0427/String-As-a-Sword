@@ -5,11 +5,14 @@ using StringAsASword.Stage;
 namespace StringAsASword.Combat
 {
     public enum PatternKind { Row, Column, LockedCell, TopPressure }
+    // Either: guard or leave. GuardOnly: dodge-route checks are skipped. DodgeOnly: a guard does not protect.
+    public enum AttackResponse { Either, GuardOnly, DodgeOnly }
     [Serializable]
     public sealed class PatternDefinition
     {
         public string Name = "Row";
         public PatternKind Kind;
+        public AttackResponse Response;
         public int Coordinate = 6, FirstColumn, ColumnCount = 4;
         public int TelegraphNotes = 3, FirstImpact = 7, RepeatNotes = 24;
         public int PhaseMask = 15, SelectionWeight = 1;
@@ -84,7 +87,8 @@ namespace StringAsASword.Combat
                 if (p == null || p.TelegraphNotes < 1 || p.FirstImpact <= p.TelegraphNotes || p.RepeatNotes < 1 ||
                     p.Coordinate < 0 || p.Coordinate > 7 || p.FirstColumn < 0 || p.ColumnCount < 1 || p.FirstColumn + p.ColumnCount > 8 ||
                     p.SelectionWeight < 0 || p.SelectionWeight > 10000 || !Enum.IsDefined(typeof(PatternKind), p.Kind) ||
-                    Schedule.Enabled && p.Kind == PatternKind.TopPressure && p.ColumnCount >= 8)
+                    !Enum.IsDefined(typeof(AttackResponse), p.Response) ||
+                    Schedule.Enabled && p.Kind == PatternKind.TopPressure && p.ColumnCount >= 8 && p.Response != AttackResponse.DodgeOnly)
                     throw new ArgumentException("Invalid pattern range, warning or schedule.");
         }
     }
