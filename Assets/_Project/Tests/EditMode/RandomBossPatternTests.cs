@@ -540,7 +540,7 @@ namespace StringAsASword.Tests
             Rejected(p => p.Kind = PatternKind.FullBoard);
             Rejected(p => { p.Kind = PatternKind.FullBoard; p.Response = AttackResponse.DodgeOnly; });
             Rejected(p => { p.Kind = PatternKind.Row; p.Response = AttackResponse.GuardOnly; });
-            var settings = Variety(); settings.Schedule.MaxWarning = 5;
+            var settings = Variety(); settings.Schedule.MaxWarning = RandomAttackSchedule.WarningCeiling + 1;
             Assert.Throws<ArgumentException>(settings.Validate);
         }
 
@@ -742,6 +742,9 @@ namespace StringAsASword.Tests
             Assert.That(safe.RequiredDodgeActions, Is.Zero);
             settings.Schedule.MaxWarning = 3;
             Assert.That(First(new GridPosition(3, 7)), Is.Null, "Three moves cannot clear four rows, so it never publishes.");
+            settings.Schedule.MaxWarning = 5; settings.Patterns[0].TelegraphNotes = 5;
+            var slack = First(new GridPosition(3, 7));
+            Assert.That(slack.RequiredDodgeActions, Is.LessThan(slack.WarningNotes), "A fifth warning note leaves time to react from row 8.");
         }
 
         [TestCase(PatternKind.TopPressure, 8, 1, 1)]

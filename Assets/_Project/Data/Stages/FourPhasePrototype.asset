@@ -154,7 +154,7 @@ MonoBehaviour:
     Coordinate: 6
     FirstColumn: 0
     ColumnCount: 4
-    TelegraphNotes: 4
+    TelegraphNotes: 5
     FirstImpact: 7
     RepeatNotes: 24
     PhaseMask: 14
@@ -195,6 +195,6 @@ MonoBehaviour:
     MinInterval: 4
     IntervalWeights: 0300000005000000040000000200000001000000
     MinWarning: 1
-    MaxWarning: 4
+    MaxWarning: 5
     CandidateAttempts: 16
     MaxDeferrals: 8

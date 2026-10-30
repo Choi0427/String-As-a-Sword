@@ -34,7 +34,7 @@ namespace StringAsASword.Combat
         public bool Enabled;
         public int MinInterval = 4;
         public int[] IntervalWeights = { 1, 1, 5, 5, 5, 1, 1, 1, 1, 1, 1, 1, 1 };
-        public const int WarningCeiling = 4;
+        public const int WarningCeiling = 5;
         public int MinWarning = 1, MaxWarning = 3, CandidateAttempts = 16, MaxDeferrals = 8;
         public RandomAttackSchedule Copy()
         { var copy = (RandomAttackSchedule)MemberwiseClone(); copy.IntervalWeights = (int[])IntervalWeights.Clone(); return copy; }
