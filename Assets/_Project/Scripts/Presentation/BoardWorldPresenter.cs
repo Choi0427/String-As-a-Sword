@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using StringAsASword.Board;
+using StringAsASword.Combat;
 using StringAsASword.Core;
 using StringAsASword.Player;
 using UnityEngine;
@@ -21,11 +22,14 @@ namespace StringAsASword.Presentation
         private Mesh box;
         private Material edgeMaterial;
         private Material materialTemplate;
-        private readonly GameObject[] warnings = new GameObject[64];
+        // One pool per AttackResponse, indexed by its value.
+        private readonly GameObject[][] warnings = { new GameObject[64], new GameObject[64], new GameObject[64] };
         private readonly GameObject[] impacts = new GameObject[64];
         private int lastClosedNote = -1;
         private float impactAge = 1;
         private ulong impactCells;
+        private readonly int[] cellCounts = new int[64], cellSoonest = new int[64];
+        private readonly AttackResponse[] cellResponses = new AttackResponse[64];
         private Vector3 moveFrom, moveTarget;
         private float moveAge = 1, attackAge = 1, guardAge = 1;
         private int guardNote = -1;
@@ -105,7 +109,11 @@ namespace StringAsASword.Presentation
             player.localPosition = moveTarget; selection.localPosition = moveTarget;
             player.localScale = Vector3.one; sword.gameObject.SetActive(false); shield.gameObject.SetActive(false);
             impactAge = 1; impactCells = 0; lastClosedNote = -1;
-            for (int i = 0; i < warnings.Length; i++) { warnings[i].SetActive(false); impacts[i].SetActive(false); }
+            for (int i = 0; i < impacts.Length; i++)
+            {
+                impacts[i].SetActive(false);
+                foreach (var pool in warnings) pool[i].SetActive(false);
+            }
             lastSession = game.SessionId;
         }
         public void ShowAction(ActionResult result)
@@ -146,14 +154,20 @@ namespace StringAsASword.Presentation
         {
             var dark = Material(new Color(.045f, .055f, .065f));
             var white = Material(new Color(.97f, .97f, .94f));
-            Mesh warning = TelegraphMesh(false), impact = TelegraphMesh(true);
-            resources.Add(warning); resources.Add(impact);
+            // Tints follow the guard pose and the gold attack edge, but each response is already its own shape.
+            var guard = Material(new Color(.45f, .85f, 1f));
+            var dodge = Material(new Color(1f, .72f, .25f));
+            Mesh impact = TelegraphMesh(true);
+            resources.Add(impact);
             var materials = new[] { dark, white };
-            for (int i = 0; i < 64; i++)
+            for (int response = 0; response < warnings.Length; response++)
             {
-                warnings[i] = TelegraphCell("Warning", i, warning, materials);
-                impacts[i] = TelegraphCell("Impact", i, impact, materials);
+                Mesh warning = TelegraphMesh((AttackResponse)response);
+                resources.Add(warning);
+                var marks = new[] { dark, response == (int)AttackResponse.GuardOnly ? guard : response == (int)AttackResponse.DodgeOnly ? dodge : white };
+                for (int i = 0; i < 64; i++) warnings[response][i] = TelegraphCell((AttackResponse)response + "Warning", i, warning, marks);
             }
+            for (int i = 0; i < 64; i++) impacts[i] = TelegraphCell("Impact", i, impact, materials);
         }
         private GameObject TelegraphCell(string name, int index, Mesh mesh, Material[] materials)
         {
@@ -174,13 +188,13 @@ namespace StringAsASword.Presentation
                 impactAge = 0;
             }
             if (game.State != PrototypeState.Paused) impactAge += dt;
-            ulong active = 0;
-            foreach (var pattern in battle.Patterns.Active) active |= pattern.Cells;
+            TelegraphHud.MapCells(battle.Patterns.Active, battle.LastClosedNote, cellCounts, cellSoonest, cellResponses);
             for (int i = 0; i < 64; i++)
             {
-                ulong bit = 1UL << i;
-                bool fired = impactAge < .3f && (impactCells & bit) != 0;
-                warnings[i].SetActive(!fired && (active & bit) != 0);
+                bool fired = impactAge < .3f && (impactCells & (1UL << i)) != 0;
+                bool warning = !fired && cellCounts[i] > 0;
+                for (int response = 0; response < warnings.Length; response++)
+                    warnings[response][i].SetActive(warning && (int)cellResponses[i] == response);
                 impacts[i].SetActive(fired);
             }
         }
@@ -216,6 +230,52 @@ namespace StringAsASword.Presentation
             if (impact) { Stripe(-.035f, 1, .07f); Stripe(-.035f, -1, .07f); }
             else for (int stripe = -3; stripe <= 3; stripe++) Stripe(stripe * .22f, 1, .035f);
             var mesh = new Mesh { name = impact ? "Impact Cross" : "Warning Hatching", subMeshCount = 2 };
+            mesh.SetVertices(vertices); mesh.SetTriangles(underlay, 0); mesh.SetTriangles(markings, 1);
+            mesh.RecalculateNormals(); mesh.RecalculateBounds(); return mesh;
+        }
+        // Marks sit above the cell's lower strip, where a countdown badge covers them.
+        private static Mesh TelegraphMesh(AttackResponse response)
+        {
+            if (response == AttackResponse.Either) return TelegraphMesh(false);
+            var vertices = new List<Vector3>();
+            var underlay = new List<int>(); var markings = new List<int>();
+            void Quad(Vector2 a, Vector2 b, Vector2 c, Vector2 d, float height, List<int> triangles)
+            {
+                int start = vertices.Count;
+                vertices.Add(new Vector3(a.x, height, a.y)); vertices.Add(new Vector3(b.x, height, b.y));
+                vertices.Add(new Vector3(c.x, height, c.y)); vertices.Add(new Vector3(d.x, height, d.y));
+                triangles.AddRange(new[] { start, start + 1, start + 2, start, start + 2, start + 3 });
+            }
+            void Line(Vector2 from, Vector2 to, float width)
+            {
+                Vector2 along = (to - from).normalized * width / 2, across = new Vector2(-along.y, along.x);
+                from -= along; to += along;
+                Quad(from - across, from + across, to + across, to - across, .024f, markings);
+            }
+            Quad(new Vector2(-.46f, -.46f), new Vector2(-.46f, .46f), new Vector2(.46f, .46f), new Vector2(.46f, -.46f), .015f, underlay);
+            foreach (float side in new[] { -.45f, .45f })
+            {
+                Line(new Vector2(-.45f, side), new Vector2(.45f, side), .024f);
+                Line(new Vector2(side, -.45f), new Vector2(side, .45f), .024f);
+            }
+            if (response == AttackResponse.GuardOnly)
+            {
+                // The same silhouette as the knight's guard pose.
+                var outline = new[] { new Vector2(-.25f, .37f), new Vector2(.25f, .37f), new Vector2(.21f, .05f), new Vector2(0, -.13f), new Vector2(-.21f, .05f) };
+                for (int i = 0; i < outline.Length; i++) Line(outline[i], outline[(i + 1) % outline.Length], .055f);
+                Line(new Vector2(0, .27f), new Vector2(0, .03f), .045f);
+            }
+            else
+            {
+                // Four ways out: the safe direction depends on the attack, so no single arrow can be honest.
+                var center = new Vector2(0, .13f);
+                foreach (var way in new[] { Vector2.up, Vector2.right, Vector2.down, Vector2.left })
+                {
+                    Vector2 tip = center + way * .27f, wing = new Vector2(-way.y, way.x) * .09f, back = center + way * .17f;
+                    Line(center, tip, .045f); Line(back + wing, tip, .045f); Line(back - wing, tip, .045f);
+                }
+            }
+            var mesh = new Mesh { name = response + " Warning", subMeshCount = 2 };
             mesh.SetVertices(vertices); mesh.SetTriangles(underlay, 0); mesh.SetTriangles(markings, 1);
             mesh.RecalculateNormals(); mesh.RecalculateBounds(); return mesh;
         }

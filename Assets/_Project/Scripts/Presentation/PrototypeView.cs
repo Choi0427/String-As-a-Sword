@@ -36,6 +36,7 @@ namespace StringAsASword.Presentation
         private readonly bool[] badgePlaced = new bool[64];
         private readonly int[] dangerCounts = new int[64];
         private readonly int[] dangerRemaining = new int[64];
+        private readonly AttackResponse[] dangerResponses = new AttackResponse[64];
         private readonly StringBuilder patternText = new StringBuilder(256);
         private int lastClosedNote = -1;
         private float impactAge = 1;
@@ -91,7 +92,7 @@ namespace StringAsASword.Presentation
             patternList.alignment = TextAlignmentOptions.TopLeft;
             stats = Label("", new Vector2(573,-318), new Vector2(330,85), 14, Muted);
             Label("PERFECT +/-70 ms   /   GOOD +/-140 ms", new Vector2(573,-375), new Vector2(370,22), 12, Muted);
-            Label("/// WARNING   /   X IMPACT\nNUMBER = NOTES LEFT   /   +N = EXTRA ATTACKS", new Vector2(-573,-365), new Vector2(400,45), 12, Muted);
+            Label("/// EITHER   /   SHIELD GUARD   /   ARROWS MOVE   /   X IMPACT\nNUMBER = NOTES LEFT   /   +N = EXTRA ATTACKS", new Vector2(-573,-365), new Vector2(400,45), 12, Muted);
 
             for (int i = 0; i < 4; i++)
                 healthSlots[i] = Label("", new Vector2((i-1.5f)*136,285), new Vector2(130,45), 16, InkWhite, true);
@@ -223,7 +224,7 @@ namespace StringAsASword.Presentation
             }
             stats.text=$"PERFECT     {game.Session.PerfectCount:000}\nGOOD            {game.Session.GoodCount:000}\nMISS              {game.Session.MissCount:000}\nBEST              {game.Session.BestCombo:000}";
             int cellIndex = cell.Y * 8 + cell.X;
-            position.text=$"POSITION  {(char)('A'+cell.X)}{cell.Y+1}     /     " + (dangerCounts[cellIndex] > 0 ? $"DANGER IN {dangerRemaining[cellIndex]} NOTES" : "SAFE");
+            position.text=$"POSITION  {(char)('A'+cell.X)}{cell.Y+1}     /     " + (dangerCounts[cellIndex] > 0 ? TelegraphHud.ThreatText(dangerResponses[cellIndex], dangerRemaining[cellIndex], dangerCounts[cellIndex]) : "SAFE");
             beatLabel.text=game.CurrentBeat<0?"PREPARE":$"BEAT  {game.CurrentBeat+1:0000}   /   {game.CurrentBeat%4+1}:4";
             mode.text=game.Song.Music!=null?"SONG AUDIO":game.MetronomeMuted?"METRONOME / MUTED":"METRONOME / ON";
             pulseLine.color=new Color(Accent.r,Accent.g,Accent.b,.15f+.85f*Mathf.Exp(-8*pulseAge));
@@ -236,7 +237,7 @@ namespace StringAsASword.Presentation
             {
                 string result = game.Battle.Outcome == BattleOutcome.Won ? "WON / BOSS DEFEATED" : game.Battle.Outcome == BattleOutcome.Dead ? "DEAD / PLAYER HP EMPTY" : "TIMEOUT / NOTES EXHAUSTED";
                 overlayTitle.text=game.State==PrototypeState.Paused?"SESSION PAUSED":game.State==PrototypeState.Finished?result:"FIND YOUR RHYTHM";
-                overlayBody.text=game.State==PrototypeState.Ready?"WASD move / J attack / K guard this note\nHatched cells are dangerous. Numbers count down to impact.\nAttack from row 8. Collect waves to unlock each phase.":$"Player HP {game.Battle.PlayerHp} / {game.Stage.PlayerMaxHp}    Phase {game.Phases.PhaseId} / 4\nPerfect {game.Session.PerfectCount}    Good {game.Session.GoodCount}    Miss {game.Session.MissCount}\nStart again with a fresh four-beat count-in.";
+                overlayBody.text=game.State==PrototypeState.Ready?"WASD move / J attack / K guard this note\nHatched: guard or move. Shield: guard. Arrows: move.\nNumbers count down to impact.\nAttack from row 8. Collect waves to unlock each phase.":$"Player HP {game.Battle.PlayerHp} / {game.Stage.PlayerMaxHp}    Phase {game.Phases.PhaseId} / 4\nPerfect {game.Session.PerfectCount}    Good {game.Session.GoodCount}    Miss {game.Session.MissCount}\nStart again with a fresh four-beat count-in.";
                 buttonLabel.text=game.State==PrototypeState.Ready?"START / SPACE":"RESTART / R OR SPACE";
             }
         }
@@ -250,8 +251,8 @@ namespace StringAsASword.Presentation
                 impactAge = 0;
             }
             if (game.State != PrototypeState.Paused) impactAge += Time.unscaledDeltaTime;
-            Array.Clear(dangerCounts, 0, dangerCounts.Length);
-            for (int i = 0; i < dangerRemaining.Length; i++) dangerRemaining[i] = int.MaxValue;
+            var active = battle.Patterns.Active;
+            TelegraphHud.MapCells(active, battle.LastClosedNote, dangerCounts, dangerRemaining, dangerResponses);
             patternText.Clear();
             int shown = 0;
             bool flashing = impactAge < .3f;
@@ -260,40 +261,34 @@ namespace StringAsASword.Presentation
                 {
                     if (shown++ < 5) patternText.Append("X  ").Append(fired.Name).Append("  /  IMPACT\n");
                 }
-            foreach (var pattern in battle.Patterns.Active)
-            {
-                int remaining = pattern.Remaining(battle.LastClosedNote);
-                if (shown++ < 5) patternText.Append("/// ").Append(pattern.Name).Append("  /  ").Append(remaining).Append(" NOTES\n");
-                for (int i = 0; i < 64; i++)
-                {
-                    if ((pattern.Cells & (1UL << i)) == 0) continue;
-                    dangerCounts[i]++;
-                    dangerRemaining[i] = Math.Min(dangerRemaining[i], remaining);
-                }
-            }
+            shown = TelegraphHud.AppendPatternLines(patternText, active, battle.LastClosedNote, shown, 5);
             if (shown > 5) patternText.Append('+').Append(shown - 5).Append(" patterns");
             patternList.text = patternText.Length == 0 ? "CLEAR / NO ATTACK QUEUED" : patternText.ToString();
             Vector2 knightPoint = boardWorld.ProjectToBoard(boardWorld.PlayerTransform.localPosition, new Vector2(600,550));
             var knightBounds = new Rect(knightPoint.x - 26, knightPoint.y + 5, 52, 76);
+            ulong marked = flashing ? impactCells : 0;
+            for (int i = 0; i < 64; i++) if (dangerCounts[i] > 0) marked |= 1UL << i;
+            var player = game.Session.Position;
+            ulong badges = TelegraphHud.BadgeCells(marked, dangerRemaining, player.Y * 8 + player.X);
             for (int i = 0; i < 64; i++)
             {
                 bool fired = flashing && (impactCells & (1UL << i)) != 0;
-                bool active = fired || dangerCounts[i] > 0;
-                dangerBadges[i].SetActive(active);
+                bool visible = (badges & (1UL << i)) != 0;
+                dangerBadges[i].SetActive(visible);
                 badgeBounds[i] = new Rect(dangerPoints[i] - new Vector2(20,10), new Vector2(40,20));
-                badgePlaced[i] = active && !knightBounds.Overlaps(badgeBounds[i]);
+                badgePlaced[i] = visible && !knightBounds.Overlaps(badgeBounds[i]);
                 if (dangerCounts[i] > 0)
                     dangerLabels[i].text = dangerRemaining[i] + (dangerCounts[i] > 1 ? $"<size=11> +{dangerCounts[i] - 1}</size>" : "") + (fired ? "<size=11> X</size>" : "");
                 else if (fired) dangerLabels[i].text = "X";
             }
             for (int i = 0; i < 64; i++)
             {
-                bool active = dangerBadges[i].activeSelf;
+                bool visible = dangerBadges[i].activeSelf;
                 Vector2 point = dangerPoints[i];
-                if (active && !badgePlaced[i]) point = PlaceCountdown(i, knightBounds);
+                if (visible && !badgePlaced[i]) point = PlaceCountdown(i, knightBounds);
                 ((RectTransform)dangerBadges[i].transform).anchoredPosition = point;
                 Vector2 delta = point - dangerPoints[i];
-                var line = dangerConnectors[i]; line.gameObject.SetActive(active && delta.sqrMagnitude > 1);
+                var line = dangerConnectors[i]; line.gameObject.SetActive(visible && delta.sqrMagnitude > 1);
                 if (!line.gameObject.activeSelf) continue;
                 line.anchoredPosition = (point + dangerPoints[i]) * .5f;
                 line.sizeDelta = new Vector2(delta.magnitude, 1);

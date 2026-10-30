@@ -51,6 +51,39 @@ namespace StringAsASword.Editor
             return Describe("player / noise / overlap / light and dark tiles / 3 notes");
         }
 
+        // Real sessions with a telegraph per response. mixed: fixed rows with the player on the guard row.
+        // guard: three-hit full board. move: two-hit checker. Step() continues from there.
+        public static string PrepareResponses(string scenario)
+        {
+            CaptureLiveSession();
+            var settings = BattleSettings.From(game.Song, game.Stage).Copy();
+            settings.NoteCount = 512; settings.SpawnInterval = 1000;
+            if (scenario == "mixed")
+            {
+                settings.Schedule.Enabled = false;
+                settings.Patterns = new[] {
+                    new PatternDefinition { Name = "ROW 4", Kind = PatternKind.Row, Coordinate = 3, Response = AttackResponse.GuardOnly, FirstImpact = 4, TelegraphNotes = 3, RepeatNotes = 1000 },
+                    new PatternDefinition { Name = "ROW 2", Kind = PatternKind.Row, Coordinate = 1, FirstImpact = 5, TelegraphNotes = 4, RepeatNotes = 1000 },
+                    new PatternDefinition { Name = "ROW 6", Kind = PatternKind.Row, Coordinate = 5, Response = AttackResponse.DodgeOnly, FirstImpact = 6, TelegraphNotes = 5, RepeatNotes = 1000 }
+                };
+            }
+            else if (scenario == "guard" || scenario == "move")
+            {
+                settings.Schedule.Enabled = true;
+                settings.Patterns = new[] { scenario == "guard"
+                    ? new PatternDefinition { Name = "Tremolo", Kind = PatternKind.FullBoard, Response = AttackResponse.GuardOnly, TelegraphNotes = 3, Hits = 3 }
+                    : new PatternDefinition { Name = "Checker", Kind = PatternKind.Checker, Response = AttackResponse.DodgeOnly, TelegraphNotes = 3, Hits = 2 } };
+            }
+            else throw new ArgumentException("Use mixed, guard or move.", nameof(scenario));
+            battle = new BattleSession(settings, 2);
+            for (int note = 0; note < 64 && battle.Patterns.Active.Count == 0; note++)
+                battle.Advance(game.Timeline.TimeOf(note) + settings.GoodWindow + settings.InputOffset + .001);
+            if (battle.Patterns.Active.Count == 0) throw new InvalidOperationException("The response fixture published nothing.");
+            BindBattle();
+            Render(battle.AdvancedTime);
+            return Describe("response fixture / " + scenario);
+        }
+
         // Searches real public-information play; only the presentation clock freezes after selection.
         public static string PrepareRandom(int warningNotes)
         {
