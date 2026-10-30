@@ -94,7 +94,8 @@ namespace StringAsASword.Combat
                     p.SelectionWeight < 0 || p.SelectionWeight > 10000 || !Enum.IsDefined(typeof(PatternKind), p.Kind) ||
                     !Enum.IsDefined(typeof(AttackResponse), p.Response) || p.Hits < 1 || p.Hits > PatternDefinition.MaxHits ||
                     p.HitSpacing < 1 || p.HitSpacing > PatternDefinition.MaxHitSpacing || p.Kind == PatternKind.FullBoard && p.Response != AttackResponse.GuardOnly ||
-                    Schedule.Enabled && p.Kind == PatternKind.TopPressure && p.ColumnCount >= 8 && p.Response != AttackResponse.DodgeOnly)
+                    Schedule.Enabled && p.Kind == PatternKind.TopPressure && p.ColumnCount >= 8 && p.Response != AttackResponse.DodgeOnly ||
+                    Schedule.Enabled && p.Response == AttackResponse.GuardOnly && p.Kind != PatternKind.FullBoard)
                     throw new ArgumentException("Invalid pattern range, warning or schedule.");
         }
     }

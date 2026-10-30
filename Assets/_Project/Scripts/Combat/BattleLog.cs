@@ -11,7 +11,7 @@ namespace StringAsASword.Combat
 {
     public static class BattleLog
     {
-        private const string RuntimeVersion = "battle-3/xorshift32-v1";
+        private const string RuntimeVersion = "battle-4/xorshift32-v1";
         [Serializable] private sealed class Line
         {
             public string type, chartHash, configHash, runtimeVersion = RuntimeVersion;

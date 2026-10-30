@@ -539,6 +539,7 @@ namespace StringAsASword.Tests
             Rejected(p => p.HitSpacing = 0); Rejected(p => p.HitSpacing = PatternDefinition.MaxHitSpacing + 1);
             Rejected(p => p.Kind = PatternKind.FullBoard);
             Rejected(p => { p.Kind = PatternKind.FullBoard; p.Response = AttackResponse.DodgeOnly; });
+            Rejected(p => { p.Kind = PatternKind.Row; p.Response = AttackResponse.GuardOnly; });
             var settings = Variety(); settings.Schedule.MaxWarning = 5;
             Assert.Throws<ArgumentException>(settings.Validate);
         }
