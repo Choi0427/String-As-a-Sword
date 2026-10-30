@@ -130,13 +130,11 @@ namespace StringAsASword.Combat
         {
             if (pending != null && !Eligible(pending)) Plan(lastImpact < 0 ? lastClosed : lastImpact, lastClosed);
             if (pending == null) return;
-            if (targetImpact + pending.Span >= noteCount)
-            { Changed?.Invoke("skip", Proposal(pending, player, reason: "chart-end")); pending = null; return; }
+            if (targetImpact + pending.Span >= noteCount) { SkipAtChartEnd(lastClosed, player, noteCount); return; }
             if (lastClosed < targetImpact - warning) return;
             // Late callers still receive the full warning; live sessions visit every note in order.
             targetImpact = Math.Max(targetImpact, lastClosed + warning);
-            if (targetImpact + pending.Span >= noteCount)
-            { Changed?.Invoke("skip", Proposal(pending, player, reason: "chart-end")); pending = null; return; }
+            if (targetImpact + pending.Span >= noteCount) { SkipAtChartEnd(lastClosed, player, noteCount); return; }
             string reason = "noise-wait";
             if (!hold)
             {
@@ -170,6 +168,16 @@ namespace StringAsASword.Combat
             if (deferrals >= schedule.MaxDeferrals)
             { Changed?.Invoke("skip", Proposal(pending, player, reason: "retry-limit:" + reason)); Plan(lastClosed, lastClosed); }
             else { Changed?.Invoke("defer", Proposal(pending, player, reason: reason)); deferrals++; targetImpact++; }
+        }
+        // A sequence too long for the chart must not end the attacks while a shorter pattern still fits.
+        private void SkipAtChartEnd(int lastClosed, GridPosition player, int noteCount)
+        {
+            Changed?.Invoke("skip", Proposal(pending, player, reason: "chart-end"));
+            bool shorter = false;
+            foreach (var p in definitions) if (Eligible(p) && p.Span < pending.Span) shorter = true;
+            bool retry = shorter && targetImpact < noteCount;
+            pending = null;
+            if (retry) Plan(lastClosed, lastClosed);
         }
         private bool Invalidates(BossTelegraph[] proposal)
         {

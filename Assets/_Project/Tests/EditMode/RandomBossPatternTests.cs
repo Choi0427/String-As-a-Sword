@@ -654,6 +654,24 @@ namespace StringAsASword.Tests
         }
 
         [Test]
+        public void ChartEndSkipOfALongSequenceStillLetsAShorterPatternFire()
+        {
+            var settings = Settings(40);
+            settings.Patterns = new[] { Guard("Long", 8, 4), new PatternDefinition { Name = "Line", Kind = PatternKind.Row, TelegraphNotes = 2 } };
+            int resumed = 0;
+            for (int seed = 0; seed < 32; seed++)
+            {
+                var system = SystemFor(settings, seed);
+                var events = new List<(string Type, BossTelegraph Attack)>();
+                system.Changed += (type, attack) => events.Add((type, attack));
+                for (int closed = -1; closed < settings.NoteCount; closed++) { system.Resolve(closed); system.Publish(closed, Player, settings.NoteCount, false); }
+                int skip = events.FindIndex(e => e.Type == "skip" && e.Attack.Reason == "chart-end" && e.Attack.Name == "Long");
+                if (skip >= 0 && events.Skip(skip).Any(e => e.Type == "publish")) resumed++;
+            }
+            Assert.That(resumed, Is.GreaterThan(0));
+        }
+
+        [Test]
         public void EveryPublishedDodgeOnlySequenceHasARoutePastEveryHitAcrossManySeeds()
         {
             var settings = Settings(160); settings.Schedule.MaxWarning = 4; settings.Patterns = DodgeSet();
