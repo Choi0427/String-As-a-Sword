@@ -1,6 +1,6 @@
 # 보스 전투와 행동 예산 측정
 
-**2026-10-23 현재 설정은 battle-3, HP 31/6/12/47 및 랜덤 전역 공격이다.** 새 설정·예고·공정성 규칙은 [RandomBossCombat.md](RandomBossCombat.md), A/B/C 비교 방법은 [BattlePacingComparison.md](BattlePacingComparison.md)를 따른다. 아래 HP62/12/24/94와 12,000회 측정은 이전 battle-1/2의 기록이며 새 설정의 검증으로 혼동하지 않는다.
+**2026-10-30 현재 설정은 battle-4다. 방어 필수·회피 필수 패턴과 현재 수치는 [BossPatternVariety.md](BossPatternVariety.md)를 따른다.** 아래 문서의 "초기 패턴은 전부 방어 가능", 플레이어 HP 3, Noise Targets 3/4/5는 이전 설정의 설명이다. battle-3의 설정·예고·공정성 규칙은 [RandomBossCombat.md](RandomBossCombat.md), A/B/C 비교 방법은 [BattlePacingComparison.md](BattlePacingComparison.md)를 따른다. 아래 HP62/12/24/94와 12,000회 측정은 이전 battle-1/2의 기록이며 새 설정의 검증으로 혼동하지 않는다.
 
 2026-10-22. Unity 6000.5.5f1, Pipeline 0.8.0-exp.1, Unity CLI 1.0.0-beta.14, Codex Unity 플러그인 0.1.8-beta.
 
