@@ -10,6 +10,7 @@ namespace StringAsASword.Presentation
     {
         // A row, column or cross always keeps its per-cell numbers; wider attacks would bury the board marks.
         public const int DenseBadgeLimit = 16;
+        public const string Blocked = "BLOCKED", Hit = "HIT", GuardBroken = "GUARD BROKEN";
 
         public static string ResponseWord(AttackResponse response)
             => response == AttackResponse.GuardOnly ? "GUARD" : response == AttackResponse.DodgeOnly ? "MOVE" : "EITHER";
@@ -19,6 +20,10 @@ namespace StringAsASword.Presentation
             string lead = response == AttackResponse.GuardOnly ? "GUARD IN " : response == AttackResponse.DodgeOnly ? "MOVE IN " : "DANGER IN ";
             return hits > 1 ? lead + remaining + " x" + hits : lead + remaining;
         }
+
+        // A guard that was ignored is both a hit and a guard record, so it has to be read before the plain hit.
+        public static string OutcomeText(NoteRecord record)
+            => record.hit ? (record.category == "Guard" ? GuardBroken : Hit) : record.guardSuccess ? Blocked : null;
 
         // Later hits stay in the active list, so a cell the next hit misses still reports the hit that reaches it.
         // Equal impacts report the strictest response, as BattleSession's response events do.

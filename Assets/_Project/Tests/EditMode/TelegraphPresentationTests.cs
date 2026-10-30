@@ -150,6 +150,17 @@ namespace StringAsASword.Tests
             Assert.That(text.ToString(), Is.EqualTo("/// EITHER  A  /  2 NOTES\n"));
         }
 
+        [Test]
+        public void OutcomeTextPrefersABrokenGuardOverAPlainHit()
+        {
+            Assert.That(TelegraphHud.OutcomeText(new NoteRecord { hit = true, category = "Guard" }), Is.EqualTo("GUARD BROKEN"));
+            Assert.That(TelegraphHud.OutcomeText(new NoteRecord { hit = true, category = "Move" }), Is.EqualTo("HIT"));
+            Assert.That(TelegraphHud.OutcomeText(new NoteRecord { hit = true, category = "Other" }), Is.EqualTo("HIT"));
+            Assert.That(TelegraphHud.OutcomeText(new NoteRecord { guardSuccess = true, category = "Guard" }), Is.EqualTo("BLOCKED"));
+            Assert.That(TelegraphHud.OutcomeText(new NoteRecord { category = "Guard" }), Is.Null, "A guard with nothing to block is not an outcome.");
+            Assert.That(TelegraphHud.OutcomeText(new NoteRecord { category = "EffectiveAttack" }), Is.Null);
+        }
+
         private static int[] Countdowns(int value)
         { var soonest = new int[64]; for (int i = 0; i < 64; i++) soonest[i] = value; return soonest; }
         private static int Count(ulong mask)

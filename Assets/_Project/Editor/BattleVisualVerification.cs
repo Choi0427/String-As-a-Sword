@@ -84,6 +84,18 @@ namespace StringAsASword.Editor
             return Describe("response fixture / " + scenario);
         }
 
+        // Plays the next note with one action, then renders it: "guard" or "move" (away, up) or anything else to wait.
+        public static string Respond(string action)
+        {
+            EnsurePrepared();
+            int note = battle.LastClosedNote + 1;
+            double start = game.Timeline.TimeOf(note) + battle.Settings.InputOffset, end = start + battle.Settings.GoodWindow + .001;
+            if (action == "guard") battle.Request(PlayerActionKind.Guard, MoveDirection.Up, start);
+            else if (action == "move") battle.Request(PlayerActionKind.Move, MoveDirection.Up, start);
+            battle.Advance(end); Render(end);
+            return Describe("note response / " + action);
+        }
+
         // Searches real public-information play; only the presentation clock freezes after selection.
         public static string PrepareRandom(int warningNotes)
         {

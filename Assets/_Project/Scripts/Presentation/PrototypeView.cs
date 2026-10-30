@@ -45,6 +45,15 @@ namespace StringAsASword.Presentation
         private TMP_Text phaseLabel;
         private UnityEngine.UI.Image pulseLine;
         private float feedbackAge = 10, pulseAge = 10;
+        private const float OutcomeSeconds = .6f;
+        private static readonly Color BlockedTint = new Color(.45f, .85f, 1f), HitTint = new Color(1f, .42f, .36f);
+        private RectTransform outcomeFlash;
+        private CanvasGroup outcomeGroup;
+        private UnityEngine.UI.Image outcomePlate;
+        private TMP_Text outcomeLabel;
+        private float outcomeAge = 10;
+        private int seenRecords;
+        public string ActiveOutcome => outcomeFlash.gameObject.activeSelf ? outcomeLabel.text : "";
 
         public void Initialize(PrototypeGame owner)
         {
@@ -132,6 +141,14 @@ namespace StringAsASword.Presentation
                 Text(board,"Row",(i+1).ToString(),row,new Vector2(22,22),12,Muted);
             }
             Label("ATTACK ZONE / ROW 8",new Vector2(0,248),new Vector2(400,24),12,new Color(.84f,.70f,.40f));
+            // Built after the badges so it reads above them; the menu overlay is still built later and covers it.
+            outcomeFlash = MakeRect(board, "OutcomeFlash", Vector2.zero, new Vector2(264,48));
+            outcomeGroup = outcomeFlash.gameObject.AddComponent<CanvasGroup>();
+            outcomeGroup.blocksRaycasts = false; outcomeGroup.interactable = false;
+            outcomePlate = Image(outcomeFlash, new Color(.025f,.035f,.045f,.97f));
+            outcomeLabel = Text(outcomeFlash, "Outcome", "", Vector2.zero, new Vector2(240,44), 30, InkWhite);
+            outcomeLabel.fontStyle = FontStyles.Bold;
+            outcomeFlash.gameObject.SetActive(false);
         }
         private void BuildLanes()
         {
@@ -167,6 +184,7 @@ namespace StringAsASword.Presentation
         {
             feedback.text="FIND YOUR RHYTHM"; timing.text="Follow the two mirrored notes";
             feedbackAge=10; pulseAge=10; impactAge=1; impactCells=0; lastClosedNote=-1;
+            outcomeAge=10; seenRecords=game.Battle.Records.Count; outcomeFlash.gameObject.SetActive(false);
             Array.Clear(dangerCounts, 0, dangerCounts.Length);
             for (int i = 0; i < dangerBadges.Length; i++)
             { dangerBadges[i].SetActive(false); dangerConnectors[i].gameObject.SetActive(false); }
@@ -199,6 +217,36 @@ namespace StringAsASword.Presentation
         {
             timing.text = damage > 0 ? $"BOSS HP  -{damage}" : game.Health.Defeated ? "ALL FOUR SEGMENTS CLEARED" : game.Health.CurrentDepleted ? "HP FLOOR / COLLECT NOISE" : "SWING / 0 DAMAGE";
         }
+        // Beside the knight, because that is where the eye already is. Near the top it drops below instead.
+        private void ShowOutcome(string text)
+        {
+            outcomeAge = 0;
+            outcomeLabel.text = text;
+            outcomeFlash.sizeDelta = new Vector2(text.Length * 19 + 36, 48);
+            outcomeLabel.color = text == TelegraphHud.Blocked ? BlockedTint : text == TelegraphHud.Hit ? HitTint : InkWhite;
+            outcomePlate.color = text == TelegraphHud.GuardBroken ? new Color(.62f,.12f,.10f,.97f) : new Color(.025f,.035f,.045f,.97f);
+            Vector2 knight = boardWorld.ProjectToBoard(boardWorld.PlayerTransform.localPosition, new Vector2(600,550));
+            float y = knight.y + 106;
+            if (y > 240) y = knight.y - 44;
+            outcomeFlash.anchoredPosition = new Vector2(Mathf.Clamp(knight.x, -150, 150), y);
+            outcomeFlash.gameObject.SetActive(true);
+        }
+        private void RenderOutcome()
+        {
+            var records = game.Battle.Records;
+            for (; seenRecords < records.Count; seenRecords++)
+            {
+                string text = TelegraphHud.OutcomeText(records[seenRecords]);
+                if (text != null) ShowOutcome(text);
+            }
+            if (game.State != PrototypeState.Paused) outcomeAge += Time.unscaledDeltaTime;
+            bool visible = outcomeAge < OutcomeSeconds;
+            if (outcomeFlash.gameObject.activeSelf != visible) outcomeFlash.gameObject.SetActive(visible);
+            if (!visible) return;
+            // Hold, then fade. The pop restarts on every note so a run of BLOCKED still reads as separate blocks.
+            outcomeGroup.alpha = Mathf.Clamp01((OutcomeSeconds - outcomeAge) / .2f);
+            outcomeFlash.localScale = Vector3.one * (1 + .18f * Mathf.Clamp01(1 - outcomeAge / .1f));
+        }
         public void ShowPhase(int phase)
         {
             feedbackAge = 0; feedback.color = Accent;
@@ -211,6 +259,7 @@ namespace StringAsASword.Presentation
             var cell=game.Session.Position;
             boardWorld.Render();
             RenderTelegraphs();
+            RenderOutcome();
             playerHp.text = $"PLAYER HP  {game.Battle.PlayerHp} / {game.Stage.PlayerMaxHp}";
             attackHint.text = !game.Attacks.IsInRange(cell) ? "J / SWING ONLY - DAMAGE FROM ROW 8" : game.Health.Defeated ? "J / SWING - ALL HP CLEARED" : game.Health.CurrentDepleted ? "J / 0 DAMAGE - COLLECT NOISE" : "J / ATTACK - DAMAGE ENABLED";
             combo.text=game.Session.Combo.ToString("000");
@@ -278,7 +327,8 @@ namespace StringAsASword.Presentation
                 badgeBounds[i] = new Rect(dangerPoints[i] - new Vector2(20,10), new Vector2(40,20));
                 badgePlaced[i] = visible && !knightBounds.Overlaps(badgeBounds[i]);
                 if (dangerCounts[i] > 0)
-                    dangerLabels[i].text = dangerRemaining[i] + (dangerCounts[i] > 1 ? $"<size=11> +{dangerCounts[i] - 1}</size>" : "") + (fired ? "<size=11> X</size>" : "");
+                    // A sequence fires and counts down in the same frame; the badge only fits one suffix, and X is the news.
+                    dangerLabels[i].text = dangerRemaining[i] + (fired ? "<size=11> X</size>" : dangerCounts[i] > 1 ? $"<size=11> +{dangerCounts[i] - 1}</size>" : "");
                 else if (fired) dangerLabels[i].text = "X";
             }
             for (int i = 0; i < 64; i++)
