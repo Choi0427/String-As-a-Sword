@@ -719,8 +719,9 @@ namespace StringAsASword.Tests
             var hits = new[] { new BossTelegraph(1, "A", BossPatternSystem.Cells(checker, player), 1, response: AttackResponse.DodgeOnly),
                 new BossTelegraph(2, "B", BossPatternSystem.Cells(checker, player, 1), 2, response: AttackResponse.DodgeOnly) };
             Assert.That(BossPatternSystem.DodgeActions(player, hits[1], 0, new[] { hits[0] }), Is.EqualTo(2), "Both parities are covered, so the route runs to the last hit.");
-            Assert.That(BossPatternSystem.DodgeActions(player, new BossTelegraph(3, "Long", 0xFFUL, 32), 0, Array.Empty<BossTelegraph>()), Is.Zero);
-            Assert.That(BossPatternSystem.DodgeActions(player, new BossTelegraph(3, "Too long", 0xFFUL, 33), 0, Array.Empty<BossTelegraph>()), Is.EqualTo(-1));
+            int longest = RandomAttackSchedule.WarningCeiling + (PatternDefinition.MaxHits - 1) * PatternDefinition.MaxHitSpacing;
+            Assert.That(BossPatternSystem.DodgeActions(player, new BossTelegraph(3, "Long", 0xFFUL, longest), 0, Array.Empty<BossTelegraph>()), Is.Zero);
+            Assert.That(BossPatternSystem.DodgeActions(player, new BossTelegraph(3, "Too long", 0xFFUL, longest + 1), 0, Array.Empty<BossTelegraph>()), Is.EqualTo(-1));
         }
 
         [Test]
