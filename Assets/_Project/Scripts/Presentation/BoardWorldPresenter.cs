@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using StringAsASword.Board;
 using StringAsASword.Combat;
 using StringAsASword.Core;
@@ -15,9 +16,13 @@ namespace StringAsASword.Presentation
         private Transform player, knightBody, selection, sword, shield;
         private Transform[] pickups;
         private Renderer[][] pickupRenderers;
-        private Material noiseMaterial, dormantMaterial;
-        private Material[] activeNoiseMaterials, dormantNoiseMaterials;
+        private Material noiseMaterial;
+        // [pickup][renderer] material arrays, so a delivered prefab keeps its own materials while active.
+        private Material[][][] pickupActive, pickupDormant;
         private bool lastNoiseDormant;
+        private ArtSet art;
+        private GameObject king;
+        private int lastTelegraphId = -1, lastCollected;
         private readonly List<Object> resources = new List<Object>();
         private Mesh box;
         private Material edgeMaterial;
@@ -39,12 +44,12 @@ namespace StringAsASword.Presentation
         public Transform PlayerTransform => player;
         public int TileCount { get; private set; }
 
-        public void Initialize(PrototypeGame owner, UnityEngine.UI.RawImage output, Material template)
+        public void Initialize(PrototypeGame owner, UnityEngine.UI.RawImage output, Material template, ArtSet artSet)
         {
             if (template == null || template.shader == null)
                 throw new System.InvalidOperationException("Assign the board material to PrototypeView before building. Use String As a Sword > Prepare Windows Build.");
             materialTemplate = template;
-            game = owner;
+            game = owner; art = artSet;
             world = new GameObject("Board World");
             // A separate render target keeps the board projection independent of HUD/screen aspect ratio.
             world.transform.position = new Vector3(1000, 0, 1000);
@@ -54,16 +59,22 @@ namespace StringAsASword.Presentation
             BoardCamera.transform.SetParent(world.transform, false);
             float elevation = game.Stage.CameraElevation;
             BoardCamera.transform.localRotation = Quaternion.Euler(elevation, 0, 0);
-            BoardCamera.transform.localPosition = -(BoardCamera.transform.localRotation * Vector3.forward) * 14;
-            BoardCamera.orthographic = true; BoardCamera.orthographicSize = 4.6f;
+            BoardCamera.transform.localPosition = -(BoardCamera.transform.localRotation * Vector3.forward) * 14
+                + BoardCamera.transform.localRotation * Vector3.up * art.cameraLift;
+            BoardCamera.orthographic = true; BoardCamera.orthographicSize = art.cameraSize > 0 ? art.cameraSize : 4.6f;
             BoardCamera.nearClipPlane = .1f; BoardCamera.farClipPlane = 30;
             BoardCamera.clearFlags = CameraClearFlags.SolidColor;
             BoardCamera.backgroundColor = new Color(.035f, .043f, .052f);
             BoardCamera.targetTexture = Texture; BoardCamera.allowHDR = false;
             box = BuildBox(); resources.Add(box);
-            edgeMaterial = Material(new Color(.075f, .095f, .105f));
-            var ivory = Material(new Color(.72f, .74f, .70f));
-            var dark = Material(new Color(.15f, .20f, .22f));
+            edgeMaterial = art.boardEdge != null ? art.boardEdge : Material(new Color(.075f, .095f, .105f));
+            var ivory = art.lightTile != null ? art.lightTile : Material(new Color(.72f, .74f, .70f));
+            var dark = art.darkTile != null ? art.darkTile : Material(new Color(.15f, .20f, .22f));
+            if (art.useLighting)
+            {
+                var light = new GameObject("Board Light", typeof(Light)).GetComponent<Light>(); light.transform.SetParent(world.transform, false);
+                light.type = LightType.Directional; light.transform.localRotation = Quaternion.Euler(50, -30, 0);
+            }
             var gold = Material(new Color(.84f, .66f, .32f));
             var accent = Material(new Color(.40f, .85f, .73f));
             Box("Board Plinth", world.transform, new Vector3(0, -.30f, 0), new Vector3(8.40f, .38f, 8.40f), edgeMaterial);
@@ -80,6 +91,11 @@ namespace StringAsASword.Presentation
             selection = new GameObject("Player Cell Outline").transform; selection.SetParent(world.transform, false);
             Frame(selection, .91f, .026f, .042f, accent);
             BuildPlayer();
+            if (art.kingPrefab != null)
+            {
+                king = Instantiate(art.kingPrefab, world.transform, false); king.name = "King";
+                king.transform.localPosition = art.kingAnchor; king.transform.localScale = Vector3.one * art.kingScale;
+            }
             BuildNoise();
             BuildTelegraphs();
             sword = new GameObject("Sword Swing").transform; sword.SetParent(player, false);
@@ -109,6 +125,7 @@ namespace StringAsASword.Presentation
             player.localPosition = moveTarget; selection.localPosition = moveTarget;
             player.localScale = Vector3.one; sword.gameObject.SetActive(false); shield.gameObject.SetActive(false);
             impactAge = 1; impactCells = 0; lastClosedNote = -1;
+            lastTelegraphId = -1; lastCollected = game.Noise.Collected;
             for (int i = 0; i < impacts.Length; i++)
             {
                 impacts[i].SetActive(false);
@@ -119,8 +136,24 @@ namespace StringAsASword.Presentation
         public void ShowAction(ActionResult result)
         {
             if (!result.Accepted) return;
-            if (result.Kind == PlayerActionKind.Attack) attackAge = 0;
-            if (result.Kind == PlayerActionKind.Guard) { guardAge = 0; guardNote = result.Timing.BeatId; }
+            if (result.Kind == PlayerActionKind.Attack) { attackAge = 0; Cue("Attack", art.attackVfx); }
+            if (result.Kind == PlayerActionKind.Guard) { guardAge = 0; guardNote = result.Timing.BeatId; Cue("Guard", art.guardVfx); }
+        }
+        public void ShowOutcome(string text)
+        {
+            if (text == TelegraphHud.Blocked) Cue("Block", art.blockVfx); else Cue("Hit", art.hitVfx);
+        }
+        public void ShowDamage(int damage) { if (damage > 0) ArtCue.Trigger(king, "Hurt"); }
+        public void ShowPhase()
+        {
+            ArtCue.Trigger(king, "PhaseUp");
+            ArtCue.Spawn(art.phaseVfx, world.transform, king != null ? art.kingAnchor : Vector3.zero);
+        }
+        // VFX stay on the board where the action happened instead of following the knight.
+        private void Cue(string trigger, GameObject vfx)
+        {
+            ArtCue.Trigger(player.gameObject, trigger);
+            ArtCue.Spawn(vfx, world.transform, moveTarget);
         }
         public void Render()
         {
@@ -128,7 +161,9 @@ namespace StringAsASword.Presentation
             float dt = Time.unscaledDeltaTime;
             RenderTelegraphs(dt);
             Vector3 target = CellPosition(game.Session.Position);
-            if (target != moveTarget) { moveFrom = player.localPosition; moveTarget = target; moveAge = 0; }
+            if (target != moveTarget) { moveFrom = player.localPosition; moveTarget = target; moveAge = 0; ArtCue.Trigger(player.gameObject, "Move"); }
+            if (game.Noise.Collected > lastCollected) ArtCue.Spawn(art.pickupVfx, world.transform, target);
+            lastCollected = game.Noise.Collected;
             moveAge += dt; attackAge += dt; guardAge += dt;
             float t = Mathf.Clamp01(moveAge / .13f);
             player.localPosition = Vector3.Lerp(moveFrom, moveTarget, Mathf.SmoothStep(0, 1, t)) + Vector3.up * (Mathf.Sin(t * Mathf.PI) * .13f);
@@ -142,10 +177,13 @@ namespace StringAsASword.Presentation
             for (int i = 0; i < pickups.Length; i++)
             {
                 if (lastNoiseDormant != game.Noise.GoalReached)
-                    foreach (var renderer in pickupRenderers[i]) renderer.sharedMaterials = game.Noise.GoalReached ? dormantNoiseMaterials : activeNoiseMaterials;
+                    for (int r = 0; r < pickupRenderers[i].Length; r++)
+                        pickupRenderers[i][r].sharedMaterials = game.Noise.GoalReached ? pickupDormant[i][r] : pickupActive[i][r];
                 bool active = i < game.Noise.Pickups.Count;
                 pickups[i].gameObject.SetActive(active);
                 if (!active) continue;
+                // Re-sent every frame: an Animator forgets its parameters while the pickup is inactive.
+                if (art.noisePrefab != null) ArtCue.SetBool(pickups[i].gameObject, "Dormant", game.Noise.GoalReached);
                 pickups[i].localPosition = CellPosition(game.Noise.Pickups[i].Cell) + Vector3.up * (.12f + .025f * Mathf.Sin(Time.unscaledTime * 3 + i));
             }
             lastNoiseDormant = game.Noise.GoalReached;
@@ -160,14 +198,25 @@ namespace StringAsASword.Presentation
             Mesh impact = TelegraphMesh(true);
             resources.Add(impact);
             var materials = new[] { dark, white };
+            Mesh quad = null;
             for (int response = 0; response < warnings.Length; response++)
             {
                 Mesh warning = TelegraphMesh((AttackResponse)response);
                 resources.Add(warning);
                 var marks = new[] { dark, response == (int)AttackResponse.GuardOnly ? guard : response == (int)AttackResponse.DodgeOnly ? dodge : white };
+                var delivered = response == (int)AttackResponse.GuardOnly ? art.guardMark : response == (int)AttackResponse.DodgeOnly ? art.dodgeMark : art.eitherMark;
+                if (delivered != null) { warning = quad ?? (quad = MarkQuad()); marks = new[] { delivered }; }
                 for (int i = 0; i < 64; i++) warnings[response][i] = TelegraphCell((AttackResponse)response + "Warning", i, warning, marks);
             }
+            if (art.impactMark != null) { impact = quad ?? (quad = MarkQuad()); materials = new[] { art.impactMark }; }
             for (int i = 0; i < 64; i++) impacts[i] = TelegraphCell("Impact", i, impact, materials);
+        }
+        private Mesh MarkQuad()
+        {
+            var mesh = new Mesh { name = "Telegraph Mark",
+                vertices = new[] { new Vector3(-.46f,.024f,-.46f), new Vector3(-.46f,.024f,.46f), new Vector3(.46f,.024f,.46f), new Vector3(.46f,.024f,-.46f) },
+                uv = new[] { new Vector2(0,0), new Vector2(0,1), new Vector2(1,1), new Vector2(1,0) }, triangles = new[] { 0,1,2,0,2,3 } };
+            mesh.RecalculateNormals(); mesh.RecalculateBounds(); resources.Add(mesh); return mesh;
         }
         private GameObject TelegraphCell(string name, int index, Mesh mesh, Material[] materials)
         {
@@ -186,7 +235,18 @@ namespace StringAsASword.Presentation
                 lastClosedNote = battle.LastClosedNote; impactCells = 0;
                 foreach (var fired in battle.Patterns.LastFired) impactCells |= fired.Cells;
                 impactAge = 0;
+                if (impactCells != 0)
+                {
+                    ArtCue.Trigger(king, "Attack");
+                    if (art.bossFireVfx != null)
+                        for (int i = 0; i < 64; i++)
+                            if ((impactCells & (1UL << i)) != 0) ArtCue.Spawn(art.bossFireVfx, world.transform, CellPosition(new GridPosition(i % 8, i / 8)));
+                }
             }
+            bool published = false;
+            foreach (var telegraph in battle.Patterns.Active)
+                if (telegraph.Id > lastTelegraphId) { lastTelegraphId = telegraph.Id; published = true; }
+            if (published) ArtCue.Trigger(king, "Telegraph");
             if (game.State != PrototypeState.Paused) impactAge += dt;
             TelegraphHud.MapCells(battle.Patterns.Active, battle.LastClosedNote, cellCounts, cellSoonest, cellResponses);
             for (int i = 0; i < 64; i++)
@@ -282,6 +342,7 @@ namespace StringAsASword.Presentation
         private void BuildPlayer()
         {
             player = new GameObject("Knight").transform; player.SetParent(world.transform, false);
+            if (art.knightPrefab != null) { Instantiate(art.knightPrefab, player, false).name = "Knight Model"; return; }
             var cream = Material(new Color(.97f, .93f, .80f));
             var shade = Material(new Color(.45f, .49f, .45f));
             Box("Pedestal", player, new Vector3(0, .06f, 0), new Vector3(.68f, .12f, .52f), cream);
@@ -298,21 +359,32 @@ namespace StringAsASword.Presentation
         private void BuildNoise()
         {
             noiseMaterial = Material(new Color(.28f, .96f, .74f));
-            dormantMaterial = Material(new Color(.26f, .34f, .32f));
-            activeNoiseMaterials = new[] { noiseMaterial, noiseMaterial };
-            dormantNoiseMaterials = new[] { dormantMaterial, dormantMaterial };
+            var dormantMaterial = art.noisePrefab != null ? art.noiseDormantMaterial : Material(new Color(.26f, .34f, .32f));
             pickups = new Transform[game.Stage.MaxActiveNoise]; pickupRenderers = new Renderer[pickups.Length][];
+            pickupActive = new Material[pickups.Length][][]; pickupDormant = new Material[pickups.Length][][];
             for (int i = 0; i < pickups.Length; i++)
             {
-                var item = new GameObject($"Noise_{i}").transform; item.SetParent(world.transform, false); pickups[i] = item;
-                var wave = new GameObject("Wave Silhouette").transform; wave.SetParent(item, false);
-                wave.localRotation = Quaternion.Euler(game.Stage.CameraElevation, 0, 0);
-                Box("Wave", wave, new Vector3(0, .25f, 0), new Vector3(.65f, .055f, .10f), noiseMaterial);
-                for (int j = 0; j < 3; j++)
-                    Box($"WaveBar{j}", wave, new Vector3((j - 1) * .20f, .25f, 0), new Vector3(.075f, j == 1 ? .58f : .32f, .12f), noiseMaterial);
-                Frame(item, .64f, -.075f, .025f, noiseMaterial);
+                Transform item;
+                if (art.noisePrefab != null) { item = Instantiate(art.noisePrefab, world.transform, false).transform; item.name = $"Noise_{i}"; }
+                else
+                {
+                    item = new GameObject($"Noise_{i}").transform; item.SetParent(world.transform, false);
+                    var wave = new GameObject("Wave Silhouette").transform; wave.SetParent(item, false);
+                    wave.localRotation = Quaternion.Euler(game.Stage.CameraElevation, 0, 0);
+                    Box("Wave", wave, new Vector3(0, .25f, 0), new Vector3(.65f, .055f, .10f), noiseMaterial);
+                    for (int j = 0; j < 3; j++)
+                        Box($"WaveBar{j}", wave, new Vector3((j - 1) * .20f, .25f, 0), new Vector3(.075f, j == 1 ? .58f : .32f, .12f), noiseMaterial);
+                    Frame(item, .64f, -.075f, .025f, noiseMaterial);
+                    foreach (var renderer in item.GetComponentsInChildren<Renderer>()) renderer.sharedMaterials = new[] { noiseMaterial, noiseMaterial };
+                }
+                pickups[i] = item;
                 pickupRenderers[i] = item.GetComponentsInChildren<Renderer>();
-                foreach (var renderer in pickupRenderers[i]) renderer.sharedMaterials = activeNoiseMaterials;
+                pickupActive[i] = new Material[pickupRenderers[i].Length][]; pickupDormant[i] = new Material[pickupRenderers[i].Length][];
+                for (int r = 0; r < pickupRenderers[i].Length; r++)
+                {
+                    pickupActive[i][r] = pickupRenderers[i][r].sharedMaterials;
+                    pickupDormant[i][r] = dormantMaterial == null ? pickupActive[i][r] : Enumerable.Repeat(dormantMaterial, pickupActive[i][r].Length).ToArray();
+                }
                 item.gameObject.SetActive(false);
             }
         }
@@ -357,6 +429,8 @@ namespace StringAsASword.Presentation
             var mesh = new Mesh { name = "Two Tone Box" };
             mesh.vertices = new[] { new Vector3(-.5f,-.5f,-.5f),new Vector3(.5f,-.5f,-.5f),new Vector3(.5f,-.5f,.5f),new Vector3(-.5f,-.5f,.5f),
                 new Vector3(-.5f,.5f,-.5f),new Vector3(.5f,.5f,-.5f),new Vector3(.5f,.5f,.5f),new Vector3(-.5f,.5f,.5f) };
+            // Top-face UVs span 0..1 so a delivered tile texture covers one cell; side faces are left untextured.
+            mesh.uv = System.Array.ConvertAll(mesh.vertices, v => new Vector2(v.x + .5f, v.z + .5f));
             mesh.subMeshCount = 2;
             mesh.SetTriangles(new[] { 4,7,6,4,6,5 }, 0);
             mesh.SetTriangles(new[] { 0,1,2,0,2,3, 0,4,5,0,5,1, 1,5,6,1,6,2, 2,6,7,2,7,3, 3,7,4,3,4,0 }, 1);

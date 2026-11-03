@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d31ae8ebd295f1f46a2382ce98471280, type: 3}
+  m_Name: ArtSet
+  m_EditorClassIdentifier: StringAsASword.Runtime::StringAsASword.Presentation.ArtSet
+  knightPrefab: {fileID: 0}
+  kingPrefab: {fileID: 0}
+  kingAnchor: {x: 0, y: 0, z: 5.5}
+  kingScale: 1
+  noisePrefab: {fileID: 0}
+  noiseDormantMaterial: {fileID: 0}
+  lightTile: {fileID: 0}
+  darkTile: {fileID: 0}
+  boardEdge: {fileID: 0}
+  useLighting: 0
+  cameraSize: 0
+  cameraLift: 0
+  eitherMark: {fileID: 0}
+  guardMark: {fileID: 0}
+  dodgeMark: {fileID: 0}
+  impactMark: {fileID: 0}
+  font: {fileID: 0}
+  background: {fileID: 0}
+  noteSprite: {fileID: 0}
+  crownFull: {fileID: 0}
+  crownLocked: {fileID: 0}
+  crownBroken: {fileID: 0}
+  mainMenuDark: {fileID: 0}
+  mainMenuWhite: {fileID: 0}
+  knightBadgeBox:
+    serializedVersion: 2
+    x: -26
+    y: 5
+    width: 52
+    height: 76
+  attackVfx: {fileID: 0}
+  guardVfx: {fileID: 0}
+  hitVfx: {fileID: 0}
+  blockVfx: {fileID: 0}
+  pickupVfx: {fileID: 0}
+  bossFireVfx: {fileID: 0}
+  phaseVfx: {fileID: 0}

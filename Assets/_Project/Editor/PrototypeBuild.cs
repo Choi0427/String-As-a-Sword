@@ -28,15 +28,32 @@ namespace StringAsASword.Editor
             if (view == null || game == null || game.Song == null || game.Stage == null)
                 throw new BuildFailedException("Prototype scene, song or stage references are missing.");
             var material = PrototypeSceneSetup.EnsureBoardMaterial();
-            if (view.BoardMaterial != material)
+            // Any ArtSet the team assigned is kept; only a missing one is filled with the default asset.
+            bool assignArt = view.Art == null;
+            if (view.BoardMaterial != material || assignArt)
             {
                 var data = new SerializedObject(view);
                 data.FindProperty("boardMaterial").objectReferenceValue = material;
+                if (assignArt) data.FindProperty("art").objectReferenceValue = PrototypeSceneSetup.EnsureArtSet();
                 data.ApplyModifiedPropertiesWithoutUndo();
                 EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
                 EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
             }
+            ReportEmptyArtSlots(view.Art);
             AssetDatabase.SaveAssets();
+        }
+
+        // Empty slots are expected while art arrives; they are listed, not treated as errors.
+        public static string[] ReportEmptyArtSlots(ArtSet art)
+        {
+            var data = new SerializedObject(art);
+            var empty = new System.Collections.Generic.List<string>();
+            for (var property = data.GetIterator(); property.NextVisible(true);)
+                if (property.propertyType == SerializedPropertyType.ObjectReference && property.name != "m_Script" && property.objectReferenceValue == null)
+                    empty.Add(property.name);
+            Debug.Log(empty.Count == 0 ? $"ArtSet '{art.name}': every slot is assigned."
+                : $"ArtSet '{art.name}': {empty.Count} empty slots use the prototype visual: {string.Join(", ", empty)}");
+            return empty.ToArray();
         }
 
         public static string BuildWindows(string outputDirectory)

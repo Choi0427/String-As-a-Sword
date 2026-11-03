@@ -131,10 +131,12 @@ namespace StringAsASword.Tests
             game.StartSession();
             yield return UntilSongTime(-1);
             Canvas.ForceUpdateCanvases();
-            var glyphs=Object.FindObjectsByType<PrototypeGlyph>();
+            // Procedural glyphs or a delivered note sprite: either way each note must produce UI geometry.
+            var glyphs=Object.FindObjectsByType<UnityEngine.UI.Graphic>();
             int left=0,right=0;
             foreach(var glyph in glyphs)
             {
+                if(!glyph.name.StartsWith("Note_")) continue;
                 Assert.That(glyph.GetComponent<CanvasRenderer>(),Is.Not.Null);
                 var mesh=glyph.canvasRenderer.GetMesh();
                 Assert.That(mesh,Is.Not.Null,glyph.name);
@@ -151,7 +153,8 @@ namespace StringAsASword.Tests
             Assert.That(board.BoardCamera.orthographic, Is.True);
             Assert.That(board.BoardCamera.transform.eulerAngles.x, Is.EqualTo(60).Within(.01));
             Assert.That(board.Texture.IsCreated(), Is.True);
-            Assert.That(board.PlayerTransform.GetComponentsInChildren<MeshRenderer>().Length, Is.GreaterThan(4));
+            // Renderer, not MeshRenderer: a delivered skinned knight has none of the procedural parts.
+            Assert.That(board.PlayerTransform.GetComponentsInChildren<Renderer>().Length, Is.GreaterThan(0));
             Assert.That(board.PlayerTransform.localPosition.x, Is.EqualTo(-.5f).Within(.01));
             LogAssert.NoUnexpectedReceived();
         }

@@ -18,7 +18,9 @@ namespace StringAsASword.Presentation
         private static readonly Color Accent = new Color(.78f, .91f, .86f);
         [SerializeField] private TMP_FontAsset font;
         [SerializeField] private Material boardMaterial;
+        [SerializeField] private ArtSet art;
         public Material BoardMaterial => boardMaterial;
+        public ArtSet Art => art;
         private PrototypeGame game;
         private RectTransform root;
         private TMP_Text feedback, timing, combo, stats, beatLabel, position, mode, overlayTitle, overlayBody, buttonLabel, countIn;
@@ -42,6 +44,7 @@ namespace StringAsASword.Presentation
         private float impactAge = 1;
         private ulong impactCells;
         private readonly TMP_Text[] healthSlots = new TMP_Text[4];
+        private readonly UnityEngine.UI.Image[] crowns = new UnityEngine.UI.Image[4];
         private TMP_Text phaseLabel;
         private UnityEngine.UI.Image pulseLine;
         private float feedbackAge = 10, pulseAge = 10;
@@ -58,6 +61,8 @@ namespace StringAsASword.Presentation
         public void Initialize(PrototypeGame owner)
         {
             game = owner;
+            // A missing ArtSet is the same as an empty one: every slot falls back to the prototype visual.
+            if (art == null) { art = ScriptableObject.CreateInstance<ArtSet>(); art.hideFlags = HideFlags.DontSave; }
             var canvas = gameObject.AddComponent<Canvas>(); canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             var scaler = gameObject.AddComponent<UnityEngine.UI.CanvasScaler>();
             scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -69,7 +74,8 @@ namespace StringAsASword.Presentation
 
             var background = MakeRect((RectTransform)transform, "Background", Vector2.zero, Vector2.zero);
             background.anchorMin = Vector2.zero; background.anchorMax = Vector2.one; background.sizeDelta = Vector2.zero;
-            Image(background, new Color(.035f,.043f,.052f));
+            var backgroundImage = Image(background, new Color(.035f,.043f,.052f));
+            if (art.background != null) { backgroundImage.sprite = art.background; backgroundImage.color = Color.white; }
             root = MakeRect((RectTransform)transform, "Content", Vector2.zero, new Vector2(1600,900));
             Label("PROJECT  /  01", new Vector2(-660,394), new Vector2(200,30), 16, Muted);
             Label("GEOM EUL HYEON", new Vector2(0,385), new Vector2(650,50), 34, InkWhite);
@@ -104,7 +110,12 @@ namespace StringAsASword.Presentation
             Label("/// EITHER   /   SHIELD GUARD   /   ARROWS MOVE   /   X IMPACT\nNUMBER = NOTES LEFT   /   +N = EXTRA ATTACKS", new Vector2(-573,-365), new Vector2(400,45), 12, Muted);
 
             for (int i = 0; i < 4; i++)
+            {
                 healthSlots[i] = Label("", new Vector2((i-1.5f)*136,285), new Vector2(130,45), 16, InkWhite, true);
+                if (!art.HasCrown) continue;
+                crowns[i] = Image(MakeRect(root, $"Crown_{i}", new Vector2((i-1.5f)*136-48,285), new Vector2(30,30)), Color.white);
+                crowns[i].preserveAspect = true; healthSlots[i].margin = new Vector4(30,0,0,0);
+            }
             beatLabel = Label("BEAT  --", new Vector2(0,-292), new Vector2(320,26), 13, Accent);
             countIn = Label("", new Vector2(0,-319), new Vector2(430,40), 21, InkWhite);
             position = Label("D4", new Vector2(0,-367), new Vector2(400,30), 14, Muted);
@@ -118,7 +129,7 @@ namespace StringAsASword.Presentation
             Vector2 size = new Vector2(600,550);
             var board = MakeRect(root,"Board View",new Vector2(0,-4),size);
             var output = board.gameObject.AddComponent<UnityEngine.UI.RawImage>(); output.raycastTarget = false;
-            boardWorld = board.gameObject.AddComponent<BoardWorldPresenter>(); boardWorld.Initialize(game, output, boardMaterial);
+            boardWorld = board.gameObject.AddComponent<BoardWorldPresenter>(); boardWorld.Initialize(game, output, boardMaterial, art);
             var connectors = MakeRect(board, "DangerConnectors", Vector2.zero, size);
             for (int i = 0; i < 64; i++)
             {
@@ -159,7 +170,7 @@ namespace StringAsASword.Presentation
                 Label(side<0 ? "IN  >" : "<  IN",new Vector2(side*688,97),new Vector2(95,22),12,Muted);
                 Label("HIT",new Vector2(side*310,112),new Vector2(55,22),11,Muted);
             }
-            notes = new NotePresenter(root);
+            notes = new NotePresenter(root, art.noteSprite);
             pulseLine=Bar("BeatPulse",0,-280,530,3,Accent);
         }
         private void BuildOverlay()
@@ -215,12 +226,14 @@ namespace StringAsASword.Presentation
         public void ShowMiss(int beat) { feedbackAge=0; feedback.text="MISS"; feedback.color=Muted; timing.text="Listen. Reset. Find the next beat."; }
         public void ShowDamage(int damage)
         {
+            boardWorld.ShowDamage(damage);
             timing.text = damage > 0 ? $"BOSS HP  -{damage}" : game.Health.Defeated ? "ALL FOUR SEGMENTS CLEARED" : game.Health.CurrentDepleted ? "HP FLOOR / COLLECT NOISE" : "SWING / 0 DAMAGE";
         }
         // Beside the knight, because that is where the eye already is. Near the top it drops below instead.
         private void ShowOutcome(string text)
         {
             outcomeAge = 0;
+            boardWorld.ShowOutcome(text);
             outcomeLabel.text = text;
             outcomeFlash.sizeDelta = new Vector2(text.Length * 19 + 36, 48);
             outcomeLabel.color = text == TelegraphHud.Blocked ? BlockedTint : text == TelegraphHud.Hit ? HitTint : InkWhite;
@@ -249,6 +262,7 @@ namespace StringAsASword.Presentation
         }
         public void ShowPhase(int phase)
         {
+            boardWorld.ShowPhase();
             feedbackAge = 0; feedback.color = Accent;
             feedback.text = $"PHASE {phase} OPEN";
             timing.text = $"MELODY STOLEN  {phase - 1} / 3";
@@ -270,6 +284,8 @@ namespace StringAsASword.Presentation
                 healthSlots[i].text = $"P{i+1} {game.Health.Remaining(i)}/{game.Health.Maximum(i)}" +
                     (i > game.Health.ActiveSegment ? "<size=11> LOCKED</size>" : game.Health.Remaining(i) == 0 ? "<size=11> EMPTY</size>" : "");
                 healthSlots[i].color = active ? Accent : Muted;
+                if (crowns[i] != null)
+                    crowns[i].sprite = game.Health.Remaining(i) == 0 ? art.crownBroken : i > game.Health.ActiveSegment ? art.crownLocked : art.crownFull;
             }
             stats.text=$"PERFECT     {game.Session.PerfectCount:000}\nGOOD            {game.Session.GoodCount:000}\nMISS              {game.Session.MissCount:000}\nBEST              {game.Session.BestCombo:000}";
             int cellIndex = cell.Y * 8 + cell.X;
@@ -314,7 +330,7 @@ namespace StringAsASword.Presentation
             if (shown > 5) patternText.Append('+').Append(shown - 5).Append(" patterns");
             patternList.text = patternText.Length == 0 ? "CLEAR / NO ATTACK QUEUED" : patternText.ToString();
             Vector2 knightPoint = boardWorld.ProjectToBoard(boardWorld.PlayerTransform.localPosition, new Vector2(600,550));
-            var knightBounds = new Rect(knightPoint.x - 26, knightPoint.y + 5, 52, 76);
+            var knightBounds = new Rect(knightPoint + art.knightBadgeBox.position, art.knightBadgeBox.size);
             ulong marked = flashing ? impactCells : 0;
             for (int i = 0; i < 64; i++) if (dangerCounts[i] > 0) marked |= 1UL << i;
             var player = game.Session.Position;
@@ -383,7 +399,7 @@ namespace StringAsASword.Presentation
         private TMP_Text Text(Transform parent,string name,string content,Vector2 point,Vector2 size,int fontSize,Color tint)
         {
             var rect=MakeRect(parent,name,point,size); var label=rect.gameObject.AddComponent<TextMeshProUGUI>();
-            label.font=font; label.text=content; label.fontSize=fontSize; label.color=tint; label.alignment=TextAlignmentOptions.Center;
+            label.font=art.font!=null?art.font:font; label.text=content; label.fontSize=fontSize; label.color=tint; label.alignment=TextAlignmentOptions.Center;
             label.textWrappingMode=TextWrappingModes.NoWrap; label.raycastTarget=false; return label;
         }
     }
