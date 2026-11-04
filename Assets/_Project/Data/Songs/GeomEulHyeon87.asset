@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: StringAsASword.Runtime::StringAsASword.Rhythm.SongDefinition
   bpm: 87
   noteCount: 344
-  music: {fileID: 0}
-  audioStartOffset: 0
+  music: {fileID: 8300000, guid: cc8b426a1387c8447ad7b5c5600cb7ba, type: 3}
+  audioStartOffset: 1.48
   inputOffset: 0
   visualOffset: 0
   perfectWindow: 0.07

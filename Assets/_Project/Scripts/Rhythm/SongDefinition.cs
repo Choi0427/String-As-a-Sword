@@ -5,6 +5,7 @@ namespace StringAsASword.Rhythm
     [CreateAssetMenu(menuName = "String As a Sword/Song", fileName = "GeomEulHyeon87")]
     public sealed class SongDefinition : ScriptableObject
     {
+        private const float FixedVolume = 0.03f;
         [SerializeField, Min(1)] private float bpm = 87;
         [SerializeField, Min(1)] private int noteCount = 1;
         public int NoteCount => Mathf.Max(1, noteCount);
@@ -18,6 +19,7 @@ namespace StringAsASword.Rhythm
         [SerializeField, Range(2, 6)] private int noteApproachBeats = 4;
         public float Bpm => Mathf.Max(1, bpm);
         public AudioClip Music => music;
+        public float Volume => FixedVolume;
         public double AudioStartOffset => audioStartOffset;
         public double InputOffset => inputOffset;
         public double VisualOffset => visualOffset;

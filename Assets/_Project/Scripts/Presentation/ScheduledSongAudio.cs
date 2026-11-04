@@ -41,6 +41,7 @@ namespace StringAsASword.Presentation
             Stop(); song = definition; clock = songClock; timeline = beatTimeline;
             nextClick = -song.CountInBeats;
             musicSource.clip = song.Music;
+            musicSource.volume = song.Volume;
             if (song.Music != null) musicSource.PlayScheduled(clock.Origin - song.AudioStartOffset);
             Schedule();
         }
