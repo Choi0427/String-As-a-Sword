@@ -112,3 +112,7 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# Song audio stays local (see 36536dc). Keep the .meta next to the mp3: GeomEulHyeon87 points at its GUID
+/[Aa]ssets/_Project/Strings as a Sword*.mp3
+/[Aa]ssets/_Project/Strings as a Sword*.mp3.meta
