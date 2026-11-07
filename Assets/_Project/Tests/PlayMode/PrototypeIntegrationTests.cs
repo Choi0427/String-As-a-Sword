@@ -66,17 +66,19 @@ namespace StringAsASword.Tests
         }
         private void SetFocusPause(bool value) => typeof(PrototypeGame).GetField("pauseOnFocusLoss",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).SetValue(game, value);
-        private IEnumerator UntilSongTime(double target)
+        // The song asset may hold an authored chart, so the first note is not necessarily at song time 0.
+        private double FirstNote => game.Timeline.TimeOf(0);
+        private IEnumerator UntilSongTime(double target, double timeoutSeconds = 8)
         {
-            double timeout=Time.realtimeSinceStartupAsDouble+8;
+            double timeout=Time.realtimeSinceStartupAsDouble+timeoutSeconds;
             while(game.SongTime<target && Time.realtimeSinceStartupAsDouble<timeout) yield return null;
             Assert.That(game.SongTime,Is.GreaterThanOrEqualTo(target),"Song clock stopped or timed out.");
         }
         [UnityTest] public IEnumerator RealKeyboardMovesFourDirectionsAndHoldDoesNotRepeat()
         {
             game.StartSession();
-            yield return UntilSongTime(0);
-            Queue(Key.W,0,true);
+            yield return UntilSongTime(FirstNote);
+            Queue(Key.W,FirstNote,true);
             yield return UntilSongTime(game.Timeline.TimeOf(1)+.20);
             Assert.That(game.Session.Position,Is.EqualTo(new GridPosition(3,4)));
             Assert.That(game.Session.AcceptedMoves,Is.EqualTo(1),"Holding W must not create repeated actions.");
@@ -101,12 +103,12 @@ namespace StringAsASword.Tests
             yield return null; yield return null;
             InputSystem.QueueStateEvent(keyboard,new KeyboardState());
             Assert.That(game.State,Is.EqualTo(PrototypeState.CountIn));
-            yield return UntilSongTime(0);
-            double at=InputState.currentTime-game.SongTime;
+            yield return UntilSongTime(FirstNote);
+            double at=InputState.currentTime+FirstNote-game.SongTime;
             InputSystem.QueueStateEvent(keyboard,new KeyboardState(Key.W,Key.D),at);
-            yield return UntilSongTime(.05);
+            yield return UntilSongTime(FirstNote+.05);
             InputSystem.QueueStateEvent(keyboard,new KeyboardState());
-            yield return UntilSongTime(.15);
+            yield return UntilSongTime(FirstNote+.15);
             Assert.That(game.Session.AcceptedMoves,Is.EqualTo(1));
             Assert.That(game.Session.Position,Is.EqualTo(new GridPosition(3,4)),"Equal timestamps use W before D.");
             SetFocusPause(true);
@@ -129,7 +131,7 @@ namespace StringAsASword.Tests
         [UnityTest] public IEnumerator MirroredNotesAndKnightHaveRenderableGeometry()
         {
             game.StartSession();
-            yield return UntilSongTime(-1);
+            yield return UntilSongTime(FirstNote-1);
             Canvas.ForceUpdateCanvases();
             // Procedural glyphs or a delivered note sprite: either way each note must produce UI geometry.
             var glyphs=Object.FindObjectsByType<UnityEngine.UI.Graphic>();
@@ -260,9 +262,9 @@ namespace StringAsASword.Tests
         }
         [UnityTest] public IEnumerator AttackGuardAndMovementRespectTiePriorityAndHoldEdges()
         {
-            game.StartSession(); yield return UntilSongTime(0);
-            InputSystem.QueueStateEvent(keyboard,new KeyboardState(Key.W,Key.K,Key.J),InputState.currentTime-game.SongTime);
-            yield return UntilSongTime(.16);
+            game.StartSession(); yield return UntilSongTime(FirstNote);
+            InputSystem.QueueStateEvent(keyboard,new KeyboardState(Key.W,Key.K,Key.J),InputState.currentTime+FirstNote-game.SongTime);
+            yield return UntilSongTime(FirstNote+.16);
             Assert.That(game.Session.AcceptedAttacks,Is.EqualTo(1));
             Assert.That(game.Session.AcceptedGuards,Is.Zero);
             Assert.That(game.Session.AcceptedMoves,Is.Zero);
@@ -292,6 +294,29 @@ namespace StringAsASword.Tests
             Assert.That(game.Session.AcceptedGuards,Is.EqualTo(1));
             LogAssert.NoUnexpectedReceived();
         }
+        [UnityTest] public IEnumerator RealKeyboardHoldReleasedOnTheTailIsPerfectAndDrawsAString()
+        {
+            int hold = 0;
+            while (hold < game.Song.NoteCount && !game.Session.IsHold(hold)) hold++;
+            if (hold == game.Song.NoteCount) Assert.Ignore("The song asset has no hold notes.");
+            double head = game.Timeline.TimeOf(hold), end = game.Session.HoldEnd(hold);
+            game.StartSession();
+            yield return UntilSongTime(head - .3, head + 15);
+            Queue(Key.K, head, true);
+            yield return UntilSongTime((head + end) * .5);
+            Assert.That(game.Session.ActiveHold.HasValue, "A pressed hold head starts the hold.");
+            Canvas.ForceUpdateCanvases();
+            int strings = 0;
+            foreach (var g in Object.FindObjectsByType<UnityEngine.UI.Image>())
+                if (g.name.StartsWith("HoldString_") && g.gameObject.activeInHierarchy) strings++;
+            Assert.That(strings, Is.GreaterThanOrEqualTo(2), "The held string is drawn on both lanes.");
+            yield return UntilSongTime(end);
+            Queue(Key.K, end, false);
+            yield return UntilSongTime(end + .2);
+            Assert.That(game.Session.HoldPerfectCount, Is.EqualTo(1));
+            Assert.That(game.Battle.Events.Exists(e => e.type == "hold-perfect" && e.noteIndex == hold));
+            LogAssert.NoUnexpectedReceived();
+        }
         [UnityTest] public IEnumerator QuitButtonIsAvailableOnReadyPausedAndFinishedMenus()
         {
             var buttons = game.GetComponentsInChildren<UnityEngine.UI.Button>(true);
@@ -315,7 +340,7 @@ namespace StringAsASword.Tests
         }
         [UnityTest] public IEnumerator LandingCollectsNoiseAndRestartClearsIt()
         {
-            game.StartSession(); yield return UntilSongTime(.05);
+            game.StartSession(); yield return UntilSongTime(FirstNote+.05);
             Assert.That(game.Noise.Pickups.Count,Is.EqualTo(1));
             var target = game.Noise.Pickups[0].Cell;
             int beat=1;

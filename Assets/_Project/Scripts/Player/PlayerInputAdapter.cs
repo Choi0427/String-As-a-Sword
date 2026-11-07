@@ -7,7 +7,7 @@ using UnityEngine.InputSystem.LowLevel;
 
 namespace StringAsASword.Player
 {
-    /// <summary>Press edges only. Event timestamps are converted into DSP time, not sampled at render time.</summary>
+    /// <summary>Press and release edges. Event timestamps are converted into DSP time, not sampled at render time.</summary>
     public sealed class PlayerInputAdapter : MonoBehaviour
     {
         public readonly struct TimedAction
@@ -16,13 +16,16 @@ namespace StringAsASword.Player
             public MoveDirection Direction { get; }
             public double DspTime { get; }
             public double InputEventTime { get; }
-            public TimedAction(PlayerActionKind kind, MoveDirection direction, double dspTime, double inputEventTime)
-            { Kind = kind; Direction = direction; DspTime = dspTime; InputEventTime = inputEventTime; }
+            public bool IsRelease { get; }
+            public TimedAction(PlayerActionKind kind, MoveDirection direction, double dspTime, double inputEventTime, bool isRelease = false)
+            { Kind = kind; Direction = direction; DspTime = dspTime; InputEventTime = inputEventTime; IsRelease = isRelease; }
         }
         private readonly List<InputAction> actions = new List<InputAction>();
         private readonly List<TimedAction> requests = new List<TimedAction>();
         private readonly Queue<string> commands = new Queue<string>();
         public event Action<TimedAction> ActionPressed;
+        /// <summary>Key went up. Only hold notes care.</summary>
+        public event Action<TimedAction> ActionReleased;
         public event Action<string> CommandPressed;
 
         private void Awake()
@@ -43,25 +46,26 @@ namespace StringAsASword.Player
             => BindGameplay(key, PlayerActionKind.Move, direction);
         private void BindGameplay(string key, PlayerActionKind kind, MoveDirection direction = MoveDirection.Up)
         {
-            AddAction(key).performed += context =>
-            {
-                double dsp = AudioSettings.dspTime + context.time - InputState.currentTime;
-                requests.Add(new TimedAction(kind, direction, dsp, context.time));
-            };
+            var action = AddAction(key);
+            action.performed += context => requests.Add(new TimedAction(kind, direction, ToDsp(context.time), context.time));
+            action.canceled += context => requests.Add(new TimedAction(kind, direction, ToDsp(context.time), context.time, true));
         }
+        private static double ToDsp(double eventTime) => AudioSettings.dspTime + eventTime - InputState.currentTime;
         private void BindCommand(string key, string command) => AddAction(key).performed += _ => commands.Enqueue(command);
         public void Drain()
         {
             while (commands.Count > 0) CommandPressed?.Invoke(commands.Dequeue());
-            // Original timestamps first. Ties use J -> K -> W -> A -> S -> D.
+            // Original timestamps first. Releases before presses, then J -> K -> W -> A -> S -> D.
             requests.Sort((a, b) =>
             {
                 int time = a.InputEventTime.CompareTo(b.InputEventTime);
                 if (time != 0) return time;
+                if (a.IsRelease != b.IsRelease) return a.IsRelease ? -1 : 1;
                 int kind = a.Kind.CompareTo(b.Kind);
                 return kind != 0 ? kind : a.Direction.CompareTo(b.Direction);
             });
-            foreach (var request in requests) ActionPressed?.Invoke(request);
+            foreach (var request in requests)
+                if (request.IsRelease) ActionReleased?.Invoke(request); else ActionPressed?.Invoke(request);
             requests.Clear();
         }
         public void Clear() { requests.Clear(); commands.Clear(); }

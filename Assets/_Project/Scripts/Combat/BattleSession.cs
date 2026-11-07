@@ -27,6 +27,7 @@ namespace StringAsASword.Combat
         public double time;
         public PlayerActionKind action;
         public MoveDirection direction;
+        public bool release; // true: the key went up (hold notes)
     }
     public sealed class BattleObservation
     {
@@ -80,14 +81,18 @@ namespace StringAsASword.Combat
             if (analysisEnds != null && (analysisEnds.Length != 4 || analysisEnds[3] != settings.NoteCount || analysisEnds[0] < 1 ||
                 analysisEnds[1] <= analysisEnds[0] || analysisEnds[2] <= analysisEnds[1] || analysisEnds[3] <= analysisEnds[2]))
                 throw new ArgumentException("Analysis boundaries must partition the whole chart.");
-            timeline = new ConstantBeatTimeline(settings.Bpm); music = new BeatScheduler(timeline);
+            timeline = settings.CreateTimeline(); music = new BeatScheduler(timeline);
             var board = new BoardState();
-            Session = new RhythmSession(board, new RhythmJudge(timeline, settings.PerfectWindow, settings.GoodWindow, settings.InputOffset), new GridPosition(3, 3), settings.NoteCount);
+            Session = new RhythmSession(board, new RhythmJudge(timeline, settings.PerfectWindow, settings.GoodWindow, settings.InputOffset), new GridPosition(3, 3), settings.NoteCount, settings.HoldEndTimes);
             Noise = new NoisePickupSystem(board, settings.SpawnInterval, settings.MaxNoise);
             Health = new BossHealthGate(settings.Health);
             Attacks = new AttackResolver(board); Combat = new CombatResolver(Attacks, Health, 1);
             Phases = new PhaseController(Health, Noise, settings.NoiseTargets);
             Session.ActionEvaluated += OnAction; Session.BeatClosed += Close;
+            Session.HoldResolved += r => {
+                AddEvent("hold-" + r.Grade.ToString().ToLowerInvariant(), Math.Round(r.ErrorSeconds * 1000).ToString(System.Globalization.CultureInfo.InvariantCulture), Session.Position);
+                Events[Events.Count - 1].noteIndex = r.BeatId;
+            };
             Noise.CandidateAllowed = CandidateAllowed;
             Noise.Spawned += n => AddEvent("noise-spawn", n.Id.ToString(), n.Cell, n.Id);
             Noise.CollectedPickup += n => AddEvent("noise-collect", n.Id.ToString(), n.Cell, n.Id);
@@ -114,6 +119,14 @@ namespace StringAsASword.Combat
             Inputs.Add(new BattleInput { action = kind, direction = direction, time = songTime });
             Advance(songTime);
             return Session.RequestAction(kind, direction, songTime);
+        }
+        /// <summary>A key release. Only judges the tail of an active hold note; combat is unaffected.</summary>
+        public void Release(PlayerActionKind kind, MoveDirection direction, double songTime)
+        {
+            if (!Settings.HasHolds) return; // Charts without holds keep their inputs and logs unchanged.
+            Inputs.Add(new BattleInput { action = kind, direction = direction, time = songTime, release = true });
+            Advance(songTime);
+            if (Outcome == BattleOutcome.Running) Session.RequestRelease(kind, direction, songTime);
         }
         public void Advance(double time)
         {

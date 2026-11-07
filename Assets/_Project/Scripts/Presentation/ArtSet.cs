@@ -44,6 +44,10 @@ namespace StringAsASword.Presentation
         public TMP_FontAsset font;
         public Sprite background;
         public Sprite noteSprite;
+        [Tooltip("Hold note string, stretched horizontally between the head and the tail. Draw it white; it is tinted per state.")]
+        public Sprite holdBodySprite;
+        [Tooltip("Hold note tail peg at the string's far end. Draw it white; it is tinted per state.")]
+        public Sprite holdTailSprite;
         [Tooltip("Boss HP crown icons. Shown only when all three are assigned.")]
         public Sprite crownFull, crownLocked, crownBroken;
         [Tooltip("Reserved for the main menu (dark before the first clear, white after).")]

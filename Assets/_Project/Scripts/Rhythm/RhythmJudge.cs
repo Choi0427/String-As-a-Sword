@@ -38,6 +38,14 @@ namespace StringAsASword.Rhythm
             return new TimingResult(beat, error, grade);
         }
         public double CloseTime(int beat) => timeline.TimeOf(beat) + GoodWindow + inputOffset;
+        /// <summary>Judges a hold release against its end time; earlier than the Good window is a Miss.</summary>
+        public TimingResult EvaluateRelease(int beat, double rawSongTime, double endTime)
+        {
+            double error = rawSongTime - inputOffset - endTime, distance = Math.Abs(error);
+            var grade = distance > GoodWindow + 1e-9 ? Judgement.Miss : distance <= PerfectWindow + 1e-9 ? Judgement.Perfect : Judgement.Good;
+            return new TimingResult(beat, error, grade);
+        }
+        public double ReleaseCloseTime(double endTime) => endTime + GoodWindow + inputOffset;
     }
 
     /// <summary>One action per monotonically increasing beat; reusable by combat actions.</summary>

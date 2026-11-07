@@ -27,6 +27,7 @@
 | `eitherMark` / `guardMark` / `dodgeMark` / `impactMark` | 예고 칸 위의 사각 판 (0.92칸) | — |
 | `font` | 모든 HUD 텍스트 (한글 TMP SDF) | — |
 | `background` / `noteSprite` | 전체 배경 / 좌우 노트 | — |
+| `holdBodySprite` / `holdTailSprite` | 홀드 노트의 현(줄) 몸통 / 꼬리 말뚝 | 흰색으로 그린다. 가로로 늘어나며, 상태별 색(대기 흰색·유지 중 민트·끊김 회색)을 코드가 입힌다 |
 | `crownFull` / `crownLocked` / `crownBroken` | 보스 HP 칸 아이콘. 세 개를 모두 넣어야 표시된다 | — |
 | `*Vfx` | 해당 순간에 보드 위에 생성하고 2초 뒤 삭제 | — |
 | `mainMenuDark` / `mainMenuWhite` | 예약. 메인화면을 구현할 때 연결한다 | — |

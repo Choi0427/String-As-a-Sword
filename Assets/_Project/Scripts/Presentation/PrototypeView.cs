@@ -14,8 +14,8 @@ namespace StringAsASword.Presentation
     public sealed class PrototypeView : MonoBehaviour
     {
         public static readonly Color InkWhite = new Color(.94f, .93f, .88f);
-        private static readonly Color Muted = new Color(.58f, .62f, .66f);
-        private static readonly Color Accent = new Color(.78f, .91f, .86f);
+        public static readonly Color Muted = new Color(.58f, .62f, .66f);
+        public static readonly Color Accent = new Color(.78f, .91f, .86f);
         [SerializeField] private TMP_FontAsset font;
         [SerializeField] private Material boardMaterial;
         [SerializeField] private ArtSet art;
@@ -170,7 +170,7 @@ namespace StringAsASword.Presentation
                 Label(side<0 ? "IN  >" : "<  IN",new Vector2(side*688,97),new Vector2(95,22),12,Muted);
                 Label("HIT",new Vector2(side*310,112),new Vector2(55,22),11,Muted);
             }
-            notes = new NotePresenter(root, art.noteSprite);
+            notes = new NotePresenter(root, art.noteSprite, art.holdBodySprite, art.holdTailSprite);
             pulseLine=Bar("BeatPulse",0,-280,530,3,Accent);
         }
         private void BuildOverlay()
@@ -222,6 +222,14 @@ namespace StringAsASword.Presentation
                 feedback.text=result.Rejection==ActionRejection.OutsideBoard?"BOARD EDGE":result.Rejection==ActionRejection.BeatAlreadyUsed?"BEAT USED":"OFF BEAT";
                 timing.text=result.Rejection==ActionRejection.OutsideBoard?"Try another direction on this beat":result.Rejection==ActionRejection.BeatAlreadyUsed?"Wait for the next note":"Act when notes reach the markers";
             }
+        }
+        public void ShowHold(TimingResult result)
+        {
+            feedbackAge = 0;
+            feedback.text = result.IsHit ? "RELEASE " + result.Grade.ToString().ToUpperInvariant() : "HOLD BREAK";
+            feedback.color = result.IsHit ? Accent : Muted;
+            timing.text = result.IsHit ? $"{result.ErrorSeconds * 1000:+0;-0;0} ms  /  RELEASE" :
+                result.ErrorSeconds < 0 ? "Released too early" : "Let go at the end of the string";
         }
         public void ShowMiss(int beat) { feedbackAge=0; feedback.text="MISS"; feedback.color=Muted; timing.text="Listen. Reset. Find the next beat."; }
         public void ShowDamage(int damage)

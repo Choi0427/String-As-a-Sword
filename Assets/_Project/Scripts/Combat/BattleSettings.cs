@@ -55,6 +55,13 @@ namespace StringAsASword.Combat
     {
         public string Version = "battle-3", ChartId = "EvenNotes";
         public int NoteCount;
+        // Authored note times in seconds. Null or empty means NoteCount evenly spaced beats at Bpm.
+        public double[] NoteTimes;
+        public bool HasAuthoredChart => NoteTimes != null && NoteTimes.Length > 0;
+        // Parallel to NoteTimes: 0 for a tap, otherwise the time the held key must be released.
+        public double[] HoldEndTimes;
+        public bool HasHolds => HoldEndTimes != null && HoldEndTimes.Length > 0;
+        public IBeatTimeline CreateTimeline() => HasAuthoredChart ? (IBeatTimeline)new AuthoredBeatTimeline(Bpm, NoteTimes) : new ConstantBeatTimeline(Bpm);
         public double Bpm, PerfectWindow = .07, GoodWindow = .14, InputOffset;
         public int PlayerMaxHp = 3, SpawnInterval = 8, MaxNoise = 2, MaxCollectionCost = 12;
         public int[] Health = { 6, 6, 6, 6 }, NoiseTargets = { 3, 4, 5 };
@@ -64,11 +71,14 @@ namespace StringAsASword.Combat
         {
             var copy = (BattleSettings)MemberwiseClone();
             copy.Health = (int[])Health.Clone(); copy.NoiseTargets = (int[])NoiseTargets.Clone();
+            if (NoteTimes != null) copy.NoteTimes = (double[])NoteTimes.Clone();
+            if (HoldEndTimes != null) copy.HoldEndTimes = (double[])HoldEndTimes.Clone();
             copy.Patterns = Array.ConvertAll(Patterns, p => p.Copy());
             copy.Schedule = Schedule.Copy();
             return copy;
         }
         public static BattleSettings From(SongDefinition song, StageDefinition stage) => new BattleSettings {
+            ChartId = song.ChartName, NoteTimes = song.NoteTimes(), HoldEndTimes = song.HoldEndTimes(),
             NoteCount = song.NoteCount, Bpm = song.Bpm, PerfectWindow = song.PerfectWindow,
             GoodWindow = song.GoodWindow, InputOffset = song.InputOffset,
             Health = stage.HealthSegments, NoiseTargets = stage.NoiseTargets,
@@ -81,6 +91,16 @@ namespace StringAsASword.Combat
             if (NoteCount < 1 || Bpm <= 0 || double.IsNaN(Bpm) || double.IsInfinity(Bpm) ||
                 PlayerMaxHp < 1 || SpawnInterval < 1 || MaxNoise < 1 || MaxNoise > 2 || MaxCollectionCost < 2)
                 throw new ArgumentException("Invalid battle settings.");
+            if (HasAuthoredChart && NoteTimes.Length != NoteCount) throw new ArgumentException("NoteTimes must list exactly NoteCount notes.");
+            if (HasAuthoredChart) new AuthoredBeatTimeline(Bpm, NoteTimes); // Validates ordering and finiteness.
+            if (HasHolds)
+            {
+                if (!HasAuthoredChart || HoldEndTimes.Length != NoteTimes.Length) throw new ArgumentException("HoldEndTimes must parallel NoteTimes.");
+                for (int i = 0; i < HoldEndTimes.Length; i++)
+                    if (HoldEndTimes[i] != 0 && (double.IsNaN(HoldEndTimes[i]) || HoldEndTimes[i] <= NoteTimes[i] ||
+                        i + 1 < NoteTimes.Length && HoldEndTimes[i] >= NoteTimes[i + 1]))
+                        throw new ArgumentException($"Hold {i} must end after it starts and before the next note.");
+            }
             if (Health == null || Health.Length != 4 || NoiseTargets == null || NoiseTargets.Length != 3)
                 throw new ArgumentException("Four health segments and three collection goals required.");
             foreach (int h in Health) if (h < 1) throw new ArgumentException("HP must be positive.");

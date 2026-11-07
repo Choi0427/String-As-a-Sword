@@ -18,6 +18,17 @@ namespace StringAsASword.Player
         { Kind = kind; Timing = timing; Position = position; Rejection = rejection; }
     }
 
+    /// <summary>A hold note whose head action was accepted and whose key is still down.</summary>
+    public readonly struct HoldState
+    {
+        public int Beat { get; }
+        public PlayerActionKind Kind { get; }
+        public MoveDirection Direction { get; }
+        public double EndTime { get; }
+        public HoldState(int beat, PlayerActionKind kind, MoveDirection direction, double endTime)
+        { Beat = beat; Kind = kind; Direction = direction; EndTime = endTime; }
+    }
+
     /// <summary>Session state and movement orchestration; never touches graphics, audio or input APIs.</summary>
     public sealed class RhythmSession
     {
@@ -41,11 +52,22 @@ namespace StringAsASword.Player
         public event Action<ActionResult> ActionEvaluated;
         public event Action<int> NoteMissed;
         public event Action<int> BeatClosed;
+        public event Action<TimingResult> HoldResolved;
+        private readonly double[] holdEnds;
+        public HoldState? ActiveHold { get; private set; }
+        /// <summary>Most recent release judgement (BeatId = hold note), or null.</summary>
+        public TimingResult? LastHoldResult { get; private set; }
+        public int HoldPerfectCount { get; private set; }
+        public int HoldGoodCount { get; private set; }
+        public int HoldMissCount { get; private set; }
+        public bool IsHold(int beat) => holdEnds != null && beat >= 0 && beat < holdEnds.Length && holdEnds[beat] > 0;
+        public double HoldEnd(int beat) => IsHold(beat) ? holdEnds[beat] : 0;
 
-        public RhythmSession(BoardState board, RhythmJudge judge, GridPosition start, int noteCount = int.MaxValue)
+        public RhythmSession(BoardState board, RhythmJudge judge, GridPosition start, int noteCount = int.MaxValue, double[] holdEndTimes = null)
         {
             if (!board.Contains(start)) throw new ArgumentOutOfRangeException(nameof(start));
             this.board = board; this.judge = judge; this.start = start; this.noteCount = noteCount;
+            holdEnds = holdEndTimes == null || holdEndTimes.Length == 0 ? null : (double[])holdEndTimes.Clone();
             Reset();
         }
         public void Reset()
@@ -54,6 +76,25 @@ namespace StringAsASword.Player
             Gate.Reset();
             Stopped = false;
             AcceptedMoves = AcceptedAttacks = AcceptedGuards = 0;
+            ActiveHold = null; LastHoldResult = null; HoldPerfectCount = HoldGoodCount = HoldMissCount = 0;
+        }
+        /// <summary>Releasing the key that started the active hold judges its tail; other releases are ignored.</summary>
+        public void RequestRelease(PlayerActionKind kind, MoveDirection direction, double inputSongTime)
+        {
+            Advance(inputSongTime);
+            if (!ActiveHold.HasValue) return;
+            var hold = ActiveHold.Value;
+            if (hold.Kind != kind || kind == PlayerActionKind.Move && hold.Direction != direction) return;
+            ResolveHold(judge.EvaluateRelease(hold.Beat, inputSongTime, hold.EndTime));
+        }
+        private void ResolveHold(TimingResult result)
+        {
+            ActiveHold = null; LastHoldResult = result;
+            if (result.Grade == Judgement.Perfect) HoldPerfectCount++;
+            else if (result.Grade == Judgement.Good) HoldGoodCount++;
+            else HoldMissCount++;
+            if (result.IsHit) { Combo++; BestCombo = Math.Max(Combo, BestCombo); } else Combo = 0;
+            HoldResolved?.Invoke(result);
         }
         public ActionResult RequestMove(MoveDirection direction, double songTime)
             => RequestAction(PlayerActionKind.Move, direction, songTime);
@@ -80,6 +121,7 @@ namespace StringAsASword.Player
                 if (kind == PlayerActionKind.Move) { Position = destination; AcceptedMoves++; }
                 if (kind == PlayerActionKind.Attack) AcceptedAttacks++;
                 if (kind == PlayerActionKind.Guard) AcceptedGuards++;
+                if (IsHold(timing.BeatId)) ActiveHold = new HoldState(timing.BeatId, kind, direction, holdEnds[timing.BeatId]);
                 Combo++;
                 BestCombo = Math.Max(Combo, BestCombo);
                 if (timing.Grade == Judgement.Perfect) PerfectCount++; else GoodCount++;
@@ -91,6 +133,13 @@ namespace StringAsASword.Player
         }
         public void Advance(double songTime)
         {
+            // Holding past the tail's Good window is a Miss. Holds never overlap the next note, so this
+            // resolves before that note's head can be judged.
+            if (ActiveHold.HasValue && judge.ReleaseCloseTime(ActiveHold.Value.EndTime) < songTime - 1e-9)
+            {
+                var hold = ActiveHold.Value;
+                ResolveHold(new TimingResult(hold.Beat, judge.GoodWindow, Judgement.Miss)); // Late by at least the Good window.
+            }
             // Every closed beat resolves once, including frames spanning multiple beats.
             while (!Stopped && nextUnresolvedBeat < noteCount && judge.CloseTime(nextUnresolvedBeat) < songTime - 1e-9)
             {

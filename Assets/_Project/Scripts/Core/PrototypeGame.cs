@@ -41,10 +41,11 @@ namespace StringAsASword.Core
         private void Awake()
         {
             if (song == null) { Debug.LogError("Assign a SongDefinition to PrototypeGame.", this); enabled = false; return; }
-            Timeline = new ConstantBeatTimeline(song.Bpm);
             clock = new SongClock(() => AudioSettings.dspTime);
             if (stage == null) stage = ScriptableObject.CreateInstance<StageDefinition>();
-            Battle = new BattleSession(BattleSettings.From(song, stage), stage.NoiseSeed);
+            var settings = BattleSettings.From(song, stage);
+            Timeline = settings.CreateTimeline();
+            Battle = new BattleSession(settings, stage.NoiseSeed);
             Noise = Battle.Noise; Attacks = Battle.Attacks; Health = Battle.Health; Combat = Battle.Combat;
             Phases = Battle.Phases; Session = Battle.Session;
             Battle.MusicBeat += beat => { CurrentBeat = beat; view.Pulse(); };
@@ -52,7 +53,8 @@ namespace StringAsASword.Core
             view = GetComponentInChildren<PrototypeView>(true);
             if (view == null) { Debug.LogError("Prototype view is missing.", this); enabled = false; return; }
             view.Initialize(this);
-            input.ActionPressed += OnAction; input.CommandPressed += OnCommand;
+            input.ActionPressed += OnAction; input.ActionReleased += OnRelease; input.CommandPressed += OnCommand;
+            Session.HoldResolved += view.ShowHold;
             Session.ActionEvaluated += OnActionEvaluated; Session.NoteMissed += view.ShowMiss;
             Combat.DamageResolved += view.ShowDamage;
             Phases.PhaseUnlocked += view.ShowPhase;
@@ -97,6 +99,11 @@ namespace StringAsASword.Core
             // The first note has the same early Good window as all later notes.
             if (time < -song.GoodWindow + song.InputOffset) return;
             Battle.Request(request.Kind, request.Direction, time);
+        }
+        private void OnRelease(PlayerInputAdapter.TimedAction request)
+        {
+            if (!clock.Running) return;
+            Battle.Release(request.Kind, request.Direction, clock.ToSongTime(request.DspTime));
         }
         private void OnActionEvaluated(ActionResult result)
         {
@@ -144,9 +151,10 @@ namespace StringAsASword.Core
         private void OnDestroy()
         {
             SaveRun("Interrupted");
-            if (input != null) { input.ActionPressed -= OnAction; input.CommandPressed -= OnCommand; }
+            if (input != null) { input.ActionPressed -= OnAction; input.ActionReleased -= OnRelease; input.CommandPressed -= OnCommand; }
             if (Session != null && view != null)
             {
+                Session.HoldResolved -= view.ShowHold;
                 Session.ActionEvaluated -= OnActionEvaluated; Session.NoteMissed -= view.ShowMiss;
                 Combat.DamageResolved -= view.ShowDamage;
                 Phases.PhaseUnlocked -= view.ShowPhase;

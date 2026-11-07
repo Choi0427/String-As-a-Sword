@@ -11,7 +11,8 @@ namespace StringAsASword.Combat
 {
     public static class BattleLog
     {
-        private const string RuntimeVersion = "battle-4/xorshift32-v1";
+        // v2: inputs can be key releases (hold notes).
+        private const string RuntimeVersion = "battle-4/xorshift32-v2";
         [Serializable] private sealed class Line
         {
             public string type, chartHash, configHash, runtimeVersion = RuntimeVersion;
@@ -31,7 +32,9 @@ namespace StringAsASword.Combat
         }
         public static string ChartHash(BattleSettings s) => Hash(s.ChartId + "|" + s.NoteCount + "|" +
             s.Bpm.ToString("R", CultureInfo.InvariantCulture) + "|" + s.PerfectWindow.ToString("R", CultureInfo.InvariantCulture) + "|" +
-            s.GoodWindow.ToString("R", CultureInfo.InvariantCulture) + "|" + s.InputOffset.ToString("R", CultureInfo.InvariantCulture));
+            s.GoodWindow.ToString("R", CultureInfo.InvariantCulture) + "|" + s.InputOffset.ToString("R", CultureInfo.InvariantCulture) +
+            (s.HasAuthoredChart ? "|" + Join(s.NoteTimes) : "") + (s.HasHolds ? "|holds:" + Join(s.HoldEndTimes) : ""));
+        private static string Join(double[] values) => string.Join(",", Array.ConvertAll(values, t => t.ToString("R", CultureInfo.InvariantCulture)));
         public static string StateHash(BattleSession b)
         {
             var text = new StringBuilder().Append(b.LastClosedNote).Append('|').Append(b.Session.Position).Append('|')
@@ -71,6 +74,8 @@ namespace StringAsASword.Combat
             header.settings.PerfectWindow = ExactDouble(lines[0], "PerfectWindow");
             header.settings.GoodWindow = ExactDouble(lines[0], "GoodWindow");
             header.settings.InputOffset = ExactDouble(lines[0], "InputOffset");
+            header.settings.NoteTimes = ExactDoubles(lines[0], "NoteTimes");
+            header.settings.HoldEndTimes = ExactDoubles(lines[0], "HoldEndTimes");
             if (header.type != "header" || header.runtimeVersion != RuntimeVersion ||
                 header.chartHash != ChartHash(header.settings) || header.configHash != Hash(JsonUtility.ToJson(header.settings)))
                 throw new InvalidDataException("Replay version or content hash mismatch.");
@@ -78,7 +83,9 @@ namespace StringAsASword.Combat
             foreach (string text in lines)
             {
                 var line = JsonUtility.FromJson<Line>(text);
-                if (line.type == "input") battle.Request(line.input.action, line.input.direction, ExactDouble(text, "time"));
+                if (line.type != "input") continue;
+                if (line.input.release) battle.Release(line.input.action, line.input.direction, ExactDouble(text, "time"));
+                else battle.Request(line.input.action, line.input.direction, ExactDouble(text, "time"));
             }
             var footer = JsonUtility.FromJson<Line>(lines[lines.Length - 1]);
             battle.Advance(ExactDouble(lines[lines.Length - 1], "endTime"));
@@ -103,6 +110,12 @@ namespace StringAsASword.Combat
                 footer.type != battle.Outcome.ToString() || footer.finalStateHash != StateHash(battle))
                 throw new InvalidDataException("Replay final state mismatch.");
             return battle;
+        }
+        private static double[] ExactDoubles(string json, string field)
+        {
+            var match = Regex.Match(json, "\"" + field + "\"\\s*:\\s*\\[([^\\]]*)\\]");
+            if (!match.Success || match.Groups[1].Value.Trim().Length == 0) return new double[0];
+            return Array.ConvertAll(match.Groups[1].Value.Split(','), v => double.Parse(v.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture));
         }
         private static double ExactDouble(string json, string field)
         {

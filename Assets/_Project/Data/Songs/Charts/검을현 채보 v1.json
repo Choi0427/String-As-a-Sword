@@ -1,0 +1,1666 @@
+{
+  "formatVersion": 1,
+  "name": "NORMAL",
+  "level": 1,
+  "tracks": [
+    {
+      "id": "Note_1"
+    },
+    {
+      "id": "Note_2"
+    },
+    {
+      "id": "Note_3"
+    },
+    {
+      "id": "Note_4"
+    }
+  ],
+  "notes": [
+    {
+      "tick": 1800,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 2280,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 2760,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 3240,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 3720,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 4200,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 4680,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 5160,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 5640,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 6120,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 6600,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 7080,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 7560,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 8040,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 8520,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 9000,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 9480,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 9960,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 10440,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 10920,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 11400,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 11880,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 12360,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 12840,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 13320,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 13800,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 14280,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 14760,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 15240,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 15720,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 16200,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 16680,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 17160,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 17640,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 18120,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 18600,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 19080,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 19560,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 20040,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 20520
+    },
+    {
+      "tick": 21000,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 21480,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 21960,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 22440,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 22920,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 23400,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 23880,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 24360,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 24840,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 25320,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 25800,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 26280,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 26760,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 27240,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 27720,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 28200
+    },
+    {
+      "tick": 28680,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 29160,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 29640,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 30120,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 30600,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 31080,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 31560,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 32040,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 32520,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 33000,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 33480,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 33960,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 34440,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 34920
+    },
+    {
+      "tick": 35400,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 35880
+    },
+    {
+      "tick": 36360,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 36840,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 37320,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 37800,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 38280,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 38760
+    },
+    {
+      "tick": 39240,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 39720
+    },
+    {
+      "tick": 40200,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 40680,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 41160,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 41640,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 42120,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 42600,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 43080,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 43560,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 44040,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 44520,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 45000,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 45480,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 45960,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 46440,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 46920,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 47400,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 47880,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 48000,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 48360,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 48480,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 48840,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 48960,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 49320,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 49440,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 49800,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 50280
+    },
+    {
+      "tick": 50760,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 51240
+    },
+    {
+      "tick": 51720,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 52200
+    },
+    {
+      "tick": 52680,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 53160
+    },
+    {
+      "tick": 53640,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 54120,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 54600,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 55080,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 55560,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 56040,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 56520,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 57000,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 57480,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 57960
+    },
+    {
+      "tick": 58440,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 58920
+    },
+    {
+      "tick": 59400,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 59880,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 60360,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 60840,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 61320,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 61800,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 62280,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 62760,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 63240,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 63720,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 64200,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 64680,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 65160,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 65400
+    },
+    {
+      "tick": 65640,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 66120,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 66360
+    },
+    {
+      "tick": 66600,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 67080,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 67320
+    },
+    {
+      "tick": 67560,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 68040,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 68280
+    },
+    {
+      "tick": 68520,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 69000,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 69480,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 69960,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 70440,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 70920,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 71400,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 71880,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 72360,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 72840,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 73320,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 73800,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 74280,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 74760,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 75240,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 75720,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 75960
+    },
+    {
+      "tick": 76200,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 76680,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 77160,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 77640,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 78120,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 78600,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 79080,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 79560,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 80040,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 80520,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 81000,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 81480,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 81960,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 82440,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 82920,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 83400,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 83640
+    },
+    {
+      "tick": 83880,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 84360,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 84840,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 85320,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 85800,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 86280,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 86760,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 87240,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 87720,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 88200,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 88680,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 89160,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 89640,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 90120,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 90600
+    },
+    {
+      "tick": 91080,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 91560
+    },
+    {
+      "tick": 92040,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 92520,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 93000,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 93480,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 93960,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 94440
+    },
+    {
+      "tick": 94920,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 95400
+    },
+    {
+      "tick": 95880,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 96360,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 96840,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 97320,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 97800,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 98280,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 98760,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 99240,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 99720,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 100200,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 100680,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 101160,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 101640,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 102120,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 102600,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 103080,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 103560,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 103680,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 104040,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 104160,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 104520,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 104640,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 105000,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 105120,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 105480,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 105720
+    },
+    {
+      "tick": 105960,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 106440,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 106680
+    },
+    {
+      "tick": 106920,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 107400,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 107640
+    },
+    {
+      "tick": 107880,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 108360,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 108600
+    },
+    {
+      "tick": 108840,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 109320,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 109800,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 110280,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 110760,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 111240,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 111720,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 112200,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 112680,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 113160,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 113640
+    },
+    {
+      "tick": 114120,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 114600
+    },
+    {
+      "tick": 115080,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 115560
+    },
+    {
+      "tick": 116040,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 116520
+    },
+    {
+      "tick": 117000,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 117480,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 117960,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 118440,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 118920,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 119400,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 119880,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 120360,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 120840,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 121320,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 121800,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 122280,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 122760,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 123240,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 123720,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 124200,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 124680,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 125160,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 125640,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 126120,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 126600,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 127080,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 127560,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 128040,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 128520,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 129000,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 129480,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 129960,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 130440,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 130920,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 131400,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 131880,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 135240
+    },
+    {
+      "tick": 135720,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 136200,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 137400
+    },
+    {
+      "tick": 137640,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 138120,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 138600,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 139080,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 139560,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 140040,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 140520
+    },
+    {
+      "tick": 141000,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 141480,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 141960,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 142440
+    },
+    {
+      "tick": 142920,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 143400,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 143880,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 144360,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 144840
+    },
+    {
+      "tick": 145320,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 145800,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 146280,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 146760,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 147240,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 147720,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 148200,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 148680,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 149160,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 149640,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 150120,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 150600,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 151080,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 151560,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 151800
+    },
+    {
+      "tick": 152040,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 152520,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 152760
+    },
+    {
+      "tick": 153000,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 153480,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 153720
+    },
+    {
+      "tick": 153960,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 154440,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 154680
+    },
+    {
+      "tick": 154920,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 155400,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 155880,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 156360,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 156840,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 157320,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 157800,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 158280,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 158760,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 159240,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 159360,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 159480,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 160200,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 160680,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 161160,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 161640,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 162120,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 162600,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 163080,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 163560,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 164040,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 164520,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 165000,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 165480,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 165960,
+      "track": "Note_3",
+      "type": "tap"
+    },
+    {
+      "tick": 166440,
+      "track": "Note_3",
+      "type": "hold",
+      "endTick": 166920
+    }
+  ]
+}
