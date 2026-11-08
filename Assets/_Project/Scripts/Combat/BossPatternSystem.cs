@@ -43,10 +43,21 @@ namespace StringAsASword.Combat
         public ulong LastFiredUnblockable { get; private set; }
         public Func<IReadOnlyList<BossTelegraph>, bool> CanPublish;
         public event Action<string, BossTelegraph> Changed;
-        public BossPatternSystem(PatternDefinition[] definitions, RandomAttackSchedule schedule = null, int seed = 0)
+        // fastNote[n]: the gap from note n-1 to note n is shorter than one beat. Null for evenly spaced charts.
+        private readonly bool[] fastNote;
+        public BossPatternSystem(PatternDefinition[] definitions, RandomAttackSchedule schedule = null, int seed = 0, bool[] fastNotes = null)
         {
             this.definitions = definitions; this.schedule = schedule ?? new RandomAttackSchedule();
             this.schedule.Validate(); random = new SeededRandom(unchecked(seed ^ 0x36d9f1ab));
+            fastNote = fastNotes == null ? null : (bool[])fastNotes.Clone();
+        }
+        /// <summary>Fast sections belong to the rhythm: no attack whose warning or hits span a sub-beat note gap.</summary>
+        public bool CrossesFastSection(int lastClosed, int lastHit)
+        {
+            if (fastNote == null) return false;
+            for (int n = Math.Max(1, lastClosed + 1); n <= lastHit && n < fastNote.Length; n++)
+                if (fastNote[n]) return true;
+            return false;
         }
         public void BeginPhase(int phaseId, int firstNote)
         {
@@ -72,7 +83,8 @@ namespace StringAsASword.Combat
                         invalidates = true;
                 bool noDodge = (p.Kind == PatternKind.TopPressure || p.Response == AttackResponse.DodgeOnly) && p.Response != AttackResponse.GuardOnly &&
                     !CanDodge(player, proposal, lastClosed + 1);
-                if (hold || invalidates || noDodge || CanPublish != null && !CanPublish(new[] { proposal }))
+                if (hold || invalidates || noDodge || CrossesFastSection(lastClosed, proposal.ImpactNote) ||
+                    CanPublish != null && !CanPublish(new[] { proposal }))
                 { nextImpact[i]++; Changed?.Invoke("defer", proposal); continue; }
                 active.Add(proposal); nextId++; Changed?.Invoke("publish", proposal);
                 nextImpact[i] += p.RepeatNotes;
@@ -136,6 +148,8 @@ namespace StringAsASword.Combat
             targetImpact = Math.Max(targetImpact, lastClosed + warning);
             if (targetImpact + pending.Span >= noteCount) { SkipAtChartEnd(lastClosed, player, noteCount); return; }
             string reason = "noise-wait";
+            // Deterministic for every candidate, so check once instead of spending attempts and randomness on it.
+            if (!hold && CrossesFastSection(lastClosed, targetImpact + pending.Span)) { hold = true; reason = "fast-section"; }
             if (!hold)
             {
                 for (int attempt = 0; attempt < schedule.CandidateAttempts; attempt++)
@@ -156,7 +170,8 @@ namespace StringAsASword.Combat
                         hits = Sequence(p, player, first, warn);
                         required = SequenceActions(p, player, hits, lastClosed);
                     }
-                    reason = first + p.Span >= noteCount ? "chart-end" : required < 0 ? "no-dodge-within-warning" : Invalidates(hits) ? "disclosed-route" :
+                    reason = first + p.Span >= noteCount ? "chart-end" : CrossesFastSection(lastClosed, first + p.Span) ? "fast-section" :
+                        required < 0 ? "no-dodge-within-warning" : Invalidates(hits) ? "disclosed-route" :
                         CanPublish != null && !CanPublish(hits) ? "pickup-route" : "";
                     hits = Sequence(p, player, first, warn, required, reason);
                     if (reason.Length != 0) { Changed?.Invoke("reject", hits[0]); continue; }

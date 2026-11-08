@@ -66,4 +66,4 @@
 - `String As a Sword > Prepare Windows Build`를 실행하면 빈 슬롯 목록이 콘솔에 정보 로그로 나온다. 빌드 실패로 처리하지 않는다.
 - PlayMode 테스트 `ArtSetIntegrationTests`는 ArtSet을 메모리에서만 그레이박스로 채운다. 프리팹이 대체되는지, 신호 경로에서 로그가 나지 않는지 확인하며 디스크에는 저장하지 않는다.
 - 어두운 아트로 바꾼 뒤에는 Windows 빌드의 `--verify-prototype` 밝기 검사(밝은 픽셀 5% 초과)를 다시 확인한다.
-- 전투 로직은 바뀌지 않았으므로 combatVersion은 battle-4 그대로다.
+- 전투 로직은 바뀌지 않았으므로 combatVersion은 바뀌지 않았다(당시 battle-4).

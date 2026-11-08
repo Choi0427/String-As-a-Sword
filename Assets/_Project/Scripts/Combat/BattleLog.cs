@@ -12,7 +12,7 @@ namespace StringAsASword.Combat
     public static class BattleLog
     {
         // v2: inputs can be key releases (hold notes).
-        private const string RuntimeVersion = "battle-4/xorshift32-v2";
+        private const string RuntimeVersion = "battle-5/xorshift32-v2";
         [Serializable] private sealed class Line
         {
             public string type, chartHash, configHash, runtimeVersion = RuntimeVersion;

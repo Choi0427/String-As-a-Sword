@@ -61,6 +61,15 @@ namespace StringAsASword.Combat
         // Parallel to NoteTimes: 0 for a tap, otherwise the time the held key must be released.
         public double[] HoldEndTimes;
         public bool HasHolds => HoldEndTimes != null && HoldEndTimes.Length > 0;
+        /// <summary>Per note: true when the gap from the previous note is shorter than one beat. Null for even charts.</summary>
+        public bool[] FastNotes()
+        {
+            if (!HasAuthoredChart) return null;
+            double beat = 60.0 / Bpm;
+            var fast = new bool[NoteTimes.Length];
+            for (int i = 1; i < fast.Length; i++) fast[i] = NoteTimes[i] - NoteTimes[i - 1] < beat - 1e-6;
+            return fast;
+        }
         public IBeatTimeline CreateTimeline() => HasAuthoredChart ? (IBeatTimeline)new AuthoredBeatTimeline(Bpm, NoteTimes) : new ConstantBeatTimeline(Bpm);
         public double Bpm, PerfectWindow = .07, GoodWindow = .14, InputOffset;
         public int PlayerMaxHp = 3, SpawnInterval = 8, MaxNoise = 2, MaxCollectionCost = 12;

@@ -1,0 +1,2723 @@
+{
+    "version": "battle-5",
+    "chartHash": "e9384fed28faa61fa4115c97c589856dc38ec09cd3a636e43e099c353bc648fe",
+    "noteCount": 321,
+    "seedsPerGroup": 1000,
+    "executedRuns": 9000,
+    "invariantFailures": 0,
+    "replayed": 18,
+    "replayFailures": 0,
+    "elapsedSeconds": 900.1177345,
+    "passed": false,
+    "replayErrors": [],
+    "criteria": [
+        {
+            "name": "share three-bot mean",
+            "actual": "43.9/43.9/12.2",
+            "target": "43/43/14 +-4pp",
+            "passed": true
+        },
+        {
+            "name": "share CollectFirst",
+            "actual": "44.1/45.0/10.9",
+            "target": "43/43/14 +-8pp",
+            "passed": true
+        },
+        {
+            "name": "share AttackHold",
+            "actual": "43.7/41.9/14.4",
+            "target": "43/43/14 +-8pp",
+            "passed": true
+        },
+        {
+            "name": "share MovementUse",
+            "actual": "43.9/44.9/11.2",
+            "target": "43/43/14 +-8pp",
+            "passed": true
+        },
+        {
+            "name": "clear no-miss",
+            "actual": "98.1",
+            "target": ">=90%",
+            "passed": true
+        },
+        {
+            "name": "clear miss5",
+            "actual": "77.8",
+            "target": ">=80%",
+            "passed": false
+        },
+        {
+            "name": "leftover median",
+            "actual": "40",
+            "target": "10..50",
+            "passed": true
+        },
+        {
+            "name": "DodgeOnly fired P10",
+            "actual": "8",
+            "target": ">=8",
+            "passed": true
+        },
+        {
+            "name": "GuardOnly fired P10",
+            "actual": "8",
+            "target": ">=8",
+            "passed": true
+        },
+        {
+            "name": "invariant failures",
+            "actual": "0",
+            "target": "0",
+            "passed": true
+        },
+        {
+            "name": "replay failures",
+            "actual": "0/18",
+            "target": "0",
+            "passed": true
+        }
+    ],
+    "groups": [
+        {
+            "group": "development",
+            "strategy": "CollectFirst",
+            "runs": 1000,
+            "clears": 986,
+            "deaths": 0,
+            "timeouts": 14,
+            "invariantFailures": 0,
+            "clearRate": 0.986,
+            "deathRate": 0.0,
+            "attackShare": 0.4391970261294297,
+            "moveShare": 0.4503850614873675,
+            "guardShare": 0.11041791238320283,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 110.0,
+                    "p10": 122.0,
+                    "p50": 122.0,
+                    "p90": 122.0,
+                    "max": 122.0,
+                    "mean": 121.929
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 73.0,
+                    "p10": 107.0,
+                    "p50": 124.0,
+                    "p90": 146.0,
+                    "max": 179.0,
+                    "mean": 125.035
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 8.0,
+                    "p10": 22.0,
+                    "p50": 30.0,
+                    "p90": 40.0,
+                    "max": 60.0,
+                    "mean": 30.654
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 1.0,
+                    "p90": 4.0,
+                    "max": 14.0,
+                    "mean": 1.742
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 8.0,
+                    "p10": 22.0,
+                    "p50": 30.0,
+                    "p90": 40.0,
+                    "max": 59.0,
+                    "mean": 30.45
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 19.0,
+                    "p50": 42.0,
+                    "p90": 62.0,
+                    "max": 95.0,
+                    "mean": 41.64
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 10.0,
+                    "p10": 16.0,
+                    "p50": 20.0,
+                    "p90": 24.0,
+                    "max": 29.0,
+                    "mean": 20.121
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 10.0,
+                    "p10": 16.0,
+                    "p50": 20.0,
+                    "p90": 24.0,
+                    "max": 29.0,
+                    "mean": 19.819
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 3.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 20.0,
+                    "mean": 10.977
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 3.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 20.0,
+                    "mean": 10.654
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 1.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 23.0,
+                    "mean": 11.334
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 23.0,
+                    "mean": 11.081
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.354
+                },
+                {
+                    "name": "Chord",
+                    "mean": 5.372
+                },
+                {
+                    "name": "Cross",
+                    "mean": 1.993
+                },
+                {
+                    "name": "Line",
+                    "mean": 9.017
+                },
+                {
+                    "name": "Lock",
+                    "mean": 6.837
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.347
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.277
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.972
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 5.469
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 2.69
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.315
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 2.911
+                }
+            ]
+        },
+        {
+            "group": "development",
+            "strategy": "AttackHold",
+            "runs": 1000,
+            "clears": 982,
+            "deaths": 0,
+            "timeouts": 18,
+            "invariantFailures": 0,
+            "clearRate": 0.982,
+            "deathRate": 0.0,
+            "attackShare": 0.43594090318981157,
+            "moveShare": 0.42013311445625858,
+            "guardShare": 0.14392598235392999,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 104.0,
+                    "p10": 122.0,
+                    "p50": 122.0,
+                    "p90": 122.0,
+                    "max": 122.0,
+                    "mean": 121.893
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 77.0,
+                    "p10": 99.0,
+                    "p50": 116.0,
+                    "p90": 138.0,
+                    "max": 173.0,
+                    "mean": 117.473
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 21.0,
+                    "p10": 31.0,
+                    "p50": 40.0,
+                    "p90": 49.0,
+                    "max": 64.0,
+                    "mean": 40.243
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 2.0,
+                    "p90": 6.0,
+                    "max": 16.0,
+                    "mean": 2.748
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 21.0,
+                    "p10": 31.0,
+                    "p50": 40.0,
+                    "p90": 49.0,
+                    "max": 64.0,
+                    "mean": 40.031
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 15.0,
+                    "p50": 40.0,
+                    "p90": 60.0,
+                    "max": 86.0,
+                    "mean": 38.643
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 8.0,
+                    "p10": 16.0,
+                    "p50": 20.0,
+                    "p90": 25.0,
+                    "max": 29.0,
+                    "mean": 20.246
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 8.0,
+                    "p10": 16.0,
+                    "p50": 20.0,
+                    "p90": 24.0,
+                    "max": 29.0,
+                    "mean": 19.958
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 5.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 20.0,
+                    "mean": 11.008
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 5.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 20.0,
+                    "mean": 10.718
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 2.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 21.0,
+                    "mean": 11.45
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 2.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 20.0,
+                    "mean": 11.184
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.374
+                },
+                {
+                    "name": "Chord",
+                    "mean": 5.359
+                },
+                {
+                    "name": "Cross",
+                    "mean": 2.005
+                },
+                {
+                    "name": "Line",
+                    "mean": 9.073
+                },
+                {
+                    "name": "Lock",
+                    "mean": 6.893
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.401
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.271
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.987
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 5.493
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 2.728
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.36
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 2.916
+                }
+            ]
+        },
+        {
+            "group": "development",
+            "strategy": "MovementUse",
+            "runs": 1000,
+            "clears": 962,
+            "deaths": 0,
+            "timeouts": 38,
+            "invariantFailures": 0,
+            "clearRate": 0.962,
+            "deathRate": 0.0,
+            "attackShare": 0.4384055361926434,
+            "moveShare": 0.45020811129993956,
+            "guardShare": 0.11138635250741712,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 98.0,
+                    "p10": 122.0,
+                    "p50": 122.0,
+                    "p90": 122.0,
+                    "max": 122.0,
+                    "mean": 121.761
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 83.0,
+                    "p10": 104.0,
+                    "p50": 124.0,
+                    "p90": 146.0,
+                    "max": 187.0,
+                    "mean": 125.039
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 10.0,
+                    "p10": 22.0,
+                    "p50": 31.0,
+                    "p90": 40.0,
+                    "max": 53.0,
+                    "mean": 30.936
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 4.0,
+                    "p50": 8.0,
+                    "p90": 13.0,
+                    "max": 23.0,
+                    "mean": 7.908
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 10.0,
+                    "p10": 22.0,
+                    "p50": 31.0,
+                    "p90": 40.0,
+                    "max": 52.0,
+                    "mean": 30.736
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 10.0,
+                    "p50": 36.0,
+                    "p90": 59.0,
+                    "max": 93.0,
+                    "mean": 35.356
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 10.0,
+                    "p10": 17.0,
+                    "p50": 20.0,
+                    "p90": 25.0,
+                    "max": 32.0,
+                    "mean": 20.471
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 10.0,
+                    "p10": 16.0,
+                    "p50": 20.0,
+                    "p90": 24.0,
+                    "max": 31.0,
+                    "mean": 20.177
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 2.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 19.0,
+                    "mean": 11.043
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 2.0,
+                    "p10": 7.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 19.0,
+                    "mean": 10.739
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 3.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 16.0,
+                    "max": 21.0,
+                    "mean": 11.557
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 3.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 21.0,
+                    "mean": 11.416
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.389
+                },
+                {
+                    "name": "Chord",
+                    "mean": 5.484
+                },
+                {
+                    "name": "Cross",
+                    "mean": 2.003
+                },
+                {
+                    "name": "Line",
+                    "mean": 9.211
+                },
+                {
+                    "name": "Lock",
+                    "mean": 6.955
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.458
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.29
+                },
+                {
+                    "name": "Top",
+                    "mean": 2.008
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 5.675
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 2.626
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.339
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 2.894
+                }
+            ]
+        },
+        {
+            "group": "development",
+            "strategy": "ALL",
+            "runs": 3000,
+            "clears": 2930,
+            "deaths": 0,
+            "timeouts": 70,
+            "invariantFailures": 0,
+            "clearRate": 0.9766666666666667,
+            "deathRate": 0.0,
+            "attackShare": 0.4378433535378214,
+            "moveShare": 0.44019555357542786,
+            "guardShare": 0.12196109288675065,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 98.0,
+                    "p10": 122.0,
+                    "p50": 122.0,
+                    "p90": 122.0,
+                    "max": 122.0,
+                    "mean": 121.861
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 73.0,
+                    "p10": 103.0,
+                    "p50": 121.0,
+                    "p90": 144.0,
+                    "max": 187.0,
+                    "mean": 122.51566666666666
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 8.0,
+                    "p10": 23.0,
+                    "p50": 34.0,
+                    "p90": 45.0,
+                    "max": 64.0,
+                    "mean": 33.94433333333333
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 3.0,
+                    "p90": 10.0,
+                    "max": 23.0,
+                    "mean": 4.132666666666666
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 8.0,
+                    "p10": 23.0,
+                    "p50": 34.0,
+                    "p90": 45.0,
+                    "max": 64.0,
+                    "mean": 33.739
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 0.0,
+                    "p10": 15.0,
+                    "p50": 39.0,
+                    "p90": 60.0,
+                    "max": 95.0,
+                    "mean": 38.54633333333334
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 8.0,
+                    "p10": 16.0,
+                    "p50": 20.0,
+                    "p90": 24.0,
+                    "max": 32.0,
+                    "mean": 20.279333333333335
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 8.0,
+                    "p10": 16.0,
+                    "p50": 20.0,
+                    "p90": 24.0,
+                    "max": 31.0,
+                    "mean": 19.984666666666667
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 2.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 20.0,
+                    "mean": 11.009333333333334
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 2.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 20.0,
+                    "mean": 10.703666666666667
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 1.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 23.0,
+                    "mean": 11.447
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 0.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 23.0,
+                    "mean": 11.227
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.3723333333333335
+                },
+                {
+                    "name": "Chord",
+                    "mean": 5.405
+                },
+                {
+                    "name": "Cross",
+                    "mean": 2.0003333333333335
+                },
+                {
+                    "name": "Line",
+                    "mean": 9.100333333333334
+                },
+                {
+                    "name": "Lock",
+                    "mean": 6.895
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.402
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.2793333333333335
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.989
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 5.5456666666666669
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 2.6813333333333335
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.338
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 2.907
+                }
+            ]
+        },
+        {
+            "group": "holdout",
+            "strategy": "CollectFirst",
+            "runs": 1000,
+            "clears": 991,
+            "deaths": 0,
+            "timeouts": 9,
+            "invariantFailures": 0,
+            "clearRate": 0.991,
+            "deathRate": 0.0,
+            "attackShare": 0.440784860816955,
+            "moveShare": 0.4497480898925135,
+            "guardShare": 0.10946704929053151,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 110.0,
+                    "p10": 122.0,
+                    "p50": 122.0,
+                    "p90": 122.0,
+                    "max": 122.0,
+                    "mean": 121.959
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 82.0,
+                    "p10": 105.0,
+                    "p50": 124.0,
+                    "p90": 144.0,
+                    "max": 181.0,
+                    "mean": 124.439
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 9.0,
+                    "p10": 21.0,
+                    "p50": 30.0,
+                    "p90": 39.0,
+                    "max": 55.0,
+                    "mean": 30.288
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 1.0,
+                    "p90": 4.0,
+                    "max": 14.0,
+                    "mean": 1.772
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 9.0,
+                    "p10": 21.0,
+                    "p50": 30.0,
+                    "p90": 39.0,
+                    "max": 55.0,
+                    "mean": 30.118
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 20.0,
+                    "p50": 44.0,
+                    "p90": 63.0,
+                    "max": 85.0,
+                    "mean": 42.542
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 9.0,
+                    "p10": 16.0,
+                    "p50": 20.0,
+                    "p90": 24.0,
+                    "max": 30.0,
+                    "mean": 19.895
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 9.0,
+                    "p10": 16.0,
+                    "p50": 20.0,
+                    "p90": 24.0,
+                    "max": 29.0,
+                    "mean": 19.597
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 4.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 19.0,
+                    "mean": 10.872
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 3.0,
+                    "p10": 7.0,
+                    "p50": 10.0,
+                    "p90": 14.0,
+                    "max": 18.0,
+                    "mean": 10.556
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 2.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 21.0,
+                    "mean": 11.274
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 2.0,
+                    "p10": 7.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 21.0,
+                    "mean": 11.069
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.358
+                },
+                {
+                    "name": "Chord",
+                    "mean": 5.357
+                },
+                {
+                    "name": "Cross",
+                    "mean": 1.842
+                },
+                {
+                    "name": "Line",
+                    "mean": 9.071
+                },
+                {
+                    "name": "Lock",
+                    "mean": 6.79
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.395
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.345
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.894
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 5.458
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 2.606
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.248
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 2.858
+                }
+            ]
+        },
+        {
+            "group": "holdout",
+            "strategy": "AttackHold",
+            "runs": 1000,
+            "clears": 983,
+            "deaths": 0,
+            "timeouts": 17,
+            "invariantFailures": 0,
+            "clearRate": 0.983,
+            "deathRate": 0.0,
+            "attackShare": 0.4372064338933947,
+            "moveShare": 0.41851859819719036,
+            "guardShare": 0.1442749679094149,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 109.0,
+                    "p10": 122.0,
+                    "p50": 122.0,
+                    "p90": 122.0,
+                    "max": 122.0,
+                    "mean": 121.936
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 71.0,
+                    "p10": 98.0,
+                    "p50": 116.0,
+                    "p90": 136.0,
+                    "max": 172.0,
+                    "mean": 116.724
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 20.0,
+                    "p10": 32.0,
+                    "p50": 40.0,
+                    "p90": 49.0,
+                    "max": 62.0,
+                    "mean": 40.238
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 2.0,
+                    "p90": 6.0,
+                    "max": 13.0,
+                    "mean": 2.793
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 19.0,
+                    "p10": 31.0,
+                    "p50": 40.0,
+                    "p90": 49.0,
+                    "max": 62.0,
+                    "mean": 40.052
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 16.0,
+                    "p50": 40.0,
+                    "p90": 61.0,
+                    "max": 97.0,
+                    "mean": 39.309
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 8.0,
+                    "p10": 16.0,
+                    "p50": 20.0,
+                    "p90": 24.0,
+                    "max": 31.0,
+                    "mean": 20.099
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 8.0,
+                    "p10": 16.0,
+                    "p50": 20.0,
+                    "p90": 24.0,
+                    "max": 31.0,
+                    "mean": 19.825
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 4.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 19.0,
+                    "mean": 11.033
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 3.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 18.0,
+                    "mean": 10.717
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 3.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 21.0,
+                    "mean": 11.353
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 3.0,
+                    "p10": 7.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 21.0,
+                    "mean": 11.099
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.375
+                },
+                {
+                    "name": "Chord",
+                    "mean": 5.316
+                },
+                {
+                    "name": "Cross",
+                    "mean": 1.92
+                },
+                {
+                    "name": "Line",
+                    "mean": 9.098
+                },
+                {
+                    "name": "Lock",
+                    "mean": 6.847
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.441
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.423
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.96
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 5.425
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 2.64
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.338
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 2.858
+                }
+            ]
+        },
+        {
+            "group": "holdout",
+            "strategy": "MovementUse",
+            "runs": 1000,
+            "clears": 969,
+            "deaths": 0,
+            "timeouts": 31,
+            "invariantFailures": 0,
+            "clearRate": 0.969,
+            "deathRate": 0.0,
+            "attackShare": 0.4391754286682359,
+            "moveShare": 0.4487382357287811,
+            "guardShare": 0.11208633560298312,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 108.0,
+                    "p10": 122.0,
+                    "p50": 122.0,
+                    "p90": 122.0,
+                    "max": 122.0,
+                    "mean": 121.84
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 79.0,
+                    "p10": 105.0,
+                    "p50": 124.0,
+                    "p90": 144.0,
+                    "max": 178.0,
+                    "mean": 124.493
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 12.0,
+                    "p10": 22.0,
+                    "p50": 31.0,
+                    "p90": 40.0,
+                    "max": 54.0,
+                    "mean": 31.096
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 3.0,
+                    "p50": 7.0,
+                    "p90": 12.0,
+                    "max": 23.0,
+                    "mean": 7.773
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 11.0,
+                    "p10": 22.0,
+                    "p50": 31.0,
+                    "p90": 40.0,
+                    "max": 54.0,
+                    "mean": 30.929
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 13.0,
+                    "p50": 37.0,
+                    "p90": 59.0,
+                    "max": 91.0,
+                    "mean": 35.798
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 9.0,
+                    "p10": 16.0,
+                    "p50": 20.0,
+                    "p90": 24.0,
+                    "max": 30.0,
+                    "mean": 20.303
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 9.0,
+                    "p10": 16.0,
+                    "p50": 20.0,
+                    "p90": 24.0,
+                    "max": 30.0,
+                    "mean": 20.008
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 4.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 19.0,
+                    "mean": 11.105
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 4.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 19.0,
+                    "mean": 10.78
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 3.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 23.0,
+                    "mean": 11.541
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 3.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 23.0,
+                    "mean": 11.41
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.452
+                },
+                {
+                    "name": "Chord",
+                    "mean": 5.416
+                },
+                {
+                    "name": "Cross",
+                    "mean": 1.922
+                },
+                {
+                    "name": "Line",
+                    "mean": 9.212
+                },
+                {
+                    "name": "Lock",
+                    "mean": 6.918
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.441
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.355
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.956
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 5.684
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 2.641
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.368
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 2.833
+                }
+            ]
+        },
+        {
+            "group": "holdout",
+            "strategy": "ALL",
+            "runs": 3000,
+            "clears": 2943,
+            "deaths": 0,
+            "timeouts": 57,
+            "invariantFailures": 0,
+            "clearRate": 0.981,
+            "deathRate": 0.0,
+            "attackShare": 0.43905077111641718,
+            "moveShare": 0.4389559346612838,
+            "guardShare": 0.12199329422229907,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 108.0,
+                    "p10": 122.0,
+                    "p50": 122.0,
+                    "p90": 122.0,
+                    "max": 122.0,
+                    "mean": 121.91166666666666
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 71.0,
+                    "p10": 102.0,
+                    "p50": 121.0,
+                    "p90": 143.0,
+                    "max": 181.0,
+                    "mean": 121.88533333333334
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 9.0,
+                    "p10": 23.0,
+                    "p50": 34.0,
+                    "p90": 45.0,
+                    "max": 62.0,
+                    "mean": 33.874
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 3.0,
+                    "p90": 10.0,
+                    "max": 23.0,
+                    "mean": 4.112666666666667
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 9.0,
+                    "p10": 23.0,
+                    "p50": 33.0,
+                    "p90": 45.0,
+                    "max": 62.0,
+                    "mean": 33.699666666666669
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 0.0,
+                    "p10": 15.0,
+                    "p50": 40.0,
+                    "p90": 61.0,
+                    "max": 97.0,
+                    "mean": 39.21633333333333
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 8.0,
+                    "p10": 16.0,
+                    "p50": 20.0,
+                    "p90": 24.0,
+                    "max": 31.0,
+                    "mean": 20.099
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 8.0,
+                    "p10": 16.0,
+                    "p50": 20.0,
+                    "p90": 24.0,
+                    "max": 31.0,
+                    "mean": 19.81
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 4.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 19.0,
+                    "mean": 11.003333333333334
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 3.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 19.0,
+                    "mean": 10.684333333333333
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 2.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 23.0,
+                    "mean": 11.389333333333333
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 2.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 23.0,
+                    "mean": 11.192666666666666
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.395
+                },
+                {
+                    "name": "Chord",
+                    "mean": 5.363
+                },
+                {
+                    "name": "Cross",
+                    "mean": 1.8946666666666668
+                },
+                {
+                    "name": "Line",
+                    "mean": 9.127
+                },
+                {
+                    "name": "Lock",
+                    "mean": 6.851666666666667
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.4256666666666667
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.3743333333333335
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.9366666666666668
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 5.522333333333333
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 2.629
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.318
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 2.849666666666667
+                }
+            ]
+        },
+        {
+            "group": "miss5",
+            "strategy": "CollectFirst",
+            "runs": 1000,
+            "clears": 816,
+            "deaths": 148,
+            "timeouts": 36,
+            "invariantFailures": 0,
+            "clearRate": 0.816,
+            "deathRate": 0.148,
+            "attackShare": 0.43949625912682918,
+            "moveShare": 0.45056488687238968,
+            "guardShare": 0.10993885400078124,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 43.0,
+                    "p10": 106.0,
+                    "p50": 122.0,
+                    "p90": 122.0,
+                    "max": 122.0,
+                    "mean": 117.015
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 59.0,
+                    "p10": 101.0,
+                    "p50": 119.0,
+                    "p90": 141.0,
+                    "max": 172.0,
+                    "mean": 119.962
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 4.0,
+                    "p10": 20.0,
+                    "p50": 29.0,
+                    "p90": 39.0,
+                    "max": 52.0,
+                    "mean": 29.271
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 3.0,
+                    "p10": 11.0,
+                    "p50": 16.0,
+                    "p90": 21.0,
+                    "max": 31.0,
+                    "mean": 15.849
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 3.0,
+                    "p10": 20.0,
+                    "p50": 29.0,
+                    "p90": 38.0,
+                    "max": 51.0,
+                    "mean": 28.827
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 1.0,
+                    "max": 3.0,
+                    "mean": 0.286
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 1.0,
+                    "p50": 3.0,
+                    "p90": 5.0,
+                    "max": 5.0,
+                    "mean": 2.73
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 11.0,
+                    "p50": 35.0,
+                    "p90": 64.0,
+                    "max": 202.0,
+                    "mean": 38.903
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 8.0,
+                    "p10": 16.0,
+                    "p50": 20.0,
+                    "p90": 25.0,
+                    "max": 31.0,
+                    "mean": 20.229
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 8.0,
+                    "p10": 15.0,
+                    "p50": 20.0,
+                    "p90": 24.0,
+                    "max": 30.0,
+                    "mean": 19.956
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 3.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 18.0,
+                    "mean": 10.888
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 3.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 18.0,
+                    "mean": 10.653
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 3.0,
+                    "p10": 7.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 21.0,
+                    "mean": 11.306
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 3.0,
+                    "p10": 7.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 21.0,
+                    "mean": 11.115
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.416
+                },
+                {
+                    "name": "Chord",
+                    "mean": 5.446
+                },
+                {
+                    "name": "Cross",
+                    "mean": 1.934
+                },
+                {
+                    "name": "Line",
+                    "mean": 9.254
+                },
+                {
+                    "name": "Lock",
+                    "mean": 6.848
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.348
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.28
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.92
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 5.536
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 2.628
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.299
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 2.815
+                }
+            ]
+        },
+        {
+            "group": "miss5",
+            "strategy": "AttackHold",
+            "runs": 1000,
+            "clears": 755,
+            "deaths": 167,
+            "timeouts": 78,
+            "invariantFailures": 0,
+            "clearRate": 0.755,
+            "deathRate": 0.167,
+            "attackShare": 0.4333762867400599,
+            "moveShare": 0.42332072042546228,
+            "guardShare": 0.14330299283447796,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 45.0,
+                    "p10": 99.0,
+                    "p50": 122.0,
+                    "p90": 122.0,
+                    "max": 122.0,
+                    "mean": 116.365
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 46.0,
+                    "p10": 94.0,
+                    "p50": 113.0,
+                    "p90": 135.0,
+                    "max": 167.0,
+                    "mean": 113.665
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 8.0,
+                    "p10": 29.0,
+                    "p50": 39.0,
+                    "p90": 48.0,
+                    "max": 66.0,
+                    "mean": 38.478
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 5.0,
+                    "p10": 11.0,
+                    "p50": 17.0,
+                    "p90": 23.0,
+                    "max": 30.0,
+                    "mean": 16.763
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 8.0,
+                    "p10": 28.0,
+                    "p50": 38.0,
+                    "p90": 48.0,
+                    "max": 65.0,
+                    "mean": 38.037
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 1.0,
+                    "max": 3.0,
+                    "mean": 0.265
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 1.0,
+                    "p50": 3.0,
+                    "p90": 5.0,
+                    "max": 5.0,
+                    "mean": 2.802
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 3.0,
+                    "p50": 31.0,
+                    "p90": 63.0,
+                    "max": 207.0,
+                    "mean": 35.729
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 8.0,
+                    "p10": 15.0,
+                    "p50": 21.0,
+                    "p90": 25.0,
+                    "max": 30.0,
+                    "mean": 20.254
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 8.0,
+                    "p10": 15.0,
+                    "p50": 20.0,
+                    "p90": 24.0,
+                    "max": 30.0,
+                    "mean": 19.991
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 3.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 20.0,
+                    "mean": 11.042
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 3.0,
+                    "p10": 7.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 20.0,
+                    "mean": 10.777
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 2.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 21.0,
+                    "mean": 11.391
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 2.0,
+                    "p10": 7.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 21.0,
+                    "mean": 11.163
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.411
+                },
+                {
+                    "name": "Chord",
+                    "mean": 5.387
+                },
+                {
+                    "name": "Cross",
+                    "mean": 1.959
+                },
+                {
+                    "name": "Line",
+                    "mean": 9.163
+                },
+                {
+                    "name": "Lock",
+                    "mean": 6.896
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.37
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.311
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.973
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 5.537
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 2.771
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.308
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 2.845
+                }
+            ]
+        },
+        {
+            "group": "miss5",
+            "strategy": "MovementUse",
+            "runs": 1000,
+            "clears": 764,
+            "deaths": 131,
+            "timeouts": 105,
+            "invariantFailures": 0,
+            "clearRate": 0.764,
+            "deathRate": 0.131,
+            "attackShare": 0.43579995457236589,
+            "moveShare": 0.4512937566791655,
+            "guardShare": 0.11290628874846869,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 40.0,
+                    "p10": 105.0,
+                    "p50": 122.0,
+                    "p90": 122.0,
+                    "max": 122.0,
+                    "mean": 117.038
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 58.0,
+                    "p10": 101.0,
+                    "p50": 121.0,
+                    "p90": 141.0,
+                    "max": 176.0,
+                    "mean": 121.199
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 7.0,
+                    "p10": 21.0,
+                    "p50": 30.0,
+                    "p90": 40.0,
+                    "max": 52.0,
+                    "mean": 30.322
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 8.0,
+                    "p10": 15.0,
+                    "p50": 22.0,
+                    "p90": 29.0,
+                    "max": 41.0,
+                    "mean": 22.001
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 6.0,
+                    "p10": 21.0,
+                    "p50": 30.0,
+                    "p90": 39.0,
+                    "max": 52.0,
+                    "mean": 29.889
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 1.0,
+                    "max": 3.0,
+                    "mean": 0.273
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 1.0,
+                    "p50": 3.0,
+                    "p90": 5.0,
+                    "max": 5.0,
+                    "mean": 2.66
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 26.0,
+                    "p90": 55.0,
+                    "max": 202.0,
+                    "mean": 30.44
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 8.0,
+                    "p10": 16.0,
+                    "p50": 21.0,
+                    "p90": 25.0,
+                    "max": 31.0,
+                    "mean": 20.638
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 8.0,
+                    "p10": 16.0,
+                    "p50": 21.0,
+                    "p90": 25.0,
+                    "max": 31.0,
+                    "mean": 20.38
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 4.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 20.0,
+                    "mean": 11.293
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 3.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 19.0,
+                    "mean": 11.021
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 2.0,
+                    "p10": 8.0,
+                    "p50": 12.0,
+                    "p90": 16.0,
+                    "max": 20.0,
+                    "mean": 11.645
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 1000,
+                    "min": 2.0,
+                    "p10": 8.0,
+                    "p50": 12.0,
+                    "p90": 15.0,
+                    "max": 20.0,
+                    "mean": 11.55
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.434
+                },
+                {
+                    "name": "Chord",
+                    "mean": 5.593
+                },
+                {
+                    "name": "Cross",
+                    "mean": 1.972
+                },
+                {
+                    "name": "Line",
+                    "mean": 9.417
+                },
+                {
+                    "name": "Lock",
+                    "mean": 7.015
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.447
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.357
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.976
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 5.786
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 2.754
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.317
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 2.883
+                }
+            ]
+        },
+        {
+            "group": "miss5",
+            "strategy": "ALL",
+            "runs": 3000,
+            "clears": 2335,
+            "deaths": 446,
+            "timeouts": 219,
+            "invariantFailures": 0,
+            "clearRate": 0.7783333333333333,
+            "deathRate": 0.14866666666666668,
+            "attackShare": 0.43621493436572209,
+            "moveShare": 0.44170219652315725,
+            "guardShare": 0.1220828691111208,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 40.0,
+                    "p10": 104.0,
+                    "p50": 122.0,
+                    "p90": 122.0,
+                    "max": 122.0,
+                    "mean": 116.806
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 46.0,
+                    "p10": 98.0,
+                    "p50": 118.0,
+                    "p90": 140.0,
+                    "max": 176.0,
+                    "mean": 118.27533333333334
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 4.0,
+                    "p10": 22.0,
+                    "p50": 33.0,
+                    "p90": 44.0,
+                    "max": 66.0,
+                    "mean": 32.690333333333338
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 3.0,
+                    "p10": 12.0,
+                    "p50": 18.0,
+                    "p90": 25.0,
+                    "max": 41.0,
+                    "mean": 18.204333333333336
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 3.0,
+                    "p10": 22.0,
+                    "p50": 32.0,
+                    "p90": 43.0,
+                    "max": 65.0,
+                    "mean": 32.251
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 1.0,
+                    "max": 3.0,
+                    "mean": 0.27466666666666669
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 0.0,
+                    "p10": 1.0,
+                    "p50": 3.0,
+                    "p90": 5.0,
+                    "max": 5.0,
+                    "mean": 2.7306666666666667
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 0.0,
+                    "p10": 4.0,
+                    "p50": 31.0,
+                    "p90": 61.0,
+                    "max": 207.0,
+                    "mean": 35.024
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 8.0,
+                    "p10": 16.0,
+                    "p50": 21.0,
+                    "p90": 25.0,
+                    "max": 31.0,
+                    "mean": 20.373666666666666
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 8.0,
+                    "p10": 15.0,
+                    "p50": 20.0,
+                    "p90": 25.0,
+                    "max": 31.0,
+                    "mean": 20.109
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 3.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 20.0,
+                    "mean": 11.074333333333334
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 3.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 20.0,
+                    "mean": 10.817
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 2.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 21.0,
+                    "mean": 11.447333333333333
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 3000,
+                    "min": 2.0,
+                    "p10": 7.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 21.0,
+                    "mean": 11.276
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.4203333333333333
+                },
+                {
+                    "name": "Chord",
+                    "mean": 5.475333333333333
+                },
+                {
+                    "name": "Cross",
+                    "mean": 1.955
+                },
+                {
+                    "name": "Line",
+                    "mean": 9.278
+                },
+                {
+                    "name": "Lock",
+                    "mean": 6.919666666666667
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.3883333333333335
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.316
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.9563333333333333
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 5.619666666666666
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 2.7176666666666668
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.308
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 2.8476666666666667
+                }
+            ]
+        }
+    ]
+}
