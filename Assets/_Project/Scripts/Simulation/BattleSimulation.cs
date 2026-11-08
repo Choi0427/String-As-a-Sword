@@ -211,10 +211,12 @@ namespace StringAsASword.Simulation
             var inputRandom = new Random(unchecked(seed ^ 0x4f1bbcdc));
             double secondsPerBeat = 60.0 / settings.Bpm;
             double good = Math.Min(settings.GoodWindow, secondsPerBeat * .45);
+            // Authored charts space notes unevenly; even charts give note * secondsPerBeat as before.
+            var timeline = settings.CreateTimeline();
             int previousPhase = 1;
             for (int note = 0; note < settings.NoteCount && battle.Outcome.ToString() == "Running"; note++)
             {
-                double time = note * secondsPerBeat + settings.InputOffset;
+                double time = timeline.TimeOf(note) + settings.InputOffset;
                 battle.Advance(time);
                 var decision = BattleStrategies.Decide(strategy, battle.Observe());
                 if (missRate == 0 || inputRandom.NextDouble() >= missRate)
