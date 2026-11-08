@@ -21,6 +21,10 @@ namespace StringAsASword.Presentation
         [SerializeField] private ArtSet art;
         public Material BoardMaterial => boardMaterial;
         public ArtSet Art => art;
+        public BoardWorldPresenter BoardWorld => boardWorld;
+        /// <summary>The canvas itself, for full-screen overlays drawn above the HUD.</summary>
+        public RectTransform CanvasRect => (RectTransform)transform;
+        public TMP_FontAsset LatinFont => art.font != null ? art.font : font;
         private PrototypeGame game;
         private RectTransform root;
         private TMP_Text feedback, timing, combo, stats, beatLabel, position, mode, overlayTitle, overlayBody, buttonLabel, countIn;
@@ -189,7 +193,7 @@ namespace StringAsASword.Presentation
             var quitImage=Image(quitRect,new Color(.17f,.20f,.23f)); quitImage.raycastTarget=true;
             var quit=quitRect.gameObject.AddComponent<UnityEngine.UI.Button>(); quit.targetGraphic=quitImage;
             quit.onClick.AddListener(game.QuitGame);
-            Text(quitRect,"Label","QUIT GAME",Vector2.zero,new Vector2(270,50),17,InkWhite);
+            Text(quitRect,"Label",Core.GameFlow.HasMenu?"MAIN MENU":"QUIT GAME",Vector2.zero,new Vector2(270,50),17,InkWhite);
         }
         public void ResetFeedback()
         {

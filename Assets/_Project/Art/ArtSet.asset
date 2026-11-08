@@ -31,11 +31,14 @@ MonoBehaviour:
   font: {fileID: 0}
   background: {fileID: 0}
   noteSprite: {fileID: 0}
+  holdBodySprite: {fileID: 0}
+  holdTailSprite: {fileID: 0}
   crownFull: {fileID: 0}
   crownLocked: {fileID: 0}
   crownBroken: {fileID: 0}
-  mainMenuDark: {fileID: 0}
+  mainMenuDark: {fileID: 21300000, guid: 9777af6bfeec6ff4985b1678bf6e208c, type: 3}
   mainMenuWhite: {fileID: 0}
+  menuFont: {fileID: 0}
   knightBadgeBox:
     serializedVersion: 2
     x: -26

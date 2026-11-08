@@ -66,8 +66,16 @@ namespace StringAsASword.Combat
             if (schedule.Enabled) { Plan(lastImpact < 0 ? firstNote - 1 : lastImpact, firstNote - 1); return; }
             for (int i = 0; i < definitions.Length; i++) nextImpact[i] = firstNote + definitions[i].FirstImpact - 1;
         }
+        private bool halted;
+        /// <summary>The king is stunned: cancel what is shown and publish nothing more.</summary>
+        public void Halt()
+        {
+            foreach (var a in active) Changed?.Invoke("cancel", a);
+            active.Clear(); pending = null; halted = true;
+        }
         public void Publish(int lastClosed, GridPosition player, int noteCount, bool hold)
         {
+            if (halted) return;
             if (schedule.Enabled) { PublishRandom(lastClosed, player, noteCount, hold); return; }
             for (int i = 0; i < definitions.Length; i++)
             {

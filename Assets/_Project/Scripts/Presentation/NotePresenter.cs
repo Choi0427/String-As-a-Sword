@@ -64,9 +64,9 @@ namespace StringAsASword.Presentation
         }
         public void Render(PrototypeGame game)
         {
-            bool active = game.State == PrototypeState.Playing || game.State == PrototypeState.CountIn;
+            bool active = game.State == PrototypeState.Playing || game.State == PrototypeState.CountIn || game.State == PrototypeState.Finale;
             var session = game.Session;
-            double time = game.SongTime + game.Song.VisualOffset;
+            double time = game.SongTime + game.VisualOffset;
             double approach = game.Song.NoteApproachBeats * game.Timeline.SecondsPerBeat;
             var held = session.ActiveHold;
             var last = session.LastHoldResult;

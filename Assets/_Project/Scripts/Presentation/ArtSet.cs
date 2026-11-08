@@ -50,8 +50,11 @@ namespace StringAsASword.Presentation
         public Sprite holdTailSprite;
         [Tooltip("Boss HP crown icons. Shown only when all three are assigned.")]
         public Sprite crownFull, crownLocked, crownBroken;
-        [Tooltip("Reserved for the main menu (dark before the first clear, white after).")]
+        [Tooltip("Main menu background (Figma 'Main Menu' / MainMenu_Logo_BG). After a clear its left side is inverted to white in code; " +
+            "assign mainMenuWhite only to replace that with a hand-made white version.")]
         public Sprite mainMenuDark, mainMenuWhite;
+        [Tooltip("Main menu and story text (Figma: Hakgyoansim Godeunjemok B). Empty = the OS Korean font at runtime.")]
+        public TMP_FontAsset menuFont;
         [Tooltip("Telegraph countdown badges move away from this box around the knight, in board-view pixels.")]
         public Rect knightBadgeBox = new Rect(-26, 5, 52, 76);
 

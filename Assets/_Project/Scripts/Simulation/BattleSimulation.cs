@@ -250,9 +250,13 @@ namespace StringAsASword.Simulation
             result.FinalHp = final.PlayerHp;
             result.GoalRemaining = final.GoalRemaining;
             result.BossHp = final.CurrentHp;
-            result.LeftoverNotes = Math.Max(0, settings.NoteCount - battle.LastClosedNote - 1);
+            // With a finale, the margin is the notes between stunning the king and the finishing run.
+            int endNote = settings.HasFinale ? battle.StunnedNote : battle.LastClosedNote;
+            result.LeftoverNotes = settings.HasFinale
+                ? (battle.KingStunned ? Math.Max(0, settings.DecidingNote - battle.StunnedNote) : 0)
+                : Math.Max(0, settings.NoteCount - battle.LastClosedNote - 1);
             result.Phases[result.FinalPhase - 1].goalRemaining = result.GoalRemaining;
-            if (result.Cleared) result.Phases[3].transitionNote = battle.LastClosedNote;
+            if (result.Cleared) result.Phases[3].transitionNote = endNote;
             foreach (var e in battle.Events)
                 if (e.type.StartsWith("noise-", StringComparison.Ordinal) || e.type == "pattern-defer")
                     Increment(result.EventReasons, e.type);

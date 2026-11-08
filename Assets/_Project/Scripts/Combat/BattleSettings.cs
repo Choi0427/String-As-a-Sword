@@ -55,6 +55,12 @@ namespace StringAsASword.Combat
     {
         public string Version = "battle-3", ChartId = "EvenNotes";
         public int NoteCount;
+        // Finale: when >= 0, emptying the boss HP only stuns the king (attacks stop), and the battle is decided as
+        // note FinishNote is about to start: stunned = won, otherwise failed. -1 = win on the spot, fail after the last note.
+        public int FinishNote = -1;
+        public bool HasFinale => FinishNote >= 0;
+        /// <summary>The last note whose close can still decide the battle.</summary>
+        public int DecidingNote => HasFinale ? FinishNote - 1 : NoteCount - 1;
         // Authored note times in seconds. Null or empty means NoteCount evenly spaced beats at Bpm.
         public double[] NoteTimes;
         public bool HasAuthoredChart => NoteTimes != null && NoteTimes.Length > 0;
@@ -87,7 +93,7 @@ namespace StringAsASword.Combat
             return copy;
         }
         public static BattleSettings From(SongDefinition song, StageDefinition stage) => new BattleSettings {
-            ChartId = song.ChartName, NoteTimes = song.NoteTimes(), HoldEndTimes = song.HoldEndTimes(),
+            ChartId = song.ChartName, NoteTimes = song.NoteTimes(), HoldEndTimes = song.HoldEndTimes(), FinishNote = song.FinishNote,
             NoteCount = song.NoteCount, Bpm = song.Bpm, PerfectWindow = song.PerfectWindow,
             GoodWindow = song.GoodWindow, InputOffset = song.InputOffset,
             Health = stage.HealthSegments, NoiseTargets = stage.NoiseTargets,
@@ -100,6 +106,7 @@ namespace StringAsASword.Combat
             if (NoteCount < 1 || Bpm <= 0 || double.IsNaN(Bpm) || double.IsInfinity(Bpm) ||
                 PlayerMaxHp < 1 || SpawnInterval < 1 || MaxNoise < 1 || MaxNoise > 2 || MaxCollectionCost < 2)
                 throw new ArgumentException("Invalid battle settings.");
+            if (FinishNote < -1 || FinishNote == 0 || FinishNote >= NoteCount) throw new ArgumentException("FinishNote must be -1 or a note after the first.");
             if (HasAuthoredChart && NoteTimes.Length != NoteCount) throw new ArgumentException("NoteTimes must list exactly NoteCount notes.");
             if (HasAuthoredChart) new AuthoredBeatTimeline(Bpm, NoteTimes); // Validates ordering and finiteness.
             if (HasHolds)
