@@ -103,6 +103,19 @@ namespace StringAsASword.Tests
             }
             finally { File.Delete(path); }
         }
+        [Test] public void HeldTooLongMissKeepsEventOrderWhetherTimeAdvancesInStepsOrOneJump()
+        {
+            // Live play and bots advance note by note; replay jumps from input to input.
+            var steps = new BattleSession(Settings(), 5);
+            steps.Request(PlayerActionKind.Guard, MoveDirection.Up, 2.0);
+            steps.Advance(2.0 + .15); steps.Advance(4.0);
+            var jump = new BattleSession(Settings(), 5);
+            jump.Request(PlayerActionKind.Guard, MoveDirection.Up, 2.0);
+            jump.Advance(4.0);
+            Assert.That(steps.Events.Exists(e => e.type == "hold-miss"));
+            Assert.That(System.Array.ConvertAll(jump.Events.ToArray(), JsonUtility.ToJson),
+                Is.EqualTo(System.Array.ConvertAll(steps.Events.ToArray(), JsonUtility.ToJson)));
+        }
         [Test] public void ReleasesAreNotLoggedForChartsWithoutHolds()
         {
             var settings = Settings(); settings.HoldEndTimes = null;

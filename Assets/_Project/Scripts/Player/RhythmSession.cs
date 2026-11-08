@@ -133,16 +133,19 @@ namespace StringAsASword.Player
         }
         public void Advance(double songTime)
         {
-            // Holding past the tail's Good window is a Miss. Holds never overlap the next note, so this
-            // resolves before that note's head can be judged.
-            if (ActiveHold.HasValue && judge.ReleaseCloseTime(ActiveHold.Value.EndTime) < songTime - 1e-9)
+            // Every closed beat resolves once, including frames spanning multiple beats. A hold held past its
+            // tail's Good window is a Miss; it resolves in time order with beat closes, so one large step and
+            // many small steps (live play vs replay) raise events in the same order.
+            while (true)
             {
-                var hold = ActiveHold.Value;
-                ResolveHold(new TimingResult(hold.Beat, judge.GoodWindow, Judgement.Miss)); // Late by at least the Good window.
-            }
-            // Every closed beat resolves once, including frames spanning multiple beats.
-            while (!Stopped && nextUnresolvedBeat < noteCount && judge.CloseTime(nextUnresolvedBeat) < songTime - 1e-9)
-            {
+                double beatClose = !Stopped && nextUnresolvedBeat < noteCount ? judge.CloseTime(nextUnresolvedBeat) : double.PositiveInfinity;
+                double holdClose = ActiveHold.HasValue ? judge.ReleaseCloseTime(ActiveHold.Value.EndTime) : double.PositiveInfinity;
+                if (Math.Min(beatClose, holdClose) >= songTime - 1e-9) break;
+                if (holdClose < beatClose)
+                {
+                    ResolveHold(new TimingResult(ActiveHold.Value.Beat, judge.GoodWindow, Judgement.Miss)); // Late by at least the Good window.
+                    continue;
+                }
                 int beat = nextUnresolvedBeat++;
                 if (Gate.LastConsumedBeat != beat)
                 {
