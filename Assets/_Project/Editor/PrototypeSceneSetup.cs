@@ -19,7 +19,7 @@ namespace StringAsASword.Editor
         public const string BoardMaterialPath = "Assets/_Project/Art/Materials/PrototypeBoard.mat";
         public const string ArtSetPath = "Assets/_Project/Art/ArtSet.asset";
         public const string CutoutMaterialPath = "Assets/_Project/Art/Materials/ArtCutout.mat";
-        public static readonly string[] ArtFolders = { "Models/Knight", "Models/King", "Models/Board", "UI/Telegraph", "UI/HUD", "UI/Menu", "VFX", "Fonts" };
+        public static readonly string[] ArtFolders = { "Models/Knight", "Models/King", "Models/Board", "UI/Telegraph", "UI/HUD", "UI/Menu", "UI/Background", "VFX", "Fonts" };
 
         [MenuItem("String As a Sword/Art/Create Art Set and Folders")]
         public static ArtSet EnsureArtSet()

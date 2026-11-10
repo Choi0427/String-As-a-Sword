@@ -80,6 +80,17 @@ namespace StringAsASword.Presentation
             background.anchorMin = Vector2.zero; background.anchorMax = Vector2.one; background.sizeDelta = Vector2.zero;
             var backgroundImage = Image(background, new Color(.035f,.043f,.052f));
             if (art.background != null) { backgroundImage.sprite = art.background; backgroundImage.color = Color.white; }
+            for (int i = 0; art.backgroundLayers != null && i < art.backgroundLayers.Length; i++)
+            {
+                var layer = art.backgroundLayers[i];
+                if (layer.sprite == null) continue;
+                var rect = MakeRect((RectTransform)transform, $"Background Layer {i}", Vector2.zero, Vector2.zero);
+                rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
+                // Oversized by the sway so a floating layer never shows its edge.
+                rect.sizeDelta = 2 * new Vector2(Mathf.Abs(layer.sway.x), Mathf.Abs(layer.sway.y));
+                Image(rect, Color.white).sprite = layer.sprite;
+                if (layer.sway != Vector2.zero) rect.gameObject.AddComponent<BackgroundSway>().Set(layer.sway, layer.period, i);
+            }
             root = MakeRect((RectTransform)transform, "Content", Vector2.zero, new Vector2(1600,900));
             Label("PROJECT  /  01", new Vector2(-660,394), new Vector2(200,30), 16, Muted);
             Label("GEOM EUL HYEON", new Vector2(0,385), new Vector2(650,50), 34, InkWhite);

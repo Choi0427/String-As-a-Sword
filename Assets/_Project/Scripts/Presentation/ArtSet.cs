@@ -20,6 +20,10 @@ namespace StringAsASword.Presentation
         [Tooltip("Optional: replaces every material of the noise prefab once the phase goal is reached.")]
         public Material noiseDormantMaterial;
 
+        [Tooltip("Replaces the procedural plinth, rim, deck and cells, and falls as one piece in the finale. " +
+            "Fit its 8x8 squares to 1-unit cells centred on the origin, playing surface at y = 0.")]
+        public GameObject boardPrefab;
+
         [Header("Board materials (tile top faces are UV-mapped 0..1 per cell)")]
         public Material lightTile;
         public Material darkTile;
@@ -33,6 +37,10 @@ namespace StringAsASword.Presentation
         public float cameraSize;
         [Tooltip("Moves the view up the screen, in board units, to make room above row 8.")]
         public float cameraLift;
+        [Tooltip("Degrees above the board. 0 = the stage's elevation.")]
+        public float cameraElevation;
+        [Tooltip("Vertical field of view for a perspective board camera. 0 = orthographic.")]
+        public float cameraFieldOfView;
 
         [Header("Telegraph marks (cell-sized quads; duplicate Art/Materials/ArtCutout.mat and set the texture)")]
         public Material eitherMark;
@@ -43,6 +51,8 @@ namespace StringAsASword.Presentation
         [Header("2D UI")]
         public TMP_FontAsset font;
         public Sprite background;
+        [Tooltip("Full-screen layers drawn over the background, back to front. A non-zero sway makes the layer float.")]
+        public BackgroundLayer[] backgroundLayers;
         public Sprite noteSprite;
         [Tooltip("Hold note string, stretched horizontally between the head and the tail. Draw it white; it is tinted per state.")]
         public Sprite holdBodySprite;
@@ -69,5 +79,16 @@ namespace StringAsASword.Presentation
         public GameObject phaseVfx;
 
         public bool HasCrown => crownFull != null && crownLocked != null && crownBroken != null;
+        public bool HasBackground => background != null || (backgroundLayers != null && backgroundLayers.Length > 0);
+    }
+
+    [System.Serializable]
+    public struct BackgroundLayer
+    {
+        public Sprite sprite;
+        [Tooltip("Float distance in canvas pixels (1600x900 reference). 0 = still.")]
+        public Vector2 sway;
+        [Tooltip("Seconds for one float cycle.")]
+        public float period;
     }
 }

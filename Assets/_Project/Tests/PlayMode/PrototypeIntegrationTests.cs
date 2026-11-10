@@ -152,8 +152,9 @@ namespace StringAsASword.Tests
             Assert.That(view.BoardMaterial, Is.Not.Null, "Builds must retain a serialized shader dependency.");
             Assert.That(view.BoardMaterial.shader.isSupported, Is.True);
             Assert.That(board.TileCount, Is.EqualTo(64));
-            Assert.That(board.BoardCamera.orthographic, Is.True);
-            Assert.That(board.BoardCamera.transform.eulerAngles.x, Is.EqualTo(60).Within(.01));
+            // The stage's 60° orthographic view unless the ArtSet sets its own look-down angle or perspective.
+            Assert.That(board.BoardCamera.orthographic, Is.EqualTo(view.Art.cameraFieldOfView <= 0));
+            Assert.That(board.BoardCamera.transform.eulerAngles.x, Is.EqualTo(view.Art.cameraElevation > 0 ? view.Art.cameraElevation : 60).Within(.01));
             Assert.That(board.Texture.IsCreated(), Is.True);
             // Renderer, not MeshRenderer: a delivered skinned knight has none of the procedural parts.
             Assert.That(board.PlayerTransform.GetComponentsInChildren<Renderer>().Length, Is.GreaterThan(0));

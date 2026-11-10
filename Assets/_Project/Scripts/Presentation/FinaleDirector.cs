@@ -54,7 +54,7 @@ namespace StringAsASword.Presentation
             SetAlpha(flash, 0); SetAlpha(voidCover, 0); SetAlpha(white, 0);
             epilogueView.gameObject.SetActive(false); banner.text = ""; caption.text = "";
             flashAge = 10; epilogueAge = 0; lastFinishHit = -1; roam = Vector3.zero; returned = false;
-            board.FreeRoam = false; board.SetCollapse(0); board.SetKingDown(0); board.SetVoidColor(VoidColor);
+            board.FreeRoam = false; board.SetCollapse(0); board.SetKingDown(0); board.ResetVoid();
             game.Audio.SetMusicFade(1);
         }
         private void Update()

@@ -6,7 +6,7 @@
 
 1. 받은 파일을 폴더에 넣는다. 폴더가 없으면 `String As a Sword > Art > Create Art Set and Folders`를 실행하면 만들어진다.
    - 3D: `Art/Models/{Knight,King,Board}`
-   - UI 이미지: `Art/UI/{Telegraph,HUD,Menu}`
+   - UI 이미지: `Art/UI/{Telegraph,HUD,Menu,Background}`
    - VFX 프리팹: `Art/VFX`
    - 폰트: `Art/Fonts`
 2. 첫 임포트 때 `ArtImportRules`가 기본 설정을 자동으로 적용한다. 그 뒤 Inspector에서 바꾼 값은 유지된다.
@@ -23,10 +23,12 @@
 | `knightPrefab` | 나이트 대체. 이동 트윈·점프는 코드가 루트에서 계속 처리한다 | Trigger `Move` `Attack` `Guard` `Hit` `Block` |
 | `kingPrefab` | `kingAnchor` 위치에 `kingScale`로 배치. 비어 있으면 킹을 만들지 않는다 | Trigger `Telegraph` `Attack` `Hurt` `PhaseUp` (`Stunned`는 피날레용으로 예약) |
 | `noisePrefab` | 잡음 대체. `noiseDormantMaterial`이 있으면 목표 달성 후 머티리얼을 그것으로 바꾼다 | Bool `Dormant` |
+| `boardPrefab` | 절차적 받침·테두리·덱·64칸을 통째로 대체. 8×8 칸이 1유닛 칸에 맞고 윗면이 y = 0이어야 한다. 피날레 붕괴 때 한 덩어리로 떨어진다 | — |
 | `lightTile` / `darkTile` / `boardEdge` | 칸 윗면(칸마다 UV 0~1) / 받침·옆면 | — |
 | `eitherMark` / `guardMark` / `dodgeMark` / `impactMark` | 예고 칸 위의 사각 판 (0.92칸) | — |
 | `font` | 모든 HUD 텍스트 (한글 TMP SDF) | — |
 | `background` / `noteSprite` | 전체 배경 / 좌우 노트 | — |
+| `backgroundLayers` | `background` 위에 뒤→앞 순서로 쌓는 전체 화면 레이어. `sway`(캔버스 px)가 0이 아니면 `period`초 주기로 둥둥 떠다닌다. 배경이 있으면 보드 영역이 투명해져 배경 위에 보드가 놓인다 | — |
 | `holdBodySprite` / `holdTailSprite` | 홀드 노트의 현(줄) 몸통 / 꼬리 말뚝 | 흰색으로 그린다. 가로로 늘어나며, 상태별 색(대기 흰색·유지 중 민트·끊김 회색)을 코드가 입힌다 |
 | `crownFull` / `crownLocked` / `crownBroken` | 보스 HP 칸 아이콘. 세 개를 모두 넣어야 표시된다 | — |
 | `*Vfx` | 해당 순간에 보드 위에 생성하고 2초 뒤 삭제 | — |
@@ -47,6 +49,7 @@
 
 ## 킹 배치와 카메라
 
+- `cameraElevation`(0 = 스테이지 값 60°)과 `cameraFieldOfView`(0 = 직교)로 보드를 내려다보는 각도와 원근을 바꾼다. 예고 마크는 칸 위에 누운 3D 판이라 시점을 따라 눕고, 숫자 배지와 A–H·1–8 라벨은 투영 위치를 따라간다.
 - 기본 카메라(크기 4.6)에서는 8행 바로 뒤까지만 보인다. 킹을 세우면 `cameraSize`와 `cameraLift`로 화면 틀을 넓혀야 한다.
 - 아래 그림이 실제로 확인한 설정이다(가로 7·높이 4 블록, 앵커 z = 4.8, 크기 5, 리프트 1.25).
 - 틀을 넓히면 보드가 약 92%로 작아진다.
@@ -67,3 +70,12 @@
 - PlayMode 테스트 `ArtSetIntegrationTests`는 ArtSet을 메모리에서만 그레이박스로 채운다. 프리팹이 대체되는지, 신호 경로에서 로그가 나지 않는지 확인하며 디스크에는 저장하지 않는다.
 - 어두운 아트로 바꾼 뒤에는 Windows 빌드의 `--verify-prototype` 밝기 검사(밝은 픽셀 5% 초과)를 다시 확인한다.
 - 전투 로직은 바뀌지 않았으므로 combatVersion은 바뀌지 않았다(당시 battle-4).
+
+## 체스판 모델과 게임 배경 (2026-11-10 전달분)
+
+- `String As a Sword > Art > Set Up Chessboard and Background`를 실행하면 아래 설정이 한 번에 적용된다. 다시 실행하면 원본 파일에서 머티리얼과 프리팹을 새로 만든다.
+  - 보드: `Art/Models/Board/ChessBoard.fbx`(Meshy)로 `ChessBoard_Lit.mat`(URP Lit, 베이스컬러 + 노멀, 메탈릭 0, 스무스니스 0.2)과 `ChessBoard.prefab`을 만든다. `useLighting`을 켠다.
+  - 보드 맞춤: 모델은 정사각형이 아니다(가로 9.04 : 세로 8.21). 그래서 칸 영역 비율을 축마다 따로 잰 값(`BoardArtSetup.PlayShare`, x 0.913 / z 0.894)으로 `Fit` 노드에 스케일을 준다. 위에서 찍은 렌더에서 칸 경계가 1유닛 격자와 맞는 것을 확인했다. 모델을 바꾸면 이 값을 다시 잰다.
+  - 카메라: 고도 35°, 원근 FOV 30°, 크기 5.1.
+  - 배경: `Art/UI/Background/BG_0..5.png`를 뒤→앞 0, 1, 4, 5, 2, 3 순서로 쌓는다. 1·4·5는 떠다닌다.
+- 메탈릭·러프니스 텍스처는 돌 재질이라 쓰지 않아서 프로젝트에 넣지 않았다.
