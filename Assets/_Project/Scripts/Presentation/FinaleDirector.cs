@@ -42,7 +42,8 @@ namespace StringAsASword.Presentation
             epilogueView = PrototypeView.MakeRect(layer, "Void View", Vector2.zero, new Vector2(1080, 990)).gameObject.AddComponent<UnityEngine.UI.RawImage>();
             epilogueView.texture = board.Texture; epilogueView.raycastTarget = false;
             white = FullScreen("White", Color.white);
-            var font = UiFonts.Korean(null, view.LatinFont);
+            // The ending lines are story text, so they share the menu and story font.
+            var font = UiFonts.Korean(view.Art.menuFont, view.LatinFont);
             banner = Text("Banner", font, 34, new Vector2(0, 330));
             caption = Text("Caption", font, 40, Vector2.zero);
             caption.color = new Color(.06f, .06f, .06f, 0);

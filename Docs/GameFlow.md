@@ -29,7 +29,7 @@
 
 - 배경: `Art/UI/Menu/MainMenu_Logo_BG.png`(피그마에서 받은 3840×2160) → `ArtSet.mainMenuDark`.
 - 글자: 80px, `#D9D9D9`, 자간 -3.2px, 왼쪽 184.5px / 위 631·733·835px. 호버: `#929292` 상자 + `#0C0C0C` 글자. 하단 "Inspired by 이승윤 <검을 현>" 16px `#929292`.
-- 폰트: 학교안심 고든제목 B를 `Art/Fonts/`에 넣고 TMP 폰트 에셋으로 만든 뒤 `ArtSet.menuFont`에 지정한다. 비어 있으면 실행 중 OS 한글 폰트(맑은 고딕)를 동적으로 쓴다(파일을 프로젝트에 복사하지 않음). 피그마와 글자 모양·높이가 달라 호버 상자와 어긋나는 것은 폰트가 들어오면 맞춰진다.
+- 폰트: 학교안심 곧은제목 B(`Art/Fonts/HakgyoansimGodeunjemokB.ttf`)로 만든 동적 TMP 폰트 에셋 `HakgyoansimGodeunjemokB SDF`가 `ArtSet.menuFont`에 지정되어 있다. 메인화면, 스토리 카드, 피날레 엔딩 문구가 이 폰트를 쓴다. `String As a Sword > Art > Set Up Menu Font`를 실행하면 TTF에서 에셋을 다시 만들고 다시 지정한다. 슬롯이 비면 실행 중 OS 한글 폰트(맑은 고딕)를 동적으로 쓴다.
 - 흰 버전: `Art/Shaders/MenuInvertLeft.shader`가 이미지 왼쪽만 색을 반전한다. 경계는 아래 36% → 위 45%로 기울고 3.5% 번진다(머티리얼 `Art/Materials/MenuInvertLeft.mat`에서 조정). `ArtSet.mainMenuWhite`에 손으로 만든 흰 이미지를 넣으면 그것을 쓴다.
 - 클리어 기록은 저장되어 다음 실행에도 흰색이다. 메인화면에서 **Shift+R**로 되돌린다.
 - 설정: 음악 볼륨(0~100%), 입력 싱크·화면 싱크(±200ms). 저장되며 곡 에셋 값 위에 더해진다.
