@@ -1,0 +1,4 @@
+VOTE: NOT GUILTY
+REASON: If I were the rival, I'd copy this, not beat it: plain-text charts checked by tools the project already has are how a small team ships authored patterns fast, and any visual editor or Notion import I'd build to compete would still need the same parser, note-to-section map and validator, plus a GUI on top.
+DECIDING FACT: Today the designer "cannot say 'at this part of the song, do this specific attack,' and cannot draw new shapes without code," the project is small with Claude Code doing the implementation, and only the text route closes both gaps without building a GUI first.
+WOULD FLIP IF: The record showed that the existing fairness checks (dodge route, safe-cell invalidation, one-beat gap) only work on the 9 enum shapes and the random scheduler, so the "reused" validator would really have to be rewritten for drawn masks and authored timings.

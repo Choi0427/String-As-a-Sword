@@ -1,0 +1,4 @@
+VOTE: NOT GUILTY
+REASON: Coming to this cold, I'd try it this week: typing a few 8×8 grids of # and . and a note number into a text file is the cheapest way to get the two things I can't do today, and no clickable editor has to be built before I find out whether I like it.
+DECIDING FACT: Today the designer "cannot say 'at this part of the song, do this specific attack,' and cannot draw new shapes without code," and the method fixes both while putting off the visual editor "until after some patterns have been written this way."
+WOULD FLIP IF: The record showed that the existing fairness checks cannot judge hand-drawn masks or authored note timings. Then the "reused" validator would really be a rewrite, and a visual editor or a Notion import would cost no more and let me see what I'm making.

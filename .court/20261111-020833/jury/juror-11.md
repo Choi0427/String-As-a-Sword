@@ -1,0 +1,4 @@
+VOTE: NOT GUILTY
+REASON: An 8×8 grid of `#` and `.` is about the clearest thing a stranger could read in five seconds, since you can see the attack shape without any tool, and it fills the exact gap the user named; the opaque note numbers are a labeling problem a section map would fix, not a reason to drop the method.
+DECIDING FACT: The case says today the designer "cannot say 'at this part of the song, do this specific attack,' and cannot draw new shapes without code," and the method answers both with "8×8 ASCII drawings... (`#` = danger, `.` = safe)" plus a note-keyed timeline.
+WOULD FLIP IF: The record showed that the user finds hand-edited text grids hard to read or work with and needs to see shapes against the music, for example by designing in Notion visually, so that a visual editor or import would be the clearer first step.
