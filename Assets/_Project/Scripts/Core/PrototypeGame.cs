@@ -41,6 +41,8 @@ namespace StringAsASword.Core
         public double VisualOffset => song.VisualOffset + GameFlow.VisualOffsetMs / 1000.0;
         /// <summary>Song time at which the finale hands over to the epilogue: just after the last note (or its hold) ends.</summary>
         public double FinaleEndTime { get; private set; }
+        /// <summary>Song time of the finishing triplet's last strike: the king falls and the board is free to walk.</summary>
+        public double FinaleStrikeTime { get; private set; }
         public event System.Action FinaleStarted, EpilogueStarted;
         public event System.Action<PlayerActionKind> FinaleTap;
         public ScheduledSongAudio Audio => audioPlayer;
@@ -69,6 +71,7 @@ namespace StringAsASword.Core
             int last = song.NoteCount - 1;
             double end = Timeline.TimeOf(last), hold = Session.HoldEnd(last);
             FinaleEndTime = System.Math.Max(end, hold) + .8;
+            FinaleStrikeTime = Timeline.TimeOf(System.Math.Min(settings.FinishNote + 2, last));
             view.gameObject.AddComponent<FinaleDirector>().Initialize(this, view);
         }
         private void Start()
@@ -125,9 +128,7 @@ namespace StringAsASword.Core
             {
                 FinaleTap?.Invoke(request.Kind);
                 // After the finishing triplet the knight walks the board freely until the epilogue takes over.
-                var settings = Battle.Settings;
-                if (State == PrototypeState.Finale && request.Kind == PlayerActionKind.Move &&
-                    time >= Timeline.TimeOf(System.Math.Min(settings.FinishNote + 2, settings.NoteCount - 1)))
+                if (State == PrototypeState.Finale && request.Kind == PlayerActionKind.Move && time >= FinaleStrikeTime)
                     Session.MoveFreely(request.Direction);
                 return;
             }

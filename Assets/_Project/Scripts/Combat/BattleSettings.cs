@@ -83,7 +83,7 @@ namespace StringAsASword.Combat
         public int[] Health = { 6, 6, 6, 6 }, NoiseTargets = { 3, 4, 5 };
         public PatternDefinition[] Patterns = PatternDefinition.Defaults();
         public RandomAttackSchedule Schedule = new RandomAttackSchedule();
-        // The hand-written boss chart's text. When set, it replaces Patterns and Schedule. Kept as text so replay logs carry it.
+        // The hand-written boss chart's text. When set, it replaces Patterns and Schedule up to its `random N` note. Kept as text so replay logs carry it.
         public string BossChartText;
         [NonSerialized] private BossChart parsedChart;
         [NonSerialized] private string parsedText;

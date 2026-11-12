@@ -30,7 +30,6 @@ namespace StringAsASword.Presentation
         private Vector3 roam;
         private bool returned;
         public float EpilogueAge => epilogueAge;
-        public bool Returning => returned;
 
         public void Initialize(PrototypeGame owner, PrototypeView prototypeView)
         {
@@ -84,8 +83,7 @@ namespace StringAsASword.Presentation
                 for (int hit = 0; hit < 3; hit++)
                     if (hit > lastFinishHit && time >= game.Timeline.TimeOf(settings.FinishNote + hit))
                     { lastFinishHit = hit; flashAge = 0; view.Pulse(); }
-                double third = game.Timeline.TimeOf(System.Math.Min(settings.FinishNote + 2, settings.NoteCount - 1));
-                board.SetKingDown((float)((time - third) / 1.2));
+                board.SetKingDown((float)((time - game.FinaleStrikeTime) / 1.2));
                 float rest = (float)((time - finishTime) / System.Math.Max(1, game.FinaleEndTime - finishTime));
                 board.SetCollapse(Mathf.Lerp(.32f, .8f, Mathf.Clamp01(rest)));
             }

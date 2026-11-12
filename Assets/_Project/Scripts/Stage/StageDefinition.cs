@@ -17,7 +17,7 @@ namespace StringAsASword.Stage
         [SerializeField] private string combatVersion = "battle-3";
         [SerializeField] private PatternDefinition[] patterns = PatternDefinition.Defaults();
         [SerializeField] private RandomAttackSchedule attackSchedule = new RandomAttackSchedule();
-        [Tooltip("Hand-written boss chart (.bosschart.txt). When set, it replaces Patterns and Attack Schedule. See Docs/BossChart.md.")]
+        [Tooltip("Hand-written boss chart (.bosschart.txt). When set, it replaces Patterns and Attack Schedule (up to its 'random N' note). See Docs/BossChart.md.")]
         [SerializeField] private TextAsset bossChart;
         public string BossChartText => bossChart != null ? bossChart.text : null;
         public RandomAttackSchedule AttackSchedule => attackSchedule;

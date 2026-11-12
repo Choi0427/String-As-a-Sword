@@ -154,7 +154,7 @@ namespace StringAsASword.Presentation
             for (int i = 0; i < boardPieces.Count; i++) Fall(boardPieces[i], boardHome[i], progress - .82f, 200 + i);
             bool intact = progress <= 0;
             selection.gameObject.SetActive(intact);
-            foreach (var pickup in pickups) if (!intact) pickup.gameObject.SetActive(false);
+            if (!intact) foreach (var pickup in pickups) pickup.gameObject.SetActive(false);
         }
         private static void Fall(Transform piece, Vector3 home, float t, int seed)
         {

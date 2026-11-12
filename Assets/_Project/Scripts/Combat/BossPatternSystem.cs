@@ -52,7 +52,7 @@ namespace StringAsASword.Combat
         // `random N` hands over to the random scheduler once the chart is spent; the two never overlap, so neither
         // mode's fairness checks have to account for the other's telegraphs.
         private bool handedOver;
-        public bool Authored => chart != null && !handedOver;
+        private bool Authored => chart != null && !handedOver;
         public BossPatternSystem(PatternDefinition[] definitions, RandomAttackSchedule schedule = null, int seed = 0, bool[] fastNotes = null,
             BossChart chart = null)
         {
