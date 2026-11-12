@@ -96,6 +96,12 @@ namespace StringAsASword.Player
             if (result.IsHit) { Combo++; BestCombo = Math.Max(Combo, BestCombo); } else Combo = 0;
             HoldResolved?.Invoke(result);
         }
+        /// <summary>One cell, no beat and no judgement: for the finale after the battle is decided.</summary>
+        public bool MoveFreely(MoveDirection direction)
+        {
+            if (!board.TryGetDestination(Position, direction, out var destination)) return false;
+            Position = destination; return true;
+        }
         public ActionResult RequestMove(MoveDirection direction, double songTime)
             => RequestAction(PlayerActionKind.Move, direction, songTime);
         public ActionResult RequestAttack(double songTime)

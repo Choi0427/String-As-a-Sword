@@ -120,8 +120,17 @@ namespace StringAsASword.Core
         private void OnAction(PlayerInputAdapter.TimedAction request)
         {
             if (!clock.Running) return;
-            if (State == PrototypeState.Finale || State == PrototypeState.Epilogue) { FinaleTap?.Invoke(request.Kind); return; }
             double time = clock.ToSongTime(request.DspTime);
+            if (State == PrototypeState.Finale || State == PrototypeState.Epilogue)
+            {
+                FinaleTap?.Invoke(request.Kind);
+                // After the finishing triplet the knight walks the board freely until the epilogue takes over.
+                var settings = Battle.Settings;
+                if (State == PrototypeState.Finale && request.Kind == PlayerActionKind.Move &&
+                    time >= Timeline.TimeOf(System.Math.Min(settings.FinishNote + 2, settings.NoteCount - 1)))
+                    Session.MoveFreely(request.Direction);
+                return;
+            }
             // The first note has the same early Good window as all later notes.
             if (time < -song.GoodWindow + song.InputOffset) return;
             Battle.Request(request.Kind, request.Direction, time);
