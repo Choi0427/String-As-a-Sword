@@ -18,6 +18,8 @@ namespace StringAsASword.Combat
         public string Reason { get; }
         public AttackResponse Response { get; }
         public int Hit { get; }
+        /// <summary>Chess pieces summoned for this attack (boss chart `piece=`). Presentation only.</summary>
+        public IReadOnlyList<ChessPiece> Pieces { get; set; } = new ChessPiece[0];
         public BossTelegraph(int id, string name, ulong cells, int impactNote, PatternKind kind = PatternKind.Row,
             int warningNotes = 0, int requiredDodgeActions = 0, int selectedInterval = 0, int actualInterval = 0, string reason = "",
             AttackResponse response = AttackResponse.Either, int hit = 0)
@@ -140,7 +142,7 @@ namespace StringAsASword.Combat
                 int offset = hit * a.Every, impact = a.Note + offset;
                 int interval = hit > 0 ? a.Every : lastImpact < 0 ? 0 : a.Note - lastImpact;
                 void Add(ulong cells, AttackResponse response) => hits.Add(new BossTelegraph(nextId + 1 + hits.Count, a.Shape.Name, cells, impact,
-                    PatternKind.Drawn, a.Warning + offset, 0, hit == 0 ? 0 : a.Every, interval, reason, response, hit));
+                    PatternKind.Drawn, a.Warning + offset, 0, hit == 0 ? 0 : a.Every, interval, reason, response, hit) { Pieces = a.Shape.Pieces });
                 if (a.Shape.GuardOnly) { Add(normal, AttackResponse.GuardOnly); continue; }
                 if (normal != 0) Add(normal, AttackResponse.Either);
                 if (strong != 0) Add(strong, AttackResponse.DodgeOnly);

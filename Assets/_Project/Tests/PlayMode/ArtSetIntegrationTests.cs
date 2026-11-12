@@ -71,8 +71,12 @@ namespace StringAsASword.Tests
             board.ShowOutcome(TelegraphHud.Blocked); board.ShowOutcome(TelegraphHud.Hit);
             yield return null;
             Assert.That(GameObject.Find("Vfx Stand-in(Clone)"), Is.Not.Null);
-            // The finale collapse drops a delivered board as one piece.
-            board.SetCollapse(1); board.SetCollapse(0);
+            // The finale collapse breaks a delivered board into one shard per cell, and a reset puts the model back.
+            Assert.That(board.BoardShatters, Is.True, "a readable board mesh is cut into shards");
+            board.SetCollapse(1);
+            Assert.That(boardWorld.Find("Board Model").gameObject.activeSelf, Is.False);
+            Assert.That(boardWorld.Find("Board Shards").childCount, Is.EqualTo(64));
+            board.SetCollapse(0);
             Assert.That(boardWorld.Find("Board Model").gameObject.activeSelf, Is.True);
             game.PauseSession();
             LogAssert.NoUnexpectedReceived();

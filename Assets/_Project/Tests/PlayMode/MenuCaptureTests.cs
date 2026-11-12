@@ -64,6 +64,33 @@ namespace StringAsASword.Tests
             }
             finally { if (hadCleared) GameFlow.MarkCleared(); else GameFlow.ResetCleared(); }
         }
+        /// <summary>The battle screen with the boss picture, then the first summoned chess piece (the pawn row at note 6).</summary>
+        [UnityTest] public IEnumerator CaptureBattleBossAndSummon()
+        {
+            string dir = Arg("-menuCaptureDir", Path.Combine(Application.temporaryCachePath, "MenuCapture"));
+            Directory.CreateDirectory(dir);
+            yield return SceneManager.LoadSceneAsync(GameFlow.BattleScene);
+            yield return null;
+            var game = Object.FindAnyObjectByType<PrototypeGame>();
+            var canvas = Object.FindAnyObjectByType<PrototypeView>().GetComponent<Canvas>();
+            var board = Object.FindAnyObjectByType<BoardWorldPresenter>();
+            var texture = new RenderTexture(1920, 1080, 24);
+            var camera = new GameObject("Capture Camera").AddComponent<Camera>();
+            camera.clearFlags = CameraClearFlags.SolidColor; camera.backgroundColor = Color.black; camera.targetTexture = texture;
+            canvas.renderMode = RenderMode.ScreenSpaceCamera; canvas.worldCamera = camera; canvas.planeDistance = 5;
+            game.StartSession();
+            yield return Capture(camera, texture, Path.Combine(dir, "battle-boss.png"));
+            float deadline = Time.realtimeSinceStartup + 30;
+            while (board.LiveSummons == 0 && Time.realtimeSinceStartup < deadline) yield return null;
+            Assert.That(board.LiveSummons, Is.GreaterThan(0), "no chess piece was summoned within 30 s");
+            float shown = Time.realtimeSinceStartup + .4f;
+            while (Time.realtimeSinceStartup < shown) yield return null;
+            yield return Capture(camera, texture, Path.Combine(dir, "battle-summon.png"));
+            board.SetCollapse(.5f);
+            yield return Capture(camera, texture, Path.Combine(dir, "battle-shatter.png"));
+            board.SetCollapse(0);
+            game.PauseSession();
+        }
         private static IEnumerator Capture(Camera camera, RenderTexture texture, string path)
         {
             // No WaitForEndOfFrame: it never fires in batch mode. The camera renders the canvas on demand.

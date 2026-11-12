@@ -18,6 +18,8 @@ namespace StringAsASword.Combat
         public int To { get; }
         public BossChartSection(string name, int from, int to) { Name = name; From = from; To = to; }
     }
+    /// <summary>The chess piece a shape's attack path comes from; the boss summons it for the attack.</summary>
+    public enum ChessPiece { Pawn, Rook, Bishop, Knight, King, Queen }
     /// <summary>An 8x8 drawing: 0 = no attack, 1 = normal (guard or dodge), 2 = strong (guard breaks, must dodge).</summary>
     public sealed class BossChartShape
     {
@@ -27,10 +29,12 @@ namespace StringAsASword.Combat
         public bool HasAnchor { get; }
         public GridPosition Anchor { get; }
         public int Line { get; }
+        /// <summary>`piece=룩+나이트`: one piece, or the two halves of a fairy piece. Empty = nothing is summoned.</summary>
+        public IReadOnlyList<ChessPiece> Pieces { get; }
         /// <summary>A board full of 1 has no safe cell: it is guarded, never dodged (the FullBoard rule).</summary>
         public bool GuardOnly => !HasAnchor && Normal == ulong.MaxValue;
-        public BossChartShape(string name, ulong normal, ulong strong, bool hasAnchor, GridPosition anchor, int line)
-        { Name = name; Normal = normal; Strong = strong; HasAnchor = hasAnchor; Anchor = anchor; Line = line; }
+        public BossChartShape(string name, ulong normal, ulong strong, bool hasAnchor, GridPosition anchor, int line, ChessPiece[] pieces = null)
+        { Name = name; Normal = normal; Strong = strong; HasAnchor = hasAnchor; Anchor = anchor; Line = line; Pieces = pieces ?? new ChessPiece[0]; }
     }
     public sealed class BossChartAttack
     {
@@ -136,17 +140,33 @@ namespace StringAsASword.Combat
             if (from < 0 || to < from) throw new BossChartException(line, $"구간 범위가 잘못됐어요: {from}-{to}");
             return new BossChartSection(tokens[1], from, to);
         }
+        // In ChessPiece order.
+        private static readonly string[] PieceNames = { "폰", "룩", "비숍", "나이트", "킹", "퀸" };
         private int ParseShape(string[] tokens, string[] lines, int index)
         {
             int header = index + 1;
-            if (tokens.Length < 2 || tokens.Length > 3) throw new BossChartException(header, "형식은 'shape 이름 [anchor=줄,칸]'이에요.");
+            if (tokens.Length < 2 || tokens.Length > 4) throw new BossChartException(header, "형식은 'shape 이름 [anchor=줄,칸] [piece=기물]'이에요.");
             string name = tokens[1];
             if (shapes.ContainsKey(name)) throw new BossChartException(header, $"모양 '{name}'이 이미 있어요.");
             bool hasAnchor = false; var anchor = new GridPosition(0, 0);
-            if (tokens.Length == 3)
+            ChessPiece[] pieces = null;
+            for (int option = 2; option < tokens.Length; option++)
             {
-                if (!tokens[2].StartsWith("anchor=", StringComparison.Ordinal)) throw new BossChartException(header, $"알 수 없는 옵션 '{tokens[2]}'");
-                var parts = tokens[2].Substring(7).Split(',');
+                if (tokens[option].StartsWith("piece=", StringComparison.Ordinal) && pieces == null)
+                {
+                    var names = tokens[option].Substring(6).Split('+');
+                    if (names.Length > 2) throw new BossChartException(header, "piece는 기물 하나 또는 '기물+기물' 둘까지예요.");
+                    pieces = new ChessPiece[names.Length];
+                    for (int n = 0; n < names.Length; n++)
+                    {
+                        int piece = Array.IndexOf(PieceNames, names[n]);
+                        if (piece < 0) throw new BossChartException(header, $"모르는 기물 '{names[n]}'. {string.Join(", ", PieceNames)} 중에서 써요.");
+                        pieces[n] = (ChessPiece)piece;
+                    }
+                    continue;
+                }
+                if (!tokens[option].StartsWith("anchor=", StringComparison.Ordinal) || hasAnchor) throw new BossChartException(header, $"알 수 없는 옵션 '{tokens[option]}'");
+                var parts = tokens[option].Substring(7).Split(',');
                 if (parts.Length != 2) throw new BossChartException(header, "anchor는 'anchor=줄,칸' 형식이에요.");
                 int row = Int(parts[0], header, "anchor 줄"), column = Int(parts[1], header, "anchor 칸");
                 if (row < 1 || row > 8 || column < 1 || column > 8) throw new BossChartException(header, "anchor는 1~8 사이여야 해요.");
@@ -171,7 +191,7 @@ namespace StringAsASword.Combat
             }
             if ((normal | strong) == 0) throw new BossChartException(header, $"모양 '{name}'에 공격 칸이 없어요.");
             if (strong == ulong.MaxValue) throw new BossChartException(header, $"모양 '{name}'은 판 전체가 2라서 막을 수도 피할 수도 없어요.");
-            shapes.Add(name, new BossChartShape(name, normal, strong, hasAnchor, anchor, header));
+            shapes.Add(name, new BossChartShape(name, normal, strong, hasAnchor, anchor, header, pieces));
             return i;
         }
         private BossChartAttack ParseAttack(string[] tokens, int line)

@@ -40,6 +40,8 @@ namespace StringAsASword.Presentation
         private GameObject overlay;
         private NotePresenter notes;
         private BoardWorldPresenter boardWorld;
+        private BossPortrait bossPortrait;
+        public BossPortrait BossPortrait => bossPortrait;
         private TMP_Text noiseLabel;
         private TMP_Text attackHint;
         private TMP_Text playerHp, patternList;
@@ -159,6 +161,15 @@ namespace StringAsASword.Presentation
             var board = MakeRect(root,"Board View",BoardCenter,size);
             var output = board.gameObject.AddComponent<UnityEngine.UI.RawImage>(); output.raycastTarget = false;
             boardWorld = board.gameObject.AddComponent<BoardWorldPresenter>(); boardWorld.Initialize(game, output, boardMaterial, art);
+            if (art.bossImage != null && art.kingPrefab == null)
+            {
+                // Under the content layer, so the board and the HUD draw over the picture.
+                var boss = MakeRect((RectTransform)transform, "Boss Portrait", Vector2.zero, Vector2.zero);
+                boss.SetSiblingIndex(root.GetSiblingIndex());
+                float farEdge = BoardCenter.y + boardWorld.ProjectToBoard(new Vector3(0, 0, 4), size).y;
+                bossPortrait = boss.gameObject.AddComponent<BossPortrait>();
+                bossPortrait.Initialize(game, art.bossImage, new Vector2(BoardCenter.x + art.bossImageSink.x, farEdge - art.bossImageSink.y), Mathf.Max(1, art.bossImageHeight));
+            }
             var connectors = MakeRect(board, "DangerConnectors", Vector2.zero, size);
             for (int i = 0; i < 64; i++)
             {
@@ -268,6 +279,7 @@ namespace StringAsASword.Presentation
         public void ShowDamage(int damage)
         {
             boardWorld.ShowDamage(damage);
+            if (damage > 0 && bossPortrait != null) bossPortrait.Hurt();
             timing.text = damage > 0 ? $"BOSS HP  -{damage}" : game.Health.Defeated ? "ALL FOUR SEGMENTS CLEARED" : game.Health.CurrentDepleted ? "HP FLOOR / COLLECT NOISE" : "SWING / 0 DAMAGE";
         }
         // Beside the knight, because that is where the eye already is. Near the top it drops below instead.

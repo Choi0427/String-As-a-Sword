@@ -53,20 +53,24 @@ namespace StringAsASword.Tests
             Assert.That(probes.Any(p => p.Shape == "전체" && p.Scenario == "1칸 가드" && p.Status == V.Passed));
         }
 
-        // The stage's boss chart (battle-7): notes 0-123 as drawn, then the random scheduler from 124.
+        // The stage's boss chart (battle-8): the three chorus phases are all drawn, so the random scheduler never runs.
         [Test]
-        public void StageChartPlaysAsDrawnThenHandsOverAt124()
+        public void StageChartPlaysAsDrawnInAllThreeChorusPhases()
         {
             string text = File.ReadAllText(BossChartValidator.DefaultChartPath);
             var failed = V.Run(Settings, text).Where(p => p.Status == V.Failed).Select(p => $"{p.Shape} {p.Scenario}: {p.Detail}").ToList();
             Assert.That(failed, Is.Empty, string.Join("\n", failed));
-            Assert.That(BossChart.Parse(text).RandomFrom, Is.EqualTo(124));
+            var chart = BossChart.Parse(text);
+            Assert.That(chart.RandomFrom, Is.EqualTo(-1));
+            // Phase 1 ends with chorus 1 (note 123), phase 2 with chorus 2 (233), phase 3 before the finishing triplet.
+            foreach (var (from, to) in new[] { (0, 123), (124, 233), (234, Settings.FinishNote - 1) })
+                Assert.That(chart.Attacks.Count(a => a.Note >= from && a.LastHit <= to), Is.GreaterThanOrEqualTo(15), $"notes {from}-{to}");
             var settings = Settings.Copy(); settings.BossChartText = text;
             var battle = new BattleSession(settings, 7);
-            battle.Advance(settings.CreateTimeline().TimeOf(160) + settings.GoodWindow + .001);
+            battle.Advance(settings.CreateTimeline().TimeOf(260) + settings.GoodWindow + .001);
             var published = battle.Events.Where(e => e.type == "pattern-publish").ToList();
-            Assert.That(published.Where(e => e.kind == "Drawn").Max(e => e.impactNote), Is.LessThan(124));
-            Assert.That(published.Where(e => e.kind != "Drawn").Min(e => e.impactNote), Is.GreaterThanOrEqualTo(124));
+            Assert.That(published.All(e => e.kind == "Drawn"));
+            Assert.That(published.Max(e => e.impactNote), Is.GreaterThan(233), "phase 3 shapes are reached");
         }
 
         // Hand-computed cells, checked against the runtime (not the fixture's own expectation).

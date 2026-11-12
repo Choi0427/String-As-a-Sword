@@ -52,6 +52,19 @@ namespace StringAsASword.Tests
             Fails("shape A\n" + string.Concat(Enumerable.Repeat("22222222\n", 8)), 1, "막을 수도 피할 수도");
             Fails("hello", 1, "알 수 없는 줄");
         }
+        [Test] public void PieceOptionNamesTheSummonedPiecesAndReachesTheTelegraph()
+        {
+            const string rows = "\n00010000\n00010000\n00010000\n11111111\n00010000\n00010000\n00010000\n00010000\n";
+            var chart = BossChart.Parse("shape 챈슬러 piece=룩+나이트 anchor=4,4" + rows + "shape 룩 anchor=4,4 piece=룩" + rows + X + "10 챈슬러 2");
+            Assert.That(chart.Shapes["챈슬러"].Pieces, Is.EqualTo(new[] { ChessPiece.Rook, ChessPiece.Knight }));
+            Assert.That(chart.Shapes["챈슬러"].HasAnchor, Is.True, "options are read in either order");
+            Assert.That(chart.Shapes["룩"].Pieces, Is.EqualTo(new[] { ChessPiece.Rook }));
+            Assert.That(chart.Shapes["X"].Pieces, Is.Empty);
+            var hits = new BossPatternSystem(new PatternDefinition[0]).AuthoredHits(chart.Attacks[0], new GridPosition(3, 3));
+            Assert.That(hits[0].Pieces, Is.EqualTo(new[] { ChessPiece.Rook, ChessPiece.Knight }));
+            var e = Assert.Throws<BossChartException>(() => BossChart.Parse("shape A piece=용" + rows));
+            StringAssert.Contains("모르는 기물", e.Message);
+        }
         [Test] public void AnchoredShapeMovesToThePlayerAndClips()
         {
             var shape = BossChart.Parse(Cross).Shapes["십자"];

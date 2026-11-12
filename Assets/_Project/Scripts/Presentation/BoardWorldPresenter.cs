@@ -44,6 +44,16 @@ namespace StringAsASword.Presentation
         private readonly List<Transform> cellPieces = new List<Transform>(), edgePieces = new List<Transform>(), boardPieces = new List<Transform>();
         private Vector3[] cellHome, edgeHome, boardHome;
         private float[] cellDelay;
+        // A delivered board model is cut into one shard per cell at load, so the finale can break it apart.
+        private Transform boardModel;
+        private GameObject boardShards;
+        public bool BoardShatters => boardShards != null;
+        // Chess pieces the boss summons for attacks drawn from a piece's moves, keyed by shape name.
+        private sealed class Summon { public Transform Root; public Vector3 Home, Target; public float Age, StrikeAge = 1; public bool Live, Seen; }
+        private readonly Dictionary<string, Summon> summons = new Dictionary<string, Summon>();
+        private Material pieceFace, pieceSide;
+        public const float SummonRow = 4.75f, StrikeSeconds = .35f;
+        public int LiveSummons { get { int n = 0; foreach (var s in summons.Values) if (s.Live) n++; return n; } }
         /// <summary>Ending: the knight is placed by the caller instead of following the grid.</summary>
         public bool FreeRoam { get; set; }
         public Camera BoardCamera { get; private set; }
@@ -98,7 +108,9 @@ namespace StringAsASword.Presentation
             if (art.boardPrefab != null)
             {
                 var model = Instantiate(art.boardPrefab, world.transform, false); model.name = "Board Model";
-                boardPieces.Add(model.transform);
+                boardModel = model.transform;
+                // Without readable meshes the model cannot be cut; it then falls as one piece as before.
+                if (!BuildShards()) boardPieces.Add(boardModel);
             }
             else
             {
@@ -153,6 +165,7 @@ namespace StringAsASword.Presentation
             for (int i = 0; i < edgePieces.Count; i++) Fall(edgePieces[i], edgeHome[i], progress, 100 + i);
             for (int i = 0; i < boardPieces.Count; i++) Fall(boardPieces[i], boardHome[i], progress - .82f, 200 + i);
             bool intact = progress <= 0;
+            if (boardShards != null) { boardShards.SetActive(!intact); boardModel.gameObject.SetActive(intact); }
             selection.gameObject.SetActive(intact);
             if (!intact) foreach (var pickup in pickups) pickup.gameObject.SetActive(false);
         }
@@ -193,6 +206,7 @@ namespace StringAsASword.Presentation
                 foreach (var pool in warnings) pool[i].SetActive(false);
             }
             lastSession = game.SessionId;
+            HideSummons();
             FreeRoam = false; if (cellHome != null) SetCollapse(0); SetKingDown(0);
         }
         public void ShowAction(ActionResult result)
@@ -293,7 +307,8 @@ namespace StringAsASword.Presentation
         private void RenderTelegraphs(float dt)
         {
             var battle = game.Battle;
-            if (battle.LastClosedNote != lastClosedNote)
+            bool noteClosed = battle.LastClosedNote != lastClosedNote;
+            if (noteClosed)
             {
                 lastClosedNote = battle.LastClosedNote; impactCells = 0;
                 foreach (var fired in battle.Patterns.LastFired) impactCells |= fired.Cells;
@@ -306,6 +321,7 @@ namespace StringAsASword.Presentation
                             if ((impactCells & (1UL << i)) != 0) ArtCue.Spawn(art.bossFireVfx, world.transform, CellPosition(new GridPosition(i % 8, i / 8)));
                 }
             }
+            RenderSummons(battle, game.State == PrototypeState.Paused ? 0 : dt, noteClosed);
             bool published = false;
             foreach (var telegraph in battle.Patterns.Active)
                 if (telegraph.Id > lastTelegraphId) { lastTelegraphId = telegraph.Id; published = true; }
@@ -411,6 +427,218 @@ namespace StringAsASword.Presentation
             mesh.SetVertices(vertices); mesh.SetTriangles(underlay, 0); mesh.SetTriangles(markings, 1);
             mesh.RecalculateNormals(); mesh.RecalculateBounds(); return mesh;
         }
+        private bool BuildShards()
+        {
+            var filters = boardModel.GetComponentsInChildren<MeshFilter>();
+            foreach (var filter in filters)
+                if (filter.sharedMesh == null || !filter.sharedMesh.isReadable || filter.GetComponent<MeshRenderer>() == null) return false;
+            if (filters.Length == 0) return false;
+            boardShards = new GameObject("Board Shards");
+            boardShards.transform.SetParent(world.transform, false);
+            var cells = new Transform[64];
+            for (int i = 0; i < 64; i++)
+            {
+                cells[i] = new GameObject($"Shard_{i % 8}_{i / 8}").transform; cells[i].SetParent(boardShards.transform, false);
+                cells[i].localPosition = CellPosition(new GridPosition(i % 8, i / 8));
+            }
+            float bottom = 0;
+            foreach (var filter in filters)
+            {
+                var source = filter.sharedMesh;
+                var toBoard = world.transform.worldToLocalMatrix * filter.transform.localToWorldMatrix;
+                var normalToBoard = toBoard.inverse.transpose;
+                var positions = source.vertices; var normals = source.normals; var uvs = source.uv;
+                bool hasNormals = normals.Length == positions.Length, hasUv = uvs.Length == positions.Length;
+                for (int v = 0; v < positions.Length; v++)
+                {
+                    positions[v] = toBoard.MultiplyPoint3x4(positions[v]); bottom = Mathf.Min(bottom, positions[v].y);
+                    if (hasNormals) normals[v] = normalToBoard.MultiplyVector(normals[v]).normalized;
+                }
+                ShardVertex Vertex(int index) => new ShardVertex { Position = positions[index],
+                    Normal = hasNormals ? normals[index] : Vector3.up, Uv = hasUv ? uvs[index] : Vector2.zero };
+                var builders = new ShardBuilder[64];
+                var polygon = new List<ShardVertex>(12); var scratch = new List<ShardVertex>(12);
+                for (int sub = 0; sub < source.subMeshCount; sub++)
+                {
+                    var triangles = source.GetTriangles(sub);
+                    for (int t = 0; t < triangles.Length; t += 3)
+                    {
+                        ShardVertex a = Vertex(triangles[t]), b = Vertex(triangles[t + 1]), c = Vertex(triangles[t + 2]);
+                        int x0 = Cell(Mathf.Min(a.Position.x, Mathf.Min(b.Position.x, c.Position.x))), x1 = Cell(Mathf.Max(a.Position.x, Mathf.Max(b.Position.x, c.Position.x)));
+                        int z0 = Cell(Mathf.Min(a.Position.z, Mathf.Min(b.Position.z, c.Position.z))), z1 = Cell(Mathf.Max(a.Position.z, Mathf.Max(b.Position.z, c.Position.z)));
+                        for (int z = z0; z <= z1; z++) for (int x = x0; x <= x1; x++)
+                        {
+                            polygon.Clear(); polygon.Add(a); polygon.Add(b); polygon.Add(c);
+                            // The outermost cells keep everything beyond the playing field (rim, plinth).
+                            if (x0 != x1 || z0 != z1)
+                            {
+                                if (x > 0) Clip(polygon, scratch, 0, x - 4, true);
+                                if (x < 7) Clip(polygon, scratch, 0, x - 3, false);
+                                if (z > 0) Clip(polygon, scratch, 2, z - 4, true);
+                                if (z < 7) Clip(polygon, scratch, 2, z - 3, false);
+                            }
+                            if (polygon.Count < 3) continue;
+                            int cell = z * 8 + x;
+                            (builders[cell] ?? (builders[cell] = new ShardBuilder(source.subMeshCount))).Add(polygon, sub, cells[cell].localPosition);
+                        }
+                    }
+                }
+                var materials = filter.GetComponent<MeshRenderer>().sharedMaterials;
+                for (int cell = 0; cell < 64; cell++)
+                {
+                    if (builders[cell] == null) continue;
+                    var mesh = builders[cell].Build($"Shard {cell} {source.name}", hasUv); resources.Add(mesh);
+                    var part = new GameObject(filter.name, typeof(MeshFilter), typeof(MeshRenderer));
+                    part.transform.SetParent(cells[cell], false);
+                    part.GetComponent<MeshFilter>().sharedMesh = mesh; part.GetComponent<MeshRenderer>().sharedMaterials = materials;
+                }
+            }
+            // The model is a shell: a dark core under each cell closes the cut faces once the shards drift apart.
+            float depth = Mathf.Max(.1f, -bottom - .06f);
+            for (int cell = 0; cell < 64; cell++)
+                Box("Core", cells[cell], new Vector3(0, -.05f - depth / 2, 0), new Vector3(.985f, depth, .985f), edgeMaterial);
+            cellPieces.AddRange(cells);
+            boardShards.SetActive(false);
+            return true;
+        }
+        private static int Cell(float coordinate) => Mathf.Clamp(Mathf.FloorToInt(coordinate + 4), 0, 7);
+        private struct ShardVertex { public Vector3 Position, Normal; public Vector2 Uv; }
+        // Sutherland-Hodgman against one axis-aligned plane; keeps the side at or above (or below) the limit.
+        private static void Clip(List<ShardVertex> polygon, List<ShardVertex> scratch, int axis, float limit, bool keepAbove)
+        {
+            if (polygon.Count == 0) return;
+            scratch.Clear();
+            var previous = polygon[polygon.Count - 1];
+            float previousSide = keepAbove ? previous.Position[axis] - limit : limit - previous.Position[axis];
+            foreach (var current in polygon)
+            {
+                float side = keepAbove ? current.Position[axis] - limit : limit - current.Position[axis];
+                if (side >= 0 != previousSide >= 0)
+                {
+                    float t = previousSide / (previousSide - side);
+                    scratch.Add(new ShardVertex { Position = Vector3.Lerp(previous.Position, current.Position, t),
+                        Normal = Vector3.Lerp(previous.Normal, current.Normal, t), Uv = Vector2.Lerp(previous.Uv, current.Uv, t) });
+                }
+                if (side >= 0) scratch.Add(current);
+                previous = current; previousSide = side;
+            }
+            polygon.Clear(); polygon.AddRange(scratch);
+        }
+        private sealed class ShardBuilder
+        {
+            private readonly List<Vector3> positions = new List<Vector3>(), normals = new List<Vector3>();
+            private readonly List<Vector2> uvs = new List<Vector2>();
+            private readonly List<int>[] triangles;
+            public ShardBuilder(int subMeshes) { triangles = new List<int>[subMeshes]; for (int i = 0; i < subMeshes; i++) triangles[i] = new List<int>(); }
+            public void Add(List<ShardVertex> polygon, int subMesh, Vector3 origin)
+            {
+                int start = positions.Count;
+                foreach (var v in polygon) { positions.Add(v.Position - origin); normals.Add(v.Normal); uvs.Add(v.Uv); }
+                for (int i = 1; i < polygon.Count - 1; i++) { triangles[subMesh].Add(start); triangles[subMesh].Add(start + i); triangles[subMesh].Add(start + i + 1); }
+            }
+            public Mesh Build(string name, bool hasUv)
+            {
+                var mesh = new Mesh { name = name, subMeshCount = triangles.Length };
+                if (positions.Count > 65535) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+                mesh.SetVertices(positions); mesh.SetNormals(normals);
+                if (hasUv) mesh.SetUVs(0, uvs);
+                for (int i = 0; i < triangles.Length; i++) mesh.SetTriangles(triangles[i], i);
+                if (hasUv) mesh.RecalculateTangents();
+                mesh.RecalculateBounds(); return mesh;
+            }
+        }
+
+        // Outlines in the knight's 0..1 box, counter-clockwise, each one convex (Extrude fans from the first corner).
+        private static Vector2[] Outline(params float[] xy)
+        {
+            var points = new Vector2[xy.Length / 2];
+            for (int i = 0; i < points.Length; i++) points[i] = new Vector2(xy[i * 2], xy[i * 2 + 1]);
+            return points;
+        }
+        private static readonly Vector2[] PieceBase = Outline(.2f,0, .8f,0, .72f,.14f, .28f,.14f);
+        private static readonly Vector2[] PieceBody = Outline(.35f,.14f, .65f,.14f, .59f,.6f, .41f,.6f);
+        private static Vector2[][] PieceOutlines(ChessPiece piece)
+        {
+            switch (piece)
+            {
+                case ChessPiece.Pawn: return new[] { PieceBase, Outline(.37f,.14f, .63f,.14f, .56f,.48f, .44f,.48f),
+                    Outline(.4f,.46f, .6f,.46f, .67f,.59f, .6f,.72f, .4f,.72f, .33f,.59f) };
+                case ChessPiece.Rook: return new[] { PieceBase, Outline(.33f,.14f, .67f,.14f, .63f,.62f, .37f,.62f), Outline(.28f,.62f, .72f,.62f, .72f,.74f, .28f,.74f),
+                    Outline(.28f,.74f, .38f,.74f, .38f,.86f, .28f,.86f), Outline(.45f,.74f, .55f,.74f, .55f,.86f, .45f,.86f), Outline(.62f,.74f, .72f,.74f, .72f,.86f, .62f,.86f) };
+                case ChessPiece.Bishop: return new[] { PieceBase, Outline(.37f,.14f, .63f,.14f, .56f,.5f, .44f,.5f),
+                    Outline(.5f,.46f, .66f,.67f, .5f,.94f, .34f,.67f), Outline(.46f,.91f, .54f,.91f, .5f,1.02f) };
+                case ChessPiece.Knight: return new[] { PieceBase, Outline(.3f,.14f, .76f,.14f, .82f,.22f, .24f,.22f), Outline(.24f,.22f, .82f,.22f, .67f,.64f, .49f,.60f),
+                    Outline(.35f,.50f, .68f,.64f, .72f,.80f, .43f,.91f, .22f,.72f), Outline(.08f,.59f, .35f,.52f, .45f,.75f, .22f,.73f), Outline(.43f,.88f, .59f,.83f, .48f,1f) };
+                case ChessPiece.Queen: return new[] { PieceBase, PieceBody, Outline(.3f,.6f, .7f,.6f, .76f,.86f, .24f,.86f),
+                    Outline(.24f,.84f, .36f,.84f, .29f,1f), Outline(.44f,.84f, .56f,.84f, .5f,1.03f), Outline(.64f,.84f, .76f,.84f, .71f,1f) };
+                default: return new[] { PieceBase, PieceBody, Outline(.31f,.6f, .69f,.6f, .73f,.8f, .27f,.8f),
+                    Outline(.47f,.8f, .53f,.8f, .53f,1.04f, .47f,1.04f), Outline(.4f,.9f, .6f,.9f, .6f,.96f, .4f,.96f) };
+            }
+        }
+        private Summon BuildSummon(string shape, IReadOnlyList<ChessPiece> pieces)
+        {
+            if (pieceFace == null) { pieceFace = Material(new Color(.78f, .79f, .84f)); pieceSide = Material(new Color(.10f, .11f, .13f)); }
+            var root = new GameObject("Summon " + shape).transform; root.SetParent(world.transform, false);
+            for (int i = 0; i < pieces.Count; i++)
+            {
+                var body = new GameObject(pieces[i].ToString()).transform; body.SetParent(root, false);
+                // A compound piece (chancellor = rook + knight) stands as its two halves side by side.
+                body.localPosition = new Vector3((i - (pieces.Count - 1) * .5f) * .62f, 0, 0);
+                body.localRotation = Quaternion.Euler(Elevation, 0, 0);
+                body.localScale = Vector3.one * (pieces.Count == 1 ? 1.5f : 1.25f);
+                foreach (var outline in PieceOutlines(pieces[i])) Extrude(body, pieces[i].ToString(), pieceFace, pieceSide, outline);
+            }
+            root.gameObject.SetActive(false);
+            return new Summon { Root = root };
+        }
+        private static Vector3 Centroid(ulong cells)
+        {
+            Vector3 sum = Vector3.zero; int count = 0;
+            for (int i = 0; i < 64; i++) if ((cells & (1UL << i)) != 0) { sum += CellPosition(new GridPosition(i % 8, i / 8)); count++; }
+            return count == 0 ? Vector3.zero : sum / count;
+        }
+        // The piece rises behind row 8 in the attack's column while the warning counts down, then lunges onto the cells it hits.
+        private void RenderSummons(BattleSession battle, float dt, bool noteClosed)
+        {
+            foreach (var summon in summons.Values) summon.Seen = false;
+            foreach (var telegraph in battle.Patterns.Active)
+            {
+                if (telegraph.Pieces.Count == 0) continue;
+                if (!summons.TryGetValue(telegraph.Name, out var summon)) summons.Add(telegraph.Name, summon = BuildSummon(telegraph.Name, telegraph.Pieces));
+                if (summon.Seen) continue;
+                summon.Seen = true;
+                if (summon.StrikeAge < StrikeSeconds) continue;
+                ulong cells = 0;
+                foreach (var other in battle.Patterns.Active) if (other.Name == telegraph.Name && other.ImpactNote == telegraph.ImpactNote) cells |= other.Cells;
+                summon.Target = Centroid(cells); summon.Home = new Vector3(summon.Target.x, 0, SummonRow);
+                if (!summon.Live) { summon.Live = true; summon.Age = 0; summon.Root.gameObject.SetActive(true); }
+            }
+            if (noteClosed)
+                foreach (var fired in battle.Patterns.LastFired)
+                    if (fired.Pieces.Count > 0 && summons.TryGetValue(fired.Name, out var summon) && summon.Live && summon.StrikeAge >= StrikeSeconds)
+                    {
+                        ulong cells = 0;
+                        foreach (var other in battle.Patterns.LastFired) if (other.Name == fired.Name) cells |= other.Cells;
+                        summon.Target = Centroid(cells); summon.StrikeAge = 0;
+                    }
+            foreach (var summon in summons.Values)
+            {
+                if (!summon.Live) continue;
+                summon.Age += dt; summon.StrikeAge += dt;
+                bool striking = summon.StrikeAge < StrikeSeconds;
+                if (!summon.Seen && !striking) { summon.Live = false; summon.Root.gameObject.SetActive(false); continue; }
+                float rise = Mathf.SmoothStep(0, 1, summon.Age / .18f);
+                float lunge = striking ? Mathf.SmoothStep(0, 1, summon.StrikeAge / .12f) : 0;
+                summon.Root.localPosition = Vector3.Lerp(summon.Home, summon.Target, lunge)
+                    + Vector3.up * ((1 - rise) * 1.4f + Mathf.Sin(lunge * Mathf.PI) * .7f);
+                // After the hit the piece shrinks away instead of popping out.
+                summon.Root.localScale = Vector3.one * (rise * (striking ? Mathf.Clamp01((StrikeSeconds - summon.StrikeAge) / .12f) : 1));
+            }
+        }
+        private void HideSummons()
+        {
+            foreach (var summon in summons.Values) { summon.Live = false; summon.StrikeAge = 1; summon.Root.gameObject.SetActive(false); }
+        }
         private void BuildPlayer()
         {
             player = new GameObject("Knight").transform; player.SetParent(world.transform, false);
@@ -509,7 +737,8 @@ namespace StringAsASword.Presentation
             mesh.SetTriangles(new[] { 0,1,2,0,2,3, 0,4,5,0,5,1, 1,5,6,1,6,2, 2,6,7,2,7,3, 3,7,4,3,4,0 }, 1);
             mesh.RecalculateNormals(); mesh.RecalculateBounds(); return mesh;
         }
-        private void Extrude(string label, Material face, Material side, params Vector2[] outline)
+        private void Extrude(string label, Material face, Material side, params Vector2[] outline) => Extrude(knightBody, label, face, side, outline);
+        private void Extrude(Transform parent, string label, Material face, Material side, Vector2[] outline)
         {
             int count = outline.Length;
             var vertices = new Vector3[count * 2]; var front = new List<int>(); var sides = new List<int>();
@@ -524,7 +753,7 @@ namespace StringAsASword.Presentation
             { int next = (i + 1) % count; sides.AddRange(new[] { i,next,i+count, next,next+count,i+count }); }
             var mesh = new Mesh { name = label, vertices = vertices, subMeshCount = 2 };
             mesh.SetTriangles(front, 0); mesh.SetTriangles(sides, 1); mesh.RecalculateNormals(); mesh.RecalculateBounds(); resources.Add(mesh);
-            var part = new GameObject(label, typeof(MeshFilter), typeof(MeshRenderer)); part.transform.SetParent(knightBody, false);
+            var part = new GameObject(label, typeof(MeshFilter), typeof(MeshRenderer)); part.transform.SetParent(parent, false);
             part.GetComponent<MeshFilter>().sharedMesh = mesh; part.GetComponent<MeshRenderer>().sharedMaterials = new[] { face, side };
         }
         private void OnDestroy()

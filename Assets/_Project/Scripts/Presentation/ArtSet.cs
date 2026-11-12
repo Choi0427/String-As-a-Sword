@@ -15,6 +15,12 @@ namespace StringAsASword.Presentation
         [Tooltip("Board-local position of the king's pivot. Row 8's far edge is z = 4.")]
         public Vector3 kingAnchor = new Vector3(0, 0, 5.5f);
         public float kingScale = 1;
+        [Tooltip("2D boss picture drawn behind the board (temporary until the king model arrives). Its lower part hides behind the board.")]
+        public Sprite bossImage;
+        [Tooltip("Boss picture height in canvas pixels (1600x900 reference). The width follows the sprite's aspect.")]
+        public float bossImageHeight = 400;
+        [Tooltip("x: sideways nudge. y: how far the picture's bottom edge sits below the board's far edge. Canvas pixels.")]
+        public Vector2 bossImageSink = new Vector2(0, 110);
         [Tooltip("Replaces the procedural wave. Animator bool: Dormant (noise goal reached).")]
         public GameObject noisePrefab;
         [Tooltip("Optional: replaces every material of the noise prefab once the phase goal is reached.")]

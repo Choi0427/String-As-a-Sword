@@ -61,9 +61,11 @@ namespace StringAsASword.Editor
                 var tokens = lines[i].Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
                 if (tokens.Length < 2 || tokens[0] != "shape") continue;
                 var d = new Drawing { Name = tokens[1] };
-                if (tokens.Length > 2)
+                // Other options (piece=) do not change the cells.
+                string anchor = Array.Find(tokens, t => t.StartsWith("anchor=", StringComparison.Ordinal));
+                if (anchor != null)
                 {
-                    var rc = tokens[2].Substring("anchor=".Length).Split(',');
+                    var rc = anchor.Substring("anchor=".Length).Split(',');
                     d.HasAnchor = true; d.AnchorX = int.Parse(rc[1]) - 1; d.AnchorY = 8 - int.Parse(rc[0]);
                 }
                 for (int row = 0; row < 8;)
