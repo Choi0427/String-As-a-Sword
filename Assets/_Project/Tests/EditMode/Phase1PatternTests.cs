@@ -35,7 +35,7 @@ namespace StringAsASword.Tests
         [Test]
         public void VerificationChartsPassTheValidator()
         {
-            foreach (var path in new[] { V.ChartPath, V.CombosPath })
+            foreach (var path in new[] { V.ChartPath, V.CombosPath, BossChartValidator.DefaultChartPath })
             {
                 var result = BossChartValidator.Check(File.ReadAllText(path), Settings);
                 Assert.That(result.Passed, Is.True, path + "\n" + string.Join("\n", result.Findings.Select(f => f.Message)));
@@ -51,6 +51,22 @@ namespace StringAsASword.Tests
             Assert.That(failed, Is.Empty, string.Join("\n", failed));
             // The full board of 1 is guard-only: a guard anywhere succeeds on both hits.
             Assert.That(probes.Any(p => p.Shape == "전체" && p.Scenario == "1칸 가드" && p.Status == V.Passed));
+        }
+
+        // The stage's boss chart (battle-7): notes 0-123 as drawn, then the random scheduler from 124.
+        [Test]
+        public void StageChartPlaysAsDrawnThenHandsOverAt124()
+        {
+            string text = File.ReadAllText(BossChartValidator.DefaultChartPath);
+            var failed = V.Run(Settings, text).Where(p => p.Status == V.Failed).Select(p => $"{p.Shape} {p.Scenario}: {p.Detail}").ToList();
+            Assert.That(failed, Is.Empty, string.Join("\n", failed));
+            Assert.That(BossChart.Parse(text).RandomFrom, Is.EqualTo(124));
+            var settings = Settings.Copy(); settings.BossChartText = text;
+            var battle = new BattleSession(settings, 7);
+            battle.Advance(settings.CreateTimeline().TimeOf(160) + settings.GoodWindow + .001);
+            var published = battle.Events.Where(e => e.type == "pattern-publish").ToList();
+            Assert.That(published.Where(e => e.kind == "Drawn").Max(e => e.impactNote), Is.LessThan(124));
+            Assert.That(published.Where(e => e.kind != "Drawn").Min(e => e.impactNote), Is.GreaterThanOrEqualTo(124));
         }
 
         // Hand-computed cells, checked against the runtime (not the fixture's own expectation).

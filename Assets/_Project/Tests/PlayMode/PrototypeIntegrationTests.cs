@@ -178,6 +178,7 @@ namespace StringAsASword.Tests
         private IEnumerator StartWith(PatternDefinition pattern, AttackResponse response)
         {
             game.Battle.Settings.Schedule.Enabled = false;
+            game.Battle.Settings.BossChartText = null; // the stage's boss chart would replace the fixture pattern
             game.Battle.Settings.Patterns = new[] { pattern };
             game.StartSession();
             yield return UntilSongTime(game.Timeline.TimeOf(0)+.16);

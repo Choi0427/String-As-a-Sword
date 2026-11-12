@@ -20,7 +20,7 @@ MonoBehaviour:
   cameraElevation: 45
   playerMaxHp: 300
   maxCollectionCost: 12
-  combatVersion: battle-6
+  combatVersion: battle-7
   patterns:
   - Name: Line
     Kind: 0
@@ -198,3 +198,4 @@ MonoBehaviour:
     MaxWarning: 5
     CandidateAttempts: 16
     MaxDeferrals: 8
+  bossChart: {fileID: 4900000, guid: 10a74606a0e7a8c439d2b291b1dc6648, type: 3}
