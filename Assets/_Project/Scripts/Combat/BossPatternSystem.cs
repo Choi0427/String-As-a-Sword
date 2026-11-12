@@ -49,7 +49,10 @@ namespace StringAsASword.Combat
         // for fairness ahead of time, so nothing here defers or rerolls; phases only filter, they never cancel.
         private readonly BossChart chart;
         private int chartCursor;
-        public bool Authored => chart != null;
+        // `random N` hands over to the random scheduler once the chart is spent; the two never overlap, so neither
+        // mode's fairness checks have to account for the other's telegraphs.
+        private bool handedOver;
+        public bool Authored => chart != null && !handedOver;
         public BossPatternSystem(PatternDefinition[] definitions, RandomAttackSchedule schedule = null, int seed = 0, bool[] fastNotes = null,
             BossChart chart = null)
         {
@@ -68,7 +71,7 @@ namespace StringAsASword.Combat
         }
         public void BeginPhase(int phaseId, int firstNote)
         {
-            if (chart != null) { phase = phaseId; return; }
+            if (Authored) { phase = phaseId; return; }
             foreach (var a in active) Changed?.Invoke("cancel", a);
             active.Clear(); phase = phaseId; nextImpact = new int[definitions.Length];
             if (schedule.Enabled) { Plan(lastImpact < 0 ? firstNote - 1 : lastImpact, firstNote - 1); return; }
@@ -84,7 +87,12 @@ namespace StringAsASword.Combat
         public void Publish(int lastClosed, GridPosition player, int noteCount, bool hold)
         {
             if (halted) return;
-            if (chart != null) { PublishAuthored(lastClosed, player, noteCount); return; }
+            if (Authored)
+            {
+                PublishAuthored(lastClosed, player, noteCount);
+                if (chart.RandomFrom < 0 || lastClosed + 1 < chart.RandomFrom || chartCursor < chart.Attacks.Count || active.Count > 0) return;
+                handedOver = true; BeginPhase(phase, lastClosed + 1);
+            }
             if (schedule.Enabled) { PublishRandom(lastClosed, player, noteCount, hold); return; }
             for (int i = 0; i < definitions.Length; i++)
             {
@@ -318,7 +326,7 @@ namespace StringAsASword.Combat
                 }
             // Only one sequence is ever active, so an empty list means its last hit fired. A cancelled
             // sequence empties the list without firing and BeginPhase plans the replacement.
-            if (chart == null && schedule.Enabled && fired.Count > 0 && active.Count == 0) Plan(note, note);
+            if (!Authored && schedule.Enabled && fired.Count > 0 && active.Count == 0) Plan(note, note);
             return cells;
         }
     }

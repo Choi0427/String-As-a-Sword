@@ -61,6 +61,8 @@ namespace StringAsASword.Combat
         public IReadOnlyDictionary<string, BossChartShape> Shapes => shapes;
         /// <summary>Ordered by publish note, then by line.</summary>
         public IReadOnlyList<BossChartAttack> Attacks => attacks;
+        /// <summary>`random N`: the random scheduler takes over from note N once every chart hit has fired. -1 = chart only.</summary>
+        public int RandomFrom { get; private set; } = -1;
 
         public string SectionAt(int note)
         {
@@ -100,8 +102,14 @@ namespace StringAsASword.Combat
                 var tokens = line.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
                 if (tokens[0] == "section") chart.sections.Add(ParseSection(tokens, i + 1));
                 else if (tokens[0] == "shape") i = chart.ParseShape(tokens, lines, i);
+                else if (tokens[0] == "random")
+                {
+                    if (tokens.Length != 2 || chart.RandomFrom >= 0) throw new BossChartException(i + 1, "형식은 'random 노트'이고 한 번만 쓸 수 있어요.");
+                    chart.RandomFrom = Int(tokens[1], i + 1, "random 노트");
+                    if (chart.RandomFrom < 1) throw new BossChartException(i + 1, "random 노트는 1 이상이어야 해요.");
+                }
                 else if (char.IsDigit(tokens[0][0]) || tokens[0][0] == '-') pending.Add((i + 1, tokens));
-                else throw new BossChartException(i + 1, $"알 수 없는 줄 '{line}'. section, shape, 또는 노트 번호로 시작해야 해요.");
+                else throw new BossChartException(i + 1, $"알 수 없는 줄 '{line}'. section, shape, random, 또는 노트 번호로 시작해야 해요.");
             }
             // Attacks may name a shape drawn further down the file.
             foreach (var (line, tokens) in pending) chart.attacks.Add(chart.ParseAttack(tokens, line));

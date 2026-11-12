@@ -118,6 +118,35 @@ namespace StringAsASword.Tests
             Assert.That(system.Active, Is.Empty, "the finale stun still clears the board");
         }
 
+        // ── Handover to the random scheduler ──
+        private static List<(string type, BossTelegraph t)> RunWithRandom(string chart, int toNote)
+        {
+            var system = new BossPatternSystem(PatternDefinition.Defaults(), new RandomAttackSchedule { Enabled = true }, 3, null, BossChart.Parse(chart));
+            var log = new List<(string, BossTelegraph)>();
+            system.Changed += (type, t) => log.Add((type, t));
+            system.BeginPhase(1, 0);
+            for (int closed = -1; closed <= toNote; closed++) { system.Resolve(closed); system.Publish(closed, new GridPosition(3, 3), 80, false); }
+            return log;
+        }
+        [Test] public void RandomTakesOverAfterTheChartAndNeverBefore()
+        {
+            Assert.That(BossChart.Parse(X + "random 30").RandomFrom, Is.EqualTo(30));
+            var log = RunWithRandom(X + "10 X 3\nrandom 30", 70);
+            var randoms = log.Where(e => e.type == "publish" && e.t.Kind != PatternKind.Drawn).Select(e => e.t).ToList();
+            Assert.That(randoms, Is.Not.Empty, "the random scheduler publishes after the handover");
+            Assert.That(randoms.Min(t => t.ImpactNote), Is.GreaterThanOrEqualTo(30));
+            Assert.That(log.Where(e => e.type == "publish" && e.t.Kind == PatternKind.Drawn).Max(e => e.t.ImpactNote), Is.LessThan(30));
+            var chartOnly = RunWithRandom(X + "10 X 3", 70);
+            Assert.That(chartOnly.Any(e => e.t.Kind != PatternKind.Drawn), Is.False, "no `random` line: the chart alone");
+        }
+        [Test] public void ValidatorRejectsAChartHitAtOrAfterTheHandover()
+        {
+            var result = BossChartValidator.Check(X + "30 X 3\nrandom 30", Settings());
+            Assert.That(result.Passed, Is.False);
+            StringAssert.Contains("랜덤 인계", result.Findings.Single(f => f.Error).Message);
+            Assert.Throws<BossChartException>(() => BossChart.Parse(X + "random 30\nrandom 40"));
+        }
+
         // ── Validator ──
         [Test] public void ValidatorFailsAnUndodgeableShapeAndListsTheCells()
         {

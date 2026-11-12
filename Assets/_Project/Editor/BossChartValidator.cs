@@ -60,6 +60,8 @@ namespace StringAsASword.Editor
                     Shape = a.Shape.Name, Section = chart.SectionAt(a.Note), Message = message, Error = error });
                 if (a.Publish < 0) Report(true, $"경고 {a.Warning}노트가 곡 시작(노트 0) 전에 시작돼요.");
                 if (a.LastHit >= settings.NoteCount) { Report(true, $"마지막 타격(노트 {a.LastHit})이 곡 노트 수({settings.NoteCount})를 넘어요."); continue; }
+                if (chart.RandomFrom >= 0 && a.LastHit >= chart.RandomFrom)
+                    Report(true, $"마지막 타격(노트 {a.LastHit})이 랜덤 인계 노트({chart.RandomFrom}) 이후예요. 채보와 랜덤은 겹칠 수 없어요.");
                 if (settings.HasFinale && a.LastHit >= settings.FinishNote)
                     Report(false, $"피날레 노트({settings.FinishNote}) 이후예요. 보스가 스턴되면 나오지 않아요.");
                 if (a.Publish >= 0 && system.CrossesFastSection(a.Publish, a.LastHit))
