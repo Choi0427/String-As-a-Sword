@@ -185,6 +185,15 @@ namespace StringAsASword.Editor
             return Describe(name);
         }
 
+        // Shows a session played elsewhere (Phase1PatternVerification) on the live view, frozen at its last advanced time.
+        public static string Present(BattleSession session, string scenario)
+        {
+            CaptureLiveSession();
+            battle = session;
+            BindBattle(); Render(battle.AdvancedTime);
+            return Describe(scenario);
+        }
+
         // Return the real session to Ready or Paused. Exiting Play Mode also discards the fixture.
         public static string Restore()
         {
