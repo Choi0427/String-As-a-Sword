@@ -109,7 +109,7 @@ namespace StringAsASword.Combat
             PlayerHp = Settings.PlayerMaxHp; Outcome = BattleOutcome.Running;
             KingStunned = false; StunnedNote = -1;
             LastClosedNote = CurrentMusicBeat = -1; advancedTime = double.NegativeInfinity; before = Session.Position;
-            Patterns = new BossPatternSystem(Settings.Patterns, Settings.Schedule, seed, Settings.FastNotes());
+            Patterns = new BossPatternSystem(Settings.Patterns, Settings.Schedule, seed, Settings.FastNotes(), Settings.Chart);
             Patterns.Changed += (type, a) => Events.Add(new BattleEvent { type = "pattern-" + type,
                 noteIndex = LastClosedNote, musicBeat = CurrentMusicBeat, phase = Phases.PhaseId,
                 id = a.Id, impactNote = a.ImpactNote, cells = a.Cells.ToString("X16"), detail = a.Name,

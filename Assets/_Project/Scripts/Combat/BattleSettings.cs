@@ -4,7 +4,8 @@ using StringAsASword.Stage;
 
 namespace StringAsASword.Combat
 {
-    public enum PatternKind { Row, Column, LockedCell, TopPressure, Cross, FullBoard, UpperHalf, Checker, Ring }
+    // Drawn: a shape from the hand-written boss chart (BossChart); never used by PatternDefinition.
+    public enum PatternKind { Row, Column, LockedCell, TopPressure, Cross, FullBoard, UpperHalf, Checker, Ring, Drawn }
     // Either: guard or leave. GuardOnly: dodge-route checks are skipped. DodgeOnly: a guard does not protect.
     public enum AttackResponse { Either, GuardOnly, DodgeOnly }
     [Serializable]
@@ -82,6 +83,19 @@ namespace StringAsASword.Combat
         public int[] Health = { 6, 6, 6, 6 }, NoiseTargets = { 3, 4, 5 };
         public PatternDefinition[] Patterns = PatternDefinition.Defaults();
         public RandomAttackSchedule Schedule = new RandomAttackSchedule();
+        // The hand-written boss chart's text. When set, it replaces Patterns and Schedule. Kept as text so replay logs carry it.
+        public string BossChartText;
+        [NonSerialized] private BossChart parsedChart;
+        [NonSerialized] private string parsedText;
+        public BossChart Chart
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(BossChartText)) return null;
+                if (parsedChart == null || !ReferenceEquals(parsedText, BossChartText)) { parsedChart = BossChart.Parse(BossChartText); parsedText = BossChartText; }
+                return parsedChart;
+            }
+        }
         public BattleSettings Copy()
         {
             var copy = (BattleSettings)MemberwiseClone();
@@ -99,7 +113,7 @@ namespace StringAsASword.Combat
             Health = stage.HealthSegments, NoiseTargets = stage.NoiseTargets,
             PlayerMaxHp = stage.PlayerMaxHp, SpawnInterval = stage.NoiseSpawnInterval,
             MaxNoise = stage.MaxActiveNoise, MaxCollectionCost = stage.MaxCollectionCost,
-            Patterns = stage.Patterns, Version = stage.CombatVersion, Schedule = stage.AttackSchedule
+            Patterns = stage.Patterns, Version = stage.CombatVersion, Schedule = stage.AttackSchedule, BossChartText = stage.BossChartText
         };
         public void Validate()
         {
@@ -123,6 +137,7 @@ namespace StringAsASword.Combat
             foreach (int n in NoiseTargets) if (n < 1) throw new ArgumentException("Goals must be positive.");
             if (Patterns == null || Patterns.Length > 64) throw new ArgumentException("Pattern list must contain at most 64 entries.");
             if (Schedule == null) throw new ArgumentException("Attack schedule is missing.");
+            _ = Chart; // Throws BossChartException (an ArgumentException) with the line number.
             Schedule.Validate();
             foreach (var p in Patterns)
                 if (p == null || p.TelegraphNotes < 1 || p.FirstImpact <= p.TelegraphNotes || p.RepeatNotes < 1 ||
