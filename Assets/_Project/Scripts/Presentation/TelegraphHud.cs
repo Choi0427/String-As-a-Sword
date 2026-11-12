@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using StringAsASword.Combat;
+using UnityEngine;
 
 namespace StringAsASword.Presentation
 {
@@ -14,6 +15,10 @@ namespace StringAsASword.Presentation
 
         public static string ResponseWord(AttackResponse response)
             => response == AttackResponse.GuardOnly ? "GUARD" : response == AttackResponse.DodgeOnly ? "MOVE" : "EITHER";
+
+        // Tints follow the guard pose and the gold attack edge; Either keeps the caller's own colour.
+        public static Color ResponseColor(AttackResponse response, Color either)
+            => response == AttackResponse.DodgeOnly ? new Color(1f, .72f, .25f) : response == AttackResponse.GuardOnly ? new Color(.45f, .85f, 1f) : either;
 
         public static string ThreatText(AttackResponse response, int remaining, int hits)
         {

@@ -91,6 +91,14 @@ namespace StringAsASword.Tests
             => Assert.That(TelegraphHud.ThreatText(response, remaining, hits), Is.EqualTo(expected));
 
         [Test]
+        public void ResponseColorTintsStrictResponsesAndKeepsEither()
+        {
+            Assert.That(TelegraphHud.ResponseColor(AttackResponse.DodgeOnly, Color.black), Is.EqualTo(new Color(1f, .72f, .25f)));
+            Assert.That(TelegraphHud.ResponseColor(AttackResponse.GuardOnly, Color.black), Is.EqualTo(new Color(.45f, .85f, 1f)));
+            Assert.That(TelegraphHud.ResponseColor(AttackResponse.Either, Color.magenta), Is.EqualTo(Color.magenta));
+        }
+
+        [Test]
         public void SharedCellReportsTheSoonestAttacksResponse()
         {
             var counts = new int[64]; var soonest = new int[64]; var responses = new AttackResponse[64];

@@ -27,6 +27,8 @@ namespace StringAsASword.Presentation
         private Mesh box;
         private Material edgeMaterial;
         private Material materialTemplate;
+        private Material outlineMaterial;
+        private Color outlineAccent, outlineColor;
         // One pool per AttackResponse, indexed by its value.
         private readonly GameObject[][] warnings = { new GameObject[64], new GameObject[64], new GameObject[64] };
         private readonly GameObject[] impacts = new GameObject[64];
@@ -91,7 +93,8 @@ namespace StringAsASword.Presentation
                 light.type = LightType.Directional; light.transform.localRotation = Quaternion.Euler(50, -30, 0);
             }
             var gold = Material(new Color(.84f, .66f, .32f));
-            var accent = Material(new Color(.40f, .85f, .73f));
+            outlineAccent = outlineColor = new Color(.40f, .85f, .73f);
+            var accent = outlineMaterial = Material(outlineAccent);
             if (art.boardPrefab != null)
             {
                 var model = Instantiate(art.boardPrefab, world.transform, false); model.name = "Board Model";
@@ -252,9 +255,9 @@ namespace StringAsASword.Presentation
         {
             var dark = Material(new Color(.045f, .055f, .065f));
             var white = Material(new Color(.97f, .97f, .94f));
-            // Tints follow the guard pose and the gold attack edge, but each response is already its own shape.
-            var guard = Material(new Color(.45f, .85f, 1f));
-            var dodge = Material(new Color(1f, .72f, .25f));
+            // Each response is already its own shape; the tint only backs it up.
+            var guard = Material(TelegraphHud.ResponseColor(AttackResponse.GuardOnly, Color.white));
+            var dodge = Material(TelegraphHud.ResponseColor(AttackResponse.DodgeOnly, Color.white));
             Mesh impact = TelegraphMesh(true);
             resources.Add(impact);
             var materials = new[] { dark, white };
@@ -316,6 +319,15 @@ namespace StringAsASword.Presentation
                 for (int response = 0; response < warnings.Length; response++)
                     warnings[response][i].SetActive(warning && (int)cellResponses[i] == response);
                 impacts[i].SetActive(fired);
+            }
+            // The knight's pedestal covers its own cell's mark, so the outline carries that cell's response.
+            var position = game.Session.Position;
+            int cell = position.Y * 8 + position.X;
+            Color outline = cellCounts[cell] > 0 ? TelegraphHud.ResponseColor(cellResponses[cell], outlineAccent) : outlineAccent;
+            if (outlineColor != outline)
+            {
+                outlineMaterial.color = outlineColor = outline;
+                if (outlineMaterial.HasProperty("_BaseColor")) outlineMaterial.SetColor("_BaseColor", outline);
             }
         }
         private static Mesh TelegraphMesh(bool impact)

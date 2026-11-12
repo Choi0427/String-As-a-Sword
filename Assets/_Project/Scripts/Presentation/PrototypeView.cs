@@ -45,6 +45,8 @@ namespace StringAsASword.Presentation
         private TMP_Text playerHp, patternList;
         private readonly TMP_Text[] dangerLabels = new TMP_Text[64];
         private readonly GameObject[] dangerBadges = new GameObject[64];
+        private readonly UnityEngine.UI.Image[] dangerBackgrounds = new UnityEngine.UI.Image[64];
+        private static readonly Color BadgeDark = new Color(.025f,.035f,.045f,.97f);
         private readonly Vector2[] dangerPoints = new Vector2[64];
         private readonly RectTransform[] dangerConnectors = new RectTransform[64];
         private readonly Rect[] badgeBounds = new Rect[64];
@@ -166,7 +168,7 @@ namespace StringAsASword.Presentation
                 Image(dangerConnectors[i], new Color(.94f,.93f,.88f,.65f));
                 dangerConnectors[i].gameObject.SetActive(false);
                 var badge = MakeRect(board, $"DangerBadge_{i % 8}_{i / 8}", point, new Vector2(40,20));
-                Image(badge, new Color(.025f,.035f,.045f,.97f)); dangerBadges[i] = badge.gameObject;
+                dangerBackgrounds[i] = Image(badge, BadgeDark); dangerBadges[i] = badge.gameObject;
                 dangerLabels[i] = Text(badge, "Countdown", "", Vector2.zero, new Vector2(40,20), 17, InkWhite);
                 dangerLabels[i].fontStyle = FontStyles.Bold;
                 badge.gameObject.SetActive(false);
@@ -386,6 +388,11 @@ namespace StringAsASword.Presentation
                     // A sequence fires and counts down in the same frame; the badge only fits one suffix, and X is the news.
                     dangerLabels[i].text = dangerRemaining[i] + (fired ? "<size=11> X</size>" : dangerCounts[i] > 1 ? $"<size=11> +{dangerCounts[i] - 1}</size>" : "");
                 else if (fired) dangerLabels[i].text = "X";
+                if (!visible) continue;
+                // Impact-only badges have no response left and keep the dark style.
+                var response = dangerCounts[i] > 0 ? dangerResponses[i] : AttackResponse.Either;
+                dangerBackgrounds[i].color = TelegraphHud.ResponseColor(response, BadgeDark);
+                dangerLabels[i].color = response == AttackResponse.Either ? InkWhite : BadgeDark;
             }
             for (int i = 0; i < 64; i++)
             {
