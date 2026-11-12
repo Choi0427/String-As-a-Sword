@@ -41,9 +41,14 @@ namespace StringAsASword.Presentation
             Stop(); song = definition; clock = songClock; timeline = beatTimeline;
             nextClick = -song.CountInBeats;
             musicSource.clip = song.Music;
-            musicSource.volume = song.Volume;
+            musicSource.volume = song.Volume * Core.GameFlow.MusicVolume;
             if (song.Music != null) musicSource.PlayScheduled(clock.Origin - song.AudioStartOffset);
             Schedule();
+        }
+        /// <summary>Ending fade: 1 = the song's configured volume, 0 = silent.</summary>
+        public void SetMusicFade(float scale)
+        {
+            if (song != null) musicSource.volume = song.Volume * Core.GameFlow.MusicVolume * Mathf.Clamp01(scale);
         }
         public void ToggleMute()
         {

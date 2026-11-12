@@ -59,6 +59,9 @@ namespace StringAsASword.Combat
         public BattleOutcome Outcome { get; private set; }
         public int PlayerHp { get; private set; }
         public int LastClosedNote { get; private set; } = -1;
+        /// <summary>Finale only: the boss HP is empty and the king no longer attacks.</summary>
+        public bool KingStunned { get; private set; }
+        public int StunnedNote { get; private set; } = -1;
         public int CurrentMusicBeat { get; private set; } = -1;
         public int Seed { get; private set; }
         public List<NoteRecord> Records { get; } = new List<NoteRecord>();
@@ -104,8 +107,9 @@ namespace StringAsASword.Combat
             Seed = seed; Records.Clear(); Events.Clear(); Inputs.Clear(); accepted = null;
             Session.Reset(); music.Reset(); Combat.Reset(); Phases.Reset(sessionId, seed);
             PlayerHp = Settings.PlayerMaxHp; Outcome = BattleOutcome.Running;
+            KingStunned = false; StunnedNote = -1;
             LastClosedNote = CurrentMusicBeat = -1; advancedTime = double.NegativeInfinity; before = Session.Position;
-            Patterns = new BossPatternSystem(Settings.Patterns, Settings.Schedule, seed);
+            Patterns = new BossPatternSystem(Settings.Patterns, Settings.Schedule, seed, Settings.FastNotes(), Settings.Chart);
             Patterns.Changed += (type, a) => Events.Add(new BattleEvent { type = "pattern-" + type,
                 noteIndex = LastClosedNote, musicBeat = CurrentMusicBeat, phase = Phases.PhaseId,
                 id = a.Id, impactNote = a.ImpactNote, cells = a.Cells.ToString("X16"), detail = a.Name,
@@ -183,7 +187,13 @@ namespace StringAsASword.Combat
             bool transition = false;
             if (analysisEnds == null)
             {
-                if (Health.Defeated) Outcome = BattleOutcome.Won;
+                if (Health.Defeated && !Settings.HasFinale) Outcome = BattleOutcome.Won;
+                else if (Health.Defeated)
+                {
+                    // Finale: the king staggers and stops attacking; the finishing run decides the battle later.
+                    if (!KingStunned)
+                    { KingStunned = true; StunnedNote = note; AddEvent("king-stunned", note.ToString(), Session.Position); Patterns.Halt(); }
+                }
                 else if (PlayerHp == 0) Outcome = BattleOutcome.Dead;
                 else transition = Phases.ResolveBeat(note, CurrentMusicBeat + 1);
             }
@@ -198,7 +208,8 @@ namespace StringAsASword.Combat
             }
             if (transition)
             { AddEvent("phase", Phases.PhaseId.ToString(), Session.Position); Patterns.BeginPhase(Phases.PhaseId, note + 1); }
-            if (Outcome == BattleOutcome.Running && note == Settings.NoteCount - 1) Outcome = BattleOutcome.Timeout;
+            if (Outcome == BattleOutcome.Running && note == Settings.DecidingNote)
+                Outcome = KingStunned ? BattleOutcome.Won : BattleOutcome.Timeout;
             accepted = null; before = Session.Position;
             if (Outcome == BattleOutcome.Running)
                 Patterns.Publish(note, Session.Position, Settings.NoteCount, Noise.WaitingForSafeSpawn);

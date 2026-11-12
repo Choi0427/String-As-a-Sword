@@ -12,7 +12,7 @@ namespace StringAsASword.Combat
     public static class BattleLog
     {
         // v2: inputs can be key releases (hold notes).
-        private const string RuntimeVersion = "battle-4/xorshift32-v2";
+        private const string RuntimeVersion = "battle-6/xorshift32-v2";
         [Serializable] private sealed class Line
         {
             public string type, chartHash, configHash, runtimeVersion = RuntimeVersion;
@@ -33,7 +33,7 @@ namespace StringAsASword.Combat
         public static string ChartHash(BattleSettings s) => Hash(s.ChartId + "|" + s.NoteCount + "|" +
             s.Bpm.ToString("R", CultureInfo.InvariantCulture) + "|" + s.PerfectWindow.ToString("R", CultureInfo.InvariantCulture) + "|" +
             s.GoodWindow.ToString("R", CultureInfo.InvariantCulture) + "|" + s.InputOffset.ToString("R", CultureInfo.InvariantCulture) +
-            (s.HasAuthoredChart ? "|" + Join(s.NoteTimes) : "") + (s.HasHolds ? "|holds:" + Join(s.HoldEndTimes) : ""));
+            (s.HasAuthoredChart ? "|" + Join(s.NoteTimes) : "") + (s.HasHolds ? "|holds:" + Join(s.HoldEndTimes) : "") + (s.HasFinale ? "|finish:" + s.FinishNote : ""));
         private static string Join(double[] values) => string.Join(",", Array.ConvertAll(values, t => t.ToString("R", CultureInfo.InvariantCulture)));
         public static string StateHash(BattleSession b)
         {

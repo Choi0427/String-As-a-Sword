@@ -4,7 +4,8 @@ using StringAsASword.Stage;
 
 namespace StringAsASword.Combat
 {
-    public enum PatternKind { Row, Column, LockedCell, TopPressure, Cross, FullBoard, UpperHalf, Checker, Ring }
+    // Drawn: a shape from the hand-written boss chart (BossChart); never used by PatternDefinition.
+    public enum PatternKind { Row, Column, LockedCell, TopPressure, Cross, FullBoard, UpperHalf, Checker, Ring, Drawn }
     // Either: guard or leave. GuardOnly: dodge-route checks are skipped. DodgeOnly: a guard does not protect.
     public enum AttackResponse { Either, GuardOnly, DodgeOnly }
     [Serializable]
@@ -55,18 +56,46 @@ namespace StringAsASword.Combat
     {
         public string Version = "battle-3", ChartId = "EvenNotes";
         public int NoteCount;
+        // Finale: when >= 0, emptying the boss HP only stuns the king (attacks stop), and the battle is decided as
+        // note FinishNote is about to start: stunned = won, otherwise failed. -1 = win on the spot, fail after the last note.
+        public int FinishNote = -1;
+        public bool HasFinale => FinishNote >= 0;
+        /// <summary>The last note whose close can still decide the battle.</summary>
+        public int DecidingNote => HasFinale ? FinishNote - 1 : NoteCount - 1;
         // Authored note times in seconds. Null or empty means NoteCount evenly spaced beats at Bpm.
         public double[] NoteTimes;
         public bool HasAuthoredChart => NoteTimes != null && NoteTimes.Length > 0;
         // Parallel to NoteTimes: 0 for a tap, otherwise the time the held key must be released.
         public double[] HoldEndTimes;
         public bool HasHolds => HoldEndTimes != null && HoldEndTimes.Length > 0;
+        /// <summary>Per note: true when the gap from the previous note is shorter than one beat. Null for even charts.</summary>
+        public bool[] FastNotes()
+        {
+            if (!HasAuthoredChart) return null;
+            double beat = 60.0 / Bpm;
+            var fast = new bool[NoteTimes.Length];
+            for (int i = 1; i < fast.Length; i++) fast[i] = NoteTimes[i] - NoteTimes[i - 1] < beat - 1e-6;
+            return fast;
+        }
         public IBeatTimeline CreateTimeline() => HasAuthoredChart ? (IBeatTimeline)new AuthoredBeatTimeline(Bpm, NoteTimes) : new ConstantBeatTimeline(Bpm);
         public double Bpm, PerfectWindow = .07, GoodWindow = .14, InputOffset;
         public int PlayerMaxHp = 3, SpawnInterval = 8, MaxNoise = 2, MaxCollectionCost = 12;
         public int[] Health = { 6, 6, 6, 6 }, NoiseTargets = { 3, 4, 5 };
         public PatternDefinition[] Patterns = PatternDefinition.Defaults();
         public RandomAttackSchedule Schedule = new RandomAttackSchedule();
+        // The hand-written boss chart's text. When set, it replaces Patterns and Schedule. Kept as text so replay logs carry it.
+        public string BossChartText;
+        [NonSerialized] private BossChart parsedChart;
+        [NonSerialized] private string parsedText;
+        public BossChart Chart
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(BossChartText)) return null;
+                if (parsedChart == null || !ReferenceEquals(parsedText, BossChartText)) { parsedChart = BossChart.Parse(BossChartText); parsedText = BossChartText; }
+                return parsedChart;
+            }
+        }
         public BattleSettings Copy()
         {
             var copy = (BattleSettings)MemberwiseClone();
@@ -78,19 +107,20 @@ namespace StringAsASword.Combat
             return copy;
         }
         public static BattleSettings From(SongDefinition song, StageDefinition stage) => new BattleSettings {
-            ChartId = song.ChartName, NoteTimes = song.NoteTimes(), HoldEndTimes = song.HoldEndTimes(),
+            ChartId = song.ChartName, NoteTimes = song.NoteTimes(), HoldEndTimes = song.HoldEndTimes(), FinishNote = song.FinishNote,
             NoteCount = song.NoteCount, Bpm = song.Bpm, PerfectWindow = song.PerfectWindow,
             GoodWindow = song.GoodWindow, InputOffset = song.InputOffset,
             Health = stage.HealthSegments, NoiseTargets = stage.NoiseTargets,
             PlayerMaxHp = stage.PlayerMaxHp, SpawnInterval = stage.NoiseSpawnInterval,
             MaxNoise = stage.MaxActiveNoise, MaxCollectionCost = stage.MaxCollectionCost,
-            Patterns = stage.Patterns, Version = stage.CombatVersion, Schedule = stage.AttackSchedule
+            Patterns = stage.Patterns, Version = stage.CombatVersion, Schedule = stage.AttackSchedule, BossChartText = stage.BossChartText
         };
         public void Validate()
         {
             if (NoteCount < 1 || Bpm <= 0 || double.IsNaN(Bpm) || double.IsInfinity(Bpm) ||
                 PlayerMaxHp < 1 || SpawnInterval < 1 || MaxNoise < 1 || MaxNoise > 2 || MaxCollectionCost < 2)
                 throw new ArgumentException("Invalid battle settings.");
+            if (FinishNote < -1 || FinishNote == 0 || FinishNote >= NoteCount) throw new ArgumentException("FinishNote must be -1 or a note after the first.");
             if (HasAuthoredChart && NoteTimes.Length != NoteCount) throw new ArgumentException("NoteTimes must list exactly NoteCount notes.");
             if (HasAuthoredChart) new AuthoredBeatTimeline(Bpm, NoteTimes); // Validates ordering and finiteness.
             if (HasHolds)
@@ -107,6 +137,7 @@ namespace StringAsASword.Combat
             foreach (int n in NoiseTargets) if (n < 1) throw new ArgumentException("Goals must be positive.");
             if (Patterns == null || Patterns.Length > 64) throw new ArgumentException("Pattern list must contain at most 64 entries.");
             if (Schedule == null) throw new ArgumentException("Attack schedule is missing.");
+            _ = Chart; // Throws BossChartException (an ArgumentException) with the line number.
             Schedule.Validate();
             foreach (var p in Patterns)
                 if (p == null || p.TelegraphNotes < 1 || p.FirstImpact <= p.TelegraphNotes || p.RepeatNotes < 1 ||

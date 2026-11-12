@@ -14,6 +14,9 @@ namespace StringAsASword.Rhythm
         [SerializeField] private int[] noteTicks = new int[0];
         // Parallel to noteTicks: 0 for a tap, otherwise the hold's end tick. Held for the later hold rule; not played yet.
         [SerializeField] private int[] noteHoldEndTicks = new int[0];
+        [Tooltip("First note of the finishing run (the last sixteenth triplet). The boss must be emptied before it; -1 = no finale.")]
+        [SerializeField] private int finishNote = -1;
+        public int FinishNote => HasChart && finishNote > 0 && finishNote < NoteCount ? finishNote : -1;
         public bool HasChart => noteTicks != null && noteTicks.Length > 0;
         public string ChartName => HasChart && !string.IsNullOrEmpty(chartName) ? chartName : "EvenNotes";
         public int NoteCount => HasChart ? noteTicks.Length : Mathf.Max(1, noteCount);

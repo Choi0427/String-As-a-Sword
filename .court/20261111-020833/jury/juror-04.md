@@ -1,0 +1,4 @@
+VOTE: NOT GUILTY
+REASON: The prosecution's strongest point is that the record does not prove the fairness code handles hand-drawn shapes, but silence is not proof of failure; its other charges (re-measuring, the stale branch, no playtest, no note-to-section map) burden every option equally, so they do not show this method in particular should not go ahead.
+DECIDING FACT: The case records that the code already checks for a dodge route, protection of safe cells already shown, and the one-beat gap before publishing an attack, and the method's validator reports failures by note number while the chart is being written, not at runtime.
+WOULD FLIP IF: The record showed that those fairness checks are hard-wired to the 9 enum shape kinds and cannot judge an arbitrary 8x8 cell mask without being rewritten, so that "reuse" really means building a new validator.

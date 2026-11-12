@@ -39,10 +39,18 @@ namespace StringAsASword.Presentation
         private float moveAge = 1, attackAge = 1, guardAge = 1;
         private int guardNote = -1;
         private int lastSession = -1;
+        private readonly List<Transform> cellPieces = new List<Transform>(), edgePieces = new List<Transform>(), boardPieces = new List<Transform>();
+        private Vector3[] cellHome, edgeHome, boardHome;
+        private float[] cellDelay;
+        /// <summary>Ending: the knight is placed by the caller instead of following the grid.</summary>
+        public bool FreeRoam { get; set; }
         public Camera BoardCamera { get; private set; }
         public RenderTexture Texture { get; private set; }
         public Transform PlayerTransform => player;
         public int TileCount { get; private set; }
+        /// <summary>Board camera angle above the board; upright silhouettes tilt by it to face the camera.</summary>
+        public float Elevation { get; private set; }
+        private Color clearColor;
 
         public void Initialize(PrototypeGame owner, UnityEngine.UI.RawImage output, Material template, ArtSet artSet)
         {
@@ -57,14 +65,21 @@ namespace StringAsASword.Presentation
             Texture.Create(); output.texture = Texture; resources.Add(Texture);
             BoardCamera = new GameObject("Board Camera", typeof(Camera)).GetComponent<Camera>();
             BoardCamera.transform.SetParent(world.transform, false);
-            float elevation = game.Stage.CameraElevation;
-            BoardCamera.transform.localRotation = Quaternion.Euler(elevation, 0, 0);
-            BoardCamera.transform.localPosition = -(BoardCamera.transform.localRotation * Vector3.forward) * 14
+            Elevation = art.cameraElevation > 0 ? art.cameraElevation : game.Stage.CameraElevation;
+            float size = art.cameraSize > 0 ? art.cameraSize : 4.6f;
+            // A perspective camera stands back far enough that the same half-height fits at the board centre.
+            bool perspective = art.cameraFieldOfView > 0;
+            float distance = perspective ? size / Mathf.Tan(art.cameraFieldOfView * .5f * Mathf.Deg2Rad) : 14;
+            BoardCamera.transform.localRotation = Quaternion.Euler(Elevation, 0, 0);
+            BoardCamera.transform.localPosition = -(BoardCamera.transform.localRotation * Vector3.forward) * distance
                 + BoardCamera.transform.localRotation * Vector3.up * art.cameraLift;
-            BoardCamera.orthographic = true; BoardCamera.orthographicSize = art.cameraSize > 0 ? art.cameraSize : 4.6f;
-            BoardCamera.nearClipPlane = .1f; BoardCamera.farClipPlane = 30;
+            BoardCamera.orthographic = !perspective; BoardCamera.orthographicSize = size;
+            if (perspective) BoardCamera.fieldOfView = art.cameraFieldOfView;
+            BoardCamera.nearClipPlane = .1f; BoardCamera.farClipPlane = distance + 16;
             BoardCamera.clearFlags = CameraClearFlags.SolidColor;
-            BoardCamera.backgroundColor = new Color(.035f, .043f, .052f);
+            // With background art the board view is see-through, so the board sits in the scene instead of on a panel.
+            clearColor = new Color(.035f, .043f, .052f, art.HasBackground ? 0 : 1);
+            BoardCamera.backgroundColor = clearColor;
             BoardCamera.targetTexture = Texture; BoardCamera.allowHDR = false;
             box = BuildBox(); resources.Add(box);
             edgeMaterial = art.boardEdge != null ? art.boardEdge : Material(new Color(.075f, .095f, .105f));
@@ -77,15 +92,24 @@ namespace StringAsASword.Presentation
             }
             var gold = Material(new Color(.84f, .66f, .32f));
             var accent = Material(new Color(.40f, .85f, .73f));
-            Box("Board Plinth", world.transform, new Vector3(0, -.30f, 0), new Vector3(8.40f, .38f, 8.40f), edgeMaterial);
-            Box("Board Rim", world.transform, new Vector3(0, -.13f, 0), new Vector3(8.20f, .14f, 8.20f), gold);
-            Box("Board Deck", world.transform, new Vector3(0, -.115f, 0), new Vector3(8, .08f, 8), edgeMaterial);
+            if (art.boardPrefab != null)
+            {
+                var model = Instantiate(art.boardPrefab, world.transform, false); model.name = "Board Model";
+                boardPieces.Add(model.transform);
+            }
+            else
+            {
+                boardPieces.Add(Box("Board Plinth", world.transform, new Vector3(0, -.30f, 0), new Vector3(8.40f, .38f, 8.40f), edgeMaterial));
+                boardPieces.Add(Box("Board Rim", world.transform, new Vector3(0, -.13f, 0), new Vector3(8.20f, .14f, 8.20f), gold));
+                boardPieces.Add(Box("Board Deck", world.transform, new Vector3(0, -.115f, 0), new Vector3(8, .08f, 8), edgeMaterial));
+            }
             for (int y = 0; y < 8; y++) for (int x = 0; x < 8; x++)
             {
-                Box($"Cell_{x}_{y}", world.transform, CellPosition(new GridPosition(x, y)) - Vector3.up * .05f,
-                    new Vector3(.975f, .10f, .975f), (x + y) % 2 == 0 ? dark : ivory);
+                if (art.boardPrefab == null)
+                    cellPieces.Add(Box($"Cell_{x}_{y}", world.transform, CellPosition(new GridPosition(x, y)) - Vector3.up * .05f,
+                        new Vector3(.975f, .10f, .975f), (x + y) % 2 == 0 ? dark : ivory));
                 if (y == 7)
-                    Box($"AttackEdge_{x}", world.transform, new Vector3(x - 3.5f, .014f, 3.90f), new Vector3(.83f, .028f, .065f), gold);
+                    edgePieces.Add(Box($"AttackEdge_{x}", world.transform, new Vector3(x - 3.5f, .014f, 3.90f), new Vector3(.83f, .028f, .065f), gold));
                 TileCount++;
             }
             selection = new GameObject("Player Cell Outline").transform; selection.SetParent(world.transform, false);
@@ -111,6 +135,40 @@ namespace StringAsASword.Presentation
             BuildShield();
             ResetVisuals();
         }
+        /// <summary>Board collapse, 0 = intact, 1 = everything has fallen. Outer cells go first, the plinth last.</summary>
+        public void SetCollapse(float progress)
+        {
+            if (cellHome == null)
+            {
+                cellHome = cellPieces.Select(p => p.localPosition).ToArray();
+                edgeHome = edgePieces.Select(p => p.localPosition).ToArray();
+                boardHome = boardPieces.Select(p => p.localPosition).ToArray();
+                var random = new System.Random(87);
+                cellDelay = cellHome.Select(p => .72f * (1 - Mathf.Max(Mathf.Abs(p.x), Mathf.Abs(p.z)) / 3.5f) + .12f * (float)random.NextDouble()).ToArray();
+            }
+            for (int i = 0; i < cellPieces.Count; i++) Fall(cellPieces[i], cellHome[i], progress - cellDelay[i], i);
+            for (int i = 0; i < edgePieces.Count; i++) Fall(edgePieces[i], edgeHome[i], progress, 100 + i);
+            for (int i = 0; i < boardPieces.Count; i++) Fall(boardPieces[i], boardHome[i], progress - .82f, 200 + i);
+            bool intact = progress <= 0;
+            selection.gameObject.SetActive(intact);
+            foreach (var pickup in pickups) if (!intact) pickup.gameObject.SetActive(false);
+        }
+        private static void Fall(Transform piece, Vector3 home, float t, int seed)
+        {
+            t = Mathf.Max(0, t) * 2.2f; // seconds-like fall time once the piece lets go
+            piece.localPosition = home + Vector3.down * (4.5f * t * t);
+            piece.localRotation = Quaternion.Euler((seed * 37 % 23 - 11) * t * 6, 0, (seed * 53 % 19 - 9) * t * 6);
+            piece.gameObject.SetActive(t < 2.4f);
+        }
+        /// <summary>0 = standing, 1 = fallen over. Delivered king prefabs also get the "Hurt" cue at the start.</summary>
+        public void SetKingDown(float t)
+        {
+            if (king == null) return;
+            king.transform.localRotation = Quaternion.Euler(-80 * Mathf.SmoothStep(0, 1, t), 0, 0);
+        }
+        public void SetVoidColor(Color color) => BoardCamera.backgroundColor = color;
+        /// <summary>Back to the battle's clear colour (transparent when background art is assigned).</summary>
+        public void ResetVoid() => BoardCamera.backgroundColor = clearColor;
         public static Vector3 CellPosition(GridPosition cell) => new Vector3(cell.X - 3.5f, 0, cell.Y - 3.5f);
         public Vector2 ProjectToBoard(Vector3 local, Vector2 rectSize)
         {
@@ -132,6 +190,7 @@ namespace StringAsASword.Presentation
                 foreach (var pool in warnings) pool[i].SetActive(false);
             }
             lastSession = game.SessionId;
+            FreeRoam = false; if (cellHome != null) SetCollapse(0); SetKingDown(0);
         }
         public void ShowAction(ActionResult result)
         {
@@ -158,6 +217,7 @@ namespace StringAsASword.Presentation
         public void Render()
         {
             if (lastSession != game.SessionId) ResetVisuals();
+            if (FreeRoam) return;
             float dt = Time.unscaledDeltaTime;
             RenderTelegraphs(dt);
             Vector3 target = CellPosition(game.Session.Position);
@@ -349,7 +409,7 @@ namespace StringAsASword.Presentation
             Box("Base", player, new Vector3(0, .17f, 0), new Vector3(.55f, .10f, .38f), cream);
             knightBody = new GameObject("Knight Silhouette").transform; knightBody.SetParent(player, false);
             knightBody.localPosition = new Vector3(0, .08f, 0);
-            knightBody.localRotation = Quaternion.Euler(game.Stage.CameraElevation, 0, 0);
+            knightBody.localRotation = Quaternion.Euler(Elevation, 0, 0);
             Extrude("Neck", cream, shade, new Vector2(.24f,.22f), new Vector2(.82f,.22f), new Vector2(.67f,.64f), new Vector2(.49f,.60f));
             Extrude("Head", cream, shade, new Vector2(.35f,.50f), new Vector2(.68f,.64f), new Vector2(.72f,.80f), new Vector2(.43f,.91f), new Vector2(.22f,.72f));
             Extrude("Muzzle", cream, shade, new Vector2(.08f,.59f), new Vector2(.35f,.52f), new Vector2(.45f,.75f), new Vector2(.22f,.73f));
@@ -370,7 +430,7 @@ namespace StringAsASword.Presentation
                 {
                     item = new GameObject($"Noise_{i}").transform; item.SetParent(world.transform, false);
                     var wave = new GameObject("Wave Silhouette").transform; wave.SetParent(item, false);
-                    wave.localRotation = Quaternion.Euler(game.Stage.CameraElevation, 0, 0);
+                    wave.localRotation = Quaternion.Euler(Elevation, 0, 0);
                     Box("Wave", wave, new Vector3(0, .25f, 0), new Vector3(.65f, .055f, .10f), noiseMaterial);
                     for (int j = 0; j < 3; j++)
                         Box($"WaveBar{j}", wave, new Vector3((j - 1) * .20f, .25f, 0), new Vector3(.075f, j == 1 ? .58f : .32f, .12f), noiseMaterial);
@@ -393,7 +453,7 @@ namespace StringAsASword.Presentation
             // The domain resolves note-based guarding; this shield only presents the accepted guard action.
             shield = new GameObject("Guard Pose").transform; shield.SetParent(player, false);
             shield.localPosition = new Vector3(.13f, .22f, -.32f);
-            shield.localRotation = Quaternion.Euler(game.Stage.CameraElevation, 0, 0);
+            shield.localRotation = Quaternion.Euler(Elevation, 0, 0);
             var outline = shield.gameObject.AddComponent<LineRenderer>();
             outline.useWorldSpace = false; outline.loop = true; outline.positionCount = 5;
             outline.sharedMaterial = Material(new Color(.45f, .85f, 1f));
@@ -417,12 +477,13 @@ namespace StringAsASword.Presentation
             if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", color);
             resources.Add(material); return material;
         }
-        private void Box(string label, Transform parent, Vector3 position, Vector3 scale, Material top)
+        private Transform Box(string label, Transform parent, Vector3 position, Vector3 scale, Material top)
         {
             var item = new GameObject(label, typeof(MeshFilter), typeof(MeshRenderer));
             item.transform.SetParent(parent, false); item.transform.localPosition = position; item.transform.localScale = scale;
             item.GetComponent<MeshFilter>().sharedMesh = box;
             item.GetComponent<MeshRenderer>().sharedMaterials = new[] { top, edgeMaterial };
+            return item.transform;
         }
         private Mesh BuildBox()
         {

@@ -16,11 +16,11 @@ MonoBehaviour:
   noiseSpawnInterval: 8
   maxActiveNoise: 2
   noiseTargets: 040000000500000006000000
-  healthSegments: 2a000000080000001000000040000000
-  cameraElevation: 60
-  playerMaxHp: 5
+  healthSegments: 23000000080000000e00000036000000
+  cameraElevation: 45
+  playerMaxHp: 300
   maxCollectionCost: 12
-  combatVersion: battle-4
+  combatVersion: battle-6
   patterns:
   - Name: Line
     Kind: 0

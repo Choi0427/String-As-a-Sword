@@ -24,6 +24,8 @@ namespace StringAsASword.Editor
             texture.textureType = TextureImporterType.Sprite; texture.spriteImportMode = SpriteImportMode.Single;
             texture.mipmapEnabled = false; texture.alphaIsTransparency = true;
             texture.wrapMode = UnityEngine.TextureWrapMode.Clamp;
+            // Full-screen art is delivered at 4K; the 2048 default would halve it on a 1080p screen.
+            texture.maxTextureSize = 4096;
         }
     }
 }

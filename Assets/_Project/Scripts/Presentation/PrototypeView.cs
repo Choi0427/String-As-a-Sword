@@ -19,8 +19,21 @@ namespace StringAsASword.Presentation
         [SerializeField] private TMP_FontAsset font;
         [SerializeField] private Material boardMaterial;
         [SerializeField] private ArtSet art;
+        [Tooltip("Shows the prototype's full text HUD (tempo, controls, stats, telegraph list) for balancing work.")]
+        [SerializeField] private bool detailedHud;
+        /// <summary>Board view size on the 1600x900 canvas; keeps the board render texture's 960:880 aspect.</summary>
+        public static readonly Vector2 BoardSize = new Vector2(800, 733);
+        private static readonly Vector2 BoardCenter = new Vector2(0, -60);
+        private const float StringGap = 34, ScreenEdge = 820;
+        // Label and Bar build into this layer: the root, or the detail layer that is hidden by default.
+        private RectTransform layer;
+        private UnityEngine.UI.Image[] judgeLines;
         public Material BoardMaterial => boardMaterial;
         public ArtSet Art => art;
+        public BoardWorldPresenter BoardWorld => boardWorld;
+        /// <summary>The canvas itself, for full-screen overlays drawn above the HUD.</summary>
+        public RectTransform CanvasRect => (RectTransform)transform;
+        public TMP_FontAsset LatinFont => art.font != null ? art.font : font;
         private PrototypeGame game;
         private RectTransform root;
         private TMP_Text feedback, timing, combo, stats, beatLabel, position, mode, overlayTitle, overlayBody, buttonLabel, countIn;
@@ -46,7 +59,6 @@ namespace StringAsASword.Presentation
         private readonly TMP_Text[] healthSlots = new TMP_Text[4];
         private readonly UnityEngine.UI.Image[] crowns = new UnityEngine.UI.Image[4];
         private TMP_Text phaseLabel;
-        private UnityEngine.UI.Image pulseLine;
         private float feedbackAge = 10, pulseAge = 10;
         private const float OutcomeSeconds = .6f;
         private static readonly Color BlockedTint = new Color(.45f, .85f, 1f), HitTint = new Color(1f, .42f, .36f);
@@ -76,58 +88,73 @@ namespace StringAsASword.Presentation
             background.anchorMin = Vector2.zero; background.anchorMax = Vector2.one; background.sizeDelta = Vector2.zero;
             var backgroundImage = Image(background, new Color(.035f,.043f,.052f));
             if (art.background != null) { backgroundImage.sprite = art.background; backgroundImage.color = Color.white; }
+            for (int i = 0; art.backgroundLayers != null && i < art.backgroundLayers.Length; i++)
+            {
+                var layer = art.backgroundLayers[i];
+                if (layer.sprite == null) continue;
+                var rect = MakeRect((RectTransform)transform, $"Background Layer {i}", Vector2.zero, Vector2.zero);
+                rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
+                // Oversized by the sway so a floating layer never shows its edge.
+                rect.sizeDelta = 2 * new Vector2(Mathf.Abs(layer.sway.x), Mathf.Abs(layer.sway.y));
+                Image(rect, Color.white).sprite = layer.sprite;
+                if (layer.sway != Vector2.zero) rect.gameObject.AddComponent<BackgroundSway>().Set(layer.sway, layer.period, i);
+            }
             root = MakeRect((RectTransform)transform, "Content", Vector2.zero, new Vector2(1600,900));
-            Label("PROJECT  /  01", new Vector2(-660,394), new Vector2(200,30), 16, Muted);
-            Label("GEOM EUL HYEON", new Vector2(0,385), new Vector2(650,50), 34, InkWhite);
-            phaseLabel = Label("", new Vector2(0,343), new Vector2(650,30), 14, Muted);
-            Label("RHYTHM PROTOTYPE", new Vector2(655,394), new Vector2(220,30), 14, Muted);
-            Bar("HeaderRule", 0, 317, 1460, 1, new Color(.23f,.26f,.29f));
+            // The full prototype readout lives on a detail layer, hidden unless detailedHud is on.
+            var detail = MakeRect(root, "Detail HUD", Vector2.zero, new Vector2(1600,900));
+            layer = root;
+            Label("GEOM EUL HYEON", new Vector2(0,410), new Vector2(650,40), 24, InkWhite);
+            phaseLabel = Label("", new Vector2(0,380), new Vector2(650,24), 13, Muted);
             BuildBoard();
             BuildLanes();
+            // Kept on screen: player state top left, combo top right, judgement under the right strings.
+            playerHp = Label("", new Vector2(-600,300), new Vector2(330,36), 24, InkWhite);
+            noiseLabel = Label("", new Vector2(-600,245), new Vector2(330,65), 16, Accent);
+            Label("COMBO", new Vector2(600,320), new Vector2(250,26), 14, Muted);
+            combo = Label("000", new Vector2(600,272), new Vector2(300,70), 56, InkWhite);
+            feedback = Label("FIND YOUR RHYTHM", new Vector2(600,-210), new Vector2(330,45), 23, InkWhite);
+            timing = Label("Follow the two mirrored notes", new Vector2(600,-250), new Vector2(330,40), 14, Muted);
+            countIn = Label("", new Vector2(0,-405), new Vector2(430,40), 21, InkWhite);
+            for (int i = 0; i < 4; i++)
+            {
+                healthSlots[i] = Label("", new Vector2((i-1.5f)*136,340), new Vector2(130,40), 16, InkWhite, true);
+                if (!art.HasCrown) continue;
+                crowns[i] = Image(MakeRect(root, $"Crown_{i}", new Vector2((i-1.5f)*136-48,340), new Vector2(30,30)), Color.white);
+                crowns[i].preserveAspect = true; healthSlots[i].margin = new Vector4(30,0,0,0);
+            }
 
+            layer = detail;
+            detail.gameObject.SetActive(detailedHud);
+            Label("PROJECT  /  01", new Vector2(-660,394), new Vector2(200,30), 16, Muted);
+            Label("RHYTHM PROTOTYPE", new Vector2(655,394), new Vector2(220,30), 14, Muted);
             Label("TEMPO", new Vector2(-573,235), new Vector2(250,30), 14, Muted);
             Label($"{game.Song.Bpm:0} <size=18>BPM</size>", new Vector2(-573,187), new Vector2(250,65), 52, InkWhite);
             Label($"ONE NOTE / {(60f / game.Song.Bpm):0.000} SEC", new Vector2(-573,139), new Vector2(300,26), 13, Muted);
             mode = Label("", new Vector2(-573,105), new Vector2(300,30), 13, Muted);
-            playerHp = Label("", new Vector2(-573,-16), new Vector2(330,36), 24, InkWhite);
-            noiseLabel = Label("", new Vector2(-573,-71), new Vector2(330,65), 18, Accent);
             Label("MOVE ON THE BEAT", new Vector2(-573,-132), new Vector2(300,30), 17, InkWhite);
             Label("W", new Vector2(-573,-190), new Vector2(44,44), 22, InkWhite, true);
             Label("A", new Vector2(-625,-240), new Vector2(44,44), 22, InkWhite, true);
             Label("S", new Vector2(-573,-240), new Vector2(44,44), 22, InkWhite, true);
             Label("D", new Vector2(-521,-240), new Vector2(44,44), 22, InkWhite, true);
             Label("WASD  MOVE    J  ATTACK    K  GUARD\nOne action per beat.", new Vector2(-573,-311), new Vector2(380,55), 14, Muted);
-
-            Label("COMBO", new Vector2(573,235), new Vector2(250,30), 14, Muted);
-            combo = Label("000", new Vector2(573,181), new Vector2(300,80), 64, InkWhite);
-            feedback = Label("FIND YOUR RHYTHM", new Vector2(573,-35), new Vector2(330,45), 23, InkWhite);
-            timing = Label("Follow the two mirrored notes", new Vector2(573,-78), new Vector2(330,40), 14, Muted);
             Label("BOSS TELEGRAPHS", new Vector2(573,-118), new Vector2(330,25), 13, Muted);
             patternList = Label("", new Vector2(573,-198), new Vector2(330,130), 15, InkWhite);
             patternList.alignment = TextAlignmentOptions.TopLeft;
             stats = Label("", new Vector2(573,-318), new Vector2(330,85), 14, Muted);
             Label("PERFECT +/-70 ms   /   GOOD +/-140 ms", new Vector2(573,-375), new Vector2(370,22), 12, Muted);
             Label("/// EITHER   /   SHIELD GUARD   /   ARROWS MOVE   /   X IMPACT\nNUMBER = NOTES LEFT   /   +N = EXTRA ATTACKS", new Vector2(-573,-365), new Vector2(400,45), 12, Muted);
-
-            for (int i = 0; i < 4; i++)
-            {
-                healthSlots[i] = Label("", new Vector2((i-1.5f)*136,285), new Vector2(130,45), 16, InkWhite, true);
-                if (!art.HasCrown) continue;
-                crowns[i] = Image(MakeRect(root, $"Crown_{i}", new Vector2((i-1.5f)*136-48,285), new Vector2(30,30)), Color.white);
-                crowns[i].preserveAspect = true; healthSlots[i].margin = new Vector4(30,0,0,0);
-            }
             beatLabel = Label("BEAT  --", new Vector2(0,-292), new Vector2(320,26), 13, Accent);
-            countIn = Label("", new Vector2(0,-319), new Vector2(430,40), 21, InkWhite);
             position = Label("D4", new Vector2(0,-367), new Vector2(400,30), 14, Muted);
             attackHint = Label("", new Vector2(0,-342), new Vector2(600,25), 13, Accent);
             Bar("FooterRule", 0,-397,1460,1,new Color(.23f,.26f,.29f));
             Label("SPACE  START     R  RESTART     ESC  PAUSE     M  CLICK SOUND", new Vector2(0,-423), new Vector2(1200,30), 14, Muted);
+            layer = root;
             BuildOverlay();
         }
         private void BuildBoard()
         {
-            Vector2 size = new Vector2(600,550);
-            var board = MakeRect(root,"Board View",new Vector2(0,-4),size);
+            Vector2 size = BoardSize;
+            var board = MakeRect(root,"Board View",BoardCenter,size);
             var output = board.gameObject.AddComponent<UnityEngine.UI.RawImage>(); output.raycastTarget = false;
             boardWorld = board.gameObject.AddComponent<BoardWorldPresenter>(); boardWorld.Initialize(game, output, boardMaterial, art);
             var connectors = MakeRect(board, "DangerConnectors", Vector2.zero, size);
@@ -151,7 +178,6 @@ namespace StringAsASword.Presentation
                 Text(board,"Column",((char)('A'+i)).ToString(),column,new Vector2(22,22),12,Muted);
                 Text(board,"Row",(i+1).ToString(),row,new Vector2(22,22),12,Muted);
             }
-            Label("ATTACK ZONE / ROW 8",new Vector2(0,248),new Vector2(400,24),12,new Color(.84f,.70f,.40f));
             // Built after the badges so it reads above them; the menu overlay is still built later and covers it.
             outcomeFlash = MakeRect(board, "OutcomeFlash", Vector2.zero, new Vector2(264,48));
             outcomeGroup = outcomeFlash.gameObject.AddComponent<CanvasGroup>();
@@ -163,15 +189,20 @@ namespace StringAsASword.Presentation
         }
         private void BuildLanes()
         {
+            // Five strings run from the screen edge to judge lines on the board's sides, at the board's middle height,
+            // so the strings read as tied to the board. The judge lines follow the board camera, not a fixed x.
+            float laneY = BoardCenter.y + boardWorld.ProjectToBoard(Vector3.zero, BoardSize).y;
+            float judgeX = BoardCenter.x + boardWorld.ProjectToBoard(new Vector3(4.9f, 0, 0), BoardSize).x + 10; // clear of the 1-8 row labels at x 4.43
+            float span = StringGap * 4 + 34;
+            judgeLines = new UnityEngine.UI.Image[2];
             for(int side=-1;side<=1;side+=2)
             {
-                Bar("Lane",side*517,60,418,2,new Color(.28f,.31f,.33f));
-                Bar("JudgeMarker",side*310,60,3,72,InkWhite);
-                Label(side<0 ? "IN  >" : "<  IN",new Vector2(side*688,97),new Vector2(95,22),12,Muted);
-                Label("HIT",new Vector2(side*310,112),new Vector2(55,22),11,Muted);
+                for (int s = 0; s < 5; s++)
+                    Bar("String", side * (judgeX + ScreenEdge) * .5f, laneY + (s - 2) * StringGap, ScreenEdge - judgeX, s == 2 ? 2 : 1.5f,
+                        new Color(InkWhite.r, InkWhite.g, InkWhite.b, s == 2 ? .55f : .3f));
+                judgeLines[(side + 1) / 2] = Bar("JudgeLine", side * judgeX, laneY, 4, span, InkWhite);
             }
-            notes = new NotePresenter(root, art.noteSprite, art.holdBodySprite, art.holdTailSprite);
-            pulseLine=Bar("BeatPulse",0,-280,530,3,Accent);
+            notes = new NotePresenter(root, art.noteSprite, art.holdBodySprite, art.holdTailSprite, judgeX, ScreenEdge, laneY, span);
         }
         private void BuildOverlay()
         {
@@ -189,7 +220,7 @@ namespace StringAsASword.Presentation
             var quitImage=Image(quitRect,new Color(.17f,.20f,.23f)); quitImage.raycastTarget=true;
             var quit=quitRect.gameObject.AddComponent<UnityEngine.UI.Button>(); quit.targetGraphic=quitImage;
             quit.onClick.AddListener(game.QuitGame);
-            Text(quitRect,"Label","QUIT GAME",Vector2.zero,new Vector2(270,50),17,InkWhite);
+            Text(quitRect,"Label",Core.GameFlow.HasMenu?"MAIN MENU":"QUIT GAME",Vector2.zero,new Vector2(270,50),17,InkWhite);
         }
         public void ResetFeedback()
         {
@@ -246,10 +277,10 @@ namespace StringAsASword.Presentation
             outcomeFlash.sizeDelta = new Vector2(text.Length * 19 + 36, 48);
             outcomeLabel.color = text == TelegraphHud.Blocked ? BlockedTint : text == TelegraphHud.Hit ? HitTint : InkWhite;
             outcomePlate.color = text == TelegraphHud.GuardBroken ? new Color(.62f,.12f,.10f,.97f) : new Color(.025f,.035f,.045f,.97f);
-            Vector2 knight = boardWorld.ProjectToBoard(boardWorld.PlayerTransform.localPosition, new Vector2(600,550));
+            Vector2 knight = boardWorld.ProjectToBoard(boardWorld.PlayerTransform.localPosition, BoardSize);
             float y = knight.y + 106;
-            if (y > 240) y = knight.y - 44;
-            outcomeFlash.anchoredPosition = new Vector2(Mathf.Clamp(knight.x, -150, 150), y);
+            if (y > BoardSize.y * .5f - 35) y = knight.y - 44;
+            outcomeFlash.anchoredPosition = new Vector2(Mathf.Clamp(knight.x, 150 - BoardSize.x * .5f, BoardSize.x * .5f - 150), y);
             outcomeFlash.gameObject.SetActive(true);
         }
         private void RenderOutcome()
@@ -300,7 +331,8 @@ namespace StringAsASword.Presentation
             position.text=$"POSITION  {(char)('A'+cell.X)}{cell.Y+1}     /     " + (dangerCounts[cellIndex] > 0 ? TelegraphHud.ThreatText(dangerResponses[cellIndex], dangerRemaining[cellIndex], dangerCounts[cellIndex]) : "SAFE");
             beatLabel.text=game.CurrentBeat<0?"PREPARE":$"BEAT  {game.CurrentBeat+1:0000}   /   {game.CurrentBeat%4+1}:4";
             mode.text=game.Song.Music!=null?"SONG AUDIO":game.MetronomeMuted?"METRONOME / MUTED":"METRONOME / ON";
-            pulseLine.color=new Color(Accent.r,Accent.g,Accent.b,.15f+.85f*Mathf.Exp(-8*pulseAge));
+            // The judge lines flash on the beat pulse, then settle back to white.
+            foreach (var line in judgeLines) line.color = Color.Lerp(InkWhite, Accent, Mathf.Exp(-8 * pulseAge));
             notes.Render(game);
             noiseLabel.text = game.Phases.PhaseId == 4 ? "FINAL PHASE\nALL MELODIES RECOVERED" : $"NOISE  {game.Noise.Collected} / {game.Noise.Required}" + (game.Noise.GoalReached ? "\nEMPTY HP TO UNLOCK" : game.Health.CurrentDepleted ? "\nCOLLECT TO UNLOCK NEXT HP" : "\nLAND ON A WAVE TO COLLECT");
             countIn.text=game.State==PrototypeState.CountIn?$"GET READY  {Mathf.Clamp((int)Math.Ceiling(-game.SongTime/game.Timeline.SecondsPerBeat),1,game.Song.CountInBeats)}": "TWO NOTES. ONE BEAT. ONE ACTION.";
@@ -337,7 +369,7 @@ namespace StringAsASword.Presentation
             shown = TelegraphHud.AppendPatternLines(patternText, active, battle.LastClosedNote, shown, 5);
             if (shown > 5) patternText.Append('+').Append(shown - 5).Append(" patterns");
             patternList.text = patternText.Length == 0 ? "CLEAR / NO ATTACK QUEUED" : patternText.ToString();
-            Vector2 knightPoint = boardWorld.ProjectToBoard(boardWorld.PlayerTransform.localPosition, new Vector2(600,550));
+            Vector2 knightPoint = boardWorld.ProjectToBoard(boardWorld.PlayerTransform.localPosition, BoardSize);
             var knightBounds = new Rect(knightPoint + art.knightBadgeBox.position, art.knightBadgeBox.size);
             ulong marked = flashing ? impactCells : 0;
             for (int i = 0; i < 64; i++) if (dangerCounts[i] > 0) marked |= 1UL << i;
@@ -380,7 +412,8 @@ namespace StringAsASword.Presentation
                 if (offset.sqrMagnitude >= bestDistance) continue;
                 Vector2 point = origin + offset;
                 var candidate = new Rect(point - new Vector2(20,10), new Vector2(40,20));
-                if (candidate.xMin < -290 || candidate.xMax > 290 || candidate.yMin < -265 || candidate.yMax > 265 || candidate.Overlaps(knightBounds)) continue;
+                Vector2 half = BoardSize * .5f - new Vector2(10, 10);
+                if (candidate.xMin < -half.x || candidate.xMax > half.x || candidate.yMin < -half.y || candidate.yMax > half.y || candidate.Overlaps(knightBounds)) continue;
                 bool free = true;
                 for (int i = 0; i < 64; i++)
                     if (badgePlaced[i] && candidate.Overlaps(badgeBounds[i])) { free = false; break; }
@@ -398,11 +431,11 @@ namespace StringAsASword.Presentation
         }
         private static UnityEngine.UI.Image Image(RectTransform rect,Color color)
         { var image=rect.gameObject.AddComponent<UnityEngine.UI.Image>(); image.color=color; image.raycastTarget=false; return image; }
-        private UnityEngine.UI.Image Bar(string name,float x,float y,float width,float height,Color color)=>Image(MakeRect(root,name,new Vector2(x,y),new Vector2(width,height)),color);
+        private UnityEngine.UI.Image Bar(string name,float x,float y,float width,float height,Color color)=>Image(MakeRect(layer,name,new Vector2(x,y),new Vector2(width,height)),color);
         private TMP_Text Label(string content,Vector2 point,Vector2 size,int fontSize,Color tint,bool box=false)
         {
-            if(box) Image(MakeRect(root,"KeyBackground",point,size),new Color(.12f,.15f,.18f));
-            return Text(root,"Label",content,point,size,fontSize,tint);
+            if(box) Image(MakeRect(layer,"KeyBackground",point,size),new Color(.12f,.15f,.18f));
+            return Text(layer,"Label",content,point,size,fontSize,tint);
         }
         private TMP_Text Text(Transform parent,string name,string content,Vector2 point,Vector2 size,int fontSize,Color tint)
         {

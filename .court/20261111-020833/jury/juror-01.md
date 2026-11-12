@@ -1,0 +1,4 @@
+VOTE: NOT GUILTY
+REASON: Nobody in this record puts a price on anything, but every cost the prosecution names (re-measuring, the stale branch, the parser) is a bill the user pays under any option that gets attacks placed at chosen points in the song, and this method is the only one that pushes the biggest purchase, the clickable editor, until it has shown it is worth the money.
+DECIDING FACT: The case concedes that replacing the random scheduler "means re-measuring", yet keeping that scheduler cannot do what the user asked for, so re-measuring is a fixed cost of the goal and not a cost of this method, while the GUI is put off "only later, if needed."
+WOULD FLIP IF: The record showed that the existing fairness code cannot check hand-drawn 8×8 masks or authored timings without being rewritten, or gave an effort estimate showing the text-plus-validator path costs more than building the visual editor or a Notion import first.

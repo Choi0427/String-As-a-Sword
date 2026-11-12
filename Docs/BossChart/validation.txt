@@ -1,0 +1,5 @@
+보스 채보 검증: Assets/_Project/Data/Bosses/GeomEulHyeon.bosschart.txt
+곡: NORMAL1-Note_3, 노트 321개, 피날레 노트 304
+칸 표기: (줄,칸) = 그림과 같은 기준. 위에서 몇 번째 줄, 왼쪽에서 몇 번째 칸.
+
+결과: 통과. 공격 5개 중 실패 0, 경고 0.

@@ -54,6 +54,28 @@ namespace StringAsASword.Editor
         public static string Run(string outputDir, int seedsPerGroup = 1000)
             => Run(BattleAnalysis.LoadSettings(), outputDir, seedsPerGroup);
 
+        /// <summary>Batch mode: Unity -batchmode -executeMethod StringAsASword.Editor.BattleActionMixReport.RunFromCommandLine
+        /// [-mixOutput Docs/...] [-mixSeeds 1000]. Measures the current song and stage assets.</summary>
+        public static void RunFromCommandLine()
+        {
+            var args = Environment.GetCommandLineArgs();
+            string Arg(string name, string fallback) { int i = Array.IndexOf(args, name); return i >= 0 && i + 1 < args.Length ? args[i + 1] : fallback; }
+            string output = Arg("-mixOutput", "Docs/BossPatternVariety/Current");
+            int seeds = int.Parse(Arg("-mixSeeds", "1000"), Invariant);
+            // -mixHpScales 0.94,0.92: scale the stage's boss HP (ratio kept) and measure each into output/scale-x.
+            string scales = Arg("-mixHpScales", "");
+            if (scales.Length == 0) { UnityEngine.Debug.Log("[ActionMix] " + Run(output, seeds)); return; }
+            var loaded = BattleAnalysis.LoadSettings();
+            foreach (string text in scales.Split(','))
+            {
+                double scale = double.Parse(text, Invariant);
+                var settings = loaded.Copy();
+                settings.Health = Array.ConvertAll(loaded.Health, h => Math.Max(1, (int)Math.Round(h * scale)));
+                string dir = Path.Combine(output, "scale-" + scale.ToString("0.00", Invariant));
+                UnityEngine.Debug.Log($"[ActionMix] HP {string.Join("/", settings.Health)}\n" + Run(settings, dir, seeds));
+            }
+        }
+
         public static string Run(BattleSettings settings, string outputDir, int seedsPerGroup = 1000)
         {
             if (settings == null) throw new ArgumentNullException(nameof(settings));

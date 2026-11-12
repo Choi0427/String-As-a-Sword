@@ -8,7 +8,8 @@ using UnityEngine;
 
 namespace StringAsASword.Core
 {
-    public enum PrototypeState { Ready, CountIn, Playing, Paused, Finished }
+    // Finale: the battle is won, the song plays on with no judgement. Epilogue: free movement and the ending.
+    public enum PrototypeState { Ready, CountIn, Playing, Paused, Finished, Finale, Epilogue }
 
     [RequireComponent(typeof(PlayerInputAdapter), typeof(ScheduledSongAudio))]
     public sealed class PrototypeGame : MonoBehaviour
@@ -37,6 +38,12 @@ namespace StringAsASword.Core
         public int CurrentBeat { get; private set; } = -1;
         public int SessionId { get; private set; }
         public bool MetronomeMuted => audioPlayer.Muted;
+        public double VisualOffset => song.VisualOffset + GameFlow.VisualOffsetMs / 1000.0;
+        /// <summary>Song time at which the finale hands over to the epilogue: just after the last note (or its hold) ends.</summary>
+        public double FinaleEndTime { get; private set; }
+        public event System.Action FinaleStarted, EpilogueStarted;
+        public event System.Action<PlayerActionKind> FinaleTap;
+        public ScheduledSongAudio Audio => audioPlayer;
 
         private void Awake()
         {
@@ -44,6 +51,7 @@ namespace StringAsASword.Core
             clock = new SongClock(() => AudioSettings.dspTime);
             if (stage == null) stage = ScriptableObject.CreateInstance<StageDefinition>();
             var settings = BattleSettings.From(song, stage);
+            settings.InputOffset += GameFlow.InputOffsetMs / 1000.0;
             Timeline = settings.CreateTimeline();
             Battle = new BattleSession(settings, stage.NoiseSeed);
             Noise = Battle.Noise; Attacks = Battle.Attacks; Health = Battle.Health; Combat = Battle.Combat;
@@ -58,6 +66,15 @@ namespace StringAsASword.Core
             Session.ActionEvaluated += OnActionEvaluated; Session.NoteMissed += view.ShowMiss;
             Combat.DamageResolved += view.ShowDamage;
             Phases.PhaseUnlocked += view.ShowPhase;
+            int last = song.NoteCount - 1;
+            double end = Timeline.TimeOf(last), hold = Session.HoldEnd(last);
+            FinaleEndTime = System.Math.Max(end, hold) + .8;
+            view.gameObject.AddComponent<FinaleDirector>().Initialize(this, view);
+        }
+        private void Start()
+        {
+            if (!enabled || !GameFlow.AutoStartBattle) return;
+            GameFlow.ConsumeAutoStart(); StartSession();
         }
         public void StartSession()
         {
@@ -71,6 +88,12 @@ namespace StringAsASword.Core
             State = PrototypeState.CountIn; view.ResetFeedback();
             audioPlayer.Begin(song, clock, Timeline);
         }
+        /// <summary>Tests only: skip the battle and the finale and start the epilogue now.</summary>
+        internal void JumpToEpilogueForTests()
+        {
+            if (!clock.Running) StartSession();
+            State = PrototypeState.Epilogue; EpilogueStarted?.Invoke();
+        }
         public void PauseSession()
         {
             if (State != PrototypeState.Playing && State != PrototypeState.CountIn) return;
@@ -80,6 +103,7 @@ namespace StringAsASword.Core
         {
             PauseSession();
             SaveRun("Quit");
+            if (GameFlow.HasMenu) { GameFlow.ReturnToMenu(); return; }
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
 #else
@@ -88,6 +112,7 @@ namespace StringAsASword.Core
         }
         private void OnCommand(string command)
         {
+            if (State == PrototypeState.Finale || State == PrototypeState.Epilogue) return; // The ending plays through.
             if (command == "restart" || command == "start" && State != PrototypeState.Playing && State != PrototypeState.CountIn) StartSession();
             else if (command == "pause") PauseSession();
             else if (command == "mute") audioPlayer.ToggleMute();
@@ -95,6 +120,7 @@ namespace StringAsASword.Core
         private void OnAction(PlayerInputAdapter.TimedAction request)
         {
             if (!clock.Running) return;
+            if (State == PrototypeState.Finale || State == PrototypeState.Epilogue) { FinaleTap?.Invoke(request.Kind); return; }
             double time = clock.ToSongTime(request.DspTime);
             // The first note has the same early Good window as all later notes.
             if (time < -song.GoodWindow + song.InputOffset) return;
@@ -102,7 +128,7 @@ namespace StringAsASword.Core
         }
         private void OnRelease(PlayerInputAdapter.TimedAction request)
         {
-            if (!clock.Running) return;
+            if (!clock.Running || State == PrototypeState.Finale || State == PrototypeState.Epilogue) return;
             Battle.Release(request.Kind, request.Direction, clock.ToSongTime(request.DspTime));
         }
         private void OnActionEvaluated(ActionResult result)
@@ -122,10 +148,17 @@ namespace StringAsASword.Core
             if (clock.Running)
             {
                 double time = SongTime;
-                if (time >= 0) State = PrototypeState.Playing;
+                if (time >= 0 && State == PrototypeState.CountIn) State = PrototypeState.Playing;
                 audioPlayer.Schedule();
                 AdvanceWorld(time);
-                if (Battle.Outcome != BattleOutcome.Running)
+                if (State == PrototypeState.Finale && time >= FinaleEndTime)
+                { State = PrototypeState.Epilogue; EpilogueStarted?.Invoke(); }
+                else if (Battle.Outcome == BattleOutcome.Won && Battle.Settings.HasFinale && (State == PrototypeState.Playing || State == PrototypeState.CountIn))
+                {
+                    // Won on the finishing run: keep the song and the notes going, without judgement.
+                    State = PrototypeState.Finale; SaveRun("Completed"); FinaleStarted?.Invoke();
+                }
+                else if (Battle.Outcome != BattleOutcome.Running && (State == PrototypeState.Playing || State == PrototypeState.CountIn))
                 {
                     clock.Stop(); audioPlayer.Stop(); State = PrototypeState.Finished;
                     SaveRun("Completed");

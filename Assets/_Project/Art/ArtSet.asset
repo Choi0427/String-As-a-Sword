@@ -18,24 +18,49 @@ MonoBehaviour:
   kingScale: 1
   noisePrefab: {fileID: 0}
   noiseDormantMaterial: {fileID: 0}
+  boardPrefab: {fileID: 8618644286574060529, guid: 5fc99c1874e6d4449951e424dbe9d844, type: 3}
   lightTile: {fileID: 0}
   darkTile: {fileID: 0}
   boardEdge: {fileID: 0}
-  useLighting: 0
-  cameraSize: 0
+  useLighting: 1
+  cameraSize: 5.1
   cameraLift: 0
+  cameraElevation: 35
+  cameraFieldOfView: 30
   eitherMark: {fileID: 0}
   guardMark: {fileID: 0}
   dodgeMark: {fileID: 0}
   impactMark: {fileID: 0}
   font: {fileID: 0}
   background: {fileID: 0}
+  backgroundLayers:
+  - sprite: {fileID: 21300000, guid: 937bb6a48e8677146bbcd240b6f24299, type: 3}
+    sway: {x: 0, y: 0}
+    period: 0
+  - sprite: {fileID: 21300000, guid: b7c84fd93ce14ed46a2abebdffe884c9, type: 3}
+    sway: {x: 12, y: 8}
+    period: 7
+  - sprite: {fileID: 21300000, guid: 7a0eaa3872a967c42a4c3c3551111e7d, type: 3}
+    sway: {x: 18, y: 10}
+    period: 9
+  - sprite: {fileID: 21300000, guid: 668792221f22a4f4692783a7f36f87d0, type: 3}
+    sway: {x: 10, y: 14}
+    period: 11
+  - sprite: {fileID: 21300000, guid: b7fe01c101962034aaf3a5f84eead2d7, type: 3}
+    sway: {x: 0, y: 0}
+    period: 0
+  - sprite: {fileID: 21300000, guid: 0b3ce865041aa7b4f8e90fc37334ce82, type: 3}
+    sway: {x: 0, y: 0}
+    period: 0
   noteSprite: {fileID: 0}
+  holdBodySprite: {fileID: 0}
+  holdTailSprite: {fileID: 0}
   crownFull: {fileID: 0}
   crownLocked: {fileID: 0}
   crownBroken: {fileID: 0}
-  mainMenuDark: {fileID: 0}
+  mainMenuDark: {fileID: 21300000, guid: 9777af6bfeec6ff4985b1678bf6e208c, type: 3}
   mainMenuWhite: {fileID: 0}
+  menuFont: {fileID: 11400000, guid: 9f923aa8663272541816bacfcefebd7e, type: 2}
   knightBadgeBox:
     serializedVersion: 2
     x: -26

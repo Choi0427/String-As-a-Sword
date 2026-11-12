@@ -43,20 +43,48 @@ namespace StringAsASword.Combat
         public ulong LastFiredUnblockable { get; private set; }
         public Func<IReadOnlyList<BossTelegraph>, bool> CanPublish;
         public event Action<string, BossTelegraph> Changed;
-        public BossPatternSystem(PatternDefinition[] definitions, RandomAttackSchedule schedule = null, int seed = 0)
+        // fastNote[n]: the gap from note n-1 to note n is shorter than one beat. Null for evenly spaced charts.
+        private readonly bool[] fastNote;
+        // Chart mode: attacks come from the hand-written boss chart, in order, at their notes. The validator vouches
+        // for fairness ahead of time, so nothing here defers or rerolls; phases only filter, they never cancel.
+        private readonly BossChart chart;
+        private int chartCursor;
+        public bool Authored => chart != null;
+        public BossPatternSystem(PatternDefinition[] definitions, RandomAttackSchedule schedule = null, int seed = 0, bool[] fastNotes = null,
+            BossChart chart = null)
         {
             this.definitions = definitions; this.schedule = schedule ?? new RandomAttackSchedule();
             this.schedule.Validate(); random = new SeededRandom(unchecked(seed ^ 0x36d9f1ab));
+            fastNote = fastNotes == null ? null : (bool[])fastNotes.Clone();
+            this.chart = chart;
+        }
+        /// <summary>Fast sections belong to the rhythm: no attack whose warning or hits span a sub-beat note gap.</summary>
+        public bool CrossesFastSection(int lastClosed, int lastHit)
+        {
+            if (fastNote == null) return false;
+            for (int n = Math.Max(1, lastClosed + 1); n <= lastHit && n < fastNote.Length; n++)
+                if (fastNote[n]) return true;
+            return false;
         }
         public void BeginPhase(int phaseId, int firstNote)
         {
+            if (chart != null) { phase = phaseId; return; }
             foreach (var a in active) Changed?.Invoke("cancel", a);
             active.Clear(); phase = phaseId; nextImpact = new int[definitions.Length];
             if (schedule.Enabled) { Plan(lastImpact < 0 ? firstNote - 1 : lastImpact, firstNote - 1); return; }
             for (int i = 0; i < definitions.Length; i++) nextImpact[i] = firstNote + definitions[i].FirstImpact - 1;
         }
+        private bool halted;
+        /// <summary>The king is stunned: cancel what is shown and publish nothing more.</summary>
+        public void Halt()
+        {
+            foreach (var a in active) Changed?.Invoke("cancel", a);
+            active.Clear(); pending = null; halted = true;
+        }
         public void Publish(int lastClosed, GridPosition player, int noteCount, bool hold)
         {
+            if (halted) return;
+            if (chart != null) { PublishAuthored(lastClosed, player, noteCount); return; }
             if (schedule.Enabled) { PublishRandom(lastClosed, player, noteCount, hold); return; }
             for (int i = 0; i < definitions.Length; i++)
             {
@@ -72,11 +100,46 @@ namespace StringAsASword.Combat
                         invalidates = true;
                 bool noDodge = (p.Kind == PatternKind.TopPressure || p.Response == AttackResponse.DodgeOnly) && p.Response != AttackResponse.GuardOnly &&
                     !CanDodge(player, proposal, lastClosed + 1);
-                if (hold || invalidates || noDodge || CanPublish != null && !CanPublish(new[] { proposal }))
+                if (hold || invalidates || noDodge || CrossesFastSection(lastClosed, proposal.ImpactNote) ||
+                    CanPublish != null && !CanPublish(new[] { proposal }))
                 { nextImpact[i]++; Changed?.Invoke("defer", proposal); continue; }
                 active.Add(proposal); nextId++; Changed?.Invoke("publish", proposal);
                 nextImpact[i] += p.RepeatNotes;
             }
+        }
+        private void PublishAuthored(int lastClosed, GridPosition player, int noteCount)
+        {
+            var attacks = chart.Attacks;
+            for (; chartCursor < attacks.Count && attacks[chartCursor].Publish <= lastClosed; chartCursor++)
+            {
+                var a = attacks[chartCursor];
+                var (normal, strong) = BossChart.Cells(a.Shape, player);
+                var hits = AuthoredHits(a, player, a.Note <= lastClosed ? "late" : a.LastHit >= noteCount ? "chart-end" :
+                    phase < a.MinPhase ? "phase" : (normal | strong) == 0 ? "off-board" : "");
+                if (hits[0].Reason.Length != 0) { Changed?.Invoke("skip", hits[0]); continue; }
+                active.AddRange(hits); nextId += hits.Count;
+                foreach (var hit in hits) Changed?.Invoke("publish", hit);
+            }
+        }
+        // Per hit: 1-cells as an Either telegraph and 2-cells as a DodgeOnly one at the same note (a full board of 1 is GuardOnly).
+        // Danger, Unblockable and LastFiredUnblockable already merge telegraphs that share a note.
+        public List<BossTelegraph> AuthoredHits(BossChartAttack a, GridPosition player, string reason = "")
+        {
+            var (normal, strong) = BossChart.Cells(a.Shape, player);
+            var hits = new List<BossTelegraph>();
+            for (int hit = 0; hit < a.Hits; hit++)
+            {
+                int offset = hit * a.Every, impact = a.Note + offset;
+                int interval = hit > 0 ? a.Every : lastImpact < 0 ? 0 : a.Note - lastImpact;
+                void Add(ulong cells, AttackResponse response) => hits.Add(new BossTelegraph(nextId + 1 + hits.Count, a.Shape.Name, cells, impact,
+                    PatternKind.Drawn, a.Warning + offset, 0, hit == 0 ? 0 : a.Every, interval, reason, response, hit));
+                if (a.Shape.GuardOnly) { Add(normal, AttackResponse.GuardOnly); continue; }
+                if (normal != 0) Add(normal, AttackResponse.Either);
+                if (strong != 0) Add(strong, AttackResponse.DodgeOnly);
+            }
+            // An anchored shape can slide fully off the board; keep one empty telegraph so a skip can still be reported.
+            if (hits.Count == 0) hits.Add(new BossTelegraph(nextId + 1, a.Shape.Name, 0, a.Note, PatternKind.Drawn, a.Warning, reason: reason));
+            return hits;
         }
         private void Plan(int anchor, int lastClosed)
         {
@@ -136,6 +199,8 @@ namespace StringAsASword.Combat
             targetImpact = Math.Max(targetImpact, lastClosed + warning);
             if (targetImpact + pending.Span >= noteCount) { SkipAtChartEnd(lastClosed, player, noteCount); return; }
             string reason = "noise-wait";
+            // Deterministic for every candidate, so check once instead of spending attempts and randomness on it.
+            if (!hold && CrossesFastSection(lastClosed, targetImpact + pending.Span)) { hold = true; reason = "fast-section"; }
             if (!hold)
             {
                 for (int attempt = 0; attempt < schedule.CandidateAttempts; attempt++)
@@ -156,7 +221,8 @@ namespace StringAsASword.Combat
                         hits = Sequence(p, player, first, warn);
                         required = SequenceActions(p, player, hits, lastClosed);
                     }
-                    reason = first + p.Span >= noteCount ? "chart-end" : required < 0 ? "no-dodge-within-warning" : Invalidates(hits) ? "disclosed-route" :
+                    reason = first + p.Span >= noteCount ? "chart-end" : CrossesFastSection(lastClosed, first + p.Span) ? "fast-section" :
+                        required < 0 ? "no-dodge-within-warning" : Invalidates(hits) ? "disclosed-route" :
                         CanPublish != null && !CanPublish(hits) ? "pickup-route" : "";
                     hits = Sequence(p, player, first, warn, required, reason);
                     if (reason.Length != 0) { Changed?.Invoke("reject", hits[0]); continue; }
@@ -179,7 +245,9 @@ namespace StringAsASword.Combat
             pending = null;
             if (retry) Plan(lastClosed, lastClosed);
         }
-        private bool Invalidates(BossTelegraph[] proposal)
+        private bool Invalidates(BossTelegraph[] proposal) => Invalidates(active, proposal);
+        /// <summary>True when a proposed hit would fire on a cell already shown as safe at an earlier-or-equal deadline.</summary>
+        public static bool Invalidates(IReadOnlyList<BossTelegraph> active, IReadOnlyList<BossTelegraph> proposal)
         {
             foreach (var hit in proposal)
                 foreach (var a in active)
@@ -250,7 +318,7 @@ namespace StringAsASword.Combat
                 }
             // Only one sequence is ever active, so an empty list means its last hit fired. A cancelled
             // sequence empties the list without firing and BeginPhase plans the replacement.
-            if (schedule.Enabled && fired.Count > 0 && active.Count == 0) Plan(note, note);
+            if (chart == null && schedule.Enabled && fired.Count > 0 && active.Count == 0) Plan(note, note);
             return cells;
         }
     }
