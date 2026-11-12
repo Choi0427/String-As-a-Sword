@@ -1,0 +1,3923 @@
+{
+    "version": "battle-7+chart",
+    "chartHash": "7dfb2e74bcfabbf576ffc81c3882b3c2bb30ea72f8b7a139848accd00b6a1ad6",
+    "noteCount": 321,
+    "seedsPerGroup": 200,
+    "executedRuns": 1800,
+    "invariantFailures": 0,
+    "replayed": 18,
+    "replayFailures": 0,
+    "elapsedSeconds": 252.9325513,
+    "passed": true,
+    "replayErrors": [],
+    "criteria": [
+        {
+            "name": "share three-bot mean",
+            "actual": "42.9/44.9/12.2",
+            "target": "43/43/14 +-4pp",
+            "passed": true
+        },
+        {
+            "name": "share CollectFirst",
+            "actual": "42.9/46.4/10.7",
+            "target": "43/43/14 +-8pp",
+            "passed": true
+        },
+        {
+            "name": "share AttackHold",
+            "actual": "43.1/42.1/14.8",
+            "target": "43/43/14 +-8pp",
+            "passed": true
+        },
+        {
+            "name": "share MovementUse",
+            "actual": "42.7/46.1/11.2",
+            "target": "43/43/14 +-8pp",
+            "passed": true
+        },
+        {
+            "name": "clear no-miss",
+            "actual": "99.2",
+            "target": ">=90%",
+            "passed": true
+        },
+        {
+            "name": "clear miss5",
+            "actual": "93.2",
+            "target": ">=80%",
+            "passed": true
+        },
+        {
+            "name": "leftover median",
+            "actual": "42",
+            "target": "10..50",
+            "passed": true
+        },
+        {
+            "name": "DodgeOnly fired P10",
+            "actual": "8",
+            "target": ">=8",
+            "passed": true
+        },
+        {
+            "name": "GuardOnly fired P10",
+            "actual": "8",
+            "target": ">=8",
+            "passed": true
+        },
+        {
+            "name": "invariant failures",
+            "actual": "0",
+            "target": "0",
+            "passed": true
+        },
+        {
+            "name": "replay failures",
+            "actual": "0/18",
+            "target": "0",
+            "passed": true
+        }
+    ],
+    "groups": [
+        {
+            "group": "development",
+            "strategy": "CollectFirst",
+            "runs": 200,
+            "clears": 198,
+            "deaths": 0,
+            "timeouts": 2,
+            "invariantFailures": 0,
+            "clearRate": 0.99,
+            "deathRate": 0.0,
+            "attackShare": 0.42582465027920099,
+            "moveShare": 0.4653541342851112,
+            "guardShare": 0.10882121543568783,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 104.0,
+                    "p10": 111.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.955
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 89.0,
+                    "p10": 101.0,
+                    "p50": 121.0,
+                    "p90": 140.0,
+                    "max": 169.0,
+                    "mean": 121.255
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 14.0,
+                    "p10": 20.0,
+                    "p50": 28.0,
+                    "p90": 37.0,
+                    "max": 43.0,
+                    "mean": 28.355
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 2.0,
+                    "p10": 23.0,
+                    "p50": 44.0,
+                    "p90": 64.0,
+                    "max": 80.0,
+                    "mean": 43.435
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 12.0,
+                    "p10": 20.0,
+                    "p50": 28.0,
+                    "p90": 36.0,
+                    "max": 42.0,
+                    "mean": 27.45
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 21.0,
+                    "p50": 43.0,
+                    "p90": 63.0,
+                    "max": 79.0,
+                    "mean": 42.185
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 23.0,
+                    "p10": 26.0,
+                    "p50": 29.0,
+                    "p90": 32.0,
+                    "max": 35.0,
+                    "mean": 28.91
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 23.0,
+                    "p10": 26.0,
+                    "p50": 29.0,
+                    "p90": 31.0,
+                    "max": 35.0,
+                    "mean": 28.735
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 5.0,
+                    "p10": 8.0,
+                    "p50": 10.0,
+                    "p90": 13.0,
+                    "max": 15.0,
+                    "mean": 10.045
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 5.0,
+                    "p10": 7.0,
+                    "p50": 10.0,
+                    "p90": 12.0,
+                    "max": 14.0,
+                    "mean": 9.82
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 18.0,
+                    "mean": 11.21
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 18.0,
+                    "mean": 11.06
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.185
+                },
+                {
+                    "name": "Chord",
+                    "mean": 1.665
+                },
+                {
+                    "name": "Cross",
+                    "mean": 0.99
+                },
+                {
+                    "name": "Line",
+                    "mean": 3.22
+                },
+                {
+                    "name": "Lock",
+                    "mean": 2.22
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.175
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.17
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.305
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 1.82
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 1.845
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.14
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 1.88
+                },
+                {
+                    "name": "각잡은악수-오른",
+                    "mean": 1.0
+                },
+                {
+                    "name": "나이트훈수+중심",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩가로",
+                    "mean": 2.0
+                },
+                {
+                    "name": "룩세로강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-검은칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-흰칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍X추적",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝1-e5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝2-Nf6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝3-Bc5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝4-캐슬링",
+                    "mean": 1.0
+                },
+                {
+                    "name": "전체",
+                    "mean": 4.0
+                },
+                {
+                    "name": "킹고리강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥강",
+                    "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+대각",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+십자",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀강",
+                    "mean": 1.0
+                }
+            ]
+        },
+        {
+            "group": "development",
+            "strategy": "AttackHold",
+            "runs": 200,
+            "clears": 199,
+            "deaths": 0,
+            "timeouts": 1,
+            "invariantFailures": 0,
+            "clearRate": 0.995,
+            "deathRate": 0.0,
+            "attackShare": 0.4289635973476134,
+            "moveShare": 0.4233379086357221,
+            "guardShare": 0.14769849401666444,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 100.0,
+                    "p10": 111.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.945
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 70.0,
+                    "p10": 88.0,
+                    "p50": 110.0,
+                    "p90": 129.0,
+                    "max": 152.0,
+                    "mean": 109.49
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 21.0,
+                    "p10": 30.0,
+                    "p50": 38.0,
+                    "p90": 46.0,
+                    "max": 57.0,
+                    "mean": 38.2
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 1.0,
+                    "p10": 22.0,
+                    "p50": 45.0,
+                    "p90": 70.0,
+                    "max": 94.0,
+                    "mean": 45.365
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 21.0,
+                    "p10": 29.0,
+                    "p50": 37.0,
+                    "p90": 45.0,
+                    "max": 56.0,
+                    "mean": 37.39
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 20.0,
+                    "p50": 42.0,
+                    "p90": 67.0,
+                    "max": 87.0,
+                    "mean": 42.82
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 22.0,
+                    "p10": 26.0,
+                    "p50": 29.0,
+                    "p90": 32.0,
+                    "max": 37.0,
+                    "mean": 29.07
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 22.0,
+                    "p10": 26.0,
+                    "p50": 29.0,
+                    "p90": 32.0,
+                    "max": 37.0,
+                    "mean": 28.88
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 5.0,
+                    "p10": 8.0,
+                    "p50": 10.0,
+                    "p90": 13.0,
+                    "max": 17.0,
+                    "mean": 10.06
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 5.0,
+                    "p10": 7.0,
+                    "p50": 10.0,
+                    "p90": 12.0,
+                    "max": 17.0,
+                    "mean": 9.845
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 9.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 18.0,
+                    "mean": 11.18
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 9.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 17.0,
+                    "mean": 10.98
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.285
+                },
+                {
+                    "name": "Chord",
+                    "mean": 1.68
+                },
+                {
+                    "name": "Cross",
+                    "mean": 1.09
+                },
+                {
+                    "name": "Line",
+                    "mean": 3.21
+                },
+                {
+                    "name": "Lock",
+                    "mean": 2.275
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.17
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.115
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.305
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 1.755
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 1.785
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.265
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 1.77
+                },
+                {
+                    "name": "각잡은악수-오른",
+                    "mean": 1.0
+                },
+                {
+                    "name": "나이트훈수+중심",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩가로",
+                    "mean": 2.0
+                },
+                {
+                    "name": "룩세로강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-검은칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-흰칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍X추적",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝1-e5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝2-Nf6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝3-Bc5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝4-캐슬링",
+                    "mean": 1.0
+                },
+                {
+                    "name": "전체",
+                    "mean": 4.0
+                },
+                {
+                    "name": "킹고리강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥강",
+                    "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+대각",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+십자",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀강",
+                    "mean": 1.0
+                }
+            ]
+        },
+        {
+            "group": "development",
+            "strategy": "MovementUse",
+            "runs": 200,
+            "clears": 193,
+            "deaths": 0,
+            "timeouts": 7,
+            "invariantFailures": 0,
+            "clearRate": 0.965,
+            "deathRate": 0.0,
+            "attackShare": 0.4256272229164664,
+            "moveShare": 0.4637123906565414,
+            "guardShare": 0.11066038642699222,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 90.0,
+                    "p10": 111.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.695
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 81.0,
+                    "p10": 100.0,
+                    "p50": 121.0,
+                    "p90": 140.0,
+                    "max": 171.0,
+                    "mean": 120.6
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 13.0,
+                    "p10": 21.0,
+                    "p50": 29.0,
+                    "p90": 36.0,
+                    "max": 46.0,
+                    "mean": 28.78
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 2.0,
+                    "p10": 22.0,
+                    "p50": 43.0,
+                    "p90": 66.0,
+                    "max": 95.0,
+                    "mean": 43.925
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 13.0,
+                    "p10": 20.0,
+                    "p50": 28.0,
+                    "p90": 35.0,
+                    "max": 46.0,
+                    "mean": 27.975
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 14.0,
+                    "p50": 38.0,
+                    "p90": 63.0,
+                    "max": 85.0,
+                    "mean": 38.575
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 23.0,
+                    "p10": 26.0,
+                    "p50": 29.0,
+                    "p90": 32.0,
+                    "max": 37.0,
+                    "mean": 29.195
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 23.0,
+                    "p10": 26.0,
+                    "p50": 29.0,
+                    "p90": 32.0,
+                    "max": 37.0,
+                    "mean": 29.04
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 5.0,
+                    "p10": 8.0,
+                    "p50": 10.0,
+                    "p90": 12.0,
+                    "max": 16.0,
+                    "mean": 10.155
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 5.0,
+                    "p10": 8.0,
+                    "p50": 10.0,
+                    "p90": 12.0,
+                    "max": 15.0,
+                    "mean": 9.93
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 5.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 18.0,
+                    "mean": 11.365
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 5.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 18.0,
+                    "mean": 11.205
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.33
+                },
+                {
+                    "name": "Chord",
+                    "mean": 1.735
+                },
+                {
+                    "name": "Cross",
+                    "mean": 1.04
+                },
+                {
+                    "name": "Line",
+                    "mean": 3.37
+                },
+                {
+                    "name": "Lock",
+                    "mean": 2.31
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.255
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.225
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.32
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 1.8
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 1.805
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.165
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 1.82
+                },
+                {
+                    "name": "각잡은악수-오른",
+                    "mean": 1.0
+                },
+                {
+                    "name": "나이트훈수+중심",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩가로",
+                    "mean": 2.0
+                },
+                {
+                    "name": "룩세로강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-검은칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-흰칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍X추적",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝1-e5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝2-Nf6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝3-Bc5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝4-캐슬링",
+                    "mean": 1.0
+                },
+                {
+                    "name": "전체",
+                    "mean": 4.0
+                },
+                {
+                    "name": "킹고리강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥강",
+                    "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+대각",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+십자",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀강",
+                    "mean": 1.0
+                }
+            ]
+        },
+        {
+            "group": "development",
+            "strategy": "ALL",
+            "runs": 600,
+            "clears": 590,
+            "deaths": 0,
+            "timeouts": 10,
+            "invariantFailures": 0,
+            "clearRate": 0.9833333333333333,
+            "deathRate": 0.0,
+            "attackShare": 0.4268005517949376,
+            "moveShare": 0.45086137756247798,
+            "guardShare": 0.12233807064258445,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 90.0,
+                    "p10": 111.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.865
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 70.0,
+                    "p10": 96.0,
+                    "p50": 117.0,
+                    "p90": 137.0,
+                    "max": 171.0,
+                    "mean": 117.115
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 13.0,
+                    "p10": 22.0,
+                    "p50": 32.0,
+                    "p90": 42.0,
+                    "max": 57.0,
+                    "mean": 31.778333333333334
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 1.0,
+                    "p10": 23.0,
+                    "p50": 44.0,
+                    "p90": 67.0,
+                    "max": 95.0,
+                    "mean": 44.24166666666667
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 12.0,
+                    "p10": 21.0,
+                    "p50": 31.0,
+                    "p90": 41.0,
+                    "max": 56.0,
+                    "mean": 30.938333333333334
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 0.0,
+                    "p10": 19.0,
+                    "p50": 41.0,
+                    "p90": 64.0,
+                    "max": 87.0,
+                    "mean": 41.193333333333338
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 22.0,
+                    "p10": 26.0,
+                    "p50": 29.0,
+                    "p90": 32.0,
+                    "max": 37.0,
+                    "mean": 29.058333333333335
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 22.0,
+                    "p10": 26.0,
+                    "p50": 29.0,
+                    "p90": 32.0,
+                    "max": 37.0,
+                    "mean": 28.885
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 5.0,
+                    "p10": 8.0,
+                    "p50": 10.0,
+                    "p90": 13.0,
+                    "max": 17.0,
+                    "mean": 10.086666666666666
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 5.0,
+                    "p10": 7.0,
+                    "p50": 10.0,
+                    "p90": 12.0,
+                    "max": 17.0,
+                    "mean": 9.865
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 5.0,
+                    "p10": 9.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 18.0,
+                    "mean": 11.251666666666667
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 5.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 18.0,
+                    "mean": 11.081666666666667
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.2666666666666667
+                },
+                {
+                    "name": "Chord",
+                    "mean": 1.6933333333333334
+                },
+                {
+                    "name": "Cross",
+                    "mean": 1.04
+                },
+                {
+                    "name": "Line",
+                    "mean": 3.2666666666666668
+                },
+                {
+                    "name": "Lock",
+                    "mean": 2.2683333333333337
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.2
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.17
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.31
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 1.7916666666666668
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 1.8116666666666668
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.19
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 1.8233333333333333
+                },
+                {
+                    "name": "각잡은악수-오른",
+                    "mean": 1.0
+                },
+                {
+                    "name": "나이트훈수+중심",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩가로",
+                    "mean": 2.0
+                },
+                {
+                    "name": "룩세로강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-검은칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-흰칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍X추적",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝1-e5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝2-Nf6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝3-Bc5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝4-캐슬링",
+                    "mean": 1.0
+                },
+                {
+                    "name": "전체",
+                    "mean": 4.0
+                },
+                {
+                    "name": "킹고리강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥강",
+                    "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+대각",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+십자",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀강",
+                    "mean": 1.0
+                }
+            ]
+        },
+        {
+            "group": "holdout",
+            "strategy": "CollectFirst",
+            "runs": 200,
+            "clears": 199,
+            "deaths": 0,
+            "timeouts": 1,
+            "invariantFailures": 0,
+            "clearRate": 0.995,
+            "deathRate": 0.0,
+            "attackShare": 0.42919010884906136,
+            "moveShare": 0.4636428668097365,
+            "guardShare": 0.10716702434120217,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 110.0,
+                    "p10": 111.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.995
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 78.0,
+                    "p10": 101.0,
+                    "p50": 120.0,
+                    "p90": 137.0,
+                    "max": 157.0,
+                    "mean": 119.905
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 11.0,
+                    "p10": 20.0,
+                    "p50": 28.0,
+                    "p90": 35.0,
+                    "max": 47.0,
+                    "mean": 27.715
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 27.0,
+                    "p50": 46.0,
+                    "p90": 65.0,
+                    "max": 90.0,
+                    "mean": 45.385
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 10.0,
+                    "p10": 19.0,
+                    "p50": 27.0,
+                    "p90": 34.0,
+                    "max": 44.0,
+                    "mean": 26.86
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 24.0,
+                    "p50": 45.0,
+                    "p90": 64.0,
+                    "max": 85.0,
+                    "mean": 44.065
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 24.0,
+                    "p10": 25.0,
+                    "p50": 29.0,
+                    "p90": 32.0,
+                    "max": 36.0,
+                    "mean": 28.72
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 24.0,
+                    "p10": 25.0,
+                    "p50": 28.0,
+                    "p90": 32.0,
+                    "max": 36.0,
+                    "mean": 28.53
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 4.0,
+                    "p10": 7.0,
+                    "p50": 10.0,
+                    "p90": 12.0,
+                    "max": 15.0,
+                    "mean": 9.815
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 4.0,
+                    "p10": 7.0,
+                    "p50": 10.0,
+                    "p90": 12.0,
+                    "max": 15.0,
+                    "mean": 9.645
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 17.0,
+                    "mean": 11.02
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 17.0,
+                    "mean": 10.875
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.21
+                },
+                {
+                    "name": "Chord",
+                    "mean": 1.665
+                },
+                {
+                    "name": "Cross",
+                    "mean": 1.085
+                },
+                {
+                    "name": "Line",
+                    "mean": 3.24
+                },
+                {
+                    "name": "Lock",
+                    "mean": 2.09
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.205
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.075
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.115
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 1.695
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 1.765
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.14
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 1.765
+                },
+                {
+                    "name": "각잡은악수-오른",
+                    "mean": 1.0
+                },
+                {
+                    "name": "나이트훈수+중심",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩가로",
+                    "mean": 2.0
+                },
+                {
+                    "name": "룩세로강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-검은칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-흰칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍X추적",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝1-e5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝2-Nf6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝3-Bc5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝4-캐슬링",
+                    "mean": 1.0
+                },
+                {
+                    "name": "전체",
+                    "mean": 4.0
+                },
+                {
+                    "name": "킹고리강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥강",
+                    "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+대각",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+십자",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀강",
+                    "mean": 1.0
+                }
+            ]
+        },
+        {
+            "group": "holdout",
+            "strategy": "AttackHold",
+            "runs": 200,
+            "clears": 198,
+            "deaths": 0,
+            "timeouts": 2,
+            "invariantFailures": 0,
+            "clearRate": 0.99,
+            "deathRate": 0.0,
+            "attackShare": 0.4306742271244369,
+            "moveShare": 0.42117834394904465,
+            "guardShare": 0.1481474289265186,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 95.0,
+                    "p10": 111.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.89
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 60.0,
+                    "p10": 90.0,
+                    "p50": 109.0,
+                    "p90": 126.0,
+                    "max": 165.0,
+                    "mean": 108.445
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 22.0,
+                    "p10": 31.0,
+                    "p50": 37.0,
+                    "p90": 46.0,
+                    "max": 53.0,
+                    "mean": 38.145
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 26.0,
+                    "p50": 45.0,
+                    "p90": 69.0,
+                    "max": 94.0,
+                    "mean": 46.52
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 22.0,
+                    "p10": 30.0,
+                    "p50": 37.0,
+                    "p90": 44.0,
+                    "max": 52.0,
+                    "mean": 37.375
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 23.0,
+                    "p50": 44.0,
+                    "p90": 67.0,
+                    "max": 85.0,
+                    "mean": 43.915
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 24.0,
+                    "p10": 26.0,
+                    "p50": 29.0,
+                    "p90": 32.0,
+                    "max": 38.0,
+                    "mean": 28.795
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 23.0,
+                    "p10": 26.0,
+                    "p50": 29.0,
+                    "p90": 31.0,
+                    "max": 38.0,
+                    "mean": 28.69
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 8.0,
+                    "p50": 10.0,
+                    "p90": 12.0,
+                    "max": 15.0,
+                    "mean": 10.04
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 8.0,
+                    "p50": 10.0,
+                    "p90": 12.0,
+                    "max": 15.0,
+                    "mean": 9.855
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 18.0,
+                    "mean": 10.915
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 18.0,
+                    "mean": 10.78
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.135
+                },
+                {
+                    "name": "Chord",
+                    "mean": 1.77
+                },
+                {
+                    "name": "Cross",
+                    "mean": 1.135
+                },
+                {
+                    "name": "Line",
+                    "mean": 3.22
+                },
+                {
+                    "name": "Lock",
+                    "mean": 2.28
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.22
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.195
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.055
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 1.61
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 1.74
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.15
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 1.815
+                },
+                {
+                    "name": "각잡은악수-오른",
+                    "mean": 1.0
+                },
+                {
+                    "name": "나이트훈수+중심",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩가로",
+                    "mean": 2.0
+                },
+                {
+                    "name": "룩세로강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-검은칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-흰칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍X추적",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝1-e5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝2-Nf6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝3-Bc5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝4-캐슬링",
+                    "mean": 1.0
+                },
+                {
+                    "name": "전체",
+                    "mean": 4.0
+                },
+                {
+                    "name": "킹고리강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥강",
+                    "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+대각",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+십자",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀강",
+                    "mean": 1.0
+                }
+            ]
+        },
+        {
+            "group": "holdout",
+            "strategy": "MovementUse",
+            "runs": 200,
+            "clears": 198,
+            "deaths": 0,
+            "timeouts": 2,
+            "invariantFailures": 0,
+            "clearRate": 0.99,
+            "deathRate": 0.0,
+            "attackShare": 0.42704585249466056,
+            "moveShare": 0.4610071001135249,
+            "guardShare": 0.11194704739181469,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 106.0,
+                    "p10": 111.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.97
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 83.0,
+                    "p10": 101.0,
+                    "p50": 119.0,
+                    "p90": 142.0,
+                    "max": 155.0,
+                    "mean": 119.795
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 15.0,
+                    "p10": 22.0,
+                    "p50": 29.0,
+                    "p90": 36.0,
+                    "max": 46.0,
+                    "mean": 29.09
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 21.0,
+                    "p50": 44.0,
+                    "p90": 64.0,
+                    "max": 86.0,
+                    "mean": 44.145
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 14.0,
+                    "p10": 21.0,
+                    "p50": 28.0,
+                    "p90": 35.0,
+                    "max": 45.0,
+                    "mean": 28.315
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 14.0,
+                    "p50": 40.0,
+                    "p90": 60.0,
+                    "max": 85.0,
+                    "mean": 38.685
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 24.0,
+                    "p10": 26.0,
+                    "p50": 29.0,
+                    "p90": 32.0,
+                    "max": 36.0,
+                    "mean": 29.04
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 24.0,
+                    "p10": 26.0,
+                    "p50": 29.0,
+                    "p90": 32.0,
+                    "max": 36.0,
+                    "mean": 28.865
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 5.0,
+                    "p10": 8.0,
+                    "p50": 10.0,
+                    "p90": 13.0,
+                    "max": 15.0,
+                    "mean": 10.215
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 5.0,
+                    "p10": 8.0,
+                    "p50": 10.0,
+                    "p90": 13.0,
+                    "max": 15.0,
+                    "mean": 10.005
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 7.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 19.0,
+                    "mean": 11.265
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 19.0,
+                    "mean": 11.105
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.215
+                },
+                {
+                    "name": "Chord",
+                    "mean": 1.835
+                },
+                {
+                    "name": "Cross",
+                    "mean": 1.175
+                },
+                {
+                    "name": "Line",
+                    "mean": 3.345
+                },
+                {
+                    "name": "Lock",
+                    "mean": 2.195
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.295
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.13
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.15
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 1.78
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 1.81
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.23
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 1.815
+                },
+                {
+                    "name": "각잡은악수-오른",
+                    "mean": 1.0
+                },
+                {
+                    "name": "나이트훈수+중심",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩가로",
+                    "mean": 2.0
+                },
+                {
+                    "name": "룩세로강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-검은칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-흰칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍X추적",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝1-e5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝2-Nf6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝3-Bc5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝4-캐슬링",
+                    "mean": 1.0
+                },
+                {
+                    "name": "전체",
+                    "mean": 4.0
+                },
+                {
+                    "name": "킹고리강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥강",
+                    "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+대각",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+십자",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀강",
+                    "mean": 1.0
+                }
+            ]
+        },
+        {
+            "group": "holdout",
+            "strategy": "ALL",
+            "runs": 600,
+            "clears": 595,
+            "deaths": 0,
+            "timeouts": 5,
+            "invariantFailures": 0,
+            "clearRate": 0.9916666666666667,
+            "deathRate": 0.0,
+            "attackShare": 0.42896449513499587,
+            "moveShare": 0.4486693730266126,
+            "guardShare": 0.12236613183839165,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 95.0,
+                    "p10": 111.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.95166666666667
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 60.0,
+                    "p10": 96.0,
+                    "p50": 115.0,
+                    "p90": 136.0,
+                    "max": 165.0,
+                    "mean": 116.04833333333333
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 11.0,
+                    "p10": 22.0,
+                    "p50": 31.0,
+                    "p90": 42.0,
+                    "max": 53.0,
+                    "mean": 31.65
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 0.0,
+                    "p10": 23.0,
+                    "p50": 45.0,
+                    "p90": 67.0,
+                    "max": 94.0,
+                    "mean": 45.35
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 10.0,
+                    "p10": 21.0,
+                    "p50": 30.0,
+                    "p90": 41.0,
+                    "max": 52.0,
+                    "mean": 30.85
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 0.0,
+                    "p10": 20.0,
+                    "p50": 42.0,
+                    "p90": 64.0,
+                    "max": 85.0,
+                    "mean": 42.221666666666667
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 24.0,
+                    "p10": 26.0,
+                    "p50": 29.0,
+                    "p90": 32.0,
+                    "max": 38.0,
+                    "mean": 28.851666666666668
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 23.0,
+                    "p10": 26.0,
+                    "p50": 29.0,
+                    "p90": 32.0,
+                    "max": 38.0,
+                    "mean": 28.695
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 4.0,
+                    "p10": 8.0,
+                    "p50": 10.0,
+                    "p90": 12.0,
+                    "max": 15.0,
+                    "mean": 10.023333333333334
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 4.0,
+                    "p10": 8.0,
+                    "p50": 10.0,
+                    "p90": 12.0,
+                    "max": 15.0,
+                    "mean": 9.835
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 6.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 19.0,
+                    "mean": 11.066666666666667
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 6.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 19.0,
+                    "mean": 10.92
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.1866666666666668
+                },
+                {
+                    "name": "Chord",
+                    "mean": 1.7566666666666667
+                },
+                {
+                    "name": "Cross",
+                    "mean": 1.1316666666666667
+                },
+                {
+                    "name": "Line",
+                    "mean": 3.2683333333333337
+                },
+                {
+                    "name": "Lock",
+                    "mean": 2.1883333333333336
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.24
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.1333333333333334
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.1066666666666667
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 1.695
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 1.7716666666666668
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.1733333333333334
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 1.7983333333333334
+                },
+                {
+                    "name": "각잡은악수-오른",
+                    "mean": 1.0
+                },
+                {
+                    "name": "나이트훈수+중심",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩가로",
+                    "mean": 2.0
+                },
+                {
+                    "name": "룩세로강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-검은칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-흰칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍X추적",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝1-e5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝2-Nf6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝3-Bc5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝4-캐슬링",
+                    "mean": 1.0
+                },
+                {
+                    "name": "전체",
+                    "mean": 4.0
+                },
+                {
+                    "name": "킹고리강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥강",
+                    "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+대각",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+십자",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀강",
+                    "mean": 1.0
+                }
+            ]
+        },
+        {
+            "group": "miss5",
+            "strategy": "CollectFirst",
+            "runs": 200,
+            "clears": 192,
+            "deaths": 0,
+            "timeouts": 8,
+            "invariantFailures": 0,
+            "clearRate": 0.96,
+            "deathRate": 0.0,
+            "attackShare": 0.4325500605019712,
+            "moveShare": 0.4595807798899254,
+            "guardShare": 0.10786915960810337,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 103.0,
+                    "p10": 111.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.815
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 78.0,
+                    "p10": 99.0,
+                    "p50": 118.0,
+                    "p90": 136.0,
+                    "max": 160.0,
+                    "mean": 117.74
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 13.0,
+                    "p10": 20.0,
+                    "p50": 27.0,
+                    "p90": 35.0,
+                    "max": 40.0,
+                    "mean": 27.635
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 10.0,
+                    "p10": 26.0,
+                    "p50": 50.0,
+                    "p90": 67.0,
+                    "max": 100.0,
+                    "mean": 47.81
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 12.0,
+                    "p10": 20.0,
+                    "p50": 26.0,
+                    "p90": 34.0,
+                    "max": 39.0,
+                    "mean": 26.525
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 1.0,
+                    "max": 3.0,
+                    "mean": 0.26
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 1.0,
+                    "p50": 2.0,
+                    "p90": 5.0,
+                    "max": 8.0,
+                    "mean": 2.51
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 8.0,
+                    "p50": 34.0,
+                    "p90": 54.0,
+                    "max": 88.0,
+                    "mean": 32.92
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 24.0,
+                    "p10": 27.0,
+                    "p50": 30.0,
+                    "p90": 33.0,
+                    "max": 36.0,
+                    "mean": 29.6
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 24.0,
+                    "p10": 26.0,
+                    "p50": 29.0,
+                    "p90": 33.0,
+                    "max": 36.0,
+                    "mean": 29.415
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 8.0,
+                    "p50": 10.0,
+                    "p90": 13.0,
+                    "max": 16.0,
+                    "mean": 10.275
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 8.0,
+                    "p50": 10.0,
+                    "p90": 12.0,
+                    "max": 16.0,
+                    "mean": 10.045
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 8.0,
+                    "p50": 12.0,
+                    "p90": 15.0,
+                    "max": 19.0,
+                    "mean": 11.48
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 19.0,
+                    "mean": 11.345
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.245
+                },
+                {
+                    "name": "Chord",
+                    "mean": 1.88
+                },
+                {
+                    "name": "Cross",
+                    "mean": 1.145
+                },
+                {
+                    "name": "Line",
+                    "mean": 3.535
+                },
+                {
+                    "name": "Lock",
+                    "mean": 2.5
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.3
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.23
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.235
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 1.84
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 1.785
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.15
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 1.96
+                },
+                {
+                    "name": "각잡은악수-오른",
+                    "mean": 1.0
+                },
+                {
+                    "name": "나이트훈수+중심",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩가로",
+                    "mean": 2.0
+                },
+                {
+                    "name": "룩세로강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-검은칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-흰칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍X추적",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝1-e5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝2-Nf6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝3-Bc5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝4-캐슬링",
+                    "mean": 1.0
+                },
+                {
+                    "name": "전체",
+                    "mean": 4.0
+                },
+                {
+                    "name": "킹고리강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥강",
+                    "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+대각",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+십자",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀강",
+                    "mean": 1.0
+                }
+            ]
+        },
+        {
+            "group": "miss5",
+            "strategy": "AttackHold",
+            "runs": 200,
+            "clears": 188,
+            "deaths": 0,
+            "timeouts": 12,
+            "invariantFailures": 0,
+            "clearRate": 0.94,
+            "deathRate": 0.0,
+            "attackShare": 0.43288426568640867,
+            "moveShare": 0.41952955438671959,
+            "guardShare": 0.14758617992687174,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 93.0,
+                    "p10": 111.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.695
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 72.0,
+                    "p10": 88.0,
+                    "p50": 106.0,
+                    "p90": 130.0,
+                    "max": 154.0,
+                    "mean": 107.28
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 22.0,
+                    "p10": 30.0,
+                    "p50": 37.0,
+                    "p90": 46.0,
+                    "max": 56.0,
+                    "mean": 37.74
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 12.0,
+                    "p10": 23.0,
+                    "p50": 48.0,
+                    "p90": 70.0,
+                    "max": 90.0,
+                    "mean": 48.285
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 22.0,
+                    "p10": 29.0,
+                    "p50": 37.0,
+                    "p90": 44.0,
+                    "max": 54.0,
+                    "mean": 36.695
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 1.0,
+                    "max": 3.0,
+                    "mean": 0.285
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 1.0,
+                    "p50": 2.0,
+                    "p90": 5.0,
+                    "max": 9.0,
+                    "mean": 2.54
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 5.0,
+                    "p50": 34.0,
+                    "p90": 55.0,
+                    "max": 76.0,
+                    "mean": 32.48
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 24.0,
+                    "p10": 27.0,
+                    "p50": 29.0,
+                    "p90": 32.0,
+                    "max": 35.0,
+                    "mean": 29.41
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 24.0,
+                    "p10": 27.0,
+                    "p50": 29.0,
+                    "p90": 32.0,
+                    "max": 35.0,
+                    "mean": 29.29
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 8.0,
+                    "p50": 10.0,
+                    "p90": 13.0,
+                    "max": 16.0,
+                    "mean": 10.44
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 8.0,
+                    "p50": 10.0,
+                    "p90": 13.0,
+                    "max": 16.0,
+                    "mean": 10.23
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 9.0,
+                    "p50": 12.0,
+                    "p90": 14.0,
+                    "max": 19.0,
+                    "mean": 11.615
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 9.0,
+                    "p50": 11.0,
+                    "p90": 14.0,
+                    "max": 19.0,
+                    "mean": 11.43
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.27
+                },
+                {
+                    "name": "Chord",
+                    "mean": 1.875
+                },
+                {
+                    "name": "Cross",
+                    "mean": 1.27
+                },
+                {
+                    "name": "Line",
+                    "mean": 3.425
+                },
+                {
+                    "name": "Lock",
+                    "mean": 2.355
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.315
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.165
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.24
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 1.9
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 2.015
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.175
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 1.945
+                },
+                {
+                    "name": "각잡은악수-오른",
+                    "mean": 1.0
+                },
+                {
+                    "name": "나이트훈수+중심",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩가로",
+                    "mean": 2.0
+                },
+                {
+                    "name": "룩세로강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-검은칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-흰칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍X추적",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝1-e5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝2-Nf6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝3-Bc5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝4-캐슬링",
+                    "mean": 1.0
+                },
+                {
+                    "name": "전체",
+                    "mean": 4.0
+                },
+                {
+                    "name": "킹고리강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥강",
+                    "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+대각",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+십자",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀강",
+                    "mean": 1.0
+                }
+            ]
+        },
+        {
+            "group": "miss5",
+            "strategy": "MovementUse",
+            "runs": 200,
+            "clears": 179,
+            "deaths": 0,
+            "timeouts": 21,
+            "invariantFailures": 0,
+            "clearRate": 0.895,
+            "deathRate": 0.0,
+            "attackShare": 0.4265530171247439,
+            "moveShare": 0.4614210058371023,
+            "guardShare": 0.11202597703815377,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 97.0,
+                    "p10": 110.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.345
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 86.0,
+                    "p10": 102.0,
+                    "p50": 118.0,
+                    "p90": 140.0,
+                    "max": 156.0,
+                    "mean": 119.365
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 12.0,
+                    "p10": 22.0,
+                    "p50": 29.0,
+                    "p90": 36.0,
+                    "max": 46.0,
+                    "mean": 28.98
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 16.0,
+                    "p10": 24.0,
+                    "p50": 47.0,
+                    "p90": 65.0,
+                    "max": 85.0,
+                    "mean": 45.31
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 11.0,
+                    "p10": 21.0,
+                    "p50": 28.0,
+                    "p90": 35.0,
+                    "max": 45.0,
+                    "mean": 27.845
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 1.0,
+                    "max": 3.0,
+                    "mean": 0.27
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 1.0,
+                    "p50": 2.0,
+                    "p90": 5.0,
+                    "max": 7.0,
+                    "mean": 2.45
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 26.0,
+                    "p90": 48.0,
+                    "max": 70.0,
+                    "mean": 26.095
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 25.0,
+                    "p10": 27.0,
+                    "p50": 30.0,
+                    "p90": 33.0,
+                    "max": 37.0,
+                    "mean": 29.965
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 25.0,
+                    "p10": 27.0,
+                    "p50": 30.0,
+                    "p90": 33.0,
+                    "max": 37.0,
+                    "mean": 29.81
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 5.0,
+                    "p10": 8.0,
+                    "p50": 10.0,
+                    "p90": 13.0,
+                    "max": 17.0,
+                    "mean": 10.645
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 5.0,
+                    "p10": 8.0,
+                    "p50": 10.0,
+                    "p90": 13.0,
+                    "max": 17.0,
+                    "mean": 10.41
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 9.0,
+                    "p50": 12.0,
+                    "p90": 15.0,
+                    "max": 19.0,
+                    "mean": 11.765
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 6.0,
+                    "p10": 9.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 19.0,
+                    "mean": 11.635
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.265
+                },
+                {
+                    "name": "Chord",
+                    "mean": 2.015
+                },
+                {
+                    "name": "Cross",
+                    "mean": 1.38
+                },
+                {
+                    "name": "Line",
+                    "mean": 3.545
+                },
+                {
+                    "name": "Lock",
+                    "mean": 2.645
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.36
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.175
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.24
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 1.9
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 1.96
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.26
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 2.11
+                },
+                {
+                    "name": "각잡은악수-오른",
+                    "mean": 1.0
+                },
+                {
+                    "name": "나이트훈수+중심",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩가로",
+                    "mean": 2.0
+                },
+                {
+                    "name": "룩세로강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-검은칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-흰칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍X추적",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝1-e5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝2-Nf6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝3-Bc5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝4-캐슬링",
+                    "mean": 1.0
+                },
+                {
+                    "name": "전체",
+                    "mean": 4.0
+                },
+                {
+                    "name": "킹고리강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥강",
+                    "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+대각",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+십자",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀강",
+                    "mean": 1.0
+                }
+            ]
+        },
+        {
+            "group": "miss5",
+            "strategy": "ALL",
+            "runs": 600,
+            "clears": 559,
+            "deaths": 0,
+            "timeouts": 41,
+            "invariantFailures": 0,
+            "clearRate": 0.9316666666666666,
+            "deathRate": 0.0,
+            "attackShare": 0.43064774622207516,
+            "moveShare": 0.4469079088237012,
+            "guardShare": 0.12244434495422368,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 93.0,
+                    "p10": 111.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.61833333333334
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 72.0,
+                    "p10": 95.0,
+                    "p50": 114.0,
+                    "p90": 136.0,
+                    "max": 160.0,
+                    "mean": 114.795
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 12.0,
+                    "p10": 22.0,
+                    "p50": 31.0,
+                    "p90": 40.0,
+                    "max": 56.0,
+                    "mean": 31.451666666666669
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 10.0,
+                    "p10": 24.0,
+                    "p50": 48.0,
+                    "p90": 67.0,
+                    "max": 100.0,
+                    "mean": 47.135
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 11.0,
+                    "p10": 21.0,
+                    "p50": 30.0,
+                    "p90": 39.0,
+                    "max": 54.0,
+                    "mean": 30.355
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 1.0,
+                    "max": 3.0,
+                    "mean": 0.27166666666666669
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 0.0,
+                    "p10": 1.0,
+                    "p50": 2.0,
+                    "p90": 5.0,
+                    "max": 9.0,
+                    "mean": 2.5
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 0.0,
+                    "p10": 4.0,
+                    "p50": 32.0,
+                    "p90": 52.0,
+                    "max": 88.0,
+                    "mean": 30.498333333333336
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 24.0,
+                    "p10": 27.0,
+                    "p50": 30.0,
+                    "p90": 33.0,
+                    "max": 37.0,
+                    "mean": 29.658333333333336
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 24.0,
+                    "p10": 27.0,
+                    "p50": 29.0,
+                    "p90": 33.0,
+                    "max": 37.0,
+                    "mean": 29.505
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 5.0,
+                    "p10": 8.0,
+                    "p50": 10.0,
+                    "p90": 13.0,
+                    "max": 17.0,
+                    "mean": 10.453333333333334
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 5.0,
+                    "p10": 8.0,
+                    "p50": 10.0,
+                    "p90": 13.0,
+                    "max": 17.0,
+                    "mean": 10.228333333333334
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 6.0,
+                    "p10": 9.0,
+                    "p50": 12.0,
+                    "p90": 15.0,
+                    "max": 19.0,
+                    "mean": 11.62
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 6.0,
+                    "p10": 8.0,
+                    "p50": 11.0,
+                    "p90": 15.0,
+                    "max": 19.0,
+                    "mean": 11.47
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "Checker",
+                    "mean": 1.26
+                },
+                {
+                    "name": "Chord",
+                    "mean": 1.9233333333333334
+                },
+                {
+                    "name": "Cross",
+                    "mean": 1.265
+                },
+                {
+                    "name": "Line",
+                    "mean": 3.5016666666666667
+                },
+                {
+                    "name": "Lock",
+                    "mean": 2.5
+                },
+                {
+                    "name": "Ring",
+                    "mean": 1.325
+                },
+                {
+                    "name": "Syncopation",
+                    "mean": 1.19
+                },
+                {
+                    "name": "Top",
+                    "mean": 1.2383333333333333
+                },
+                {
+                    "name": "Top Wipe",
+                    "mean": 1.88
+                },
+                {
+                    "name": "Tremolo",
+                    "mean": 1.92
+                },
+                {
+                    "name": "Tremolo Long",
+                    "mean": 1.195
+                },
+                {
+                    "name": "Upper Crush",
+                    "mean": 2.005
+                },
+                {
+                    "name": "각잡은악수-오른",
+                    "mean": 1.0
+                },
+                {
+                    "name": "나이트훈수+중심",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩가로",
+                    "mean": 2.0
+                },
+                {
+                    "name": "룩세로강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-검은칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-흰칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍X추적",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝1-e5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝2-Nf6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝3-Bc5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝4-캐슬링",
+                    "mean": 1.0
+                },
+                {
+                    "name": "전체",
+                    "mean": 4.0
+                },
+                {
+                    "name": "킹고리강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥강",
+                    "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+대각",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+십자",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀강",
+                    "mean": 1.0
+                }
+            ]
+        }
+    ]
+}

@@ -1,8 +1,8 @@
 # 보스 채보
 
-보스의 공격을 곡의 노트 번호에 맞춰 텍스트 파일 하나에 직접 적는 방식이에요. 채보를 연결하면 랜덤 패턴(`Patterns`, `Attack Schedule`) 대신 채보대로 공격해요. 매 판 같은 노트에 같은 공격이 나와요.
+보스의 공격을 곡의 노트 번호에 맞춰 텍스트 파일 하나에 직접 적는 방식이에요. 채보를 연결하면 랜덤 패턴(`Patterns`, `Attack Schedule`) 대신 채보대로 공격해요. 매 판 같은 노트에 같은 공격이 나와요. `random` 줄을 쓰면 채보가 끝난 뒤부터 랜덤 패턴이 이어받아요.
 
-- 채보 파일: `Assets/_Project/Data/Bosses/GeomEulHyeon.bosschart.txt` (시작용 예시)
+- 채보 파일: `Assets/_Project/Data/Bosses/GeomEulHyeon.bosschart.txt` (battle-7: 노트 0-123은 1페이즈 채보, 124부터 랜덤)
 - 코드: `Scripts/Combat/BossChart.cs`(파서), `BossPatternSystem`의 채보 모드, `Editor/BossChartValidator.cs`(검증기)
 
 ## 쓰는 법
@@ -55,9 +55,20 @@ shape X
 - 페이즈가 바뀌어도 이미 보여준 공격은 취소되지 않아요. 피날레에서 보스가 스턴되면 모두 사라져요.
 - 모양은 파일 어디에 정의해도 돼요. 공격 줄보다 아래에 있어도 괜찮아요.
 
+### 랜덤으로 넘기기
+
+```
+random 124
+```
+
+- 노트 124부터 스테이지의 랜덤 패턴(`Patterns`, `Attack Schedule`)이 이어받아요. 채보의 모든 공격이 발동한 뒤에 넘어가요. 랜덤 공격의 첫 타격은 124 이후예요.
+- 채보와 랜덤은 동시에 떠 있지 않아요. 그래서 채보 타격이 이 노트 이상이면 검증기가 실패로 처리해요.
+- 넘어간 뒤에는 랜덤 모드와 똑같이 동작해요. 인게임 페이즈의 `PhaseMask`를 따르고, 페이즈가 바뀌면 예고를 취소해요.
+- `random` 줄이 없으면 곡 끝까지 채보만 써요.
+
 ## 스테이지에 연결
 
-`Assets/_Project/Data/Stages/FourPhasePrototype.asset`의 **Boss Chart** 칸에 채보 파일을 끌어다 놓아요. 비우면 다시 랜덤 패턴으로 돌아가요. 규칙이 바뀌는 것이므로 연결할 때 `Combat Version`을 `battle-7`로 올려 주세요.
+`Assets/_Project/Data/Stages/FourPhasePrototype.asset`의 **Boss Chart** 칸에 채보 파일을 끌어다 놓아요. 비우면 다시 랜덤 패턴으로 돌아가요. 규칙이 바뀌는 것이므로 연결할 때 `Combat Version`을 올려 주세요. 현재 `GeomEulHyeon.bosschart.txt`가 연결되어 있고 `battle-7`이에요.
 
 ## 검증
 
