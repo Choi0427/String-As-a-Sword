@@ -5,33 +5,33 @@
 결과: 통과. 공격 29개 중 실패 0, 경고 0.
 
 봇 시뮬레이션 (200 시드/그룹)
-Battle action mix: battle-7+chart, 321 notes, 200 seeds per group, 1800 runs, 252.9s.
+Battle action mix: battle-7+chart, 321 notes, 200 seeds per group, 1800 runs, 220.2s.
 Shares are attack/move/guard among those three actions. Counts are mean (P10/P50/P90) per run. Fired counts each attack's first hit.
-development CollectFirst: share 42.6/46.5/10.9; attack 111.0 (111/111/111) move 121.3 (101/121/140) guard 28.4 (20/28/37) other 43.4 (23/44/64); guard ok 27.5; clear 99.0 won/dead/timeout 198/0/2; hits 0.00; leftover 42.2 (21/43/63); fired P10/mean Either 26/28.7 Guard 7/9.8 Dodge 8/11.1; invariants 0
-development AttackHold: share 42.9/42.3/14.8; attack 110.9 (111/111/111) move 109.5 (88/110/129) guard 38.2 (30/38/46) other 45.4 (22/45/70); guard ok 37.4; clear 99.5 won/dead/timeout 199/0/1; hits 0.00; leftover 42.8 (20/42/67); fired P10/mean Either 26/28.9 Guard 7/9.8 Dodge 9/11.0; invariants 0
-development MovementUse: share 42.6/46.4/11.1; attack 110.7 (111/111/111) move 120.6 (100/121/140) guard 28.8 (21/29/36) other 43.9 (22/43/66); guard ok 28.0; clear 96.5 won/dead/timeout 193/0/7; hits 0.00; leftover 38.6 (14/38/63); fired P10/mean Either 26/29.0 Guard 8/9.9 Dodge 8/11.2; invariants 0
-development ALL: share 42.7/45.1/12.2; attack 110.9 (111/111/111) move 117.1 (96/117/137) guard 31.8 (22/32/42) other 44.2 (23/44/67); guard ok 30.9; clear 98.3 won/dead/timeout 590/0/10; hits 0.00; leftover 41.2 (19/41/64); fired P10/mean Either 26/28.9 Guard 7/9.9 Dodge 8/11.1; invariants 0
-  patterns fired per run: Checker 1.3, Chord 1.7, Cross 1.0, Line 3.3, Lock 2.3, Ring 1.2, Syncopation 1.2, Top 1.3, Top Wipe 1.8, Tremolo 1.8, Tremolo Long 1.2, Upper Crush 1.8, 각잡은악수-오른 1.0, 나이트훈수+중심 1.0, 룩-e열강 1.0, 룩가로 2.0, 룩세로강 1.0, 비숍-검은칸 1.0, 비숍-흰칸 1.0, 비숍X추적 1.0, 오프닝1-e5 1.0, 오프닝2-Nf6 1.0, 오프닝3-Bc5 1.0, 오프닝4-캐슬링 1.0, 전체 4.0, 킹고리강 1.0, 킹손바닥 1.0, 킹손바닥강 2.0, 폰대각-aceg 1.0, 폰대각-bdfh 1.0, 폰줄-4 1.0, 폰줄-5 1.0, 폰줄-6 1.0, 폰줄-7 1.0, 핀+대각 1.0, 핀+십자 1.0, 핀강 1.0
-holdout CollectFirst: share 42.9/46.4/10.7; attack 111.0 (111/111/111) move 119.9 (101/120/137) guard 27.7 (20/28/35) other 45.4 (27/46/65); guard ok 26.9; clear 99.5 won/dead/timeout 199/0/1; hits 0.00; leftover 44.1 (24/45/64); fired P10/mean Either 25/28.5 Guard 7/9.6 Dodge 8/10.9; invariants 0
-holdout AttackHold: share 43.1/42.1/14.8; attack 110.9 (111/111/111) move 108.4 (90/109/126) guard 38.1 (31/37/46) other 46.5 (26/45/69); guard ok 37.4; clear 99.0 won/dead/timeout 198/0/2; hits 0.00; leftover 43.9 (23/44/67); fired P10/mean Either 26/28.7 Guard 8/9.9 Dodge 8/10.8; invariants 0
-holdout MovementUse: share 42.7/46.1/11.2; attack 111.0 (111/111/111) move 119.8 (101/119/142) guard 29.1 (22/29/36) other 44.1 (21/44/64); guard ok 28.3; clear 99.0 won/dead/timeout 198/0/2; hits 0.00; leftover 38.7 (14/40/60); fired P10/mean Either 26/28.9 Guard 8/10.0 Dodge 8/11.1; invariants 0
-holdout ALL: share 42.9/44.9/12.2; attack 111.0 (111/111/111) move 116.0 (96/115/136) guard 31.7 (22/31/42) other 45.4 (23/45/67); guard ok 30.9; clear 99.2 won/dead/timeout 595/0/5; hits 0.00; leftover 42.2 (20/42/64); fired P10/mean Either 26/28.7 Guard 8/9.8 Dodge 8/10.9; invariants 0
-  patterns fired per run: Checker 1.2, Chord 1.8, Cross 1.1, Line 3.3, Lock 2.2, Ring 1.2, Syncopation 1.1, Top 1.1, Top Wipe 1.7, Tremolo 1.8, Tremolo Long 1.2, Upper Crush 1.8, 각잡은악수-오른 1.0, 나이트훈수+중심 1.0, 룩-e열강 1.0, 룩가로 2.0, 룩세로강 1.0, 비숍-검은칸 1.0, 비숍-흰칸 1.0, 비숍X추적 1.0, 오프닝1-e5 1.0, 오프닝2-Nf6 1.0, 오프닝3-Bc5 1.0, 오프닝4-캐슬링 1.0, 전체 4.0, 킹고리강 1.0, 킹손바닥 1.0, 킹손바닥강 2.0, 폰대각-aceg 1.0, 폰대각-bdfh 1.0, 폰줄-4 1.0, 폰줄-5 1.0, 폰줄-6 1.0, 폰줄-7 1.0, 핀+대각 1.0, 핀+십자 1.0, 핀강 1.0
-miss5 CollectFirst: share 43.3/46.0/10.8; attack 110.8 (111/111/111) move 117.7 (99/118/136) guard 27.6 (20/27/35) other 47.8 (26/50/67); guard ok 26.5; clear 96.0 won/dead/timeout 192/0/8; hits 2.51; leftover 32.9 (8/34/54); fired P10/mean Either 26/29.4 Guard 8/10.0 Dodge 8/11.3; invariants 0
-miss5 AttackHold: share 43.3/42.0/14.8; attack 110.7 (111/111/111) move 107.3 (88/106/130) guard 37.7 (30/37/46) other 48.3 (23/48/70); guard ok 36.7; clear 94.0 won/dead/timeout 188/0/12; hits 2.54; leftover 32.5 (5/34/55); fired P10/mean Either 27/29.3 Guard 8/10.2 Dodge 9/11.4; invariants 0
-miss5 MovementUse: share 42.7/46.1/11.2; attack 110.3 (110/111/111) move 119.4 (102/118/140) guard 29.0 (22/29/36) other 45.3 (24/47/65); guard ok 27.8; clear 89.5 won/dead/timeout 179/0/21; hits 2.45; leftover 26.1 (0/26/48); fired P10/mean Either 27/29.8 Guard 8/10.4 Dodge 9/11.6; invariants 0
-miss5 ALL: share 43.1/44.7/12.2; attack 110.6 (111/111/111) move 114.8 (95/114/136) guard 31.5 (22/31/40) other 47.1 (24/48/67); guard ok 30.4; clear 93.2 won/dead/timeout 559/0/41; hits 2.50; leftover 30.5 (4/32/52); fired P10/mean Either 27/29.5 Guard 8/10.2 Dodge 8/11.5; invariants 0
-  patterns fired per run: Checker 1.3, Chord 1.9, Cross 1.3, Line 3.5, Lock 2.5, Ring 1.3, Syncopation 1.2, Top 1.2, Top Wipe 1.9, Tremolo 1.9, Tremolo Long 1.2, Upper Crush 2.0, 각잡은악수-오른 1.0, 나이트훈수+중심 1.0, 룩-e열강 1.0, 룩가로 2.0, 룩세로강 1.0, 비숍-검은칸 1.0, 비숍-흰칸 1.0, 비숍X추적 1.0, 오프닝1-e5 1.0, 오프닝2-Nf6 1.0, 오프닝3-Bc5 1.0, 오프닝4-캐슬링 1.0, 전체 4.0, 킹고리강 1.0, 킹손바닥 1.0, 킹손바닥강 2.0, 폰대각-aceg 1.0, 폰대각-bdfh 1.0, 폰줄-4 1.0, 폰줄-5 1.0, 폰줄-6 1.0, 폰줄-7 1.0, 핀+대각 1.0, 핀+십자 1.0, 핀강 1.0
+development CollectFirst: share 42.5/46.8/10.7; attack 111.0 (111/111/111) move 122.4 (103/123/140) guard 27.9 (20/27/36) other 42.7 (23/43/62); guard ok 27.3; clear 99.5 won/dead/timeout 199/0/1; hits 0.00; leftover 41.3 (22/42/62); fired P10/mean Either 26/29.0 Guard 7/9.7 Dodge 8/11.3; invariants 0
+development AttackHold: share 42.3/42.6/15.1; attack 110.9 (111/111/111) move 111.7 (93/111/129) guard 39.5 (32/39/47) other 41.9 (18/42/62); guard ok 38.8; clear 99.0 won/dead/timeout 198/0/2; hits 0.00; leftover 39.6 (17/39/61); fired P10/mean Either 26/29.2 Guard 8/9.9 Dodge 8/11.1; invariants 0
+development MovementUse: share 42.4/46.5/11.0; attack 110.8 (111/111/111) move 121.6 (105/120/139) guard 28.8 (21/28/36) other 42.9 (22/44/61); guard ok 28.2; clear 96.0 won/dead/timeout 192/0/8; hits 0.00; leftover 37.3 (15/38/58); fired P10/mean Either 27/29.2 Guard 8/10.0 Dodge 9/11.2; invariants 0
+development ALL: share 42.4/45.3/12.3; attack 110.9 (111/111/111) move 118.6 (99/118/138) guard 32.1 (22/32/43) other 42.5 (22/43/62); guard ok 31.4; clear 98.2 won/dead/timeout 589/0/11; hits 0.00; leftover 39.4 (19/39/60); fired P10/mean Either 26/29.1 Guard 8/9.9 Dodge 8/11.2; invariants 0
+  patterns fired per run: Checker 1.3, Chord 1.7, Cross 1.1, Line 3.3, Lock 2.4, Ring 1.2, Syncopation 1.1, Top 1.3, Top Wipe 1.8, Tremolo 1.9, Tremolo Long 1.2, Upper Crush 1.9, 각잡은악수-오른 1.0, 나이트훈수+중심 1.0, 룩-e열강 1.0, 룩가로 2.0, 룩세로강 1.0, 비숍-검은칸 1.0, 비숍-흰칸 1.0, 비숍X추적 1.0, 오프닝1-e5 1.0, 오프닝2-Nf6 1.0, 오프닝3-Bc5 1.0, 오프닝4-캐슬링 1.0, 전체 4.0, 킹고리강 1.0, 킹손바닥 1.0, 킹손바닥강 2.0, 폰대각-aceg 1.0, 폰대각-bdfh 1.0, 폰줄-4 1.0, 폰줄-5 1.0, 폰줄-6 1.0, 폰줄-7 1.0, 핀+대각 1.0, 핀+십자 1.0, 핀강 1.0
+holdout CollectFirst: share 42.8/46.5/10.7; attack 111.0 (111/111/111) move 120.8 (101/121/137) guard 27.7 (20/27/36) other 44.6 (22/45/64); guard ok 27.2; clear 98.5 won/dead/timeout 197/0/3; hits 0.00; leftover 43.4 (20/44/63); fired P10/mean Either 25/28.5 Guard 7/9.7 Dodge 8/11.0; invariants 0
+holdout AttackHold: share 42.8/42.1/15.1; attack 111.0 (111/111/111) move 109.1 (93/108/128) guard 39.3 (31/39/47) other 44.6 (25/44/65); guard ok 38.6; clear 99.5 won/dead/timeout 199/0/1; hits 0.00; leftover 42.1 (22/42/63); fired P10/mean Either 26/28.7 Guard 7/9.9 Dodge 8/10.9; invariants 0
+holdout MovementUse: share 42.7/46.3/11.0; attack 111.0 (111/111/111) move 120.2 (103/118/141) guard 28.7 (21/29/36) other 44.0 (21/46/67); guard ok 28.2; clear 100.0 won/dead/timeout 200/0/0; hits 0.00; leftover 38.6 (13/40/60); fired P10/mean Either 26/29.1 Guard 7/9.9 Dodge 8/11.0; invariants 0
+holdout ALL: share 42.8/45.0/12.3; attack 111.0 (111/111/111) move 116.7 (97/116/136) guard 31.9 (22/31/43) other 44.4 (22/45/65); guard ok 31.3; clear 99.3 won/dead/timeout 596/0/4; hits 0.00; leftover 41.4 (18/42/63); fired P10/mean Either 26/28.8 Guard 7/9.8 Dodge 8/11.0; invariants 0
+  patterns fired per run: Checker 1.2, Chord 1.8, Cross 1.1, Line 3.3, Lock 2.2, Ring 1.2, Syncopation 1.1, Top 1.1, Top Wipe 1.8, Tremolo 1.8, Tremolo Long 1.2, Upper Crush 1.9, 각잡은악수-오른 1.0, 나이트훈수+중심 1.0, 룩-e열강 1.0, 룩가로 2.0, 룩세로강 1.0, 비숍-검은칸 1.0, 비숍-흰칸 1.0, 비숍X추적 1.0, 오프닝1-e5 1.0, 오프닝2-Nf6 1.0, 오프닝3-Bc5 1.0, 오프닝4-캐슬링 1.0, 전체 4.0, 킹고리강 1.0, 킹손바닥 1.0, 킹손바닥강 2.0, 폰대각-aceg 1.0, 폰대각-bdfh 1.0, 폰줄-4 1.0, 폰줄-5 1.0, 폰줄-6 1.0, 폰줄-7 1.0, 핀+대각 1.0, 핀+십자 1.0, 핀강 1.0
+miss5 CollectFirst: share 43.1/45.9/11.0; attack 110.9 (111/111/111) move 118.1 (99/119/134) guard 28.2 (20/28/37) other 46.8 (25/45/67); guard ok 27.4; clear 96.0 won/dead/timeout 192/0/8; hits 2.70; leftover 32.0 (9/32/54); fired P10/mean Either 26/29.3 Guard 8/10.3 Dodge 8/11.3; invariants 0
+miss5 AttackHold: share 43.4/41.4/15.2; attack 110.7 (111/111/111) move 105.6 (87/104/126) guard 38.8 (31/39/46) other 48.9 (25/50/69); guard ok 37.9; clear 95.5 won/dead/timeout 191/0/9; hits 2.59; leftover 33.1 (10/34/54); fired P10/mean Either 27/29.4 Guard 8/10.1 Dodge 9/11.3; invariants 0
+miss5 MovementUse: share 42.4/46.3/11.2; attack 110.2 (110/111/111) move 120.3 (101/119/142) guard 29.1 (22/29/36) other 44.4 (24/44/66); guard ok 28.4; clear 89.5 won/dead/timeout 179/0/21; hits 2.61; leftover 25.2 (0/25/49); fired P10/mean Either 27/29.8 Guard 8/10.4 Dodge 9/11.8; invariants 0
+miss5 ALL: share 43.0/44.6/12.5; attack 110.6 (111/111/111) move 114.7 (95/114/135) guard 32.0 (23/32/42) other 46.7 (25/47/67); guard ok 31.2; clear 93.7 won/dead/timeout 562/0/38; hits 2.63; leftover 30.1 (5/30/52); fired P10/mean Either 27/29.5 Guard 8/10.3 Dodge 9/11.5; invariants 0
+  patterns fired per run: Checker 1.3, Chord 1.9, Cross 1.3, Line 3.5, Lock 2.5, Ring 1.2, Syncopation 1.2, Top 1.2, Top Wipe 1.9, Tremolo 1.9, Tremolo Long 1.3, Upper Crush 2.0, 각잡은악수-오른 1.0, 나이트훈수+중심 1.0, 룩-e열강 1.0, 룩가로 2.0, 룩세로강 1.0, 비숍-검은칸 1.0, 비숍-흰칸 1.0, 비숍X추적 1.0, 오프닝1-e5 1.0, 오프닝2-Nf6 1.0, 오프닝3-Bc5 1.0, 오프닝4-캐슬링 1.0, 전체 4.0, 킹고리강 1.0, 킹손바닥 1.0, 킹손바닥강 2.0, 폰대각-aceg 1.0, 폰대각-bdfh 1.0, 폰줄-4 1.0, 폰줄-5 1.0, 폰줄-6 1.0, 폰줄-7 1.0, 핀+대각 1.0, 핀+십자 1.0, 핀강 1.0
 Plan criteria:
-  PASS share three-bot mean: 42.9/44.9/12.2 (target 43/43/14 +-4pp)
-  PASS share CollectFirst: 42.9/46.4/10.7 (target 43/43/14 +-8pp)
-  PASS share AttackHold: 43.1/42.1/14.8 (target 43/43/14 +-8pp)
-  PASS share MovementUse: 42.7/46.1/11.2 (target 43/43/14 +-8pp)
-  PASS clear no-miss: 99.2 (target >=90%)
-  PASS clear miss5: 93.2 (target >=80%)
+  PASS share three-bot mean: 42.8/45.0/12.3 (target 43/43/14 +-4pp)
+  PASS share CollectFirst: 42.8/46.5/10.7 (target 43/43/14 +-8pp)
+  PASS share AttackHold: 42.8/42.1/15.1 (target 43/43/14 +-8pp)
+  PASS share MovementUse: 42.7/46.3/11.0 (target 43/43/14 +-8pp)
+  PASS clear no-miss: 99.3 (target >=90%)
+  PASS clear miss5: 93.7 (target >=80%)
   PASS leftover median: 42 (target 10..50)
   PASS DodgeOnly fired P10: 8 (target >=8)
-  PASS GuardOnly fired P10: 8 (target >=8)
+  FAIL GuardOnly fired P10: 7 (target >=8)
   PASS invariant failures: 0 (target 0)
   PASS replay failures: 0/18 (target 0)
-Overall: PASS
+Overall: FAIL
