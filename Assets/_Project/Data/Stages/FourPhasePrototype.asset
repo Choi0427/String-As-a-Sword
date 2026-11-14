@@ -18,7 +18,7 @@ MonoBehaviour:
   noiseTargets: 040000000500000006000000
   healthSegments: 23000000080000000e00000036000000
   cameraElevation: 45
-  playerMaxHp: 300
+  playerMaxHp: 5
   maxCollectionCost: 12
   combatVersion: battle-8
   patterns:
