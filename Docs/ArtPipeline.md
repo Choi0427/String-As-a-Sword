@@ -81,3 +81,11 @@
   - 카메라: 고도 35°, 원근 FOV 30°, 크기 5.1.
   - 배경: `Art/UI/Background/BG_0..5.png`를 뒤→앞 0, 1, 4, 5, 2, 3 순서로 쌓는다. 1·4·5는 떠다닌다.
 - 메탈릭·러프니스 텍스처는 돌 재질이라 쓰지 않아서 프로젝트에 넣지 않았다.
+
+## 나이트 모델 (2026-11-14 전달분)
+
+- `String As a Sword > Art > Set Up Knight Model`을 실행하면 아래 설정이 한 번에 적용된다. 다시 실행하면 원본 파일에서 머티리얼과 프리팹을 새로 만든다.
+  - `Art/Models/Knight/Knight.fbx`와 `Knight_BaseColor.jpg`로 `Knight_Lit.mat`(URP Lit, 베이스컬러만, 메탈릭 0, 스무스니스 0.2)과 `Knight.prefab`을 만들어 `knightPrefab` 슬롯에 넣는다.
+  - 맞춤: 원본은 0.39 × 1.00 × 0.36 크기다. `Fit` 노드에서 높이 1.2유닛(`KnightArtSetup.Height`)으로 균일하게 키우고, 발밑 중앙을 원점에 둔다. 방향은 `KnightArtSetup.Yaw`로 돌리며, 원본이 이미 8행(보스) 쪽을 봐서 0이다.
+- 모델에는 리그와 애니메이션이 없어서 Animator를 붙이지 않았다. 이동·점프·스쿼시와 칼 궤적·방패 라인은 코드 연출 그대로다.
+- 같은 날 시작 칸을 d4에서 나이트의 실제 시작 칸인 g1로 바꿨다(`BattleSession`). 채보 밸런스는 d4 기준으로 맞춘 것이라 다시 확인해야 한다.

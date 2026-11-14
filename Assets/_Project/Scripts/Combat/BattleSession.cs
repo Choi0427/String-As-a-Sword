@@ -86,7 +86,7 @@ namespace StringAsASword.Combat
                 throw new ArgumentException("Analysis boundaries must partition the whole chart.");
             timeline = settings.CreateTimeline(); music = new BeatScheduler(timeline);
             var board = new BoardState();
-            Session = new RhythmSession(board, new RhythmJudge(timeline, settings.PerfectWindow, settings.GoodWindow, settings.InputOffset), new GridPosition(3, 3), settings.NoteCount, settings.HoldEndTimes);
+            Session = new RhythmSession(board, new RhythmJudge(timeline, settings.PerfectWindow, settings.GoodWindow, settings.InputOffset), new GridPosition(6, 0), settings.NoteCount, settings.HoldEndTimes);
             Noise = new NoisePickupSystem(board, settings.SpawnInterval, settings.MaxNoise);
             Health = new BossHealthGate(settings.Health);
             Attacks = new AttackResolver(board); Combat = new CombatResolver(Attacks, Health, 1);

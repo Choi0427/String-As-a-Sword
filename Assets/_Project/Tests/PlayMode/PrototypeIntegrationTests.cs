@@ -93,7 +93,7 @@ namespace StringAsASword.Tests
             Queue(Key.D,game.Timeline.TimeOf(4),true);
             yield return UntilSongTime(game.Timeline.TimeOf(4)+.05); Queue(Key.D,game.SongTime,false);
             yield return UntilSongTime(game.Timeline.TimeOf(4)+.15);
-            Assert.That(game.Session.Position,Is.EqualTo(new GridPosition(3,3)));
+            Assert.That(game.Session.Position,Is.EqualTo(new GridPosition(6,0)));
             Assert.That(game.Session.PerfectCount,Is.EqualTo(4));
             LogAssert.NoUnexpectedReceived();
         }
@@ -110,7 +110,7 @@ namespace StringAsASword.Tests
             InputSystem.QueueStateEvent(keyboard,new KeyboardState());
             yield return UntilSongTime(FirstNote+.15);
             Assert.That(game.Session.AcceptedMoves,Is.EqualTo(1));
-            Assert.That(game.Session.Position,Is.EqualTo(new GridPosition(3,4)),"Equal timestamps use W before D.");
+            Assert.That(game.Session.Position,Is.EqualTo(new GridPosition(6,1)),"Equal timestamps use W before D.");
             SetFocusPause(true);
             game.SendMessage("OnApplicationFocus",false);
             SetFocusPause(false);
@@ -123,7 +123,7 @@ namespace StringAsASword.Tests
             yield return null; yield return null;
             InputSystem.QueueStateEvent(keyboard,new KeyboardState());
             Assert.That(game.SessionId,Is.EqualTo(oldSession+1));
-            Assert.That(game.Session.Position,Is.EqualTo(new GridPosition(3,3)));
+            Assert.That(game.Session.Position,Is.EqualTo(new GridPosition(6,0)));
             Assert.That(game.Session.AcceptedMoves,Is.Zero); Assert.That(game.Session.MissCount,Is.Zero);
             Assert.That(game.State,Is.EqualTo(PrototypeState.CountIn));
             LogAssert.NoUnexpectedReceived();
