@@ -66,6 +66,7 @@ namespace StringAsASword.Tests
             foreach (var (from, to) in new[] { (0, 123), (124, 233), (234, Settings.FinishNote - 1) })
                 Assert.That(chart.Attacks.Count(a => a.Note >= from && a.LastHit <= to), Is.GreaterThanOrEqualTo(15), $"notes {from}-{to}");
             var settings = Settings.Copy(); settings.BossChartText = text;
+            settings.PlayerMaxHp = 1000; // nobody plays this run; the stage's HP 5 would end it around note 45
             var battle = new BattleSession(settings, 7);
             battle.Advance(settings.CreateTimeline().TimeOf(260) + settings.GoodWindow + .001);
             var published = battle.Events.Where(e => e.type == "pattern-publish").ToList();

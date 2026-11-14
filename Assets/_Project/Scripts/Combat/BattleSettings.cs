@@ -80,6 +80,8 @@ namespace StringAsASword.Combat
         public IBeatTimeline CreateTimeline() => HasAuthoredChart ? (IBeatTimeline)new AuthoredBeatTimeline(Bpm, NoteTimes) : new ConstantBeatTimeline(Bpm);
         public double Bpm, PerfectWindow = .07, GoodWindow = .14, InputOffset;
         public int PlayerMaxHp = 3, SpawnInterval = 8, MaxNoise = 2, MaxCollectionCost = 12;
+        /// <summary>The knight's start cell. g1, a real knight's home square. Rule tests written around d4 set (3, 3).</summary>
+        public int StartX = 6, StartY = 0;
         public int[] Health = { 6, 6, 6, 6 }, NoiseTargets = { 3, 4, 5 };
         public PatternDefinition[] Patterns = PatternDefinition.Defaults();
         public RandomAttackSchedule Schedule = new RandomAttackSchedule();
@@ -118,7 +120,8 @@ namespace StringAsASword.Combat
         public void Validate()
         {
             if (NoteCount < 1 || Bpm <= 0 || double.IsNaN(Bpm) || double.IsInfinity(Bpm) ||
-                PlayerMaxHp < 1 || SpawnInterval < 1 || MaxNoise < 1 || MaxNoise > 2 || MaxCollectionCost < 2)
+                PlayerMaxHp < 1 || SpawnInterval < 1 || MaxNoise < 1 || MaxNoise > 2 || MaxCollectionCost < 2 ||
+                StartX < 0 || StartX > 7 || StartY < 0 || StartY > 7)
                 throw new ArgumentException("Invalid battle settings.");
             if (FinishNote < -1 || FinishNote == 0 || FinishNote >= NoteCount) throw new ArgumentException("FinishNote must be -1 or a note after the first.");
             if (HasAuthoredChart && NoteTimes.Length != NoteCount) throw new ArgumentException("NoteTimes must list exactly NoteCount notes.");

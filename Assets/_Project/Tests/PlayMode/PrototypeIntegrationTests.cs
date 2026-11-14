@@ -80,7 +80,7 @@ namespace StringAsASword.Tests
             yield return UntilSongTime(FirstNote);
             Queue(Key.W,FirstNote,true);
             yield return UntilSongTime(game.Timeline.TimeOf(1)+.20);
-            Assert.That(game.Session.Position,Is.EqualTo(new GridPosition(3,4)));
+            Assert.That(game.Session.Position,Is.EqualTo(new GridPosition(6,1)));
             Assert.That(game.Session.AcceptedMoves,Is.EqualTo(1),"Holding W must not create repeated actions.");
             Queue(Key.W,game.SongTime,false);
             yield return UntilSongTime(game.Timeline.TimeOf(2));
@@ -158,7 +158,7 @@ namespace StringAsASword.Tests
             Assert.That(board.Texture.IsCreated(), Is.True);
             // Renderer, not MeshRenderer: a delivered skinned knight has none of the procedural parts.
             Assert.That(board.PlayerTransform.GetComponentsInChildren<Renderer>().Length, Is.GreaterThan(0));
-            Assert.That(board.PlayerTransform.localPosition.x, Is.EqualTo(-.5f).Within(.01));
+            Assert.That(board.PlayerTransform.localPosition.x, Is.EqualTo(2.5f).Within(.01), "The knight starts on g1.");
             LogAssert.NoUnexpectedReceived();
         }
         private IEnumerator TapAtBeat(Key key, int beat)
@@ -173,7 +173,7 @@ namespace StringAsASword.Tests
         private const int ImpactNote = 2;
         private static PatternDefinition RequiredGuard() => new PatternDefinition { Name = "Guard Fixture", Kind = PatternKind.FullBoard,
             Response = AttackResponse.GuardOnly, FirstImpact = ImpactNote + 1, TelegraphNotes = ImpactNote, RepeatNotes = 1000 };
-        private static PatternDefinition RequiredDodge() => new PatternDefinition { Name = "Dodge Fixture", Kind = PatternKind.Row, Coordinate = 3,
+        private static PatternDefinition RequiredDodge() => new PatternDefinition { Name = "Dodge Fixture", Kind = PatternKind.Row, Coordinate = 0, // row 1, where the knight starts
             Response = AttackResponse.DodgeOnly, FirstImpact = ImpactNote + 1, TelegraphNotes = ImpactNote, RepeatNotes = 1000 };
         private IEnumerator StartWith(PatternDefinition pattern, AttackResponse response)
         {
@@ -240,7 +240,7 @@ namespace StringAsASword.Tests
         {
             yield return StartWith(RequiredDodge(), AttackResponse.DodgeOnly);
             yield return TapAtBeat(Key.W, 1);
-            Assert.That(game.Session.Position, Is.EqualTo(new GridPosition(3,4)));
+            Assert.That(game.Session.Position, Is.EqualTo(new GridPosition(6,1)));
             yield return UntilImpactResolved();
             Assert.That(game.Battle.PlayerHp, Is.EqualTo(game.Stage.PlayerMaxHp));
             Assert.That(EventCount("player-hit"), Is.Zero);
@@ -283,11 +283,15 @@ namespace StringAsASword.Tests
         }
         [UnityTest] public IEnumerator TopRowAttacksStopAtHealthFloorUntilNoiseGoalIsMet()
         {
+            // This is about the HP floor: no boss attacks, so the long stay on row 8 cannot end the run.
+            game.Battle.Settings.Schedule.Enabled = false;
+            game.Battle.Settings.BossChartText = null;
+            game.Battle.Settings.Patterns = new PatternDefinition[0];
             game.StartSession();
-            for(int beat=0;beat<4;beat++) yield return TapAtBeat(Key.W,beat);
-            Assert.That(game.Session.Position,Is.EqualTo(new GridPosition(3,7)));
-            int afterAttacks = 5 + game.Health.Maximum(0);
-            for(int beat=4;beat<afterAttacks;beat++) yield return TapAtBeat(Key.J,beat);
+            for(int beat=0;beat<7;beat++) yield return TapAtBeat(Key.W,beat); // g1 to g8
+            Assert.That(game.Session.Position,Is.EqualTo(new GridPosition(6,7)));
+            int afterAttacks = 8 + game.Health.Maximum(0);
+            for(int beat=7;beat<afterAttacks;beat++) yield return TapAtBeat(Key.J,beat);
             Assert.That(game.Health.CurrentHp,Is.Zero);
             Assert.That(game.Health.TotalHp,Is.EqualTo(System.Linq.Enumerable.Sum(game.Stage.HealthSegments) - game.Health.Maximum(0)));
             Assert.That(game.Phases.PhaseId,Is.EqualTo(1));

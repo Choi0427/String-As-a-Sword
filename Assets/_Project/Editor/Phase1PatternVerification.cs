@@ -48,6 +48,7 @@ namespace StringAsASword.Editor
             settings.BossChartText = chartText;
             settings.SpawnInterval = 100000; // no noise pickups
             settings.PlayerMaxHp = 1000;     // walking through earlier attacks never ends the run
+            settings.StartX = Center.X; settings.StartY = Center.Y; // every probe walks out from d4, not the game's g1
             return settings;
         }
 

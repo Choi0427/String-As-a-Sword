@@ -14,6 +14,7 @@ namespace StringAsASword.Tests
         {
             Bpm = 87,
             NoteCount = notes,
+            StartX = 3, StartY = 3, // these rules were written around a d4 start
             Patterns = Array.Empty<PatternDefinition>()
         };
 
@@ -319,7 +320,8 @@ namespace StringAsASword.Tests
         public void FixedModeDefaultsReproduceTheirPreResponseEventsAndStateHashes(int seed, string expected)
         {
             // Captured from the build before attack responses existed; only pre-existing event fields are hashed.
-            var settings = new BattleSettings { Bpm = 87, NoteCount = 128, PlayerMaxHp = 1000 };
+            // The capture started at d4, so the start cell is pinned here; the game now starts at g1.
+            var settings = new BattleSettings { Bpm = 87, NoteCount = 128, PlayerMaxHp = 1000, StartX = 3, StartY = 3 };
             var battle = new BattleSession(settings, seed);
             for (int note = 0; note < settings.NoteCount && battle.Outcome == BattleOutcome.Running; note++)
             {
