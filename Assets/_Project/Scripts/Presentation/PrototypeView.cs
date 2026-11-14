@@ -205,6 +205,7 @@ namespace StringAsASword.Presentation
             // Five strings run from the screen edge to judge lines on the board's sides, at the board's middle height,
             // so the strings read as tied to the board. The judge lines follow the board camera, not a fixed x.
             float laneY = BoardCenter.y + boardWorld.ProjectToBoard(Vector3.zero, BoardSize).y;
+            if (art.laneSprite != null) { BuildLaneArt(); return; }
             float judgeX = BoardCenter.x + boardWorld.ProjectToBoard(new Vector3(4.9f, 0, 0), BoardSize).x + 10; // clear of the 1-8 row labels at x 4.43
             float span = StringGap * 4 + 34;
             judgeLines = new UnityEngine.UI.Image[2];
@@ -216,6 +217,40 @@ namespace StringAsASword.Presentation
                 judgeLines[(side + 1) / 2] = Bar("JudgeLine", side * judgeX, laneY, 4, span, InkWhite);
             }
             notes = new NotePresenter(root, art.noteSprite, art.holdBodySprite, art.holdTailSprite, judgeX, ScreenEdge, laneY, span);
+        }
+        // Delivered lane art: one sprite with strings on both sides and a gap for the board. Its height is fitted to the
+        // board rows in ArtSet.laneRows and its width so the middle string ends on the board's side edges, so the two
+        // scales differ. The judge lines lie along those edges over the same rows, tilted with the board's perspective.
+        private void BuildLaneArt()
+        {
+            var sprite = art.laneSprite;
+            float edge = art.laneBoardEdge;
+            // Row r covers board z from r - 5 to r - 4: the strings run from the near side of the first row to the far side of the last.
+            Vector2 near = boardWorld.ProjectToBoard(new Vector3(edge, 0, art.laneRows.x - 5), BoardSize);
+            Vector2 far = boardWorld.ProjectToBoard(new Vector3(edge, 0, art.laneRows.y - 4), BoardSize);
+            float scaleY = (far.y - near.y) / (art.laneStrings.z - art.laneStrings.x);
+            float laneY = BoardCenter.y + far.y - (art.laneStrings.y - art.laneStrings.x) * scaleY;
+            // Where the board's edge crosses the middle string: the art's width is fitted there.
+            float judgeX = Mathf.Lerp(near.x, far.x, Mathf.InverseLerp(near.y, far.y, laneY - BoardCenter.y));
+            float scaleX = 2 * judgeX / (art.laneBoardGap.y - art.laneBoardGap.x);
+            var lane = MakeRect(root, "Lane Art", new Vector2(
+                BoardCenter.x + (sprite.rect.width - art.laneBoardGap.x - art.laneBoardGap.y) * .5f * scaleX,
+                laneY + (art.laneStrings.y - sprite.rect.height * .5f) * scaleY), new Vector2(sprite.rect.width * scaleX, sprite.rect.height * scaleY));
+            Image(lane, Color.white).sprite = sprite;
+            float tilt = Mathf.Atan2(near.x - far.x, far.y - near.y);
+            // The notes ride their own string; the judge point is where the board's edge crosses it.
+            float noteY = BoardCenter.y + far.y - (art.laneNoteString - art.laneStrings.x) * scaleY;
+            float noteX = Mathf.Lerp(near.x, far.x, Mathf.InverseLerp(near.y, far.y, noteY - BoardCenter.y));
+            Vector2 middle = (near + far) * .5f;
+            judgeLines = new UnityEngine.UI.Image[2];
+            for (int side = -1; side <= 1; side += 2)
+            {
+                var line = Bar("JudgeLine", BoardCenter.x + side * middle.x, BoardCenter.y + middle.y, 4, (far - near).magnitude + 8, InkWhite);
+                line.rectTransform.localRotation = Quaternion.Euler(0, 0, side * tilt * Mathf.Rad2Deg);
+                judgeLines[(side + 1) / 2] = line;
+            }
+            // No scrolling bar lines here: the art has its own frets, and each note carries a stem.
+            notes = new NotePresenter(root, art.noteSprite, art.holdBodySprite, art.holdTailSprite, noteX, ScreenEdge, noteY, 0, tilt);
         }
         private void BuildOverlay()
         {

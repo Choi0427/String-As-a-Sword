@@ -59,6 +59,21 @@ namespace StringAsASword.Presentation
         public Sprite background;
         [Tooltip("Full-screen layers drawn over the background, back to front. A non-zero sway makes the layer float.")]
         public BackgroundLayer[] backgroundLayers;
+        [Tooltip("Strings and frets drawn across the screen with a gap for the board. Replaces the procedural strings; " +
+            "it is scaled so the gap fits the board, and the judge lines follow the board's side edges.")]
+        public Sprite laneSprite;
+        [Tooltip("Sprite pixels from the left where the middle string stops at the board: x = left side, y = right side.")]
+        public Vector2 laneBoardGap = new Vector2(668, 1387);
+        [Tooltip("Sprite pixel rows from the top of the top (x), middle (y) and bottom (z) string.")]
+        public Vector3 laneStrings = new Vector3(14, 128, 257);
+        [Tooltip("Sprite pixel row from the top of the string the notes ride. 190 is the fourth string, on the line between rows 4 and 3.")]
+        public float laneNoteString = 190;
+        [Tooltip("Board rows the strings span: x = nearest row, y = farthest row. The top string sits on the far side of y, the bottom string on the near side of x.")]
+        public Vector2 laneRows = new Vector2(3, 6);
+        [Tooltip("Board-local x of the board's outer side edge, where the strings end. The stone board's rim is at 4.38.")]
+        public float laneBoardEdge = 4.38f;
+        [Tooltip("Note with its stem up and the head at the bottom. Runs of two and three fast notes are joined by one and two beams; " +
+            "a hold note gets a double rail to its tail.")]
         public Sprite noteSprite;
         [Tooltip("Hold note string, stretched horizontally between the head and the tail. Draw it white; it is tinted per state.")]
         public Sprite holdBodySprite;

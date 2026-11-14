@@ -28,7 +28,9 @@
 | `lightTile` / `darkTile` / `boardEdge` | 칸 윗면(칸마다 UV 0~1) / 받침·옆면 | — |
 | `eitherMark` / `guardMark` / `dodgeMark` / `impactMark` | 예고 칸 위의 사각 판 (0.92칸) | — |
 | `font` | 모든 HUD 텍스트 (한글 TMP SDF) | — |
-| `background` / `noteSprite` | 전체 배경 / 좌우 노트 | — |
+| `background` | 전체 배경 | — |
+| `laneSprite` | 좌우 현과 프렛을 한 장에 그린 판정선 그림. 가운데 빈 곳에 보드가 들어간다. 절차적 현을 대체한다. 높이는 `laneRows`의 보드 행(기본 3~6행)에, 너비는 가운데 현이 보드 옆 가장자리에서 끝나도록 따로 맞춘다. 판정선은 같은 행 범위에서 보드 가장자리를 따라 기울여 그리고, 노트 기둥도 같은 각도로 기운다 | `laneRows`(현이 걸치는 가장 가까운 행·먼 행), `laneNoteString`(노트가 타는 현의 y 픽셀. 기본 190은 넷째 현으로 4행과 3행의 경계다), `laneBoardGap`(가운데 현이 끊기는 좌·우 x 픽셀), `laneStrings`(맨 위·가운데·맨 아래 현의 y 픽셀), `laneBoardEdge`(보드 옆 가장자리의 보드 좌표 x)를 그림에 맞게 넣는다 |
+| `noteSprite` | 좌우 노트. 기둥이 위, 머리가 아래인 그림 한 장으로 네 종류를 그린다. 기본 노트는 그대로, 빠른 노트 2개 묶음은 빔 1줄, 3개 묶음은 빔 2줄로 잇고, 홀드 노트는 꼬리까지 두 줄 레일을 긋는다 | 간격이 0.75박보다 짧은 노트를 한 묶음으로 본다. 4개 이상은 3개와 2개로 나눈다. 빔과 레일은 코드가 그린다 |
 | `backgroundLayers` | `background` 위에 뒤→앞 순서로 쌓는 전체 화면 레이어. `sway`(캔버스 px)가 0이 아니면 `period`초 주기로 둥둥 떠다닌다. 배경이 있으면 보드 영역이 투명해져 배경 위에 보드가 놓인다 | — |
 | `holdBodySprite` / `holdTailSprite` | 홀드 노트의 현(줄) 몸통 / 꼬리 말뚝 | 흰색으로 그린다. 가로로 늘어나며, 상태별 색(대기 흰색·유지 중 민트·끊김 회색)을 코드가 입힌다 |
 | `crownFull` / `crownLocked` / `crownBroken` | 보스 HP 칸 아이콘. 세 개를 모두 넣어야 표시된다 | — |

@@ -55,7 +55,11 @@ MonoBehaviour:
   - sprite: {fileID: 21300000, guid: 0b3ce865041aa7b4f8e90fc37334ce82, type: 3}
     sway: {x: 0, y: 0}
     period: 0
-  noteSprite: {fileID: 0}
+  laneSprite: {fileID: 21300000, guid: cd5d76bcb9cf94e498cd3261a1d64cd2, type: 3}
+  laneBoardGap: {x: 668, y: 1387}
+  laneStrings: {x: 14, y: 128, z: 257}
+  laneBoardEdge: 4.38
+  noteSprite: {fileID: 21300000, guid: 2b15bdc155187724d8b107e484c3a5ee, type: 3}
   holdBodySprite: {fileID: 0}
   holdTailSprite: {fileID: 0}
   crownFull: {fileID: 0}

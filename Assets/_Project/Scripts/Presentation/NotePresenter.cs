@@ -9,6 +9,8 @@ namespace StringAsASword.Presentation
     /// <summary>
     /// Mirrored notes on both lanes. A hold note is drawn as a string (絃) from its head to a tail peg:
     /// held, it pins to the judge line, glows and vibrates while it shortens; broken, it greys out and snaps.
+    /// With a note sprite there are four looks: a single note, a run of two fast notes joined by one beam,
+    /// a run of three joined by two beams, and a hold note with a double rail to its tail.
     /// </summary>
     public sealed class NotePresenter
     {
@@ -16,9 +18,21 @@ namespace StringAsASword.Presentation
         private const float HeadRise = 7; // the string runs through the note head, not the stem
         private const float StringThickness = 3, PegWidth = 6, PegHeight = 22, SnapGap = 12;
         private const double FadeSeconds = .30, FlashSeconds = .15, VibrationHz = 14;
+        // Note sprite: stem up, hollow head at the bottom. HeadPivot is the head's centre, as a share of the sprite's height.
+        private const float SpriteHeight = 100, HeadPivot = .152f, SpriteTone = .85f;
+        private const float BeamThickness = 8, BeamGap = 5, BeamStub = 16, RailOffset = 5, RailPegHeight = 30;
+        /// <summary>Notes closer together than this share of a beat are beamed into one run.</summary>
+        private const double RunGapBeats = .75;
         private readonly Graphic[,] notes = new Graphic[2, Slots];
         private readonly Image[,] strings = new Image[2, Slots], pegs = new Image[2, Slots], barLines = new Image[2, Slots];
+        private readonly Image[,] rails = new Image[2, Slots];
+        private readonly Image[,,] beams = new Image[2, Slots, 2];
         private readonly Image[] sparks = new Image[2];
+        private readonly bool art;
+        private readonly float headHalf, stemHalf;
+        // Stems lean toward the board by this angle (radians), parallel to the tilted judge lines.
+        private readonly float tilt;
+        private int[] beamLinks;
         private readonly float targetX;
         private readonly float spawnX;
         private readonly float noteY, stringY, barHeight;
@@ -27,10 +41,15 @@ namespace StringAsASword.Presentation
         private bool resolvedHit;
 
         public NotePresenter(RectTransform root, Sprite sprite = null, Sprite holdBody = null, Sprite holdTail = null,
-            float targetX = 310, float spawnX = 715, float laneY = 53, float barHeight = 0)
+            float targetX = 310, float spawnX = 715, float laneY = 53, float barHeight = 0, float tilt = 0)
         {
-            this.targetX = targetX; this.spawnX = spawnX;
-            stringY = laneY; noteY = laneY + HeadRise; this.barHeight = barHeight;
+            this.targetX = targetX; this.spawnX = spawnX; this.tilt = tilt;
+            stringY = laneY; this.barHeight = barHeight;
+            art = sprite != null;
+            // The sprite's head sits on the string; the prototype glyph is lifted so the string runs through its head.
+            noteY = art ? laneY : laneY + HeadRise;
+            var noteSize = art ? new Vector2(SpriteHeight * sprite.rect.width / sprite.rect.height, SpriteHeight) : new Vector2(23, 31);
+            headHalf = noteSize.x * .5f; stemHalf = noteSize.x * .06f;
             // A bar line per beat scrolls with the notes across all the lane's strings; drawn first, under everything.
             if (barHeight > 0)
                 for (int side = 0; side < 2; side++)
@@ -42,13 +61,18 @@ namespace StringAsASword.Presentation
                 {
                     strings[side, i] = MakeImage(root, $"HoldString_{side}_{i}", holdBody);
                     pegs[side, i] = MakeImage(root, $"HoldPeg_{side}_{i}", holdTail);
+                    if (!art) continue;
+                    pegs[side, i].rectTransform.localRotation = Lean(side);
+                    rails[side, i] = MakeImage(root, $"HoldRail_{side}_{i}", holdBody);
+                    for (int n = 0; n < 2; n++) beams[side, i, n] = MakeImage(root, $"Beam_{side}_{i}_{n}", null);
                 }
             for (int side = 0; side < 2; side++)
                 for (int i = 0; i < Slots; i++)
                 {
-                    var rect = PrototypeView.MakeRect(root, $"Note_{side}_{i}", Vector2.zero, new Vector2(23, 31));
-                    if (sprite != null)
+                    var rect = PrototypeView.MakeRect(root, $"Note_{side}_{i}", Vector2.zero, noteSize);
+                    if (art)
                     {
+                        rect.pivot = new Vector2(.5f, HeadPivot); rect.localRotation = Lean(side);
                         var image = rect.gameObject.AddComponent<Image>(); image.sprite = sprite;
                         image.preserveAspect = true; image.raycastTarget = false; notes[side, i] = image;
                         continue;
@@ -81,6 +105,8 @@ namespace StringAsASword.Presentation
             { resolvedBeat = last.Value.BeatId; resolvedAt = time; resolvedHit = last.Value.IsHit; }
             if (!last.HasValue) resolvedBeat = -1;
             double sinceResolve = time - resolvedAt;
+            if (art && (beamLinks == null || beamLinks.Length != game.Song.NoteCount))
+                beamLinks = BeamLinks(game.Timeline, game.Song.NoteCount, session.IsHold);
 
             // One slot before the nearest note keeps a just-passed note (or a held string) on screen.
             int first = Math.Max(0, game.Timeline.NearestBeat(time) - 1);
@@ -104,6 +130,14 @@ namespace StringAsASword.Presentation
                     glyph.rectTransform.anchoredPosition = new Vector2(Side(side, headX), noteY);
                     glyph.color = holding ? PrototypeView.Accent : headColor;
                 }
+                if (art)
+                {
+                    // The next note is only ever a tap here: hold notes are never beamed.
+                    double nextRemaining = game.Timeline.TimeOf(beat + 1) - time;
+                    bool nextVisible = active && beat + 1 < game.Song.NoteCount && nextRemaining <= approach &&
+                        beat + 1 != session.Gate.LastConsumedBeat && nextRemaining >= -.14;
+                    RenderBeams(i, inChart ? beamLinks[beat] : 0, headVisible, nextVisible, headX, X(nextRemaining, approach), headColor);
+                }
                 RenderBarLine(i, inChart && remaining <= approach && remaining >= 0, beat, X(remaining, approach));
                 RenderString(i, isHold && remaining <= approach, beat, session.HoldEnd(beat) - time, approach,
                     holding, consumed, beat < session.ClosedNotes, sinceResolve, headX, time);
@@ -124,6 +158,49 @@ namespace StringAsASword.Presentation
                 line.rectTransform.sizeDelta = new Vector2(2, barHeight);
                 line.rectTransform.anchoredPosition = new Vector2(Side(side, x), stringY);
             }
+        }
+        /// <summary>
+        /// links[n] is the number of beams joining note n to note n + 1: 0 for none, 1 inside a run of two, 2 inside a run of three.
+        /// Hold notes stand alone. Longer runs are split into threes and twos (4 = 2 + 2, 5 = 3 + 2, 7 = 3 + 2 + 2).
+        /// </summary>
+        public static int[] BeamLinks(IBeatTimeline timeline, int count, Func<int, bool> isHold)
+        {
+            var links = new int[count];
+            double fast = timeline.SecondsPerBeat * RunGapBeats;
+            for (int n = 0; n < count;)
+            {
+                int run = 1;
+                while (n + run < count && !isHold(n + run - 1) && !isHold(n + run) &&
+                    timeline.TimeOf(n + run) - timeline.TimeOf(n + run - 1) < fast) run++;
+                while (run > 0)
+                {
+                    int take = run == 3 || run >= 5 ? 3 : Math.Min(run, 2);
+                    for (int k = 0; k < take - 1; k++) links[n + k] = take - 1;
+                    n += take; run -= take;
+                }
+            }
+            return links;
+        }
+        // Beams run along the stem tops from this note to the next one in its run. Once the earlier note is gone,
+        // a short stub stays on the later note so it still reads as part of a run.
+        private void RenderBeams(int slot, int links, bool fromVisible, bool toVisible, float fromX, float toX, Color headColor)
+        {
+            bool visible = links > 0 && (fromVisible || toVisible);
+            float end = Mathf.Min(toX, spawnX), start = fromVisible ? fromX : end - BeamStub;
+            var color = new Color(headColor.r * SpriteTone, headColor.g * SpriteTone, headColor.b * SpriteTone, headColor.a);
+            float stem = SpriteHeight * (1 - HeadPivot), sin = Mathf.Sin(tilt), cos = Mathf.Cos(tilt);
+            for (int side = 0; side < 2; side++)
+                for (int n = 0; n < 2; n++)
+                {
+                    var beam = beams[side, slot, n];
+                    beam.gameObject.SetActive(visible && n < links);
+                    if (!visible || n >= links) continue;
+                    beam.color = color;
+                    beam.rectTransform.sizeDelta = new Vector2(end - start + 2 * stemHalf, BeamThickness);
+                    // Each beam sits on the leaning stems: further up the stem is also further toward the board.
+                    float along = stem - BeamThickness * .5f - n * (BeamThickness + BeamGap);
+                    beam.rectTransform.anchoredPosition = new Vector2(Side(side, (start + end) * .5f - along * sin), stringY + along * cos);
+                }
         }
         private void RenderString(int slot, bool candidate, int beat, double endRemaining, double approach,
             bool holding, bool consumed, bool headClosed, double sinceResolve, float headX, double time)
@@ -146,17 +223,28 @@ namespace StringAsASword.Presentation
                 startX = Mathf.Max(headX, targetX) + SnapGap;
             }
             else color = new Color(PrototypeView.InkWhite.r, PrototypeView.InkWhite.g, PrototypeView.InkWhite.b, .75f);
+            // The rails leave from the head's outer tip, not from inside the hollow head.
+            if (art && startX == headX) startX += headHalf;
             float endX = Mathf.Min(X(endRemaining, approach), spawnX);
             if (endX <= startX) visible = false;
             for (int side = 0; side < 2; side++)
             {
                 var body = strings[side, slot]; var peg = pegs[side, slot];
                 body.gameObject.SetActive(visible); peg.gameObject.SetActive(visible);
+                if (art)
+                {
+                    // The second rail of the hold note's double line.
+                    var rail = rails[side, slot];
+                    rail.gameObject.SetActive(visible);
+                    rail.color = color;
+                    rail.rectTransform.sizeDelta = new Vector2(endX - startX, thickness);
+                    rail.rectTransform.anchoredPosition = new Vector2(Side(side, (startX + endX) * .5f), stringY - RailOffset);
+                }
                 if (!visible) continue;
                 body.color = peg.color = color;
                 body.rectTransform.sizeDelta = new Vector2(endX - startX, thickness);
-                body.rectTransform.anchoredPosition = new Vector2(Side(side, (startX + endX) * .5f), stringY);
-                peg.rectTransform.sizeDelta = new Vector2(PegWidth, PegHeight);
+                body.rectTransform.anchoredPosition = new Vector2(Side(side, (startX + endX) * .5f), art ? stringY + RailOffset : stringY);
+                peg.rectTransform.sizeDelta = new Vector2(PegWidth, art ? RailPegHeight : PegHeight);
                 peg.rectTransform.anchoredPosition = new Vector2(Side(side, endX), stringY);
             }
         }
@@ -182,5 +270,6 @@ namespace StringAsASword.Presentation
         }
         private float X(double remaining, double approach) => Mathf.LerpUnclamped(targetX, spawnX, (float)(remaining / approach));
         private static float Side(int side, float distance) => side == 0 ? -distance : distance;
+        private Quaternion Lean(int side) => Quaternion.Euler(0, 0, (side == 0 ? -tilt : tilt) * Mathf.Rad2Deg);
     }
 }
