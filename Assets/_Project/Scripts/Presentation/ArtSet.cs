@@ -48,10 +48,11 @@ namespace StringAsASword.Presentation
         [Tooltip("Vertical field of view for a perspective board camera. 0 = orthographic.")]
         public float cameraFieldOfView;
 
-        [Header("Telegraph marks (cell-sized quads; duplicate Art/Materials/ArtCutout.mat and set the texture)")]
-        public Material eitherMark;
-        public Material guardMark;
-        public Material dodgeMark;
+        [Header("Attack tiles (cell-sized quads). Two kinds, drawn by the Telegraph Tile shader")]
+        [Tooltip("Normal attack tile (guard or leave). String As a Sword > Art > Set Up Telegraph Tiles builds it from the Telegraph Tile shader.")]
+        public Material normalMark;
+        [Tooltip("Strong attack tile: a guard does not protect.")]
+        public Material strongMark;
         public Material impactMark;
 
         [Header("2D UI")]

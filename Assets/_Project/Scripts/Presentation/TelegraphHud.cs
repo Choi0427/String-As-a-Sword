@@ -16,9 +16,10 @@ namespace StringAsASword.Presentation
         public static string ResponseWord(AttackResponse response)
             => response == AttackResponse.GuardOnly ? "GUARD" : response == AttackResponse.DodgeOnly ? "MOVE" : "EITHER";
 
-        // Tints follow the guard pose and the gold attack edge; Either keeps the caller's own colour.
-        public static Color ResponseColor(AttackResponse response, Color either)
-            => response == AttackResponse.DodgeOnly ? new Color(1f, .72f, .25f) : response == AttackResponse.GuardOnly ? new Color(.45f, .85f, 1f) : either;
+        // Two kinds on screen: a strong attack (a guard does not protect) takes the gold of the attack edge;
+        // a normal one, guard-only included, keeps the caller's own colour.
+        public static Color ResponseColor(AttackResponse response, Color normal)
+            => response == AttackResponse.DodgeOnly ? new Color(1f, .72f, .25f) : normal;
 
         public static string ThreatText(AttackResponse response, int remaining, int hits)
         {

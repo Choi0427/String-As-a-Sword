@@ -28,6 +28,10 @@ namespace StringAsASword.Presentation
         // Label and Bar build into this layer: the root, or the detail layer that is hidden by default.
         private RectTransform layer;
         private UnityEngine.UI.Image[] judgeLines;
+        // White glow behind the delivered lane art's judge lines; null with the prototype lanes.
+        private UnityEngine.UI.Image[] judgeGlows;
+        private const float JudgeGlowWidth = 44;
+        private static Sprite glowSprite;
         public Material BoardMaterial => boardMaterial;
         public ArtSet Art => art;
         public BoardWorldPresenter BoardWorld => boardWorld;
@@ -146,7 +150,7 @@ namespace StringAsASword.Presentation
             patternList.alignment = TextAlignmentOptions.TopLeft;
             stats = Label("", new Vector2(573,-318), new Vector2(330,85), 14, Muted);
             Label("PERFECT +/-70 ms   /   GOOD +/-140 ms", new Vector2(573,-375), new Vector2(370,22), 12, Muted);
-            Label("/// EITHER   /   SHIELD GUARD   /   ARROWS MOVE   /   X IMPACT\nNUMBER = NOTES LEFT   /   +N = EXTRA ATTACKS", new Vector2(-573,-365), new Vector2(400,45), 12, Muted);
+            Label("GLOW NORMAL   /   /// STRONG, NO GUARD   /   X IMPACT\nNUMBER = NOTES LEFT   /   +N = EXTRA ATTACKS", new Vector2(-573,-365), new Vector2(400,45), 12, Muted);
             beatLabel = Label("BEAT  --", new Vector2(0,-292), new Vector2(320,26), 13, Accent);
             position = Label("D4", new Vector2(0,-367), new Vector2(400,30), 14, Muted);
             attackHint = Label("", new Vector2(0,-342), new Vector2(600,25), 13, Accent);
@@ -242,15 +246,36 @@ namespace StringAsASword.Presentation
             float noteY = BoardCenter.y + far.y - (art.laneNoteString - art.laneStrings.x) * scaleY;
             float noteX = Mathf.Lerp(near.x, far.x, Mathf.InverseLerp(near.y, far.y, noteY - BoardCenter.y));
             Vector2 middle = (near + far) * .5f;
-            judgeLines = new UnityEngine.UI.Image[2];
+            judgeLines = new UnityEngine.UI.Image[2]; judgeGlows = new UnityEngine.UI.Image[2];
             for (int side = -1; side <= 1; side += 2)
             {
-                var line = Bar("JudgeLine", BoardCenter.x + side * middle.x, BoardCenter.y + middle.y, 4, (far - near).magnitude + 8, InkWhite);
-                line.rectTransform.localRotation = Quaternion.Euler(0, 0, side * tilt * Mathf.Rad2Deg);
-                judgeLines[(side + 1) / 2] = line;
+                var turn = Quaternion.Euler(0, 0, side * tilt * Mathf.Rad2Deg);
+                float x = BoardCenter.x + side * middle.x, y = BoardCenter.y + middle.y, length = (far - near).magnitude + 8;
+                // The glow is built first so the line draws over it.
+                var glow = Bar("JudgeGlow", x, y, JudgeGlowWidth, length + 12, Color.white);
+                glow.sprite = GlowSprite(); glow.rectTransform.localRotation = turn;
+                var line = Bar("JudgeLine", x, y, 4, length, Color.white);
+                line.rectTransform.localRotation = turn;
+                judgeLines[(side + 1) / 2] = line; judgeGlows[(side + 1) / 2] = glow;
             }
             // No scrolling bar lines here: the art has its own frets, and each note carries a stem.
             notes = new NotePresenter(root, art.noteSprite, art.holdBodySprite, art.holdTailSprite, noteX, ScreenEdge, noteY, 0, tilt);
+        }
+        // A soft white band: opaque along its centre line, fading out to both sides.
+        private static Sprite GlowSprite()
+        {
+            if (glowSprite != null) return glowSprite;
+            const int width = 64;
+            var texture = new Texture2D(width, 1, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
+            for (int x = 0; x < width; x++)
+            {
+                float fromCentre = Mathf.Abs((x + .5f) / width * 2 - 1);
+                texture.SetPixel(x, 0, new Color(1, 1, 1, Mathf.Pow(1 - fromCentre, 2)));
+            }
+            texture.Apply();
+            glowSprite = Sprite.Create(texture, new Rect(0, 0, width, 1), new Vector2(.5f, .5f));
+            glowSprite.hideFlags = HideFlags.HideAndDontSave;
+            return glowSprite;
         }
         private void BuildOverlay()
         {
@@ -381,7 +406,10 @@ namespace StringAsASword.Presentation
             beatLabel.text=game.CurrentBeat<0?"PREPARE":$"BEAT  {game.CurrentBeat+1:0000}   /   {game.CurrentBeat%4+1}:4";
             mode.text=game.Song.Music!=null?"SONG AUDIO":game.MetronomeMuted?"METRONOME / MUTED":"METRONOME / ON";
             // The judge lines flash on the beat pulse, then settle back to white.
-            foreach (var line in judgeLines) line.color = Color.Lerp(InkWhite, Accent, Mathf.Exp(-8 * pulseAge));
+            // With the glow, the lines stay white and the glow swells on the beat pulse instead.
+            if (judgeGlows != null)
+                foreach (var glow in judgeGlows) glow.color = new Color(1, 1, 1, Mathf.Lerp(.55f, 1, Mathf.Exp(-8 * pulseAge)));
+            else foreach (var line in judgeLines) line.color = Color.Lerp(InkWhite, Accent, Mathf.Exp(-8 * pulseAge));
             notes.Render(game);
             noiseLabel.text = game.Phases.PhaseId == 4 ? "FINAL PHASE\nALL MELODIES RECOVERED" : $"NOISE  {game.Noise.Collected} / {game.Noise.Required}" + (game.Noise.GoalReached ? "\nEMPTY HP TO UNLOCK" : game.Health.CurrentDepleted ? "\nCOLLECT TO UNLOCK NEXT HP" : "\nLAND ON A WAVE TO COLLECT");
             countIn.text=game.State==PrototypeState.CountIn?$"GET READY  {Mathf.Clamp((int)Math.Ceiling(-game.SongTime/game.Timeline.SecondsPerBeat),1,game.Song.CountInBeats)}": "TWO NOTES. ONE BEAT. ONE ACTION.";
@@ -439,7 +467,8 @@ namespace StringAsASword.Presentation
                 // Impact-only badges have no response left and keep the dark style.
                 var response = dangerCounts[i] > 0 ? dangerResponses[i] : AttackResponse.Either;
                 dangerBackgrounds[i].color = TelegraphHud.ResponseColor(response, BadgeDark);
-                dangerLabels[i].color = response == AttackResponse.Either ? InkWhite : BadgeDark;
+                // Only a strong attack's badge is tinted; every other badge is dark and needs the light number.
+                dangerLabels[i].color = response == AttackResponse.DodgeOnly ? BadgeDark : InkWhite;
             }
             for (int i = 0; i < 64; i++)
             {

@@ -34,7 +34,7 @@ namespace StringAsASword.Tests
             mark = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
             art.knightPrefab = knight; art.kingPrefab = king; art.noisePrefab = noise; art.boardPrefab = boardModel;
             art.backgroundLayers = new[] { new BackgroundLayer { sprite = layer, sway = new Vector2(6, 4), period = 3 } };
-            art.eitherMark = art.guardMark = art.dodgeMark = art.impactMark = mark;
+            art.normalMark = art.strongMark = art.impactMark = mark;
             art.attackVfx = art.guardVfx = art.hitVfx = art.blockVfx = art.pickupVfx = art.bossFireVfx = art.phaseVfx = vfx;
             yield return SceneManager.LoadSceneAsync("RhythmPrototype");
         }

@@ -17,39 +17,24 @@ namespace StringAsASword.Tests
             AssertMeshInsideCellAndFacingCamera((Mesh)build.Invoke(null, new object[] { impact }));
         }
 
-        [TestCase(AttackResponse.Either)]
-        [TestCase(AttackResponse.GuardOnly)]
-        [TestCase(AttackResponse.DodgeOnly)]
-        public void ResponseGeometryStaysInsideCellAndFacesCamera(AttackResponse response)
-            => AssertMeshInsideCellAndFacingCamera(ResponseMesh(response));
-
         [Test]
-        public void EachResponseHasItsOwnMarkShapeAboveTheBadgeStrip()
+        public void FallbackTilesComeInTwoKindsAndOnlyTheStrongOneIsHatched()
         {
-            Mesh either = ResponseMesh(AttackResponse.Either), guard = ResponseMesh(AttackResponse.GuardOnly), dodge = ResponseMesh(AttackResponse.DodgeOnly);
+            var build = typeof(BoardWorldPresenter).GetMethod("TelegraphMesh", BindingFlags.Static | BindingFlags.NonPublic, null, new[] { typeof(bool), typeof(bool) }, null);
+            Mesh normal = (Mesh)build.Invoke(null, new object[] { false, false }), strong = (Mesh)build.Invoke(null, new object[] { false, true });
             try
             {
-                Assert.That(guard.GetTriangles(1).Length, Is.Not.EqualTo(either.GetTriangles(1).Length));
-                Assert.That(dodge.GetTriangles(1).Length, Is.Not.EqualTo(guard.GetTriangles(1).Length));
-                Assert.That(dodge.GetTriangles(1).Length, Is.Not.EqualTo(either.GetTriangles(1).Length));
-                foreach (var mesh in new[] { guard, dodge })
+                // The frame is four quads of markings; hatching adds to it.
+                Assert.That(normal.GetTriangles(1).Length, Is.EqualTo(24));
+                Assert.That(strong.GetTriangles(1).Length, Is.GreaterThan(24));
+                foreach (var vertex in normal.vertices)
                 {
-                    var vertices = mesh.vertices;
-                    // The frame is the first four quads of markings; the symbol follows it.
-                    var triangles = mesh.GetTriangles(1);
-                    for (int i = 24; i < triangles.Length; i++)
-                    {
-                        Assert.That(vertices[triangles[i]].z, Is.GreaterThan(-.2f), "A countdown badge covers the lower strip of a cell.");
-                        Assert.That(Mathf.Abs(vertices[triangles[i]].x), Is.LessThan(.42f));
-                    }
+                    Assert.That(Mathf.Abs(vertex.x), Is.LessThan(.5f));
+                    Assert.That(Mathf.Abs(vertex.z), Is.LessThan(.5f));
                 }
             }
-            finally { Object.DestroyImmediate(either); Object.DestroyImmediate(guard); Object.DestroyImmediate(dodge); }
+            finally { Object.DestroyImmediate(normal); Object.DestroyImmediate(strong); }
         }
-
-        private static Mesh ResponseMesh(AttackResponse response)
-            => (Mesh)typeof(BoardWorldPresenter).GetMethod("TelegraphMesh", BindingFlags.Static | BindingFlags.NonPublic, null, new[] { typeof(AttackResponse) }, null)
-                .Invoke(null, new object[] { response });
 
         private static void AssertMeshInsideCellAndFacingCamera(Mesh mesh)
         {
@@ -91,10 +76,10 @@ namespace StringAsASword.Tests
             => Assert.That(TelegraphHud.ThreatText(response, remaining, hits), Is.EqualTo(expected));
 
         [Test]
-        public void ResponseColorTintsStrictResponsesAndKeepsEither()
+        public void ResponseColorTintsOnlyStrongAttacks()
         {
             Assert.That(TelegraphHud.ResponseColor(AttackResponse.DodgeOnly, Color.black), Is.EqualTo(new Color(1f, .72f, .25f)));
-            Assert.That(TelegraphHud.ResponseColor(AttackResponse.GuardOnly, Color.black), Is.EqualTo(new Color(.45f, .85f, 1f)));
+            Assert.That(TelegraphHud.ResponseColor(AttackResponse.GuardOnly, Color.black), Is.EqualTo(Color.black), "Guard-only is a normal attack on screen.");
             Assert.That(TelegraphHud.ResponseColor(AttackResponse.Either, Color.magenta), Is.EqualTo(Color.magenta));
         }
 

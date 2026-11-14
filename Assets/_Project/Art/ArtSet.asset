@@ -30,9 +30,8 @@ MonoBehaviour:
   cameraLift: 0
   cameraElevation: 35
   cameraFieldOfView: 30
-  eitherMark: {fileID: 0}
-  guardMark: {fileID: 0}
-  dodgeMark: {fileID: 0}
+  normalMark: {fileID: 2100000, guid: cfb4941d74cb7e34f81db90cfebbd654, type: 2}
+  strongMark: {fileID: 2100000, guid: 68ec3dcb7bdf36045874a17ddf642374, type: 2}
   impactMark: {fileID: 0}
   font: {fileID: 0}
   background: {fileID: 0}
@@ -58,6 +57,8 @@ MonoBehaviour:
   laneSprite: {fileID: 21300000, guid: cd5d76bcb9cf94e498cd3261a1d64cd2, type: 3}
   laneBoardGap: {x: 668, y: 1387}
   laneStrings: {x: 14, y: 128, z: 257}
+  laneNoteString: 190
+  laneRows: {x: 3, y: 6}
   laneBoardEdge: 4.38
   noteSprite: {fileID: 21300000, guid: 2b15bdc155187724d8b107e484c3a5ee, type: 3}
   holdBodySprite: {fileID: 0}

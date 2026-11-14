@@ -29,8 +29,10 @@ namespace StringAsASword.Presentation
         private Material materialTemplate;
         private Material outlineMaterial;
         private Color outlineAccent, outlineColor;
-        // One pool per AttackResponse, indexed by its value.
-        private readonly GameObject[][] warnings = { new GameObject[64], new GameObject[64], new GameObject[64] };
+        // Two tile kinds: normal (guard or leave) and strong (a guard does not protect: AttackResponse.DodgeOnly).
+        // A full-board GuardOnly attack is a normal attack with nowhere to go, so it shows the normal tile.
+        private const int NormalTile = 0, StrongTile = 1;
+        private readonly GameObject[][] warnings = { new GameObject[64], new GameObject[64] };
         private readonly GameObject[] impacts = new GameObject[64];
         private int lastClosedNote = -1;
         private float impactAge = 1;
@@ -269,21 +271,19 @@ namespace StringAsASword.Presentation
         {
             var dark = Material(new Color(.045f, .055f, .065f));
             var white = Material(new Color(.97f, .97f, .94f));
-            // Each response is already its own shape; the tint only backs it up.
-            var guard = Material(TelegraphHud.ResponseColor(AttackResponse.GuardOnly, Color.white));
-            var dodge = Material(TelegraphHud.ResponseColor(AttackResponse.DodgeOnly, Color.white));
             Mesh impact = TelegraphMesh(true);
             resources.Add(impact);
             var materials = new[] { dark, white };
             Mesh quad = null;
-            for (int response = 0; response < warnings.Length; response++)
+            for (int kind = 0; kind < warnings.Length; kind++)
             {
-                Mesh warning = TelegraphMesh((AttackResponse)response);
-                resources.Add(warning);
-                var marks = new[] { dark, response == (int)AttackResponse.GuardOnly ? guard : response == (int)AttackResponse.DodgeOnly ? dodge : white };
-                var delivered = response == (int)AttackResponse.GuardOnly ? art.guardMark : response == (int)AttackResponse.DodgeOnly ? art.dodgeMark : art.eitherMark;
+                bool strong = kind == StrongTile;
+                // Delivered tiles are one quad drawn by the Telegraph Tile shader. Without them: a bare frame, hatched when strong.
+                var delivered = strong ? art.strongMark : art.normalMark;
+                Mesh warning; Material[] marks;
                 if (delivered != null) { warning = quad ?? (quad = MarkQuad()); marks = new[] { delivered }; }
-                for (int i = 0; i < 64; i++) warnings[response][i] = TelegraphCell((AttackResponse)response + "Warning", i, warning, marks);
+                else { warning = TelegraphMesh(false, strong); resources.Add(warning); marks = materials; }
+                for (int i = 0; i < 64; i++) warnings[kind][i] = TelegraphCell(strong ? "StrongWarning" : "NormalWarning", i, warning, marks);
             }
             if (art.impactMark != null) { impact = quad ?? (quad = MarkQuad()); materials = new[] { art.impactMark }; }
             for (int i = 0; i < 64; i++) impacts[i] = TelegraphCell("Impact", i, impact, materials);
@@ -332,8 +332,9 @@ namespace StringAsASword.Presentation
             {
                 bool fired = impactAge < .3f && (impactCells & (1UL << i)) != 0;
                 bool warning = !fired && cellCounts[i] > 0;
-                for (int response = 0; response < warnings.Length; response++)
-                    warnings[response][i].SetActive(warning && (int)cellResponses[i] == response);
+                int tile = cellResponses[i] == AttackResponse.DodgeOnly ? StrongTile : NormalTile;
+                for (int kind = 0; kind < warnings.Length; kind++)
+                    warnings[kind][i].SetActive(warning && kind == tile);
                 impacts[i].SetActive(fired);
             }
             // The knight's pedestal covers its own cell's mark, so the outline carries that cell's response.
@@ -346,7 +347,9 @@ namespace StringAsASword.Presentation
                 if (outlineMaterial.HasProperty("_BaseColor")) outlineMaterial.SetColor("_BaseColor", outline);
             }
         }
-        private static Mesh TelegraphMesh(bool impact)
+        private static Mesh TelegraphMesh(bool impact) => TelegraphMesh(impact, true);
+        // The fallback marks: a dark underlay and a frame, plus an X (impact) or diagonal hatching (strong) when striped.
+        private static Mesh TelegraphMesh(bool impact, bool striped)
         {
             var vertices = new List<Vector3>();
             var underlay = new List<int>(); var markings = new List<int>();
@@ -376,54 +379,8 @@ namespace StringAsASword.Presentation
                 Quad(side - .012f, -.46f, side + .012f, .46f, .024f, markings);
             }
             if (impact) { Stripe(-.035f, 1, .07f); Stripe(-.035f, -1, .07f); }
-            else for (int stripe = -3; stripe <= 3; stripe++) Stripe(stripe * .22f, 1, .035f);
-            var mesh = new Mesh { name = impact ? "Impact Cross" : "Warning Hatching", subMeshCount = 2 };
-            mesh.SetVertices(vertices); mesh.SetTriangles(underlay, 0); mesh.SetTriangles(markings, 1);
-            mesh.RecalculateNormals(); mesh.RecalculateBounds(); return mesh;
-        }
-        // Marks sit above the cell's lower strip, where a countdown badge covers them.
-        private static Mesh TelegraphMesh(AttackResponse response)
-        {
-            if (response == AttackResponse.Either) return TelegraphMesh(false);
-            var vertices = new List<Vector3>();
-            var underlay = new List<int>(); var markings = new List<int>();
-            void Quad(Vector2 a, Vector2 b, Vector2 c, Vector2 d, float height, List<int> triangles)
-            {
-                int start = vertices.Count;
-                vertices.Add(new Vector3(a.x, height, a.y)); vertices.Add(new Vector3(b.x, height, b.y));
-                vertices.Add(new Vector3(c.x, height, c.y)); vertices.Add(new Vector3(d.x, height, d.y));
-                triangles.AddRange(new[] { start, start + 1, start + 2, start, start + 2, start + 3 });
-            }
-            void Line(Vector2 from, Vector2 to, float width)
-            {
-                Vector2 along = (to - from).normalized * width / 2, across = new Vector2(-along.y, along.x);
-                from -= along; to += along;
-                Quad(from - across, from + across, to + across, to - across, .024f, markings);
-            }
-            Quad(new Vector2(-.46f, -.46f), new Vector2(-.46f, .46f), new Vector2(.46f, .46f), new Vector2(.46f, -.46f), .015f, underlay);
-            foreach (float side in new[] { -.45f, .45f })
-            {
-                Line(new Vector2(-.45f, side), new Vector2(.45f, side), .024f);
-                Line(new Vector2(side, -.45f), new Vector2(side, .45f), .024f);
-            }
-            if (response == AttackResponse.GuardOnly)
-            {
-                // The same silhouette as the knight's guard pose.
-                var outline = new[] { new Vector2(-.25f, .37f), new Vector2(.25f, .37f), new Vector2(.21f, .05f), new Vector2(0, -.13f), new Vector2(-.21f, .05f) };
-                for (int i = 0; i < outline.Length; i++) Line(outline[i], outline[(i + 1) % outline.Length], .055f);
-                Line(new Vector2(0, .27f), new Vector2(0, .03f), .045f);
-            }
-            else
-            {
-                // Four ways out: the safe direction depends on the attack, so no single arrow can be honest.
-                var center = new Vector2(0, .13f);
-                foreach (var way in new[] { Vector2.up, Vector2.right, Vector2.down, Vector2.left })
-                {
-                    Vector2 tip = center + way * .27f, wing = new Vector2(-way.y, way.x) * .09f, back = center + way * .17f;
-                    Line(center, tip, .045f); Line(back + wing, tip, .045f); Line(back - wing, tip, .045f);
-                }
-            }
-            var mesh = new Mesh { name = response + " Warning", subMeshCount = 2 };
+            else if (striped) for (int stripe = -3; stripe <= 3; stripe++) Stripe(stripe * .22f, 1, .035f);
+            var mesh = new Mesh { name = impact ? "Impact Cross" : striped ? "Warning Hatching" : "Warning Frame", subMeshCount = 2 };
             mesh.SetVertices(vertices); mesh.SetTriangles(underlay, 0); mesh.SetTriangles(markings, 1);
             mesh.RecalculateNormals(); mesh.RecalculateBounds(); return mesh;
         }
