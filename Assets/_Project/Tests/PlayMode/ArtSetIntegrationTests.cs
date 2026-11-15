@@ -90,6 +90,9 @@ namespace StringAsASword.Tests
             Assert.That(board.LightBelow, Is.False);
             board.SetBreak(2.5f);
             Assert.That(board.LightBelow, Is.True, "once the king falls, light shows between the fragments");
+            Assert.That(board.LightInCracks, Is.True, "and stands in the cracks between them");
+            board.SetBreak(2);
+            Assert.That(board.LightInCracks, Is.False, "not while the battle is still on");
             board.SetBreak(0);
             Assert.That(board.LightBelow, Is.False);
             Assert.That(boardWorld.Find("Board Model").gameObject.activeSelf, Is.True);

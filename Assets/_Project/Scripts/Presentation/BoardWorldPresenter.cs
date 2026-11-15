@@ -222,6 +222,7 @@ namespace StringAsASword.Presentation
                 lightGlow = Sheet("Light Glow", 1, 3020, out glowMaterial);
                 lightGlow.localRotation = BoardCamera.transform.localRotation * Quaternion.Euler(-90, 0, 0);
                 glowMaterial.SetFloat("_ZTest", (float)UnityEngine.Rendering.CompareFunction.Always);
+                if (boardShards != null) BuildLightBlades();
             }
             var random = new System.Random(87);
             float Next() => (float)random.NextDouble();
@@ -254,6 +255,52 @@ namespace StringAsASword.Presentation
                 rubble.Add(chip);
             }
         }
+        private GameObject lightBlades;
+        private Material bladeMaterial;
+        /// <summary>The light that stands in the cracks of the centre is shown (from the king's fall on).</summary>
+        public bool LightInCracks => lightBlades != null && lightBlades.activeSelf;
+        // A thin sheet of light stands on every crack between two centre fragments and leans away from the centre,
+        // bright at the crack and fading upward. Together they read as light leaking out along the cracks.
+        private void BuildLightBlades()
+        {
+            var seen = new HashSet<long>();
+            var positions = new List<Vector3>(); var lifts = new List<Vector3>(); var uvs = new List<Vector2>(); var traits = new List<Vector2>();
+            var triangles = new List<int>();
+            var random = new System.Random(53);
+            long Key(Vector2 p) => (long)Mathf.RoundToInt((p.x + 8) * 500) * 100000 + Mathf.RoundToInt((p.y + 8) * 500);
+            foreach (var outline in FragmentOutlines())
+                for (int i = 0; i < outline.Count; i++)
+                {
+                    Vector2 a = outline[i], b = outline[(i + 1) % outline.Count], middle = (a + b) / 2;
+                    // Two fragments share each crack: one blade for both. None on the border of the cut, which would draw its square.
+                    long ka = Key(a), kb = Key(b);
+                    if (!seen.Add(System.Math.Min(ka, kb) * 10000000000L + System.Math.Max(ka, kb))) continue;
+                    if (Mathf.Max(Mathf.Abs(middle.x), Mathf.Abs(middle.y)) > FragmentHalf - .01f || (b - a).sqrMagnitude < .0004f) continue;
+                    float chance = (float)random.NextDouble(), distance = middle.magnitude;
+                    Vector3 outward = distance > .05f ? new Vector3(middle.x, 0, middle.y) / distance : Vector3.zero;
+                    // The upper edge is lifted in the shader by this much per unit of reach: up and about 30 degrees outward.
+                    Vector3 lift = (Vector3.up * .87f + outward * .5f) * (.55f + .9f * chance);
+                    int first = positions.Count;
+                    positions.Add(new Vector3(a.x, stoneLow - .004f, a.y)); positions.Add(new Vector3(b.x, stoneLow - .004f, b.y));
+                    positions.Add(positions[first]); positions.Add(positions[first + 1]);
+                    lifts.Add(Vector3.zero); lifts.Add(Vector3.zero); lifts.Add(lift); lifts.Add(lift);
+                    uvs.Add(new Vector2(0, 0)); uvs.Add(new Vector2(1, 0)); uvs.Add(new Vector2(0, 1)); uvs.Add(new Vector2(1, 1));
+                    // x: when it lights up, from the centre outward. y: its own strength and flicker.
+                    var trait = new Vector2(Mathf.Clamp01(distance / FragmentHalf), chance);
+                    for (int k = 0; k < 4; k++) traits.Add(trait);
+                    triangles.AddRange(new[] { first, first + 2, first + 1, first + 1, first + 2, first + 3 });
+                }
+            var mesh = new Mesh { name = "Light Blades" };
+            mesh.SetVertices(positions); mesh.SetNormals(lifts); mesh.SetUVs(0, uvs); mesh.SetUVs(1, traits); mesh.SetTriangles(triangles, 0);
+            // The shader moves the upper edges: bounds that hold the tallest blade.
+            mesh.bounds = new Bounds(Vector3.zero, new Vector3(16, 12, 16)); resources.Add(mesh);
+            bladeMaterial = new Material(crackMaterial) { name = "Light Blades", renderQueue = 3005 }; resources.Add(bladeMaterial);
+            bladeMaterial.SetFloat("_Mode", 4);
+            lightBlades = new GameObject("Light Blades", typeof(MeshFilter), typeof(MeshRenderer));
+            lightBlades.transform.SetParent(world.transform, false);
+            lightBlades.GetComponent<MeshFilter>().sharedMesh = mesh; lightBlades.GetComponent<MeshRenderer>().sharedMaterial = bladeMaterial;
+            lightBlades.SetActive(false);
+        }
         /// <summary>Shows a break stage at once (0..3). During play Render sets it from the song position.</summary>
         public void SetBreak(float stage)
         {
@@ -276,9 +323,18 @@ namespace StringAsASword.Presentation
                 // Pieces that sank at stage 2 are still coming back up: the light starts below the deepest of them
                 // and rises with them, or it would lie over them as flat white patches.
                 lightFloor.localPosition = new Vector3(0, lightFloorY - .16f * (1 - gap), 0);
-                float glow = (1.2f + 2.2f * leak + 16 * burst * burst) / 8;
+                if (lightBlades != null)
+                {
+                    lightBlades.SetActive(lit);
+                    // The blades come up from the centre outward, grow to the end of the song, jump at the burst and are lost in its light.
+                    bladeMaterial.SetFloat("_Light", leak + burst);
+                    bladeMaterial.SetFloat("_Reach", .25f + .75f * Mathf.SmoothStep(0, 1, leak) + 1.4f * Mathf.Clamp01(burst * 3));
+                    bladeMaterial.SetColor("_LightColor", new Color(1, 1, 1, 1 - Mathf.InverseLerp(.45f, .85f, burst)));
+                }
+                // Until the burst the glow only marks the hole: the light belongs to the cracks.
+                float glow = (.7f + 1.1f * leak + 16 * burst * burst) / 8;
                 lightGlow.localScale = new Vector3(glow, 1, glow);
-                glowMaterial.SetFloat("_Light", Mathf.Clamp01(.45f * leak + 1.3f * burst));
+                glowMaterial.SetFloat("_Light", Mathf.Clamp01(.28f * leak + 1.3f * burst));
                 float rays = (5 + 20 * burst) / 8;
                 lightRays.localScale = new Vector3(rays, 1, rays);
                 rayMaterial.SetFloat("_Light", Mathf.Clamp01(burst * 2.5f));

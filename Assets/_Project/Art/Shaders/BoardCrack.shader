@@ -1,7 +1,8 @@
 // Cracks over the whole chessboard, drawn from one board-sized quad's UVs with no texture:
 // dark cracks that spread as _Crack rises, then white light that runs along them from the centre outward (_Light).
 // The centre itself is real geometry (fragments over a white floor), so _Hole hides this overlay there.
-// _Mode draws the light that goes with it from the same shader: 1 a soft glow, 2 rays from the centre, 3 plain light.
+// _Mode draws the light that goes with it from the same shader: 1 a soft glow, 2 rays from the centre, 3 plain light,
+// 4 blades of light standing in the cracks (their own mesh: the normal is how far an upper vertex is lifted).
 Shader "String As a Sword/Board Crack"
 {
     Properties
@@ -12,7 +13,8 @@ Shader "String As a Sword/Board Crack"
         _CrackColor ("Crack Color", Color) = (0.02, 0.022, 0.028, 1)
         _LightColor ("Light Color", Color) = (1, 1, 1, 1)
         _HoleRadius ("Radius of the hidden centre (cells)", Float) = 2.7
-        _Mode ("0 cracks, 1 glow, 2 rays, 3 plain light", Float) = 0
+        _Mode ("0 cracks, 1 glow, 2 rays, 3 plain light, 4 blades", Float) = 0
+        _Reach ("Blades: height (cells)", Float) = 1
         [Enum(UnityEngine.Rendering.CompareFunction)] _ZTest ("ZTest", Float) = 4
     }
     SubShader
@@ -34,16 +36,25 @@ Shader "String As a Sword/Board Crack"
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _CrackColor, _LightColor;
-                half _Crack, _Light, _Hole, _HoleRadius, _Mode;
+                half _Crack, _Light, _Hole, _HoleRadius, _Mode, _Reach;
             CBUFFER_END
 
-            struct Attributes { float4 positionOS : POSITION; float2 uv : TEXCOORD0; };
-            struct Varyings { float4 positionCS : SV_POSITION; float2 uv : TEXCOORD0; };
+            struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; float2 uv : TEXCOORD0; float2 trait : TEXCOORD1; };
+            struct Varyings { float4 positionCS : SV_POSITION; float2 uv : TEXCOORD0; float3 blade : TEXCOORD1; };
 
             Varyings Vert(Attributes input)
             {
                 Varyings output;
-                output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
+                float3 position = input.positionOS.xyz;
+                output.blade = 0;
+                if (_Mode > 3.5)
+                {
+                    // Blades near the centre come up first (trait.x is the distance from it, 0..1).
+                    float up = saturate((_Light * 1.7 - input.trait.x) / 0.7);
+                    position += input.normalOS * (_Reach * up);
+                    output.blade = float3(input.trait, up);
+                }
+                output.positionCS = TransformObjectToHClip(position);
                 output.uv = input.uv;
                 return output;
             }
@@ -87,6 +98,17 @@ Shader "String As a Sword/Board Crack"
 
             half4 Frag(Varyings input) : SV_Target
             {
+                if (_Mode > 3.5)
+                {
+                    // Bright at the crack, gone at the top and at both ends, with streaks that drift so it is never still.
+                    float rise = pow(saturate(1 - input.uv.y), 1.7);
+                    float ends = smoothstep(0, 0.15, input.uv.x) * smoothstep(1, 0.85, input.uv.x);
+                    float streaks = 0.5 + 0.5 * Noise(float2(input.uv.x * 5 + input.blade.y * 37, _Time.y * 0.9 + input.blade.y * 11));
+                    float2 view = input.positionCS.xy / _ScreenParams.xy;
+                    float inside = smoothstep(0, 0.14, min(min(view.x, 1 - view.x), min(view.y, 1 - view.y)));
+                    float strength = rise * ends * streaks * (0.45 + 0.6 * input.blade.y) * input.blade.z;
+                    return half4(_LightColor.rgb, saturate(strength) * _LightColor.a * inside);
+                }
                 if (_Mode > 2.5) return half4(_LightColor.rgb, 1);
                 if (_Mode > 0.5)
                 {
