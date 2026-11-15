@@ -294,7 +294,22 @@ namespace StringAsASword.Presentation
             var quit=quitRect.gameObject.AddComponent<UnityEngine.UI.Button>(); quit.targetGraphic=quitImage;
             quit.onClick.AddListener(game.QuitGame);
             Text(quitRect,"Label",Core.GameFlow.HasMenu?"MAIN MENU":"QUIT GAME",Vector2.zero,new Vector2(270,50),17,InkWhite);
+            // Developer mode: restart in a phase, toggle invincibility. Shown under the card while the mode is on.
+            devStrip=MakeRect(dim,"DevStrip",new Vector2(0,-240),new Vector2(660,90)).gameObject; Image((RectTransform)devStrip.transform,new Color(.07f,.085f,.10f));
+            Text(devStrip.transform,"Title","DEVELOPER MODE    F1-F4 PHASE / F5 INVINCIBLE / F6 BOSS HP",new Vector2(0,28),new Vector2(640,24),13,Muted);
+            for(int i=0;i<6;i++)
+            {
+                int index=i;
+                var rect=MakeRect(devStrip.transform,i<4?"Phase"+(i+1):i==4?"Invincible":"BossHp",new Vector2(i<4?-282+90*i:i==4?118:262,-12),new Vector2(i<4?84:i==4?150:130,40));
+                devButtons[i]=Image(rect,InkWhite); devButtons[i].raycastTarget=true;
+                var dev=rect.gameObject.AddComponent<UnityEngine.UI.Button>(); dev.targetGraphic=devButtons[i];
+                dev.onClick.AddListener(()=>{ if(index<4) game.DevGoToPhase(index+1); else if(index==4) game.DevSetInvincible(!Core.GameFlow.Invincible); else game.DevSetBossHp(Core.GameFlow.BossHpOff); });
+                devLabels[i]=Text(rect,"Label",i<4?"PHASE "+(i+1):"",Vector2.zero,new Vector2(146,36),14,InkWhite);
+            }
         }
+        private GameObject devStrip;
+        private readonly UnityEngine.UI.Image[] devButtons=new UnityEngine.UI.Image[6];
+        private readonly TMP_Text[] devLabels=new TMP_Text[6];
         public void ResetFeedback()
         {
             feedback.text="FIND YOUR RHYTHM"; timing.text="Follow the two mirrored notes";
@@ -412,7 +427,7 @@ namespace StringAsASword.Presentation
             else foreach (var line in judgeLines) line.color = Color.Lerp(InkWhite, Accent, Mathf.Exp(-8 * pulseAge));
             notes.Render(game);
             noiseLabel.text = game.Phases.PhaseId == 4 ? "FINAL PHASE\nALL MELODIES RECOVERED" : $"NOISE  {game.Noise.Collected} / {game.Noise.Required}" + (game.Noise.GoalReached ? "\nEMPTY HP TO UNLOCK" : game.Health.CurrentDepleted ? "\nCOLLECT TO UNLOCK NEXT HP" : "\nLAND ON A WAVE TO COLLECT");
-            countIn.text=game.State==PrototypeState.CountIn?$"GET READY  {Mathf.Clamp((int)Math.Ceiling(-game.SongTime/game.Timeline.SecondsPerBeat),1,game.Song.CountInBeats)}": "TWO NOTES. ONE BEAT. ONE ACTION.";
+            countIn.text=game.State==PrototypeState.CountIn?$"GET READY  {Mathf.Clamp((int)Math.Ceiling(-game.SongTime/game.Timeline.SecondsPerBeat),1,game.Song.CountInBeats)}": game.Battle.Invincible || game.Battle.IgnoreBossHp ? "DEV MODE" + (game.Battle.Invincible ? " / INVINCIBLE" : "") + (game.Battle.IgnoreBossHp ? " / BOSS HP OFF" : "") : "TWO NOTES. ONE BEAT. ONE ACTION.";
             bool show=game.State==PrototypeState.Ready||game.State==PrototypeState.Paused||game.State==PrototypeState.Finished;
             overlay.SetActive(show);
             if(show)
@@ -421,6 +436,14 @@ namespace StringAsASword.Presentation
                 overlayTitle.text=game.State==PrototypeState.Paused?"SESSION PAUSED":game.State==PrototypeState.Finished?result:"FIND YOUR RHYTHM";
                 overlayBody.text=game.State==PrototypeState.Ready?"WASD move / J attack / K guard this note\nHatched: guard or move. Shield: guard. Arrows: move.\nNumbers count down to impact.\nAttack from row 8. Collect waves to unlock each phase.":$"Player HP {game.Battle.PlayerHp} / {game.Stage.PlayerMaxHp}    Phase {game.Phases.PhaseId} / 4\nPerfect {game.Session.PerfectCount}    Good {game.Session.GoodCount}    Miss {game.Session.MissCount}\nStart again with a fresh four-beat count-in.";
                 buttonLabel.text=game.State==PrototypeState.Ready?"START / SPACE":"RESTART / R OR SPACE";
+                devStrip.SetActive(Core.GameFlow.DevMode);
+                if(devStrip.activeSelf)
+                    for(int i=0;i<6;i++)
+                    {
+                        bool on=i<4?Core.GameFlow.StartPhase==i+1:i==4?Core.GameFlow.Invincible:!Core.GameFlow.BossHpOff;
+                        devButtons[i].color=on?InkWhite:new Color(.17f,.20f,.23f); devLabels[i].color=on?new Color(.06f,.08f,.09f):InkWhite;
+                        if(i==4) devLabels[i].text=on?"INVINCIBLE ON":"INVINCIBLE OFF"; if(i==5) devLabels[i].text=on?"BOSS HP ON":"BOSS HP OFF";
+                    }
             }
         }
         private void RenderTelegraphs()

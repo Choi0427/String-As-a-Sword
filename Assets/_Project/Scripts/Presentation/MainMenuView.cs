@@ -190,18 +190,47 @@ namespace StringAsASword.Presentation
         {
             var shade = Stretch(Rect(root, "Settings"));
             Image(shade, new Color(0, 0, 0, .72f)).raycastTarget = true;
-            var card = Rect(shade, "Card", Vector2.zero, new Vector2(820, 520));
+            var card = Rect(shade, "Card", Vector2.zero, new Vector2(820, 830));
             Image(card, Hex(0x0C0C0C)).raycastTarget = true;
-            Label(Rect(card, "Title", new Vector2(0, 205), new Vector2(700, 80)), "설정", 56, Menu, TextAlignmentOptions.Center);
-            SliderRow(card, 95, "음악 볼륨", 0, 100, Mathf.RoundToInt(GameFlow.MusicVolume * 100), v => GameFlow.MusicVolume = v / 100f, v => v + "%");
-            SliderRow(card, 0, "입력 싱크", -200, 200, GameFlow.InputOffsetMs, v => GameFlow.InputOffsetMs = v, v => (v > 0 ? "+" : "") + v + " ms");
-            SliderRow(card, -95, "화면 싱크", -200, 200, GameFlow.VisualOffsetMs, v => GameFlow.VisualOffsetMs = v, v => (v > 0 ? "+" : "") + v + " ms");
-            Label(Rect(card, "Help", new Vector2(0, -170), new Vector2(760, 40)), "입력 싱크: 판정이 늦으면 +   /   화면 싱크: 노트가 소리보다 늦게 보이면 -", 18, Footer, TextAlignmentOptions.Center);
-            var close = Rect(card, "Close", new Vector2(0, -222), new Vector2(200, 56));
+            Label(Rect(card, "Title", new Vector2(0, 360), new Vector2(700, 80)), "설정", 56, Menu, TextAlignmentOptions.Center);
+            SliderRow(card, 250, "음악 볼륨", 0, 100, Mathf.RoundToInt(GameFlow.MusicVolume * 100), v => GameFlow.MusicVolume = v / 100f, v => v + "%");
+            SliderRow(card, 155, "입력 싱크", -200, 200, GameFlow.InputOffsetMs, v => GameFlow.InputOffsetMs = v, v => (v > 0 ? "+" : "") + v + " ms");
+            SliderRow(card, 60, "화면 싱크", -200, 200, GameFlow.VisualOffsetMs, v => GameFlow.VisualOffsetMs = v, v => (v > 0 ? "+" : "") + v + " ms");
+            Label(Rect(card, "Help", new Vector2(0, -15), new Vector2(760, 40)), "입력 싱크: 판정이 늦으면 +   /   화면 싱크: 노트가 소리보다 늦게 보이면 -", 18, Footer, TextAlignmentOptions.Center);
+            // Developer mode: the two rows under it only show while it is on.
+            Image(Rect(card, "Rule", new Vector2(0, -57), new Vector2(720, 2)), Hex(0x333333));
+            ChoiceRow(card, -100, "개발자 모드", new[] { "꺼짐", "켜짐" }, () => GameFlow.DevMode ? 1 : 0, i => GameFlow.DevMode = i == 1);
+            var invincible = ChoiceRow(card, -165, "무적", new[] { "꺼짐", "켜짐" }, () => GameFlow.Invincible ? 1 : 0, i => GameFlow.Invincible = i == 1);
+            var bossHp = ChoiceRow(card, -230, "보스 HP", new[] { "꺼짐", "켜짐" }, () => GameFlow.BossHpOff ? 0 : 1, i => GameFlow.BossHpOff = i == 0);
+            var phase = ChoiceRow(card, -295, "시작 페이즈", new[] { "1", "2", "3", "4" }, () => GameFlow.StartPhase - 1, i => GameFlow.StartPhase = i + 1);
+            devRefresh += () => { invincible.SetActive(GameFlow.DevMode); phase.SetActive(GameFlow.DevMode); bossHp.SetActive(GameFlow.DevMode); };
+            devRefresh();
+            var close = Rect(card, "Close", new Vector2(0, -370), new Vector2(200, 56));
             Image(close, HoverBox).raycastTarget = true;
             Label(Stretch(Rect(close, "Label")), "닫기  ESC", 26, HoverText, TextAlignmentOptions.Center);
             close.gameObject.AddComponent<MenuButton>().Clicked = () => settingsPanel.SetActive(false);
             settingsPanel = shade.gameObject; settingsPanel.SetActive(false);
+        }
+        private Action devRefresh = () => { };
+        /// <summary>Developer mode: picks an option of a settings row as if it were clicked (0 = first).</summary>
+        public void ChooseSetting(string row, int option) => devChoices[row](option);
+        private readonly System.Collections.Generic.Dictionary<string, Action<int>> devChoices = new System.Collections.Generic.Dictionary<string, Action<int>>();
+        // A label and a few boxes to click; the chosen one is filled.
+        private GameObject ChoiceRow(RectTransform card, float y, string name, string[] options, Func<int> current, Action<int> set)
+        {
+            var row = Rect(card, name, new Vector2(0, y), new Vector2(760, 50));
+            Label(Rect(row, "Name", new Vector2(-250, 0), new Vector2(220, 50)), name, 30, Menu, TextAlignmentOptions.Left);
+            for (int i = 0; i < options.Length; i++)
+            {
+                int index = i;
+                var box = Rect(row, "Option " + options[i], new Vector2(-80 + 110 * i, 0), new Vector2(100, 46));
+                var fill = Image(box, HoverBox); fill.raycastTarget = true;
+                var text = Label(Stretch(Rect(box, "Label")), options[i], 24, Menu, TextAlignmentOptions.Center);
+                box.gameObject.AddComponent<MenuButton>().Clicked = () => devChoices[name](index);
+                devRefresh += () => { bool on = current() == index; fill.color = on ? HoverBox : Hex(0x1E1E1E); text.color = on ? HoverText : Menu; };
+            }
+            devChoices[name] = i => { set(i); devRefresh(); };
+            return row.gameObject;
         }
         private void SliderRow(RectTransform card, float y, string name, int min, int max, int value, Action<int> set, Func<int, string> show)
         {

@@ -86,7 +86,18 @@ namespace StringAsASword.Core
             CurrentBeat = -1; SessionId++;
             runSaved = false;
             Battle.Reset(SessionId, stage.NoiseSeed);
-            clock.Start(.30 + song.CountInBeats * Timeline.SecondsPerBeat + song.AudioStartOffset);
+            Battle.SkipToPhase(GameFlow.StartPhase);
+            // Developer mode: a later phase also starts later in the song, a count-in's length before its note.
+            double countIn = song.CountInBeats * Timeline.SecondsPerBeat;
+            double from = Timeline.TimeOf(DevPhaseNote(GameFlow.StartPhase)) - countIn;
+            if (from > 0)
+            {
+                // The skipped notes pass unplayed and unhurt, so the attacks, the noise and the board are where the song is.
+                Battle.Invincible = true; Battle.Advance(from);
+                clock.Start(.30 - from);
+            }
+            else clock.Start(.30 + countIn + song.AudioStartOffset);
+            Battle.Invincible = GameFlow.Invincible; Battle.IgnoreBossHp = GameFlow.BossHpOff;
             previousTime = SongTime;
             State = PrototypeState.CountIn; view.ResetFeedback();
             audioPlayer.Begin(song, clock, Timeline);
@@ -113,9 +124,48 @@ namespace StringAsASword.Core
             Application.Quit();
 #endif
         }
+        /// <summary>Developer mode: restarts the battle in this phase (1..4), at the place in the song where it usually opens.</summary>
+        public void DevGoToPhase(int phase)
+        {
+            if (!GameFlow.DevMode) return;
+            GameFlow.StartPhase = phase; StartSession();
+        }
+        /// <summary>
+        /// The note a phase is taken to start on. Phases open when the player empties the boss, not at fixed notes, so this is
+        /// an estimate: the share of boss HP before the phase, as a share of the notes before the finishing run, moved back
+        /// to the start of its chart section.
+        /// </summary>
+        private static readonly string[] DevPhaseSections = { "간주2", "Interlude", "싸비3" };
+        public int DevPhaseNote(int phase)
+        {
+            var settings = Battle.Settings;
+            if (phase <= 1) return 0;
+            // Chosen by hand for the boss chart; the estimate below is for charts without these sections.
+            if (settings.Chart != null && phase <= 4)
+                foreach (var section in settings.Chart.Sections) if (section.Name == DevPhaseSections[phase - 2]) return section.From;
+            int total = 0, before = 0;
+            for (int i = 0; i < settings.Health.Length; i++) { total += settings.Health[i]; if (i < phase - 1) before += settings.Health[i]; }
+            int note = (int)((long)(settings.HasFinale ? settings.FinishNote : settings.NoteCount) * before / total);
+            if (settings.Chart != null)
+                foreach (var section in settings.Chart.Sections) if (section.From <= note && note <= section.To) note = section.From;
+            return note;
+        }
+        public void DevSetInvincible(bool on)
+        {
+            if (!GameFlow.DevMode) return;
+            GameFlow.Invincible = on; Battle.Invincible = on;
+        }
+        public void DevSetBossHp(bool on)
+        {
+            if (!GameFlow.DevMode) return;
+            GameFlow.BossHpOff = !on; Battle.IgnoreBossHp = !on;
+        }
         private void OnCommand(string command)
         {
             if (State == PrototypeState.Finale || State == PrototypeState.Epilogue) return; // The ending plays through.
+            if (command.StartsWith("dev-phase")) { DevGoToPhase(command[command.Length - 1] - '0'); return; }
+            if (command == "dev-invincible") { DevSetInvincible(!GameFlow.Invincible); return; }
+            if (command == "dev-bosshp") { DevSetBossHp(GameFlow.BossHpOff); return; }
             if (command == "restart" || command == "start" && State != PrototypeState.Playing && State != PrototypeState.CountIn) StartSession();
             else if (command == "pause") PauseSession();
             else if (command == "mute") audioPlayer.ToggleMute();
