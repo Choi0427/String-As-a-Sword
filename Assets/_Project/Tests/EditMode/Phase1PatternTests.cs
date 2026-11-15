@@ -74,6 +74,16 @@ namespace StringAsASword.Tests
             Assert.That(published.Max(e => e.impactNote), Is.GreaterThan(233), "phase 3 shapes are reached");
         }
 
+        // The board cracks where the boss's attacks change: after chorus 1 and chorus 2.
+        [Test]
+        public void StageChartNamesTheChorusEndsTheBoardBreaksOn()
+        {
+            var chart = BossChart.Parse(File.ReadAllText(BossChartValidator.DefaultChartPath));
+            Assert.That(chart.ChorusEnd(1), Is.EqualTo(123));
+            Assert.That(chart.ChorusEnd(2), Is.EqualTo(233));
+            Assert.That(chart.ChorusEnd(9), Is.EqualTo(-1));
+        }
+
         // Hand-computed cells, checked against the runtime (not the fixture's own expectation).
         [Test]
         public void AnchoredShapesMoveAndClipAtTheEdges()

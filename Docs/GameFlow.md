@@ -9,11 +9,12 @@
 | 메인화면 | `MainMenu` | `MainMenuView` | 피그마 `Main Menu`(node 2:3) 그대로. 시작 / 설정 / 종료 |
 | 스토리 | `MainMenu` | `MainMenuView` | 자막 카드. Space·Enter·클릭 다음, Esc 전부 건너뛰기. 시작할 때마다 나온다 |
 | 전투 | `RhythmPrototype` | `PrototypeGame` | 메뉴에서 오면 준비 화면 없이 바로 카운트인 |
-| 무력화 | 〃 | `BattleSession` + `FinaleDirector` | 보스 HP를 다 깎으면 킹이 흔들리고 공격·예고가 멈춘다. 체스판 바깥 칸이 떨어지기 시작 |
-| 격파 | 〃 | 〃 | 곡 끝 16분 3연노트(304~306번)가 시작될 때 승리 확정. 3연타마다 섬광, 이후 킹이 쓰러짐 |
+| 무력화 | 〃 | `BattleSession` + `FinaleDirector` | 보스 HP를 다 깎으면 킹이 흔들리고 공격·예고가 멈춘다 |
+| 체스판 균열 | 〃 | `BoardWorldPresenter` | 보스 채보의 `싸비1` 구간이 끝나면(123번) 금이 가고, `싸비2`가 끝나면(233번) 금이 늘며 몇 칸이 내려앉고 돌조각이 흩어진다. 보스 HP 페이즈와는 무관하다 |
+| 격파 | 〃 | `BattleSession` + `FinaleDirector` | 곡 끝 16분 3연노트(304~306번)가 시작될 때 승리 확정. 3연타마다 섬광, 이후 킹이 쓰러지고 곡이 끝날 때까지 체스판 가운데가 갈라진다. 가운데 6×6칸은 크기가 제각각인 각진 파편(얇은 판)으로 잘려 있다. 파편 사이 틈으로 아래의 하얀 빛이 보이고, 빛나는 금이 가운데에서 보드 끝까지 뻗는다. 가운데 파편은 들리고 기울며, 가장 안쪽 4개는 빠져 작은 구멍이 열린다 |
 | 마무리 | 〃 | 〃 | 남은 14노트는 계속 흐르지만 판정·Miss·페널티 없음 |
-| 자유 이동 | 〃 | `FinaleDirector` | 곡이 끝나면 HUD와 남은 판이 사라지고, 허공에서 WASD·방향키로 6초간 격자 없이 이동(대각선도 같은 속도). 주변이 점점 밝아진다 |
-| 엔딩 | 〃 | 〃 | 화면이 흰색으로 차오르고 엔딩 문구 3줄 → 클리어 저장 → 메인화면 |
+| 하얀 세계 | 〃 | `FinaleDirector` | 곡이 끝나면 가운데가 터진다(2초). 파편이 회전하며 바깥과 카메라 쪽으로 날아오고, 구멍에서 빛줄기가 뻗고, 흰 빛이 구멍 위치에서 원형으로 퍼져 화면을 덮는다. 이후 전부 하얀 화면에 나이트와 잡음 하나만 남는다. WASD·방향키로 격자 없이 이동(대각선도 같은 속도), 시간 제한 없음. 잡음은 나이트가 서 있던 곳에서 가장 먼 모서리에 있고, 가까울수록 지직거리는 소리만 커진다 |
+| 컷신 | 〃 | `CutscenePlayer` | 잡음에 닿으면 검정 띠가 위아래에서 1.2초 동안 들어와 2.39:1이 되고 `ArtSet.endingCutscene` 영상이 재생된다(비어 있으면 검정 화면 2초). Space·Enter·Esc로 건너뛴다. 끝나면 흰색으로 덮고 클리어 저장 → 메인화면 |
 | 흰 메인화면 | `MainMenu` | `MainMenuView` | 체스판·나이트는 그대로, 왼쪽(여백·로고·메뉴)만 반전되어 흰색 |
 
 3연노트까지 HP를 다 깎지 못하면 실패(시간 초과)다. 전투 중 일시정지 메뉴의 버튼은 메인화면으로 돌아간다.
@@ -29,7 +30,7 @@
 
 - 배경: `Art/UI/Menu/MainMenu_Logo_BG.png`(피그마에서 받은 3840×2160) → `ArtSet.mainMenuDark`.
 - 글자: 80px, `#D9D9D9`, 자간 -3.2px, 왼쪽 184.5px / 위 631·733·835px. 호버: `#929292` 상자 + `#0C0C0C` 글자. 하단 "Inspired by 이승윤 <검을 현>" 16px `#929292`.
-- 폰트: 학교안심 곧은제목 B(`Art/Fonts/HakgyoansimGodeunjemokB.ttf`)로 만든 동적 TMP 폰트 에셋 `HakgyoansimGodeunjemokB SDF`가 `ArtSet.menuFont`에 지정되어 있다. 메인화면, 스토리 카드, 피날레 엔딩 문구가 이 폰트를 쓴다. `String As a Sword > Art > Set Up Menu Font`를 실행하면 TTF에서 에셋을 다시 만들고 다시 지정한다. 슬롯이 비면 실행 중 OS 한글 폰트(맑은 고딕)를 동적으로 쓴다.
+- 폰트: 학교안심 곧은제목 B(`Art/Fonts/HakgyoansimGodeunjemokB.ttf`)로 만든 동적 TMP 폰트 에셋 `HakgyoansimGodeunjemokB SDF`가 `ArtSet.menuFont`에 지정되어 있다. 메인화면, 스토리 카드, 컷신 건너뛰기 안내가 이 폰트를 쓴다. `String As a Sword > Art > Set Up Menu Font`를 실행하면 TTF에서 에셋을 다시 만들고 다시 지정한다. 슬롯이 비면 실행 중 OS 한글 폰트(맑은 고딕)를 동적으로 쓴다.
 - 흰 버전: `Art/Shaders/MenuInvertLeft.shader`가 이미지 왼쪽만 색을 반전한다. 경계는 아래 36% → 위 45%로 기울고 3.5% 번진다(머티리얼 `Art/Materials/MenuInvertLeft.mat`에서 조정). `ArtSet.mainMenuWhite`에 손으로 만든 흰 이미지를 넣으면 그것을 쓴다.
 - 클리어 기록은 저장되어 다음 실행에도 흰색이다. 메인화면에서 **Shift+R**로 되돌린다.
 - 설정: 음악 볼륨(0~100%), 입력 싱크·화면 싱크(±200ms). 저장되며 곡 에셋 값 위에 더해진다.
@@ -37,7 +38,7 @@
 
 ## 스토리 문구 수정
 
-`Data/Story/IntroStory.asset`의 카드 목록. 카드마다 문장과 선택 그림(`image`). 현재 문구는 GDD 콘셉트(잡음·주선율·흑백 체스판)로 쓴 초안이다. 엔딩 문구는 `FinaleDirector.EndingLines`.
+`Data/Story/IntroStory.asset`의 카드 목록. 카드마다 문장과 선택 그림(`image`). 현재 문구는 GDD 콘셉트(잡음·주선율·흑백 체스판)로 쓴 초안이다.
 
 ## 씬 다시 만들기
 
@@ -46,5 +47,5 @@
 ## 확인
 
 - EditMode `FinaleTests`: 무력화·결정 노트·실패·이전 규칙.
-- PlayMode `GameFlowTests`: 피그마 위치·호버·흰 버전 / 시작 → 스토리(Space·Esc) → 전투 자동 카운트인 / 자유 이동(대각선 정규화) → 흰 메인화면 복귀.
-- 화면 캡처(필요할 때만): `-testFilter StringAsASword.Tests.MenuCaptureTests -menuCaptureDir <폴더>` → 메뉴(어두운/호버/흰/설정)와 엔딩 단계별 PNG. 배치 모드에서는 `WaitForEndOfFrame`이 오지 않으므로 캔버스를 카메라로 직접 렌더한다.
+- PlayMode `GameFlowTests`: 피그마 위치·호버·흰 버전 / 시작 → 스토리(Space·Esc) → 전투 자동 카운트인 / 자유 이동(대각선 정규화) → 잡음에 닿기 전에는 머무름 → 닿으면 컷신 → Space로 건너뛰기 → 흰 메인화면 복귀.
+- 화면 캡처(필요할 때만): `-testFilter StringAsASword.Tests.MenuCaptureTests -menuCaptureDir <폴더>` → 메뉴(어두운/호버/흰/설정), 체스판 균열 1~3단계, 가운데가 갈라지는 과정과 터짐, 엔딩 단계별 PNG. 배치 모드에서는 `WaitForEndOfFrame`이 오지 않으므로 캔버스를 카메라로 직접 렌더한다.

@@ -74,6 +74,14 @@ namespace StringAsASword.Combat
             return "";
         }
 
+        /// <summary>Last note of chorus n: the latest end among sections named "싸비n…". -1 when the chart has none.</summary>
+        public int ChorusEnd(int chorus)
+        {
+            int end = -1;
+            foreach (var s in sections) if (s.Name.StartsWith("싸비" + chorus, System.StringComparison.Ordinal)) end = System.Math.Max(end, s.To);
+            return end;
+        }
+
         /// <summary>Shape cells on the board. Anchored shapes move so the anchor sits on the player; cells off the board drop.</summary>
         public static (ulong normal, ulong strong) Cells(BossChartShape shape, GridPosition player)
         {

@@ -26,9 +26,14 @@ namespace StringAsASword.Presentation
         [Tooltip("Optional: replaces every material of the noise prefab once the phase goal is reached.")]
         public Material noiseDormantMaterial;
 
-        [Tooltip("Replaces the procedural plinth, rim, deck and cells, and falls as one piece in the finale. " +
+        [Tooltip("Replaces the procedural plinth, rim, deck and cells. It is cut into one shard per cell so the board can break. " +
             "Fit its 8x8 squares to 1-unit cells centred on the origin, playing surface at y = 0.")]
         public GameObject boardPrefab;
+        [Tooltip("Cracks drawn over the whole board (Board Crack shader: _Crack, _Light, _Hole). " +
+            "String As a Sword > Art > Set Up Board Cracks builds it.")]
+        public Material boardCrack;
+        [Tooltip("Ending cutscene, played between the letterbox bars after the knight touches the noise. Empty = a short black placeholder.")]
+        public UnityEngine.Video.VideoClip endingCutscene;
 
         [Header("Board materials (tile top faces are UV-mapped 0..1 per cell)")]
         public Material lightTile;

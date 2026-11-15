@@ -7,29 +7,41 @@ using UnityEngine.InputSystem;
 namespace StringAsASword.Presentation
 {
     /// <summary>
-    /// Everything after the boss HP is emptied: the stunned king and the outer cells starting to fall, the finishing
-    /// triplet, the board collapsing, free movement in the void, and the white ending back to the menu.
+    /// Everything after the boss HP is emptied: the stunned king, the finishing triplet with light breaking through the
+    /// centre of the board, the centre bursting open when the song ends, the white world where the knight walks freely
+    /// toward one noise, the cutscene that touching it starts, and the return to the white menu.
     /// Rules stay in BattleSession; this only reads them.
     /// </summary>
     public sealed class FinaleDirector : MonoBehaviour
     {
-        public const float FreeRoamSeconds = 6, WhiteSeconds = 1.6f, CaptionSeconds = 2.2f;
-        private const float RoamSpeed = 2.6f, RoamBounds = 4.2f;
-        public static readonly string[] EndingLines = { "격자가 무너졌다.", "박자도, 흑과 백도 더는 나를 묶지 않는다.", "이제 이 잡음이 나의 노래다." };
-        private static readonly Color VoidColor = new Color(.035f, .043f, .052f);
+        public const float BurstSeconds = 2, RevealSeconds = .8f, ExitSeconds = .6f, TouchDistance = .6f;
+        // The part of the burst light's radius that is solid white.
+        private const float BloomCore = .45f;
+        private const float RoamSpeed = 2.6f, RoamBounds = 4.2f, NoiseCorner = 3.2f;
+        // The song plays at 0.03, so the noise stays in the same quiet range.
+        private const float NoiseFar = .002f, NoiseNear = .05f, NoiseRange = 7;
 
         private PrototypeGame game;
         private PrototypeView view;
         private BoardWorldPresenter board;
         private RectTransform layer;
-        private UnityEngine.UI.Image flash, voidCover, white;
-        private UnityEngine.UI.RawImage epilogueView;
-        private TMP_Text banner, caption;
-        private float flashAge = 10, epilogueAge;
+        private UnityEngine.UI.Image flash, whiteCover, white, exitWhite;
+        private UnityEngine.UI.RawImage epilogueView, bloom;
+        private Texture2D bloomTexture;
+        private TMP_Text banner;
+        private CutscenePlayer cutscene;
+        private AudioSource noiseSource;
+        private AudioClip noiseClip;
+        private float flashAge = 10, epilogueAge, exitAge = -1;
         private int lastFinishHit = -1;
-        private Vector3 roam;
-        private bool returned;
+        private Vector3 roam, noiseAt;
+        private bool placed, entered, touched, returned;
         public float EpilogueAge => epilogueAge;
+        /// <summary>Board-local position of the noise in the white world.</summary>
+        public Vector3 NoisePosition => noiseAt;
+        public float NoiseVolume => noiseSource.volume;
+        public bool InWhiteWorld => entered;
+        public bool CutscenePlaying => cutscene.Playing;
 
         public void Initialize(PrototypeGame owner, PrototypeView prototypeView)
         {
@@ -37,24 +49,44 @@ namespace StringAsASword.Presentation
             layer = PrototypeView.MakeRect(view.CanvasRect, "Finale Layer", Vector2.zero, Vector2.zero);
             Stretch(layer);
             flash = FullScreen("Strike Flash", Color.white);
-            voidCover = FullScreen("Void", VoidColor);
-            epilogueView = PrototypeView.MakeRect(layer, "Void View", Vector2.zero, new Vector2(1080, 990)).gameObject.AddComponent<UnityEngine.UI.RawImage>();
+            whiteCover = FullScreen("White World", Color.white);
+            epilogueView = PrototypeView.MakeRect(layer, "White World View", Vector2.zero, new Vector2(1080, 990)).gameObject.AddComponent<UnityEngine.UI.RawImage>();
             epilogueView.texture = board.Texture; epilogueView.raycastTarget = false;
+            // The light that covers the screen grows out of the hole: a white disc with a soft rim.
+            bloomTexture = new Texture2D(128, 128, TextureFormat.RGBA32, false) { name = "Burst Light", wrapMode = TextureWrapMode.Clamp };
+            var pixels = new Color32[128 * 128];
+            for (int y = 0; y < 128; y++) for (int x = 0; x < 128; x++)
+            {
+                float d = new Vector2(x - 63.5f, y - 63.5f).magnitude / 63.5f;
+                pixels[y * 128 + x] = new Color(1, 1, 1, Mathf.SmoothStep(1, 0, Mathf.InverseLerp(BloomCore, 1, d)));
+            }
+            bloomTexture.SetPixels32(pixels); bloomTexture.Apply();
+            bloom = PrototypeView.MakeRect(layer, "Burst Light", Vector2.zero, Vector2.zero).gameObject.AddComponent<UnityEngine.UI.RawImage>();
+            bloom.texture = bloomTexture; bloom.raycastTarget = false;
             white = FullScreen("White", Color.white);
-            // The ending lines are story text, so they share the menu and story font.
             var font = UiFonts.Korean(view.Art.menuFont, view.LatinFont);
             banner = Text("Banner", font, 34, new Vector2(0, 330));
-            caption = Text("Caption", font, 40, Vector2.zero);
-            caption.color = new Color(.06f, .06f, .06f, 0);
+            cutscene = layer.gameObject.AddComponent<CutscenePlayer>();
+            cutscene.Initialize(layer, font, view.Art.endingCutscene);
+            exitWhite = FullScreen("Exit White", Color.white);
+            // One second of white noise, looped. Its volume is the only thing that tells how close the knight is.
+            var samples = new float[44100]; var random = new System.Random(87);
+            for (int i = 0; i < samples.Length; i++) samples[i] = (float)(random.NextDouble() * 2 - 1);
+            noiseClip = AudioClip.Create("Ending Noise", samples.Length, 1, 44100, false); noiseClip.SetData(samples, 0);
+            noiseSource = gameObject.AddComponent<AudioSource>();
+            noiseSource.clip = noiseClip; noiseSource.loop = true; noiseSource.playOnAwake = false; noiseSource.volume = 0;
             game.FinaleTap += _ => view.Pulse();
             ResetVisuals();
         }
         private void ResetVisuals()
         {
-            SetAlpha(flash, 0); SetAlpha(voidCover, 0); SetAlpha(white, 0);
-            epilogueView.gameObject.SetActive(false); banner.text = ""; caption.text = "";
-            flashAge = 10; epilogueAge = 0; lastFinishHit = -1; roam = Vector3.zero; returned = false;
-            board.FreeRoam = false; board.SetCollapse(0); board.SetKingDown(0); board.ResetVoid();
+            SetAlpha(flash, 0); SetAlpha(whiteCover, 0); SetAlpha(white, 0); SetAlpha(exitWhite, 0);
+            epilogueView.gameObject.SetActive(false); bloom.gameObject.SetActive(false); banner.text = "";
+            flashAge = 10; epilogueAge = 0; exitAge = -1; lastFinishHit = -1;
+            placed = entered = touched = returned = false;
+            cutscene.Hide(); noiseSource.Stop(); noiseSource.volume = 0;
+            // The board puts itself back (pieces, white world) when the next session starts.
+            board.FreeRoam = false; board.BreakOverride = -1; board.SetKingDown(0);
             game.Audio.SetMusicFade(1);
         }
         private void Update()
@@ -64,16 +96,11 @@ namespace StringAsASword.Presentation
             if (!settings.HasFinale) return;
             if (game.State == PrototypeState.CountIn && (lastFinishHit >= 0 || epilogueAge > 0 || board.FreeRoam)) ResetVisuals();
             double time = game.SongTime;
-            double stunTime = game.Battle.KingStunned ? game.Timeline.TimeOf(game.Battle.StunnedNote) : double.MaxValue;
-            double finishTime = game.Timeline.TimeOf(settings.FinishNote);
             flashAge += Time.unscaledDeltaTime;
             SetAlpha(flash, .55f * Mathf.Exp(-12 * flashAge));
 
             if (game.State == PrototypeState.Playing && game.Battle.KingStunned)
             {
-                // The king staggers; the rim of the board starts to give way while the song runs to the finishing run.
-                float t = (float)((time - stunTime) / System.Math.Max(.5, finishTime - stunTime));
-                board.SetCollapse(.32f * Mathf.Clamp01(t));
                 banner.text = "KING STAGGERED"; banner.color = new Color(.94f, .93f, .88f, .55f + .45f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 3)));
             }
             else if (game.State == PrototypeState.Finale)
@@ -84,8 +111,9 @@ namespace StringAsASword.Presentation
                     if (hit > lastFinishHit && time >= game.Timeline.TimeOf(settings.FinishNote + hit))
                     { lastFinishHit = hit; flashAge = 0; view.Pulse(); }
                 board.SetKingDown((float)((time - game.FinaleStrikeTime) / 1.2));
-                float rest = (float)((time - finishTime) / System.Math.Max(1, game.FinaleEndTime - finishTime));
-                board.SetCollapse(Mathf.Lerp(.32f, .8f, Mathf.Clamp01(rest)));
+                // From the last strike to the end of the song the centre cracks and white light leaks through, brighter and brighter.
+                float leak = (float)((time - game.FinaleStrikeTime) / System.Math.Max(.5, game.FinaleEndTime - game.FinaleStrikeTime));
+                board.BreakOverride = 2 + Mathf.Clamp01(leak);
             }
             else if (game.State == PrototypeState.Epilogue) Epilogue();
         }
@@ -94,14 +122,46 @@ namespace StringAsASword.Presentation
             float dt = Time.unscaledDeltaTime;
             epilogueAge += dt;
             float a = epilogueAge;
-            // 0..1 s: the HUD gives way to the void, the rest of the board falls away.
-            epilogueView.gameObject.SetActive(true);
-            // Run past the point where every piece has dropped out of view (see BoardWorldPresenter.Fall).
-            board.SetCollapse(Mathf.Lerp(.8f, 2.2f, Mathf.Clamp01(a / 1.6f)));
-            board.FreeRoam = true;
-            // Free movement: no grid, no beat. WASD (or arrows), diagonals at the same speed.
-            if (a < 1 + FreeRoamSeconds + WhiteSeconds)
+            banner.text = "";
+            board.FreeRoam = true; board.BreakOverride = 3;
+            if (!placed)
             {
+                placed = true;
+                roam = BoardWorldPresenter.CellPosition(game.Session.Position);
+                // The noise waits in the corner farthest from where the knight stands.
+                noiseAt = new Vector3(roam.x > 0 ? -NoiseCorner : NoiseCorner, 0, roam.z > 0 ? -NoiseCorner : NoiseCorner);
+            }
+            if (a < BurstSeconds)
+            {
+                // The centre bursts open and its light swallows the screen.
+                float burst = a / BurstSeconds;
+                board.SetBurst(burst);
+                // The disc starts on the hole and ends with its solid part reaching every corner of the screen.
+                var boardRect = (RectTransform)board.transform;
+                Vector3 hole = boardRect.TransformPoint(board.ProjectToBoard(Vector3.zero, boardRect.rect.size));
+                bloom.gameObject.SetActive(true);
+                bloom.rectTransform.position = hole;
+                // It stays small while the pieces fly, then opens fast.
+                float spread = Mathf.InverseLerp(.35f, 1, burst);
+                bloom.rectTransform.sizeDelta = Vector2.one * (spread * spread * spread * 2.2f * layer.rect.size.magnitude / BloomCore);
+                SetAlpha(white, Mathf.InverseLerp(.9f, 1, burst));
+                game.Audio.SetMusicFade(1 - burst);
+            }
+            else
+            {
+                if (!entered)
+                {
+                    entered = true;
+                    board.EnterWhiteWorld(noiseAt);
+                    epilogueView.gameObject.SetActive(true); SetAlpha(whiteCover, 1); bloom.gameObject.SetActive(false);
+                    game.Audio.SetMusicFade(0);
+                    noiseSource.Play();
+                }
+                SetAlpha(white, 1 - Mathf.Clamp01((a - BurstSeconds) / RevealSeconds));
+            }
+            if (!touched)
+            {
+                // Free movement: no grid, no beat, no time limit. WASD (or arrows), diagonals at the same speed.
                 var keyboard = Keyboard.current;
                 Vector2 move = Vector2.zero;
                 if (keyboard != null)
@@ -112,35 +172,31 @@ namespace StringAsASword.Presentation
                     if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) move.x += 1;
                 }
                 if (move.sqrMagnitude > 1) move.Normalize();
-                if (roam == Vector3.zero) roam = BoardWorldPresenter.CellPosition(game.Session.Position) + Vector3.up * .001f;
                 roam += new Vector3(move.x, 0, move.y) * RoamSpeed * dt;
                 roam.x = Mathf.Clamp(roam.x, -RoamBounds, RoamBounds); roam.z = Mathf.Clamp(roam.z, -RoamBounds, RoamBounds);
                 board.PlayerTransform.localPosition = new Vector3(roam.x, .08f * Mathf.Sin(Time.unscaledTime * 2.2f), roam.z);
             }
-            // The void brightens while the knight roams, then everything turns white.
-            float roamT = Mathf.Clamp01((a - 1) / FreeRoamSeconds);
-            Color voidNow = Color.Lerp(VoidColor, new Color(.82f, .82f, .80f), roamT * roamT);
-            board.SetVoidColor(voidNow);
-            voidCover.color = new Color(voidNow.r, voidNow.g, voidNow.b, Mathf.Clamp01(a / 1f));
-            float whiteT = Mathf.Clamp01((a - 1 - FreeRoamSeconds) / WhiteSeconds);
-            SetAlpha(white, whiteT);
-            game.Audio.SetMusicFade(1 - whiteT);
-            // Ending lines on white, one after another.
-            float captionStart = 1 + FreeRoamSeconds + WhiteSeconds;
-            int line = Mathf.FloorToInt((a - captionStart) / CaptionSeconds);
-            if (line >= 0 && line < EndingLines.Length)
+            if (entered && !touched)
             {
-                float local = (a - captionStart) / CaptionSeconds - line;
-                caption.text = EndingLines[line];
-                caption.color = new Color(.06f, .06f, .06f, Mathf.Clamp01(Mathf.Min(local * 4, (1 - local) * 4)));
+                // The noise looks the same from anywhere; only its sound grows as the knight comes near.
+                float distance = new Vector2(roam.x - noiseAt.x, roam.z - noiseAt.z).magnitude;
+                float near = 1 - Mathf.Clamp01((distance - TouchDistance) / NoiseRange);
+                noiseSource.volume = Mathf.Lerp(NoiseFar, NoiseNear, near * near) * GameFlow.MusicVolume;
+                if (distance <= TouchDistance) { touched = true; cutscene.Play(() => exitAge = 0); }
             }
-            else caption.text = "";
-            if (!returned && a >= captionStart + CaptionSeconds * EndingLines.Length + .4f)
+            else if (touched) noiseSource.volume = Mathf.MoveTowards(noiseSource.volume, 0, dt * NoiseNear / CutscenePlayer.BarSeconds);
+            if (exitAge >= 0)
             {
-                returned = true;
-                GameFlow.MarkCleared();
-                game.Audio.Stop();
-                if (GameFlow.HasMenu) GameFlow.ReturnToMenu();
+                // Cutscene over or skipped: white again, then the white menu.
+                exitAge += dt;
+                SetAlpha(exitWhite, Mathf.Clamp01(exitAge / ExitSeconds));
+                if (!returned && exitAge >= ExitSeconds)
+                {
+                    returned = true;
+                    GameFlow.MarkCleared();
+                    noiseSource.Stop(); game.Audio.Stop();
+                    if (GameFlow.HasMenu) GameFlow.ReturnToMenu();
+                }
             }
         }
         private UnityEngine.UI.Image FullScreen(string name, Color color)
@@ -157,6 +213,7 @@ namespace StringAsASword.Presentation
             label.textWrappingMode = TextWrappingModes.NoWrap; label.color = PrototypeView.InkWhite;
             return label;
         }
+        private void OnDestroy() { if (noiseClip != null) Destroy(noiseClip); if (bloomTexture != null) Destroy(bloomTexture); }
         private static void Stretch(RectTransform rect) { rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one; rect.sizeDelta = Vector2.zero; }
         private static void SetAlpha(UnityEngine.UI.Graphic g, float alpha) { var c = g.color; c.a = alpha; g.color = c; }
     }
