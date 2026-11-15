@@ -16,7 +16,8 @@ namespace StringAsASword.Presentation
     {
         public const float BurstSeconds = 2, RevealSeconds = .8f, ExitSeconds = .6f, TouchDistance = .6f;
         // The part of the burst light's radius that is solid white.
-        private const float BloomCore = .45f;
+        // The solid part of the burst light, as a share of its picture's half size. The rest is halo and rays.
+        private const float BloomCore = .2f;
         private const float RoamSpeed = 2.6f, RoamBounds = 4.2f, NoiseCorner = 3.2f;
         // The song plays at 0.03, so the noise stays in the same quiet range.
         private const float NoiseFar = .002f, NoiseNear = .05f, NoiseRange = 7;
@@ -52,13 +53,40 @@ namespace StringAsASword.Presentation
             whiteCover = FullScreen("White World", Color.white);
             epilogueView = PrototypeView.MakeRect(layer, "White World View", Vector2.zero, new Vector2(1080, 990)).gameObject.AddComponent<UnityEngine.UI.RawImage>();
             epilogueView.texture = board.Texture; epilogueView.raycastTarget = false;
-            // The light that covers the screen grows out of the hole: a white disc with a soft rim.
-            bloomTexture = new Texture2D(128, 128, TextureFormat.RGBA32, false) { name = "Burst Light", wrapMode = TextureWrapMode.Clamp };
-            var pixels = new Color32[128 * 128];
-            for (int y = 0; y < 128; y++) for (int x = 0; x < 128; x++)
+            // The light that covers the screen grows out of the hole like a sun seen through a lens:
+            // an uneven core, a soft halo, and rays of different lengths and widths at uneven angles.
+            const int size = 256; const float half = (size - 1) / 2f;
+            bloomTexture = new Texture2D(size, size, TextureFormat.RGBA32, false) { name = "Burst Light", wrapMode = TextureWrapMode.Clamp };
+            var shape = new System.Random(5);
+            float Next() => (float)shape.NextDouble();
+            // The core's edge wobbles with a few slow waves around the circle.
+            float[] wave = { Next() * 6.28f, Next() * 6.28f, Next() * 6.28f };
+            const int rays = 17;
+            var rayAngle = new float[rays]; var rayLength = new float[rays]; var rayWidth = new float[rays];
+            for (int i = 0; i < rays; i++)
             {
-                float d = new Vector2(x - 63.5f, y - 63.5f).magnitude / 63.5f;
-                pixels[y * 128 + x] = new Color(1, 1, 1, Mathf.SmoothStep(1, 0, Mathf.InverseLerp(BloomCore, 1, d)));
+                rayAngle[i] = (i + Next() * .9f) / rays * 6.2832f;
+                bool major = i % 3 == 0;
+                rayLength[i] = major ? .8f + .2f * Next() : .4f + .35f * Next();
+                rayWidth[i] = major ? .035f + .025f * Next() : .012f + .02f * Next();
+            }
+            var pixels = new Color32[size * size];
+            for (int y = 0; y < size; y++) for (int x = 0; x < size; x++)
+            {
+                var p = new Vector2(x - half, y - half) / half;
+                float d = p.magnitude, angle = Mathf.Atan2(p.y, p.x);
+                float core = BloomCore * (1 + .16f * Mathf.Sin(2 * angle + wave[0]) + .1f * Mathf.Sin(3 * angle + wave[1]) + .07f * Mathf.Sin(5 * angle + wave[2]));
+                float light = Mathf.SmoothStep(1, 0, Mathf.InverseLerp(core * .8f, core * 1.5f, d));
+                float halo = Mathf.SmoothStep(1, 0, d / (core * 3)); light = Mathf.Max(light, .45f * halo * halo);
+                for (int i = 0; i < rays; i++)
+                {
+                    // A ray is widest at the core and runs out to a point.
+                    float along = d * Mathf.Cos(angle - rayAngle[i]), across = Mathf.Abs(d * Mathf.Sin(angle - rayAngle[i]));
+                    if (along <= 0 || along >= rayLength[i]) continue;
+                    float taper = 1 - along / rayLength[i];
+                    light = Mathf.Max(light, Mathf.SmoothStep(1, 0, across / (rayWidth[i] * taper + .002f)) * Mathf.Sqrt(taper));
+                }
+                pixels[y * size + x] = new Color(1, 1, 1, Mathf.Clamp01(light));
             }
             bloomTexture.SetPixels32(pixels); bloomTexture.Apply();
             bloom = PrototypeView.MakeRect(layer, "Burst Light", Vector2.zero, Vector2.zero).gameObject.AddComponent<UnityEngine.UI.RawImage>();
@@ -143,7 +171,10 @@ namespace StringAsASword.Presentation
                 bloom.rectTransform.position = hole;
                 // It stays small while the pieces fly, then opens fast.
                 float spread = Mathf.InverseLerp(.35f, 1, burst);
-                bloom.rectTransform.sizeDelta = Vector2.one * (spread * spread * spread * 2.2f * layer.rect.size.magnitude / BloomCore);
+                // The rays lead: they are already out while the core is small, and turn a little as it grows.
+                float grow = Mathf.Lerp(spread * spread, spread * spread * spread, spread);
+                bloom.rectTransform.sizeDelta = Vector2.one * (grow * 2.2f * layer.rect.size.magnitude / BloomCore);
+                bloom.rectTransform.localRotation = Quaternion.Euler(0, 0, 14 * burst);
                 SetAlpha(white, Mathf.InverseLerp(.9f, 1, burst));
                 game.Audio.SetMusicFade(1 - burst);
             }

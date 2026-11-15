@@ -93,16 +93,22 @@ Shader "String As a Sword/Board Crack"
                     // Light is plain white laid over the picture, so the same blend as the cracks serves.
                     float2 c = input.uv - 0.5;
                     float d = length(c) * 2;
-                    float v = pow(saturate(1 - d), 2.2) * 1.5;
+                    // Noise read around a circle: it depends on the direction only, with no seam.
+                    float2 dir = c / max(length(c), 0.0001);
+                    // The glow reaches further in some directions than in others, with a few sharp spikes: not a disc.
+                    float reach = 0.5 + 0.8 * (Noise(dir * 2.3 + 3.1) * 0.65 + Noise(dir * 6 + 11.7) * 0.35);
+                    float spike = pow(saturate(Noise(dir * 13 + 29.4) * 1.3), 6);
+                    float v = pow(saturate(1 - d / reach), 2.2) * 1.5 + spike * pow(saturate(1 - d), 1.3) * 1.2;
                     if (_Mode > 1.5)
                     {
-                        // Noise read around a circle: streaks that depend on the direction only, with no seam.
-                        float2 dir = c / max(length(c), 0.0001);
                         float streak = Noise(dir * 3 + 5.3) * 0.6 + Noise(dir * 9 + 17.1) * 0.4;
                         streak = pow(saturate(streak * 1.35), 4) * 3;
                         v = streak * pow(saturate(1 - d), 1.5) + smoothstep(0.3, 0, d);
                     }
-                    return half4(_LightColor.rgb, saturate(v * _Light));
+                    // Fades out toward the edge of the board's view, which would cut it off in a straight line.
+                    float2 screen = input.positionCS.xy / _ScreenParams.xy;
+                    float edge = min(min(screen.x, 1 - screen.x), min(screen.y, 1 - screen.y));
+                    return half4(_LightColor.rgb, saturate(v * _Light) * smoothstep(0, 0.14, edge));
                 }
                 float2 p = (input.uv - 0.5) * 8; // board units: one cell is 1
                 float r = length(p);

@@ -58,9 +58,12 @@ namespace StringAsASword.Presentation
         private const int Outer = 0, Rim = 1, Ring = 2, Centre = 3;
         private int[] cellZone;
         private readonly HashSet<Transform> borderPieces = new HashSet<Transform>();
+        // Which side of the cut a border piece lies on (x, z: -1, 0 or 1). A corner piece has both.
+        private readonly Dictionary<Transform, Vector2> borderSides = new Dictionary<Transform, Vector2>();
         private bool[] cellFalls;
         // Light under the centre (seen through the gaps), a glow over it, and rays across the board when it bursts.
         private Transform lightFloor, lightGlow, lightRays;
+        private float lightFloorY;
         // The lowest point of the stone's playing surface in the middle; the light lies just under it.
         private float stoneLow;
         private Material glowMaterial, rayMaterial;
@@ -211,7 +214,9 @@ namespace StringAsASword.Presentation
                     return sheet.transform;
                 }
                 // Just under the stone, so it shows even through a narrow seam seen from the side.
-                lightFloor = Sheet("Light Below", 3, 2985, out _); lightFloor.localPosition = new Vector3(0, stoneLow - .008f, 0); lightFloor.localScale = new Vector3(FragmentHalf / 4, 1, FragmentHalf / 4);
+                lightFloor = Sheet("Light Below", 3, 2985, out _); lightFloorY = stoneLow - .008f; lightFloor.localPosition = new Vector3(0, lightFloorY, 0);
+                // A little smaller than the cut: its edge stays under the border pieces, whose outer edge never moves.
+                lightFloor.localScale = new Vector3((FragmentHalf - .12f) / 4, 1, (FragmentHalf - .12f) / 4);
                 lightRays = Sheet("Light Rays", 2, 3010, out rayMaterial); lightRays.localPosition = new Vector3(0, .03f, 0);
                 // The glow faces the camera and washes over whatever is in front of it.
                 lightGlow = Sheet("Light Glow", 1, 3020, out glowMaterial);
@@ -268,11 +273,13 @@ namespace StringAsASword.Presentation
                 crackOverlay.SetActive(BreakStage > 0 || burst > 0);
                 bool lit = leak > 0 || burst > 0;
                 lightFloor.gameObject.SetActive(lit); lightGlow.gameObject.SetActive(lit); lightRays.gameObject.SetActive(burst > 0);
-                float glow = (1.2f + 2.2f * leak + 9 * burst * burst) / 8;
+                // Pieces that sank at stage 2 are still coming back up: the light starts below the deepest of them
+                // and rises with them, or it would lie over them as flat white patches.
+                lightFloor.localPosition = new Vector3(0, lightFloorY - .16f * (1 - gap), 0);
+                float glow = (1.2f + 2.2f * leak + 16 * burst * burst) / 8;
                 lightGlow.localScale = new Vector3(glow, 1, glow);
                 glowMaterial.SetFloat("_Light", Mathf.Clamp01(.45f * leak + 1.3f * burst));
-                // Both stay inside the board view: its edge would cut them off in a straight line.
-                float rays = (4 + 8 * burst) / 8;
+                float rays = (5 + 20 * burst) / 8;
                 lightRays.localScale = new Vector3(rays, 1, rays);
                 rayMaterial.SetFloat("_Light", Mathf.Clamp01(burst * 2.5f));
             }
@@ -315,20 +322,27 @@ namespace StringAsASword.Presentation
                         shown = burst < 1;
                     }
                 }
-                else if (cellZone[i] != Outer && (leak > 0 || burst > 0))
+                else if (cellZone[i] == Ring && (leak > 0 || burst > 0))
                 {
-                    // Around the hole the pieces only stir, then are pushed back and tip away from it. The nearer ones follow the centre out.
-                    float stir = cellZone[i] == Ring ? Mathf.SmoothStep(0, 1, Mathf.Clamp01((leak - .5f) / .5f)) : 0, push = Mathf.SmoothStep(0, 1, Mathf.Clamp01(burst * 2));
+                    // Around the centre the pieces only stir, then tip away from it and follow the centre out.
+                    // The pieces on the border of the cut (Rim) are never pushed out: a gap along it would draw the cut's square in light.
+                    float stir = Mathf.SmoothStep(0, 1, Mathf.Clamp01((leak - .5f) / .5f)), push = Mathf.SmoothStep(0, 1, Mathf.Clamp01(burst * 2));
                     position += Vector3.up * (.02f * stir + .3f * push) + outward * (.25f * push);
                     rotation = Quaternion.AngleAxis(stir * (2 + 4 * chance) + push * (18 + 30 * chance), hinge) * rotation;
-                    if (cellZone[i] == Ring)
-                    {
-                        float flight = Mathf.Clamp01((burst - .2f - .2f * chance) / .6f);
-                        flight = 1 - (1 - flight) * (1 - flight);
-                        position += (outward * .8f + toEye).normalized * (flight * (4 + 3 * chance));
-                        rotation = Quaternion.AngleAxis(flight * 240, cellSpin[i]) * rotation;
-                        shown = burst < 1;
-                    }
+                    float flight = Mathf.Clamp01((burst - .2f - .2f * chance) / .6f);
+                    flight = 1 - (1 - flight) * (1 - flight);
+                    position += (outward * .8f + toEye).normalized * (flight * (4 + 3 * chance));
+                    rotation = Quaternion.AngleAxis(flight * 240, cellSpin[i]) * rotation;
+                    shown = burst < 1;
+                }
+                else if (cellZone[i] == Rim && burst > 0 && borderSides.TryGetValue(cellPieces[i], out var side) && side.x * side.y == 0)
+                {
+                    // A border piece swings up like a flap about the border itself: its outer edge stays shut,
+                    // so no light draws the square of the cut. Corner pieces and about a quarter of the rest stay flat.
+                    float flap = Mathf.SmoothStep(0, 1, Mathf.Clamp01(burst * 2)) * 44 * Mathf.Clamp01((chance - .25f) / .75f);
+                    var pivot = side.x != 0 ? new Vector3(side.x * FragmentHalf, home.y, home.z) : new Vector3(home.x, home.y, side.y * FragmentHalf);
+                    var swing = side.x != 0 ? Quaternion.AngleAxis(-side.x * flap, Vector3.forward) : Quaternion.AngleAxis(side.y * flap, Vector3.right);
+                    position = pivot + swing * (position - pivot); rotation = swing * rotation;
                 }
                 cellPieces[i].localPosition = position; cellPieces[i].localRotation = rotation;
                 cellPieces[i].localScale = cellScale[i] * scale;
@@ -636,8 +650,13 @@ namespace StringAsASword.Presentation
                 fragments[i] = new GameObject($"Fragment_{i}").transform; fragments[i].SetParent(boardShards.transform, false);
                 fragments[i].localPosition = new Vector3(middle.x, 0, middle.y);
                 // Fragments on the border of the cut stay put until the burst, so the cut's square outline never shows.
+                var sides = Vector2.zero;
                 foreach (var corner in outlines[i])
-                    if (Mathf.Max(Mathf.Abs(corner.x), Mathf.Abs(corner.y)) > FragmentHalf - .001f) { borderPieces.Add(fragments[i]); break; }
+                {
+                    if (Mathf.Abs(corner.x) > FragmentHalf - .001f) sides.x = Mathf.Sign(corner.x);
+                    if (Mathf.Abs(corner.y) > FragmentHalf - .001f) sides.y = Mathf.Sign(corner.y);
+                }
+                if (sides != Vector2.zero) { borderPieces.Add(fragments[i]); borderSides[fragments[i]] = sides; }
             }
             float bottom = 0;
             foreach (var filter in filters)
