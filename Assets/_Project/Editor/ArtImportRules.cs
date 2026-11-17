@@ -21,11 +21,20 @@ namespace StringAsASword.Editor
         {
             if (!assetPath.StartsWith(UI) || !assetImporter.importSettingsMissing) return;
             var texture = (TextureImporter)assetImporter;
+            if (assetPath.EndsWith("_Regions.png")) { SetUpRegionMap(texture); return; }
             texture.textureType = TextureImporterType.Sprite; texture.spriteImportMode = SpriteImportMode.Single;
             texture.mipmapEnabled = false; texture.alphaIsTransparency = true;
             texture.wrapMode = UnityEngine.TextureWrapMode.Clamp;
             // Full-screen art is delivered at 4K; the 2048 default would halve it on a 1080p screen.
             texture.maxTextureSize = 4096;
+        }
+        /// <summary>A baked lookup map (part ids and gradients), not a picture: exact values, no colour space, no blending between texels.</summary>
+        public static void SetUpRegionMap(TextureImporter texture)
+        {
+            texture.textureType = TextureImporterType.Default; texture.sRGBTexture = false;
+            texture.mipmapEnabled = false; texture.alphaIsTransparency = false;
+            texture.filterMode = UnityEngine.FilterMode.Point; texture.wrapMode = UnityEngine.TextureWrapMode.Clamp;
+            texture.textureCompression = TextureImporterCompression.Uncompressed; texture.maxTextureSize = 4096;
         }
     }
 }

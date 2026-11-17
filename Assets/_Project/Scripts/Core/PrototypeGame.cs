@@ -68,6 +68,7 @@ namespace StringAsASword.Core
             Session.ActionEvaluated += OnActionEvaluated; Session.NoteMissed += view.ShowMiss;
             Combat.DamageResolved += view.ShowDamage;
             Phases.PhaseUnlocked += view.ShowPhase;
+            Noise.CollectedPickup += view.ShowNoiseCollected;
             int last = song.NoteCount - 1;
             double end = Timeline.TimeOf(last), hold = Session.HoldEnd(last);
             FinaleEndTime = System.Math.Max(end, hold) + .8;
@@ -201,6 +202,7 @@ namespace StringAsASword.Core
                 Session.ActionEvaluated -= OnActionEvaluated; Session.NoteMissed -= view.ShowMiss;
                 Combat.DamageResolved -= view.ShowDamage;
                 Phases.PhaseUnlocked -= view.ShowPhase;
+                Noise.CollectedPickup -= view.ShowNoiseCollected;
             }
             clock?.Stop(); if (audioPlayer != null) audioPlayer.Stop();
         }

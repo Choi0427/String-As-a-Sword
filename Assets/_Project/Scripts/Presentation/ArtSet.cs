@@ -80,8 +80,17 @@ namespace StringAsASword.Presentation
         public Sprite holdBodySprite;
         [Tooltip("Hold note tail peg at the string's far end. Draw it white; it is tinted per state.")]
         public Sprite holdTailSprite;
-        [Tooltip("Boss HP crown icons. Shown only when all three are assigned.")]
-        public Sprite crownFull, crownLocked, crownBroken;
+        [Tooltip("Crown over the boss picture's head; replaces the boss HP readout. Four blades = the four HP segments (right blade first), " +
+            "the three seams between them = the three noise phases (right seam first). String As a Sword > Art > Set Up Boss Crown bakes crownRegions and crownMaterial.")]
+        public Sprite crown;
+        [Tooltip("Baked region map for the crown: R = part id, G = height within a blade, B = position along a seam.")]
+        public Texture2D crownRegions;
+        [Tooltip("Material on the Crown UI shader.")]
+        public Material crownMaterial;
+        [Tooltip("Crown width as a share of the boss picture's width.")]
+        public float crownWidth = .6f;
+        [Tooltip("Boss picture height (0 = top) where the crown's middle seam sits: the top of the mask.")]
+        public float crownSeamHeight = .1f;
         [Tooltip("Main menu background (Figma 'Main Menu' / MainMenu_Logo_BG). After a clear its left side is inverted to white in code; " +
             "assign mainMenuWhite only to replace that with a hand-made white version.")]
         public Sprite mainMenuDark, mainMenuWhite;
@@ -100,7 +109,7 @@ namespace StringAsASword.Presentation
         public GameObject bossFireVfx;
         public GameObject phaseVfx;
 
-        public bool HasCrown => crownFull != null && crownLocked != null && crownBroken != null;
+        public bool HasCrown => crown != null && crownRegions != null && crownMaterial != null;
         public bool HasBackground => background != null || (backgroundLayers != null && backgroundLayers.Length > 0);
     }
 

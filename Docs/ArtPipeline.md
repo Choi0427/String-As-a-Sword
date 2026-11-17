@@ -35,7 +35,7 @@
 | `noteSprite` | 좌우 노트. 기둥이 위, 머리가 아래인 그림 한 장으로 네 종류를 그린다. 기본 노트는 그대로, 빠른 노트 2개 묶음은 빔 1줄, 3개 묶음은 빔 2줄로 잇고, 홀드 노트는 꼬리까지 두 줄 레일을 긋는다 | 간격이 0.75박보다 짧은 노트를 한 묶음으로 본다. 4개 이상은 3개와 2개로 나눈다. 빔과 레일은 코드가 그린다 |
 | `backgroundLayers` | `background` 위에 뒤→앞 순서로 쌓는 전체 화면 레이어. `sway`(캔버스 px)가 0이 아니면 `period`초 주기로 둥둥 떠다닌다. 배경이 있으면 보드 영역이 투명해져 배경 위에 보드가 놓인다 | — |
 | `holdBodySprite` / `holdTailSprite` | 홀드 노트의 현(줄) 몸통 / 꼬리 말뚝 | 흰색으로 그린다. 가로로 늘어나며, 상태별 색(대기 흰색·유지 중 민트·끊김 회색)을 코드가 입힌다 |
-| `crownFull` / `crownLocked` / `crownBroken` | 보스 HP 칸 아이콘. 세 개를 모두 넣어야 표시된다 | — |
+| `crown` / `crownRegions` / `crownMaterial` | 보스 그림 머리 위의 왕관(`Art/UI/Boss/Crown.png`). 보스 HP와 잡음 표시를 대신한다. 날 4개가 HP 4칸이다. 오른쪽 날부터 맞을 때마다 위에서 아래로 나이트 검정이 되고, 칸이 다 닳으면 그 날의 glow가 꺼진다. 날 사이 이음새 3개는 잡음 페이즈 1~3이다. 오른쪽 이음새부터 잡음이 날아와 닿을 때마다 오른쪽에서 검게 물들고, 요건을 채우면 지지직 노이즈가 붙는다. 보스가 쓰러지면 왕관 전체가 꺼진다. 세 슬롯이 모두 있어야 표시된다 | 그림을 바꾸면 String As a Sword > Art > Set Up Boss Crown을 다시 실행한다. 영역 맵(`Crown_Regions.png`)과 `Crown.mat`을 다시 굽고, 영역 확인 그림을 `Logs/CrownRegions.png`에 쓴다. 날·이음새의 위치는 `CrownLayout.cs`의 UV 값이다. `crownWidth`(보스 그림 너비 대비), `crownSeamHeight`(가운데 이음새가 놓이는 보스 그림 높이, 위=0)로 크기와 위치를 맞춘다 |
 | `*Vfx` | 해당 순간에 보드 위에 생성하고 2초 뒤 삭제 | — |
 | `mainMenuDark` / `mainMenuWhite` | 예약. 메인화면을 구현할 때 연결한다 | — |
 | `menuFont` | 메인화면·스토리 카드·피날레 엔딩 문구 (학교안심 곧은제목 B, 동적 TMP SDF) | — |

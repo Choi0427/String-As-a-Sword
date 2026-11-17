@@ -4,6 +4,7 @@ using StringAsASword.Combat;
 using StringAsASword.Core;
 using StringAsASword.Player;
 using StringAsASword.Rhythm;
+using StringAsASword.Stage;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -40,15 +41,18 @@ namespace StringAsASword.Presentation
         public TMP_FontAsset LatinFont => art.font != null ? art.font : font;
         private PrototypeGame game;
         private RectTransform root;
-        private TMP_Text feedback, timing, combo, stats, beatLabel, position, mode, overlayTitle, overlayBody, buttonLabel, countIn;
+        private TMP_Text stats, beatLabel, position, mode, overlayTitle, overlayBody, buttonLabel, countIn;
         private GameObject overlay;
         private NotePresenter notes;
         private BoardWorldPresenter boardWorld;
         private BossPortrait bossPortrait;
         public BossPortrait BossPortrait => bossPortrait;
-        private TMP_Text noiseLabel;
+        private BossCrownView bossCrown;
+        /// <summary>The crown over the boss picture that shows boss HP and noise; null without crown art or a boss picture.</summary>
+        public BossCrownView BossCrown => bossCrown;
+        private RectTransform boardRect;
         private TMP_Text attackHint;
-        private TMP_Text playerHp, patternList;
+        private TMP_Text patternList;
         private readonly TMP_Text[] dangerLabels = new TMP_Text[64];
         private readonly GameObject[] dangerBadges = new GameObject[64];
         private readonly UnityEngine.UI.Image[] dangerBackgrounds = new UnityEngine.UI.Image[64];
@@ -64,10 +68,7 @@ namespace StringAsASword.Presentation
         private int lastClosedNote = -1;
         private float impactAge = 1;
         private ulong impactCells;
-        private readonly TMP_Text[] healthSlots = new TMP_Text[4];
-        private readonly UnityEngine.UI.Image[] crowns = new UnityEngine.UI.Image[4];
-        private TMP_Text phaseLabel;
-        private float feedbackAge = 10, pulseAge = 10;
+        private float pulseAge = 10;
         private const float OutcomeSeconds = .6f;
         private static readonly Color BlockedTint = new Color(.45f, .85f, 1f), HitTint = new Color(1f, .42f, .36f);
         private RectTransform outcomeFlash;
@@ -111,25 +112,12 @@ namespace StringAsASword.Presentation
             // The full prototype readout lives on a detail layer, hidden unless detailedHud is on.
             var detail = MakeRect(root, "Detail HUD", Vector2.zero, new Vector2(1600,900));
             layer = root;
-            Label("GEOM EUL HYEON", new Vector2(0,410), new Vector2(650,40), 24, InkWhite);
-            phaseLabel = Label("", new Vector2(0,380), new Vector2(650,24), 13, Muted);
             BuildBoard();
             BuildLanes();
-            // Kept on screen: player state top left, combo top right, judgement under the right strings.
-            playerHp = Label("", new Vector2(-600,300), new Vector2(330,36), 24, InkWhite);
-            noiseLabel = Label("", new Vector2(-600,245), new Vector2(330,65), 16, Accent);
-            Label("COMBO", new Vector2(600,320), new Vector2(250,26), 14, Muted);
-            combo = Label("000", new Vector2(600,272), new Vector2(300,70), 56, InkWhite);
-            feedback = Label("FIND YOUR RHYTHM", new Vector2(600,-210), new Vector2(330,45), 23, InkWhite);
-            timing = Label("Follow the two mirrored notes", new Vector2(600,-250), new Vector2(330,40), 14, Muted);
+            // No text HUD in play: the crown over the boss carries boss HP and noise. Only the count-in is written out.
             countIn = Label("", new Vector2(0,-405), new Vector2(430,40), 21, InkWhite);
-            for (int i = 0; i < 4; i++)
-            {
-                healthSlots[i] = Label("", new Vector2((i-1.5f)*136,340), new Vector2(130,40), 16, InkWhite, true);
-                if (!art.HasCrown) continue;
-                crowns[i] = Image(MakeRect(root, $"Crown_{i}", new Vector2((i-1.5f)*136-48,340), new Vector2(30,30)), Color.white);
-                crowns[i].preserveAspect = true; healthSlots[i].margin = new Vector4(30,0,0,0);
-            }
+            // Collected noise flies over the board and the strings to the crown; the menu overlay, built later, covers it.
+            if (bossCrown != null) bossCrown.MoteLayer = MakeRect(root, "Noise Motes", Vector2.zero, new Vector2(1600,900));
 
             layer = detail;
             detail.gameObject.SetActive(detailedHud);
@@ -162,7 +150,7 @@ namespace StringAsASword.Presentation
         private void BuildBoard()
         {
             Vector2 size = BoardSize;
-            var board = MakeRect(root,"Board View",BoardCenter,size);
+            var board = MakeRect(root,"Board View",BoardCenter,size); boardRect = board;
             var output = board.gameObject.AddComponent<UnityEngine.UI.RawImage>(); output.raycastTarget = false;
             boardWorld = board.gameObject.AddComponent<BoardWorldPresenter>(); boardWorld.Initialize(game, output, boardMaterial, art);
             if (art.bossImage != null && art.kingPrefab == null)
@@ -173,6 +161,11 @@ namespace StringAsASword.Presentation
                 float farEdge = BoardCenter.y + boardWorld.ProjectToBoard(new Vector3(0, 0, 4), size).y;
                 bossPortrait = boss.gameObject.AddComponent<BossPortrait>();
                 bossPortrait.Initialize(game, art.bossImage, new Vector2(BoardCenter.x + art.bossImageSink.x, farEdge - art.bossImageSink.y), Mathf.Max(1, art.bossImageHeight));
+                if (art.HasCrown)
+                {
+                    bossCrown = MakeRect(boss, "Boss Crown", Vector2.zero, Vector2.zero).gameObject.AddComponent<BossCrownView>();
+                    bossCrown.Initialize(game, bossPortrait, art);
+                }
             }
             var connectors = MakeRect(board, "DangerConnectors", Vector2.zero, size);
             for (int i = 0; i < 64; i++)
@@ -282,7 +275,7 @@ namespace StringAsASword.Presentation
             var dim=MakeRect(root,"MenuOverlay",Vector2.zero,new Vector2(1600,900)); overlay=dim.gameObject;
             var dimImage=Image(dim,new Color(.015f,.02f,.025f,.87f)); dimImage.raycastTarget=true;
             var card=MakeRect(dim,"MenuCard",Vector2.zero,new Vector2(660,365)); Image(card,new Color(.07f,.085f,.10f));
-            overlayTitle=Text(card,"Title","FIND YOUR RHYTHM",new Vector2(0,110),new Vector2(610,55),32,InkWhite);
+            overlayTitle=Text(card,"Title","",new Vector2(0,110),new Vector2(610,55),32,InkWhite);
             overlayBody=Text(card,"Instructions","",new Vector2(0,22),new Vector2(590,115),18,Muted);
             var buttonRect=MakeRect(card,"StartButton",new Vector2(-150,-105),new Vector2(280,55));
             var buttonImage=Image(buttonRect,InkWhite); buttonImage.raycastTarget=true;
@@ -297,50 +290,30 @@ namespace StringAsASword.Presentation
         }
         public void ResetFeedback()
         {
-            feedback.text="FIND YOUR RHYTHM"; timing.text="Follow the two mirrored notes";
-            feedbackAge=10; pulseAge=10; impactAge=1; impactCells=0; lastClosedNote=-1;
+            pulseAge=10; impactAge=1; impactCells=0; lastClosedNote=-1;
             outcomeAge=10; seenRecords=game.Battle.Records.Count; outcomeFlash.gameObject.SetActive(false);
             Array.Clear(dangerCounts, 0, dangerCounts.Length);
             for (int i = 0; i < dangerBadges.Length; i++)
             { dangerBadges[i].SetActive(false); dangerConnectors[i].gameObject.SetActive(false); }
             boardWorld.ResetVisuals();
+            if (bossCrown != null) bossCrown.ResetVisuals();
         }
         public void Pulse() => pulseAge=0;
-        public void ShowAction(ActionResult result)
-        {
-            boardWorld.ShowAction(result);
-            feedbackAge=0;
-            feedback.color=result.Accepted?Accent:InkWhite;
-            if(result.Accepted)
-            {
-                feedback.text=result.Timing.Grade.ToString().ToUpperInvariant();
-                timing.text=$"{result.Timing.ErrorSeconds*1000:+0;-0;0} ms  /  {(result.Timing.ErrorSeconds<0?"EARLY":"LATE")}";
-                if (result.Kind == PlayerActionKind.Attack)
-                {
-                    timing.text = game.Attacks.IsInRange(result.Position) ? "ATTACK / TOP ROW" : "SWING / OUT OF RANGE";
-                }
-                if (result.Kind == PlayerActionKind.Guard) timing.text = "GUARD / THIS NOTE ONLY";
-            }
-            else
-            {
-                feedback.text=result.Rejection==ActionRejection.OutsideBoard?"BOARD EDGE":result.Rejection==ActionRejection.BeatAlreadyUsed?"BEAT USED":"OFF BEAT";
-                timing.text=result.Rejection==ActionRejection.OutsideBoard?"Try another direction on this beat":result.Rejection==ActionRejection.BeatAlreadyUsed?"Wait for the next note":"Act when notes reach the markers";
-            }
-        }
-        public void ShowHold(TimingResult result)
-        {
-            feedbackAge = 0;
-            feedback.text = result.IsHit ? "RELEASE " + result.Grade.ToString().ToUpperInvariant() : "HOLD BREAK";
-            feedback.color = result.IsHit ? Accent : Muted;
-            timing.text = result.IsHit ? $"{result.ErrorSeconds * 1000:+0;-0;0} ms  /  RELEASE" :
-                result.ErrorSeconds < 0 ? "Released too early" : "Let go at the end of the string";
-        }
-        public void ShowMiss(int beat) { feedbackAge=0; feedback.text="MISS"; feedback.color=Muted; timing.text="Listen. Reset. Find the next beat."; }
+        public void ShowAction(ActionResult result) => boardWorld.ShowAction(result);
+        // Hold releases and misses have no text readout in play; the notes and the board carry them.
+        public void ShowHold(TimingResult result) { }
+        public void ShowMiss(int beat) { }
         public void ShowDamage(int damage)
         {
             boardWorld.ShowDamage(damage);
             if (damage > 0 && bossPortrait != null) bossPortrait.Hurt();
-            timing.text = damage > 0 ? $"BOSS HP  -{damage}" : game.Health.Defeated ? "ALL FOUR SEGMENTS CLEARED" : game.Health.CurrentDepleted ? "HP FLOOR / COLLECT NOISE" : "SWING / 0 DAMAGE";
+        }
+        /// <summary>A noise pickup was collected: it flies from its cell to the crown's seam for its phase.</summary>
+        public void ShowNoiseCollected(NoisePickup pickup)
+        {
+            if (bossCrown == null) return;
+            Vector2 point = boardWorld.ProjectToBoard(BoardWorldPresenter.CellPosition(pickup.Cell) + Vector3.up * .12f, BoardSize);
+            bossCrown.Fly(boardRect.TransformPoint(point), pickup.PhaseId);
         }
         // Beside the knight, because that is where the eye already is. Near the top it drops below instead.
         private void ShowOutcome(string text)
@@ -373,33 +346,15 @@ namespace StringAsASword.Presentation
             outcomeGroup.alpha = Mathf.Clamp01((OutcomeSeconds - outcomeAge) / .2f);
             outcomeFlash.localScale = Vector3.one * (1 + .18f * Mathf.Clamp01(1 - outcomeAge / .1f));
         }
-        public void ShowPhase(int phase)
-        {
-            boardWorld.ShowPhase();
-            feedbackAge = 0; feedback.color = Accent;
-            feedback.text = $"PHASE {phase} OPEN";
-            timing.text = $"MELODY STOLEN  {phase - 1} / 3";
-        }
+        public void ShowPhase(int phase) => boardWorld.ShowPhase();
         public void Render()
         {
-            feedbackAge+=Time.unscaledDeltaTime; pulseAge+=Time.unscaledDeltaTime;
+            pulseAge+=Time.unscaledDeltaTime;
             var cell=game.Session.Position;
             boardWorld.Render();
             RenderTelegraphs();
             RenderOutcome();
-            playerHp.text = $"PLAYER HP  {game.Battle.PlayerHp} / {game.Stage.PlayerMaxHp}";
             attackHint.text = !game.Attacks.IsInRange(cell) ? "J / SWING ONLY - DAMAGE FROM ROW 8" : game.Health.Defeated ? "J / SWING - ALL HP CLEARED" : game.Health.CurrentDepleted ? "J / 0 DAMAGE - COLLECT NOISE" : "J / ATTACK - DAMAGE ENABLED";
-            combo.text=game.Session.Combo.ToString("000");
-            phaseLabel.text = game.Phases.Completed ? "FOUR SEGMENTS CLEARED" : $"PHASE {game.Phases.PhaseId} / 4     -     MELODY STOLEN  {game.Phases.Steals} / 3";
-            for (int i = 0; i < healthSlots.Length; i++)
-            {
-                bool active = i == game.Health.ActiveSegment;
-                healthSlots[i].text = $"P{i+1} {game.Health.Remaining(i)}/{game.Health.Maximum(i)}" +
-                    (i > game.Health.ActiveSegment ? "<size=11> LOCKED</size>" : game.Health.Remaining(i) == 0 ? "<size=11> EMPTY</size>" : "");
-                healthSlots[i].color = active ? Accent : Muted;
-                if (crowns[i] != null)
-                    crowns[i].sprite = game.Health.Remaining(i) == 0 ? art.crownBroken : i > game.Health.ActiveSegment ? art.crownLocked : art.crownFull;
-            }
             stats.text=$"PERFECT     {game.Session.PerfectCount:000}\nGOOD            {game.Session.GoodCount:000}\nMISS              {game.Session.MissCount:000}\nBEST              {game.Session.BestCombo:000}";
             int cellIndex = cell.Y * 8 + cell.X;
             position.text=$"POSITION  {(char)('A'+cell.X)}{cell.Y+1}     /     " + (dangerCounts[cellIndex] > 0 ? TelegraphHud.ThreatText(dangerResponses[cellIndex], dangerRemaining[cellIndex], dangerCounts[cellIndex]) : "SAFE");
@@ -411,14 +366,13 @@ namespace StringAsASword.Presentation
                 foreach (var glow in judgeGlows) glow.color = new Color(1, 1, 1, Mathf.Lerp(.55f, 1, Mathf.Exp(-8 * pulseAge)));
             else foreach (var line in judgeLines) line.color = Color.Lerp(InkWhite, Accent, Mathf.Exp(-8 * pulseAge));
             notes.Render(game);
-            noiseLabel.text = game.Phases.PhaseId == 4 ? "FINAL PHASE\nALL MELODIES RECOVERED" : $"NOISE  {game.Noise.Collected} / {game.Noise.Required}" + (game.Noise.GoalReached ? "\nEMPTY HP TO UNLOCK" : game.Health.CurrentDepleted ? "\nCOLLECT TO UNLOCK NEXT HP" : "\nLAND ON A WAVE TO COLLECT");
-            countIn.text=game.State==PrototypeState.CountIn?$"GET READY  {Mathf.Clamp((int)Math.Ceiling(-game.SongTime/game.Timeline.SecondsPerBeat),1,game.Song.CountInBeats)}": "TWO NOTES. ONE BEAT. ONE ACTION.";
+            countIn.text=game.State==PrototypeState.CountIn?$"GET READY  {Mathf.Clamp((int)Math.Ceiling(-game.SongTime/game.Timeline.SecondsPerBeat),1,game.Song.CountInBeats)}": "";
             bool show=game.State==PrototypeState.Ready||game.State==PrototypeState.Paused||game.State==PrototypeState.Finished;
             overlay.SetActive(show);
             if(show)
             {
                 string result = game.Battle.Outcome == BattleOutcome.Won ? "WON / BOSS DEFEATED" : game.Battle.Outcome == BattleOutcome.Dead ? "DEAD / PLAYER HP EMPTY" : "TIMEOUT / NOTES EXHAUSTED";
-                overlayTitle.text=game.State==PrototypeState.Paused?"SESSION PAUSED":game.State==PrototypeState.Finished?result:"FIND YOUR RHYTHM";
+                overlayTitle.text=game.State==PrototypeState.Paused?"SESSION PAUSED":game.State==PrototypeState.Finished?result:"";
                 overlayBody.text=game.State==PrototypeState.Ready?"WASD move / J attack / K guard this note\nHatched: guard or move. Shield: guard. Arrows: move.\nNumbers count down to impact.\nAttack from row 8. Collect waves to unlock each phase.":$"Player HP {game.Battle.PlayerHp} / {game.Stage.PlayerMaxHp}    Phase {game.Phases.PhaseId} / 4\nPerfect {game.Session.PerfectCount}    Good {game.Session.GoodCount}    Miss {game.Session.MissCount}\nStart again with a fresh four-beat count-in.";
                 buttonLabel.text=game.State==PrototypeState.Ready?"START / SPACE":"RESTART / R OR SPACE";
             }
