@@ -77,6 +77,10 @@ MonoBehaviour:
     y: 5
     width: 52
     height: 76
+  playerHpBarOn: {fileID: 21300000, guid: 8100d0f6468c4e04b43bb825ba59e404, type: 3}
+  playerHpBarOff: {fileID: 21300000, guid: 105bb1444b2d4547a66e4af635c93f64, type: 3}
+  playerHpKnightOn: {fileID: 21300000, guid: 73982b22091846d38a027b39e8b7f7ff, type: 3}
+  playerHpKnightOff: {fileID: 21300000, guid: bc65e1c6f73f409dbe5766649b54276c, type: 3}
   attackVfx: {fileID: 0}
   guardVfx: {fileID: 0}
   hitVfx: {fileID: 0}

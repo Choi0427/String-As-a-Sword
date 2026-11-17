@@ -94,6 +94,9 @@ namespace StringAsASword.Presentation
         public TMP_FontAsset menuFont;
         [Tooltip("Telegraph countdown badges move away from this box around the knight, in board-view pixels.")]
         public Rect knightBadgeBox = new Rect(-26, 5, 52, 76);
+        [Tooltip("Player HP under the knight, one sprite per HP: a bar segment or a knight icon, on = left, off = lost. " +
+            "The style is picked in the menu settings. An empty slot draws a plain white/grey box.")]
+        public Sprite playerHpBarOn, playerHpBarOff, playerHpKnightOn, playerHpKnightOff;
 
         [Header("VFX prefabs (destroyed after 2 seconds)")]
         public GameObject attackVfx;

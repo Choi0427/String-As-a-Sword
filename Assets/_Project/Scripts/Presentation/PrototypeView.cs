@@ -67,6 +67,15 @@ namespace StringAsASword.Presentation
         private readonly TMP_Text[] healthSlots = new TMP_Text[4];
         private readonly UnityEngine.UI.Image[] crowns = new UnityEngine.UI.Image[4];
         private TMP_Text phaseLabel;
+        // Player HP under the knight, one image per HP. Sizes are cell widths, measured from the HUD mockup.
+        private UnityEngine.UI.Image[] hpIcons;
+        private RectTransform hpRow;
+        private PlayerHpStyle hpStyle;
+        public PlayerHpStyle HpStyle => hpStyle;
+        public int HpIconsOn { get { int on = 0; foreach (var icon in hpIcons) if (icon.sprite == OnSprite && icon.color == Color.white) on++; return on; } }
+        public int HpIconCount => hpIcons.Length;
+        private Sprite OnSprite => hpStyle == PlayerHpStyle.Knights ? art.playerHpKnightOn : art.playerHpBarOn;
+        private Sprite OffSprite => hpStyle == PlayerHpStyle.Knights ? art.playerHpKnightOff : art.playerHpBarOff;
         private float feedbackAge = 10, pulseAge = 10;
         private const float OutcomeSeconds = .6f;
         private static readonly Color BlockedTint = new Color(.45f, .85f, 1f), HitTint = new Color(1f, .42f, .36f);
@@ -116,7 +125,7 @@ namespace StringAsASword.Presentation
             BuildBoard();
             BuildLanes();
             // Kept on screen: player state top left, combo top right, judgement under the right strings.
-            playerHp = Label("", new Vector2(-600,300), new Vector2(330,36), 24, InkWhite);
+            // Player HP is drawn under the knight (BuildPlayerHp); the text readout lives on the detail layer.
             noiseLabel = Label("", new Vector2(-600,245), new Vector2(330,65), 16, Accent);
             Label("COMBO", new Vector2(600,320), new Vector2(250,26), 14, Muted);
             combo = Label("000", new Vector2(600,272), new Vector2(300,70), 56, InkWhite);
@@ -133,6 +142,7 @@ namespace StringAsASword.Presentation
 
             layer = detail;
             detail.gameObject.SetActive(detailedHud);
+            playerHp = Label("", new Vector2(-600,355), new Vector2(330,36), 24, InkWhite);
             Label("PROJECT  /  01", new Vector2(-660,394), new Vector2(200,30), 16, Muted);
             Label("RHYTHM PROTOTYPE", new Vector2(655,394), new Vector2(220,30), 14, Muted);
             Label("TEMPO", new Vector2(-573,235), new Vector2(250,30), 14, Muted);
@@ -195,6 +205,7 @@ namespace StringAsASword.Presentation
                 Text(board,"Column",((char)('A'+i)).ToString(),column,new Vector2(22,22),12,Muted);
                 Text(board,"Row",(i+1).ToString(),row,new Vector2(22,22),12,Muted);
             }
+            BuildPlayerHp(board);
             // Built after the badges so it reads above them; the menu overlay is still built later and covers it.
             outcomeFlash = MakeRect(board, "OutcomeFlash", Vector2.zero, new Vector2(264,48));
             outcomeGroup = outcomeFlash.gameObject.AddComponent<CanvasGroup>();
@@ -203,6 +214,43 @@ namespace StringAsASword.Presentation
             outcomeLabel = Text(outcomeFlash, "Outcome", "", Vector2.zero, new Vector2(240,44), 30, InkWhite);
             outcomeLabel.fontStyle = FontStyles.Bold;
             outcomeFlash.gameObject.SetActive(false);
+        }
+        private void BuildPlayerHp(RectTransform board)
+        {
+            hpStyle = GameFlow.HpStyle;
+            hpRow = MakeRect(board, "Player HP", Vector2.zero, Vector2.zero);
+            hpIcons = new UnityEngine.UI.Image[Mathf.Max(1, game.Stage.PlayerMaxHp)];
+            for (int i = 0; i < hpIcons.Length; i++)
+            {
+                hpIcons[i] = Image(MakeRect(hpRow, $"HP_{i}", Vector2.zero, Vector2.zero), Color.white);
+                hpIcons[i].preserveAspect = hpStyle == PlayerHpStyle.Knights;
+            }
+        }
+        // The row follows the knight's cell (not its hop) and scales with the cell's on-screen width,
+        // so it sits just inside the cell's near edge like the mockup. Lost HP turns off from the right.
+        private void RenderPlayerHp()
+        {
+            Vector3 at = boardWorld.PlayerTransform.localPosition; at.y = 0;
+            Vector2 left = boardWorld.ProjectToBoard(at + new Vector3(-.5f, 0, -.5f), BoardSize);
+            Vector2 right = boardWorld.ProjectToBoard(at + new Vector3(.5f, 0, -.5f), BoardSize);
+            float cell = right.x - left.x;
+            bool knights = hpStyle == PlayerHpStyle.Knights;
+            // Bar: 0.14 x 0.033 segments every 0.16, centred 0.086 above the edge. Knights: 0.156 tall every 0.125, feet 0.04 above it.
+            Vector2 size = knights ? new Vector2(.125f, .156f) * cell : new Vector2(.14f, .033f) * cell;
+            float pitch = (knights ? .125f : .16f) * cell;
+            hpRow.anchoredPosition = (left + right) * .5f + Vector2.up * (knights ? .04f * cell + size.y * .5f : .086f * cell);
+            int hp = game.Battle.PlayerHp;
+            for (int i = 0; i < hpIcons.Length; i++)
+            {
+                var icon = hpIcons[i];
+                icon.rectTransform.anchoredPosition = new Vector2((i - (hpIcons.Length - 1) * .5f) * pitch, 0);
+                icon.rectTransform.sizeDelta = size;
+                bool on = i < hp;
+                var sprite = on ? OnSprite : OffSprite;
+                icon.sprite = sprite;
+                // Without art: plain boxes, white on, grey (the art's 0x676767) off.
+                icon.color = sprite != null || on ? Color.white : new Color(.404f, .404f, .404f);
+            }
         }
         private void BuildLanes()
         {
@@ -402,6 +450,7 @@ namespace StringAsASword.Presentation
             boardWorld.Render();
             RenderTelegraphs();
             RenderOutcome();
+            RenderPlayerHp();
             playerHp.text = $"PLAYER HP  {game.Battle.PlayerHp} / {game.Stage.PlayerMaxHp}";
             attackHint.text = !game.Attacks.IsInRange(cell) ? "J / SWING ONLY - DAMAGE FROM ROW 8" : game.Health.Defeated ? "J / SWING - ALL HP CLEARED" : game.Health.CurrentDepleted ? "J / 0 DAMAGE - COLLECT NOISE" : "J / ATTACK - DAMAGE ENABLED";
             combo.text=game.Session.Combo.ToString("000");
