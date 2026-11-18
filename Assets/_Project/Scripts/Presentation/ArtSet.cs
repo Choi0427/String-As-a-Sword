@@ -28,6 +28,8 @@ namespace StringAsASword.Presentation
         [Tooltip("Noise pickup picture (Art/UI/Noise/Noise.png). Used when noisePrefab is empty: it floats above its cell, facing the camera, " +
             "over a soft shadow on the cell, and greys out once the phase goal is reached.")]
         public Sprite noiseSprite;
+        [Tooltip("Material for the noise sprite and its shadow, on URP's Sprite-Unlit-Default (the legacy Sprites/Default draws it white in this pipeline). Set Up Noise Sprite builds it.")]
+        public Material noiseMaterial;
 
         [Tooltip("Replaces the procedural plinth, rim, deck and cells. It is cut into one shard per cell so the board can break. " +
             "Fit its 8x8 squares to 1-unit cells centred on the origin, playing surface at y = 0.")]

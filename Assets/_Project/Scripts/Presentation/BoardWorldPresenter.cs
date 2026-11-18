@@ -1102,7 +1102,10 @@ namespace StringAsASword.Presentation
             {
                 noiseSprites = new SpriteRenderer[pickups.Length]; noiseShadows = new SpriteRenderer[pickups.Length]; noiseFloats = new Transform[pickups.Length];
                 noiseBackings = new SpriteRenderer[pickups.Length];
-                spriteMaterial = new Material(Shader.Find("Sprites/Default")) { name = "Noise Sprite" }; resources.Add(spriteMaterial);
+                // URP's own sprite shader: the legacy Sprites/Default ignores the colours in this pipeline and draws the
+                // picture, its black glow and the shadow all white, which hides the white line on light tiles.
+                spriteMaterial = art.noiseMaterial;
+                if (spriteMaterial == null) { spriteMaterial = new Material(Shader.Find(NoiseShader)) { name = "Noise Sprite" }; resources.Add(spriteMaterial); }
             }
             var item = new GameObject($"Noise_{index}").transform; item.SetParent(world.transform, false);
             var shadow = new GameObject("Noise Shadow", typeof(SpriteRenderer)).GetComponent<SpriteRenderer>();
@@ -1126,6 +1129,7 @@ namespace StringAsASword.Presentation
             return item;
         }
         private const float NoiseWidth = 1.15f, NoiseHover = .5f, NoiseBob = .08f;
+        public const string NoiseShader = "Universal Render Pipeline/2D/Sprite-Unlit-Default";
         /// <summary>Height above its cell at which a noise pickup is drawn (where collected noise starts its flight).</summary>
         public float NoiseHeight => noiseSprites != null ? NoiseHover : .12f;
         public bool NoiseUsesSprite => noiseSprites != null;

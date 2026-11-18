@@ -86,6 +86,9 @@ namespace StringAsASword.Tests
             Assert.That(hover.localPosition.y, Is.GreaterThan(.35f), "The picture hovers well above its cell.");
             var picture = hover.Find("Noise Sprite").GetComponent<SpriteRenderer>();
             Assert.That(picture.sprite, Is.SameAs(view.Art.noiseSprite));
+            // The legacy Sprites/Default draws everything white in this pipeline; URP's sprite shader keeps the colours.
+            Assert.That(picture.sharedMaterial.shader.name, Is.EqualTo(BoardWorldPresenter.NoiseShader));
+            Assert.That(picture.sharedMaterial.shader.isSupported, Is.True);
             // A dark copy drawn behind the white picture keeps it visible on light tiles.
             var backing = hover.Find("Noise Backing").GetComponent<SpriteRenderer>();
             Assert.That(backing.sortingOrder, Is.LessThan(picture.sortingOrder));
