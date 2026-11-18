@@ -71,12 +71,30 @@ namespace StringAsASword.Tests
             board.ShowOutcome(TelegraphHud.Blocked); board.ShowOutcome(TelegraphHud.Hit);
             yield return null;
             Assert.That(GameObject.Find("Vfx Stand-in(Clone)"), Is.Not.Null);
-            // The finale collapse breaks a delivered board into one shard per cell, and a reset puts the model back.
+            // A delivered board only cracks at the first break; from the second it is shown as one shard per cell.
             Assert.That(board.BoardShatters, Is.True, "a readable board mesh is cut into shards");
-            board.SetCollapse(1);
+            var cracks = boardWorld.Find("Board Cracks");
+            Assert.That(cracks, Is.Not.Null, "the Board Crack shader must be available");
+            Assert.That(cracks.gameObject.activeSelf, Is.False, "an intact board shows no cracks");
+            board.SetBreak(1);
+            Assert.That(cracks.gameObject.activeSelf, Is.True);
+            Assert.That(boardWorld.Find("Board Model").gameObject.activeSelf, Is.True);
+            board.SetBreak(2);
             Assert.That(boardWorld.Find("Board Model").gameObject.activeSelf, Is.False);
-            Assert.That(boardWorld.Find("Board Shards").childCount, Is.EqualTo(64));
-            board.SetCollapse(0);
+            // The outer 48 cells stay whole cells; the middle 4x4 is cut into angular fragments.
+            var shards = boardWorld.Find("Board Shards");
+            Assert.That(shards.Find("Shard_0_0"), Is.Not.Null);
+            Assert.That(shards.Find("Shard_3_3"), Is.Null, "the middle is not cut along the cells");
+            Assert.That(shards.childCount, Is.GreaterThanOrEqualTo(48 + 16));
+            Assert.That(shards.Find("Fragment_0").GetComponentsInChildren<MeshFilter>().Length, Is.GreaterThanOrEqualTo(2), "stone surface and core");
+            Assert.That(board.LightBelow, Is.False);
+            board.SetBreak(2.5f);
+            Assert.That(board.LightBelow, Is.True, "once the king falls, light shows between the fragments");
+            Assert.That(board.LightInCracks, Is.True, "and stands in the cracks between them");
+            board.SetBreak(2);
+            Assert.That(board.LightInCracks, Is.False, "not while the battle is still on");
+            board.SetBreak(0);
+            Assert.That(board.LightBelow, Is.False);
             Assert.That(boardWorld.Find("Board Model").gameObject.activeSelf, Is.True);
             game.PauseSession();
             LogAssert.NoUnexpectedReceived();

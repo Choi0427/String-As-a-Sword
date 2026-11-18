@@ -24,7 +24,9 @@
 | `kingPrefab` | `kingAnchor` 위치에 `kingScale`로 배치. 비어 있으면 킹 모델을 만들지 않고 `bossImage`를 쓴다 | Trigger `Telegraph` `Attack` `Hurt` `PhaseUp` (`Stunned`는 피날레용으로 예약) |
 | `bossImage` | 임시 보스 그림(2D). 보드 뒤, 배경 위에 그린다. `bossImageHeight`(캔버스 px)로 크기를, `bossImageSink`(x 좌우, y 보드 먼 변 아래로 내리는 양)로 위치를 맞춘다. 피격 시 흔들리고, 스턴되면 어두워지며 기울고, 피날레에서 가라앉는다. `kingPrefab`이 있으면 쓰지 않는다 | — |
 | `noisePrefab` | 잡음 대체. `noiseDormantMaterial`이 있으면 목표 달성 후 머티리얼을 그것으로 바꾼다 | Bool `Dormant` |
-| `boardPrefab` | 절차적 받침·테두리·덱·64칸을 통째로 대체. 8×8 칸이 1유닛 칸에 맞고 윗면이 y = 0이어야 한다. 피날레 붕괴 때 칸 단위 64조각으로 부서져 바깥부터 떨어진다. 모델의 Read/Write가 켜져 있어야 하며(`ChessBoard.fbx`는 켜 둠), 꺼져 있으면 한 덩어리로 떨어진다 | — |
+| `boardPrefab` | 절차적 받침·테두리·덱·64칸을 통째로 대체. 8×8 칸이 1유닛 칸에 맞고 윗면이 y = 0이어야 한다. 싸비2가 끝난 뒤부터 칸 단위 64조각으로 나뉘어 몇 칸이 내려앉고, 곡이 끝나면 가운데 4×4 조각이 튕겨 나간다. 모델의 Read/Write가 켜져 있어야 하며(`ChessBoard.fbx`는 켜 둠), 꺼져 있으면 금만 가고 조각나지 않는다 | — |
+| `boardCrack` | 보드 전체에 덮는 금·가운데 빛·구멍 머티리얼(`Board Crack` 셰이더의 `_Crack`, `_Light`, `_Hole`을 코드가 움직인다). `String As a Sword > Art > Set Up Board Cracks`가 만든다 | — |
+| `endingCutscene` | 엔딩 컷신 영상(`VideoClip`). 잡음에 닿으면 레터박스 사이에서 재생된다. 비어 있으면 검정 화면 2초 | — |
 | `lightTile` / `darkTile` / `boardEdge` | 칸 윗면(칸마다 UV 0~1) / 받침·옆면 | — |
 | `normalMark` / `strongMark` | 공격 장판 (0.92칸). 그림 없이 `Telegraph Tile` 셰이더가 그린다. 일반은 반투명 흰색에 테두리 안쪽 글로우, 강화(가드 불가)는 더 투명하고 대각선 빗금이 있다. 보드 전체 공격(가드 필수)은 일반 장판으로 보인다 | `String As a Sword > Art > Set Up Telegraph Tiles`가 `TelegraphNormal.mat` / `TelegraphStrong.mat`을 만들어 넣는다. 투명도·글로우·빗금 값은 머티리얼에서 고친다 |
 | `impactMark` | 공격이 떨어진 칸에 0.3초 보이는 표시. 비어 있으면 X 모양 메시를 쓴다 | — |
@@ -38,7 +40,7 @@
 | `crown` / `crownRegions` / `crownMaterial` | 보스 그림 머리 위의 왕관(`Art/UI/Boss/Crown.png`). 보스 HP와 잡음 표시를 대신한다. 날 4개가 HP 4칸이다. 오른쪽 날부터 맞을 때마다 위에서 아래로 나이트 검정이 되고, 칸이 다 닳으면 그 날의 glow가 꺼진다. 날 사이 이음새 3개는 잡음 페이즈 1~3이다. 오른쪽 이음새부터 잡음이 날아와 닿을 때마다 오른쪽에서 검게 물들고, 요건을 채우면 지지직 노이즈가 붙는다. 보스가 쓰러지면 왕관 전체가 꺼진다. 세 슬롯이 모두 있어야 표시된다 | 그림을 바꾸면 String As a Sword > Art > Set Up Boss Crown을 다시 실행한다. 영역 맵(`Crown_Regions.png`)과 `Crown.mat`을 다시 굽고, 영역 확인 그림을 `Logs/CrownRegions.png`에 쓴다. 날·이음새의 위치는 `CrownLayout.cs`의 UV 값이다. `crownWidth`(보스 그림 너비 대비), `crownSeamHeight`(가운데 이음새가 놓이는 보스 그림 높이, 위=0)로 크기와 위치를 맞춘다 |
 | `*Vfx` | 해당 순간에 보드 위에 생성하고 2초 뒤 삭제 | — |
 | `mainMenuDark` / `mainMenuWhite` | 예약. 메인화면을 구현할 때 연결한다 | — |
-| `menuFont` | 메인화면·스토리 카드·피날레 엔딩 문구 (학교안심 곧은제목 B, 동적 TMP SDF) | — |
+| `menuFont` | 메인화면·스토리 카드·컷신 건너뛰기 안내 (학교안심 곧은제목 B, 동적 TMP SDF) | — |
 
 - 애니메이터에 해당 파라미터가 없으면 그 신호는 조용히 건너뛴다. 경고도 나지 않는다.
 - 공격·방어 연출 시간은 각각 0.23초, 0.34초다. 클립이 이보다 길면 다음 박자와 겹친다.

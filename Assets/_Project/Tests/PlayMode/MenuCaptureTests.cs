@@ -56,7 +56,7 @@ namespace StringAsASword.Tests
             try
             {
                 game.JumpToEpilogueForTests();
-                foreach (float at in new[] { .6f, 4f, 7.4f, 9.4f })
+                foreach (float at in new[] { .5f, 1f, 1.4f, 1.8f, 3.6f })
                 {
                     while (Object.FindAnyObjectByType<FinaleDirector>().EpilogueAge < at) yield return null;
                     yield return Capture(camera, texture, Path.Combine(dir, $"epilogue-{at:0.0}s.png"));
@@ -86,9 +86,26 @@ namespace StringAsASword.Tests
             float shown = Time.realtimeSinceStartup + .4f;
             while (Time.realtimeSinceStartup < shown) yield return null;
             yield return Capture(camera, texture, Path.Combine(dir, "battle-summon.png"));
-            board.SetCollapse(.5f);
-            yield return Capture(camera, texture, Path.Combine(dir, "battle-shatter.png"));
-            board.SetCollapse(0);
+            // The board's break steps: cracked, crumbling, light through the centre.
+            for (int stage = 1; stage <= 3; stage++)
+            {
+                board.BreakOverride = stage;
+                yield return Capture(camera, texture, Path.Combine(dir, $"battle-break-{stage}.png"));
+            }
+            // The centre coming apart from the king's fall to the end of the song, then bursting.
+            foreach (float leak in new[] { .3f, .7f })
+            {
+                board.BreakOverride = 2 + leak;
+                yield return Capture(camera, texture, Path.Combine(dir, $"battle-leak-{leak:0.0}.png"));
+            }
+            board.BreakOverride = 3;
+            foreach (float burst in new[] { .25f, .5f, .8f })
+            {
+                board.SetBurst(burst);
+                yield return Capture(camera, texture, Path.Combine(dir, $"battle-burst-{burst:0.00}.png"));
+            }
+            board.SetBurst(0);
+            board.BreakOverride = -1;
             game.PauseSession();
         }
         private static IEnumerator Capture(Camera camera, RenderTexture texture, string path)

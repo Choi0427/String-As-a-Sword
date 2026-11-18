@@ -36,6 +36,9 @@ namespace StringAsASword.Player
             BindGameplay("k", PlayerActionKind.Guard);
             BindCommand("space", "start"); BindCommand("enter", "start");
             BindCommand("r", "restart"); BindCommand("escape", "pause"); BindCommand("m", "mute");
+            // Developer mode only; the game ignores them otherwise.
+            for (int phase = 1; phase <= 4; phase++) BindCommand("f" + phase, "dev-phase" + phase);
+            BindCommand("f5", "dev-invincible"); BindCommand("f6", "dev-bosshp");
         }
         private InputAction AddAction(string key)
         {

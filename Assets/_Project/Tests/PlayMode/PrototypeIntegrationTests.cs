@@ -221,6 +221,10 @@ namespace StringAsASword.Tests
             Assert.That(EventCount("player-hit"), Is.EqualTo(1));
             Assert.That(EventCount("guard-success"), Is.Zero);
             Assert.That(ActiveOutcome, Is.EqualTo("HIT"));
+            yield return null; // the HUD redraws after the hit
+            var view = Object.FindAnyObjectByType<PrototypeView>();
+            Assert.That(view.HpIconCount, Is.EqualTo(game.Stage.PlayerMaxHp), "One HP icon per max HP under the knight.");
+            Assert.That(view.HpIconsOn, Is.EqualTo(game.Stage.PlayerMaxHp - 1), "The hit turns one HP icon off.");
             LogAssert.NoUnexpectedReceived();
         }
         [UnityTest] public IEnumerator DodgeOnlyAttackBreaksARealGuardKey()

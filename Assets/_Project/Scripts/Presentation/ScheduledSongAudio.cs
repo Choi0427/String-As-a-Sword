@@ -42,7 +42,18 @@ namespace StringAsASword.Presentation
             nextClick = -song.CountInBeats;
             musicSource.clip = song.Music;
             musicSource.volume = song.Volume * Core.GameFlow.MusicVolume;
-            if (song.Music != null) musicSource.PlayScheduled(clock.Origin - song.AudioStartOffset);
+            if (song.Music != null)
+            {
+                double start = clock.Origin - song.AudioStartOffset, at = AudioSettings.dspTime + .25;
+                musicSource.timeSamples = 0;
+                if (start >= at) musicSource.PlayScheduled(start);
+                else
+                {
+                    // The clock starts inside the song (developer mode): start the music from the matching sample.
+                    long sample = (long)((at - start) * song.Music.frequency);
+                    if (sample < song.Music.samples) { musicSource.timeSamples = (int)sample; musicSource.PlayScheduled(at); }
+                }
+            }
             Schedule();
         }
         /// <summary>Ending fade: 1 = the song's configured volume, 0 = silent.</summary>

@@ -103,15 +103,16 @@ namespace StringAsASword.Tests
             Assert.That(game.State, Is.EqualTo(PrototypeState.CountIn), "No ready overlay after the story.");
             LogAssert.NoUnexpectedReceived();
         }
-        [UnityTest] public IEnumerator EpilogueLetsTheKnightRoamFreelyThenReturnsToAWhiteMenu()
+        [UnityTest] public IEnumerator EpilogueLetsTheKnightRoamToTheNoiseThenTheCutsceneReturnsToAWhiteMenu()
         {
             yield return LoadAndWait(GameFlow.MenuScene);
             GameFlow.StartBattle();
             yield return UntilScene(GameFlow.BattleScene, 10);
             var game = Object.FindAnyObjectByType<PrototypeGame>();
             var knight = Object.FindAnyObjectByType<BoardWorldPresenter>().PlayerTransform;
+            var director = Object.FindAnyObjectByType<FinaleDirector>();
             game.JumpToEpilogueForTests();
-            yield return new WaitForSecondsRealtime(1.3f);
+            yield return new WaitForSecondsRealtime(.3f);
             float before = knight.localPosition.z;
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.W, Key.D));
             yield return new WaitForSecondsRealtime(1.2f);
@@ -120,7 +121,35 @@ namespace StringAsASword.Tests
             Assert.That(moved, Is.GreaterThan(1.2f), "Free movement is off the grid and continuous.");
             Assert.That(moved, Is.LessThan(2.6f * 1.25f), "Diagonals are not faster.");
             Assert.That(game.State, Is.EqualTo(PrototypeState.Epilogue));
-            yield return UntilScene(GameFlow.MenuScene, 25);
+
+            // The white world has no time limit: nothing happens until the knight reaches the noise.
+            float deadline = Time.realtimeSinceStartup + 10;
+            while (!director.InWhiteWorld && Time.realtimeSinceStartup < deadline) yield return null;
+            Assert.That(director.InWhiteWorld, "The burst gives way to the white world.");
+            yield return new WaitForSecondsRealtime(2.5f);
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo(GameFlow.BattleScene));
+            Assert.That(director.CutscenePlaying, Is.False);
+            float far = director.NoiseVolume, loudest = far;
+            var keys = new List<Key>();
+            deadline = Time.realtimeSinceStartup + 20;
+            while (!director.CutscenePlaying && Time.realtimeSinceStartup < deadline)
+            {
+                Vector3 gap = director.NoisePosition - knight.localPosition;
+                keys.Clear();
+                if (gap.x < -.1f) keys.Add(Key.A); else if (gap.x > .1f) keys.Add(Key.D);
+                if (gap.z < -.1f) keys.Add(Key.S); else if (gap.z > .1f) keys.Add(Key.W);
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(keys.ToArray()));
+                loudest = Mathf.Max(loudest, director.NoiseVolume);
+                yield return null;
+            }
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
+            Assert.That(director.CutscenePlaying, "Touching the noise starts the cutscene.");
+            if (GameFlow.MusicVolume > 0) Assert.That(loudest, Is.GreaterThan(far * 3), "The noise grows louder as the knight comes near.");
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo(GameFlow.BattleScene));
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Space)); yield return null;
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
+            Assert.That(director.CutscenePlaying, Is.False, "Space skips the cutscene.");
+            yield return UntilScene(GameFlow.MenuScene, 10);
             Assert.That(GameFlow.Cleared);
             Assert.That(Object.FindAnyObjectByType<MainMenuView>().White);
             LogAssert.NoUnexpectedReceived();
