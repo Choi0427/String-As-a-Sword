@@ -181,6 +181,7 @@ namespace StringAsASword.Tests
             game.Battle.Settings.BossChartText = null; // the stage's boss chart would replace the fixture pattern
             game.Battle.Settings.Patterns = new[] { pattern };
             game.StartSession();
+            game.Noise.BeginPhase(1, 0, 0); // no noise: an attack is held back while it would cut off the way to a pickup
             yield return UntilSongTime(game.Timeline.TimeOf(0)+.16);
             yield return null;
             Assert.That(game.Battle.Patterns.Active.Count, Is.EqualTo(1), "The fixture attack must be published before anyone responds.");
@@ -259,6 +260,7 @@ namespace StringAsASword.Tests
             Assert.That(ActiveOutcome, Is.EqualTo("HIT"));
             game.StartSession();
             Assert.That(ActiveOutcome, Is.Empty, "A restart must not carry the last run's outcome.");
+            game.Noise.BeginPhase(1, 0, 0);
             yield return UntilSongTime(game.Timeline.TimeOf(0)+.16);
             yield return UntilImpactResolved();
             Assert.That(ActiveOutcome, Is.EqualTo("HIT"));
@@ -285,23 +287,38 @@ namespace StringAsASword.Tests
             Assert.That(game.Noise.Collected,Is.Zero);
             LogAssert.NoUnexpectedReceived();
         }
-        [UnityTest] public IEnumerator TopRowAttacksStopAtHealthFloorUntilNoiseGoalIsMet()
+        [UnityTest] public IEnumerator NoiseChargesTheStringAndOnlyResonanceHurtsTheBoss()
         {
-            // This is about the HP floor: no boss attacks, so the long stay on row 8 cannot end the run.
+            // No boss attacks, so the stay on row 8 cannot end the run. The noise is pinned one step above the knight.
             game.Battle.Settings.Schedule.Enabled = false;
             game.Battle.Settings.BossChartText = null;
             game.Battle.Settings.Patterns = new PatternDefinition[0];
+            var noiseCell = new GridPosition(6, 1);
+            game.Noise.CandidateAllowed = (cell, fallback) => cell.Equals(noiseCell);
             game.StartSession();
-            for(int beat=0;beat<7;beat++) yield return TapAtBeat(Key.W,beat); // g1 to g8
+            var hud = Object.FindAnyObjectByType<PrototypeView>().ResonanceHud;
+            int full = System.Linq.Enumerable.Sum(game.Stage.HealthSegments);
+            yield return TapAtBeat(Key.W,0); // g1 to g2: lands on the noise
+            Assert.That(game.Battle.Resonance.Charged,Is.True);
+            Assert.That(hud.ShownCharged,Is.True,"The lanes show the charge.");
+            for(int beat=1;beat<6;beat++) yield return TapAtBeat(Key.W,beat); // g2 to g7
+            Assert.That(game.Noise.Pickups,Is.Empty,"No noise spawns while the string is charged.");
+            noiseCell = new GridPosition(0, 0); // the next one appears far away, after the resonance
+            yield return TapAtBeat(Key.W,6); // g8
             Assert.That(game.Session.Position,Is.EqualTo(new GridPosition(6,7)));
-            int afterAttacks = 8 + game.Health.Maximum(0);
-            for(int beat=7;beat<afterAttacks;beat++) yield return TapAtBeat(Key.J,beat);
-            Assert.That(game.Health.CurrentHp,Is.Zero);
-            Assert.That(game.Health.TotalHp,Is.EqualTo(System.Linq.Enumerable.Sum(game.Stage.HealthSegments) - game.Health.Maximum(0)));
-            Assert.That(game.Phases.PhaseId,Is.EqualTo(1));
-            yield return TapAtBeat(Key.K,afterAttacks);
-            Assert.That(game.Health.TotalHp,Is.EqualTo(System.Linq.Enumerable.Sum(game.Stage.HealthSegments) - game.Health.Maximum(0)));
-            Assert.That(game.Session.AcceptedGuards,Is.EqualTo(1));
+            Assert.That(game.Battle.Resonance.Charged,Is.True,"The charge waits for the first attack.");
+            yield return TapAtBeat(Key.J,7); // ignition
+            Assert.That(game.Battle.Resonance.EndNote,Is.EqualTo(14));
+            Assert.That(hud.ShownRemaining,Is.EqualTo(7));
+            Assert.That(game.Health.TotalHp,Is.LessThan(full),"The igniting attack already hurts.");
+            for(int beat=8;beat<15;beat++) yield return TapAtBeat(Key.J,beat);
+            Assert.That(hud.ShownRemaining,Is.Zero);
+            int afterResonance = game.Health.TotalHp;
+            Assert.That(full - afterResonance,Is.InRange(8,18),"Eight notes at 1 or 2 each, plus a cadence of 2 at most.");
+            yield return TapAtBeat(Key.J,15); // nothing left on the string
+            Assert.That(game.Health.TotalHp,Is.EqualTo(afterResonance),"Without resonance the blade passes through.");
+            Assert.That(game.Battle.Records[15].reason,Is.EqualTo("Ghost"));
+            Assert.That(game.Noise.Pickups.Count,Is.EqualTo(1),"Noise returns once the resonance is over.");
             LogAssert.NoUnexpectedReceived();
         }
         [UnityTest] public IEnumerator RealKeyboardHoldReleasedOnTheTailIsPerfectAndDrawsAString()

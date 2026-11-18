@@ -14,82 +14,50 @@ namespace StringAsASword.Tests
         {
             health = new BossHealthGate(6, 6, 6, 6);
             noise = new NoisePickupSystem(new BoardState());
-            phases = new PhaseController(health, noise, new[] { 3, 4, 5 });
+            phases = new PhaseController(health, noise);
             phases.Reset(1, 87);
         }
-        private int CollectGoal(int firstBeat)
+        [Test] public void EmptyingASegmentOpensTheNextWithoutAnyNoise()
         {
-            int beat = firstBeat;
-            while (!noise.GoalReached)
-            {
-                noise.AdvanceToBeat(beat, new GridPosition(3, 3));
-                if (noise.Pickups.Count > 0) noise.TryCollect(noise.Pickups[0].Cell, noise.SessionId, noise.PhaseId);
-                if (!noise.GoalReached) beat++;
-            }
-            return beat;
-        }
-        [TestCase(true)] [TestCase(false)]
-        public void BothConditionsAreRequiredInEitherOrder(bool damageFirst)
-        {
-            int beat;
-            if (damageFirst)
-            {
-                health.ApplyDamage(99, 0);
-                Assert.That(phases.ResolveBeat(0), Is.False);
-                Assert.That(health.ApplyDamage(1, 0), Is.Zero);
-                beat = CollectGoal(1);
-            }
-            else
-            {
-                beat = CollectGoal(0);
-                Assert.That(phases.ResolveBeat(beat++), Is.False);
-                health.ApplyDamage(99, 0);
-            }
-            Assert.That(phases.ResolveBeat(beat), Is.True);
+            health.ApplyDamage(5, 0);
+            Assert.That(phases.ResolveBeat(0), Is.False);
+            health.ApplyDamage(1, 0);
+            Assert.That(phases.ResolveBeat(1), Is.True);
             Assert.That(phases.PhaseId, Is.EqualTo(2));
             Assert.That(health.CurrentHp, Is.EqualTo(6));
-            Assert.That(health.TotalHp, Is.EqualTo(18));
-            Assert.That(noise.Collected, Is.Zero);
-            Assert.That(noise.Required, Is.EqualTo(4));
-            Assert.That(noise.Pickups, Is.Empty);
-            Assert.That(phases.ResolveBeat(beat), Is.False);
-            Assert.That(health.ApplyDamage(1, 0), Is.Zero, "Stale damage must not enter the new segment.");
+            Assert.That(phases.ResolveBeat(1), Is.False, "A beat resolves once.");
+            Assert.That(phases.ResolveBeat(2), Is.False, "A phase is reported once.");
         }
-        [Test] public void ExactlyThreeUnlocksAndNoFourthPhaseNoise()
+        [Test] public void ExactlyThreeUnlocksAndNoiseKeepsSpawning()
         {
-            int beat = 0, events = 0;
+            int events = 0;
             phases.PhaseUnlocked += _ => events++;
             for (int segment = 0; segment < 3; segment++)
             {
-                beat = CollectGoal(beat);
-                health.ApplyDamage(100, segment);
-                Assert.That(phases.ResolveBeat(beat++), Is.True);
+                health.ApplyDamage(6, segment);
+                Assert.That(phases.ResolveBeat(segment), Is.True);
             }
             Assert.That(events, Is.EqualTo(3));
             Assert.That(phases.PhaseId, Is.EqualTo(4));
             noise.AdvanceToBeat(1000, new GridPosition(0, 0));
-            Assert.That(noise.Pickups, Is.Empty);
-            Assert.That(noise.Required, Is.Zero);
+            Assert.That(noise.Pickups, Is.Not.Empty, "Noise is no longer tied to a phase goal.");
             Assert.That(phases.Completed, Is.False);
             health.ApplyDamage(100, 3);
             Assert.That(phases.ResolveBeat(1000), Is.False);
             Assert.That(phases.Completed, Is.True);
             Assert.That(health.TotalHp, Is.Zero);
         }
-        [Test] public void UnlockSpawnsNextBeatOnceAndRestartRestoresPhaseOne()
+        [Test] public void RestartRestoresPhaseOne()
         {
-            int beat = CollectGoal(0);
-            health.ApplyDamage(6, 0); phases.ResolveBeat(beat);
-            noise.AdvanceToBeat(beat, new GridPosition(0, 0));
-            Assert.That(noise.Pickups, Is.Empty);
-            noise.AdvanceToBeat(beat + 1, new GridPosition(0, 0));
-            Assert.That(noise.Pickups.Count, Is.EqualTo(1));
+            health.ApplyDamage(6, 0); phases.ResolveBeat(0);
+            noise.AdvanceToBeat(0, new GridPosition(0, 0));
             phases.Reset(2, 87);
             Assert.That(phases.PhaseId, Is.EqualTo(1));
             Assert.That(health.TotalHp, Is.EqualTo(24));
-            Assert.That(noise.Required, Is.EqualTo(3));
             Assert.That(noise.SessionId, Is.EqualTo(2));
             Assert.That(noise.Pickups, Is.Empty);
+            health.ApplyDamage(6, 0);
+            Assert.That(phases.ResolveBeat(0), Is.True, "The reported phase restarts too.");
         }
     }
 }

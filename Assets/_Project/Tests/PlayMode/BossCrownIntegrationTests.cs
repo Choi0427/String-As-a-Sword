@@ -43,7 +43,7 @@ namespace StringAsASword.Tests
             }
             Assert.That(countIn, Is.True, "The count-in stays on screen.");
         }
-        [UnityTest] public IEnumerator CrownSitsOnTheBossAndShowsHitsAndNoise()
+        [UnityTest] public IEnumerator CrownSitsOnTheBossAndShowsBossHpOnly()
         {
             var crown = view.BossCrown;
             Assert.That(crown, Is.Not.Null, "Run String As a Sword > Art > Set Up Boss Crown.");
@@ -59,11 +59,12 @@ namespace StringAsASword.Tests
 
             var noise = game.Noise;
             view.ShowNoiseCollected(new NoisePickup(99, noise.SessionId, 1, 0, new GridPosition(3, 3)));
-            Assert.That(crown.Flying, Is.EqualTo(1));
-            Assert.That(GameObject.Find("Noise Mote"), Is.Not.Null);
-            yield return new WaitForSecondsRealtime(.8f);
-            Assert.That(crown.Flying, Is.Zero, "The noise lands on the seam.");
+            Assert.That(crown.Flying, Is.Zero, "The crown is boss HP only; noise charges the string instead.");
             Assert.That(GameObject.Find("Noise Mote"), Is.Null);
+            Assert.That(crown.Seam(0), Is.Zero, "A seam stays clean until the blade before it is spent.");
+            game.Health.ApplyDamage(game.Health.CurrentHp, 0);
+            yield return new WaitForSecondsRealtime(.8f);
+            Assert.That(crown.Seam(0), Is.GreaterThan(.9f));
             LogAssert.NoUnexpectedReceived();
         }
         [UnityTest] public IEnumerator NoiseFloatsAsTheDeliveredSpriteAndTheBoardHasNoEdgeMarksOrLabels()

@@ -80,7 +80,7 @@ namespace StringAsASword.Tests
                     // A note between two hits of the same sequence, spent on row 8.
                     if (impacts.Contains(record.noteIndex - 1) && impacts.Contains(record.noteIndex + 1) && record.y == 7 && record.beforeY == 7)
                     {
-                        Assert.That(record.category == "EffectiveAttack" || record.category == "Move" || record.reason == "HpFloor", Is.True, "Seed " + battle.Seed + ", note " + record.noteIndex);
+                        Assert.That(record.category == "EffectiveAttack" || record.category == "Move" || record.reason == "NoDamage", Is.True, "Seed " + battle.Seed + ", note " + record.noteIndex);
                         if (record.category == "EffectiveAttack") between++;
                     }
                 }

@@ -41,9 +41,8 @@ namespace StringAsASword.Simulation
             bool danger = Threatened(view.Position, view.NoteIndex, view.Telegraphs);
             if (GuardRequired(view))
                 return new BattleDecision(PlayerActionKind.Guard);
-            bool urgent = view.RemainingNotes <= CollectionBudget(view);
-            bool collect = view.GoalRemaining > 0 &&
-                (kind == StrategyKind.CollectFirst || urgent || view.CurrentHp <= 0);
+            // An empty string deals no damage, so every strategy fetches a noise first.
+            bool collect = view.GoalRemaining > 0;
             var pickup = collect || kind == StrategyKind.MovementUse ? BestPickup(view) : default;
             if (kind == StrategyKind.MovementUse && pickup.Found && pickup.Cost <= view.MaxCollectionCost / 2)
                 collect = true;
@@ -82,14 +81,6 @@ namespace StringAsASword.Simulation
                 return new BattleDecision(PlayerActionKind.Guard);
             }
             return new BattleDecision(PlayerActionKind.Attack);
-        }
-
-        public static int CollectionBudget(BattleObservation view)
-        {
-            // Reserve all remaining attacks and a worst-case bounded trip per remaining pickup.
-            int goals = view.GoalRemaining + view.FutureNoiseGoals;
-            return view.RemainingBossHp + goals * view.MaxCollectionCost +
-                Math.Max(0, goals - view.Pickups.Length) * view.SpawnInterval;
         }
 
         // Decides only what a pending DodgeOnly sequence forces; false leaves the note to the strategy's normal work.
@@ -270,7 +261,7 @@ namespace StringAsASword.Simulation
                     Increment(result.InvariantFailures, "board-bounds");
                 int distance = Math.Abs(record.x - record.beforeX) + Math.Abs(record.y - record.beforeY);
                 if (distance != (record.category == "Move" ? 1 : 0)) Increment(result.InvariantFailures, "move-distance");
-                if (record.damage < 0 || record.damage > 1 || record.damage > 0 && record.y != 7)
+                if (record.damage < 0 || record.damage > ResonanceState.PerfectDamage + ResonanceState.CadenceBonus || record.damage > 0 && record.y != 7)
                     Increment(result.InvariantFailures, "attack-damage");
                 if ((record.category == "EffectiveAttack") != (record.damage > 0))
                     Increment(result.InvariantFailures, "attack-category");
