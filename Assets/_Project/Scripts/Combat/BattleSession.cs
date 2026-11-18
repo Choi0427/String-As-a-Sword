@@ -118,6 +118,21 @@ namespace StringAsASword.Combat
             Patterns.CanPublish = CanPublish;
             Patterns.BeginPhase(1, 0); Patterns.Publish(-1, Session.Position, Settings.NoteCount, false);
         }
+        /// <summary>Developer mode: hits still land and show, but cost no HP.</summary>
+        public bool Invincible { get; set; }
+        /// <summary>Developer mode: the finishing run wins the battle whatever boss HP is left.</summary>
+        public bool IgnoreBossHp { get; set; }
+        /// <summary>Developer mode: empties the boss HP of the phases before this one (1..4) and opens it. Never goes back.</summary>
+        public void SkipToPhase(int phase)
+        {
+            phase = Math.Min(4, phase);
+            while (Outcome == BattleOutcome.Running && Phases.PhaseId < phase)
+            {
+                Phases.AdvanceAnalysisPhase(CurrentMusicBeat + 1);
+                AddEvent("dev-phase", Phases.PhaseId.ToString(), Session.Position);
+                Patterns.BeginPhase(Phases.PhaseId, LastClosedNote + 1);
+            }
+        }
         public ActionResult Request(PlayerActionKind kind, MoveDirection direction, double songTime)
         {
             Inputs.Add(new BattleInput { action = kind, direction = direction, time = songTime });
@@ -166,7 +181,7 @@ namespace StringAsASword.Combat
             bool broken = guarded && (Patterns.LastFiredUnblockable & cell) != 0;
             bool guard = guarded && !broken;
             bool hit = threatened && !guard;
-            if (hit) PlayerHp = Math.Max(0, PlayerHp - 1);
+            if (hit && !Invincible) PlayerHp = Math.Max(0, PlayerHp - 1);
             LastClosedNote = note;
             var record = new NoteRecord { noteIndex = note, phase = phase, musicBeat = CurrentMusicBeat,
                 beforeX = before.X, beforeY = before.Y, x = Session.Position.X, y = Session.Position.Y,
@@ -209,7 +224,7 @@ namespace StringAsASword.Combat
             if (transition)
             { AddEvent("phase", Phases.PhaseId.ToString(), Session.Position); Patterns.BeginPhase(Phases.PhaseId, note + 1); }
             if (Outcome == BattleOutcome.Running && note == Settings.DecidingNote)
-                Outcome = KingStunned ? BattleOutcome.Won : BattleOutcome.Timeout;
+                Outcome = KingStunned || IgnoreBossHp ? BattleOutcome.Won : BattleOutcome.Timeout;
             accepted = null; before = Session.Position;
             if (Outcome == BattleOutcome.Running)
                 Patterns.Publish(note, Session.Position, Settings.NoteCount, Noise.WaitingForSafeSpawn);

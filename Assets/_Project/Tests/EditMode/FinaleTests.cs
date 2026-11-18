@@ -53,6 +53,36 @@ namespace StringAsASword.Tests
             Assert.That(battle.Outcome, Is.EqualTo(BattleOutcome.Won));
             Assert.That(battle.LastClosedNote, Is.LessThan(159), "Without a finale the boss falls on the spot.");
         }
+        [Test] public void DeveloperSkipOpensALaterPhaseAndNeverGoesBack()
+        {
+            var battle = new BattleSession(Settings(150), 7);
+            battle.SkipToPhase(3);
+            Assert.That(battle.Phases.PhaseId, Is.EqualTo(3));
+            Assert.That(battle.Health.ActiveSegment, Is.EqualTo(2));
+            battle.SkipToPhase(1);
+            Assert.That(battle.Phases.PhaseId, Is.EqualTo(3));
+            battle.SkipToPhase(9);
+            Assert.That(battle.Phases.PhaseId, Is.EqualTo(4));
+            Assert.That(battle.Outcome, Is.EqualTo(BattleOutcome.Running));
+        }
+        [Test] public void InvincibleHitsLandButCostNoHp()
+        {
+            var hurt = new BattleSession(Settings(150), 7);
+            hurt.Advance(Time(120));
+            Assert.That(hurt.PlayerHp, Is.LessThan(5), "The fixture must hit a knight that stands still.");
+            var safe = new BattleSession(Settings(150), 7) { Invincible = true };
+            safe.Advance(Time(120));
+            Assert.That(safe.Records.Exists(r => r.hit));
+            Assert.That(safe.PlayerHp, Is.EqualTo(5));
+            Assert.That(safe.Outcome, Is.EqualTo(BattleOutcome.Running));
+        }
+        [Test] public void WithBossHpOffTheFinishingRunWinsWithTheBossStanding()
+        {
+            var battle = new BattleSession(Settings(5), 7) { IgnoreBossHp = true };
+            battle.Advance(Time(4) + .2);
+            Assert.That(battle.KingStunned, Is.False);
+            Assert.That(battle.Outcome, Is.EqualTo(BattleOutcome.Won));
+        }
         [Test] public void FinishNoteMustLieInsideTheChart()
         {
             Assert.Throws<System.ArgumentException>(Settings(160).Validate);

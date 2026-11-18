@@ -25,10 +25,20 @@ namespace StringAsASword.Presentation
         public GameObject noisePrefab;
         [Tooltip("Optional: replaces every material of the noise prefab once the phase goal is reached.")]
         public Material noiseDormantMaterial;
+        [Tooltip("Noise pickup picture (Art/UI/Noise/Noise.png). Used when noisePrefab is empty: it floats above its cell, facing the camera, " +
+            "over a soft shadow on the cell, and greys out once the phase goal is reached.")]
+        public Sprite noiseSprite;
+        [Tooltip("Material for the noise sprite and its shadow, on URP's Sprite-Unlit-Default (the legacy Sprites/Default draws it white in this pipeline). Set Up Noise Sprite builds it.")]
+        public Material noiseMaterial;
 
-        [Tooltip("Replaces the procedural plinth, rim, deck and cells, and falls as one piece in the finale. " +
+        [Tooltip("Replaces the procedural plinth, rim, deck and cells. It is cut into one shard per cell so the board can break. " +
             "Fit its 8x8 squares to 1-unit cells centred on the origin, playing surface at y = 0.")]
         public GameObject boardPrefab;
+        [Tooltip("Cracks drawn over the whole board (Board Crack shader: _Crack, _Light, _Hole). " +
+            "String As a Sword > Art > Set Up Board Cracks builds it.")]
+        public Material boardCrack;
+        [Tooltip("Ending cutscene, played between the letterbox bars after the knight touches the noise. Empty = a short black placeholder.")]
+        public UnityEngine.Video.VideoClip endingCutscene;
 
         [Header("Board materials (tile top faces are UV-mapped 0..1 per cell)")]
         public Material lightTile;
@@ -80,8 +90,17 @@ namespace StringAsASword.Presentation
         public Sprite holdBodySprite;
         [Tooltip("Hold note tail peg at the string's far end. Draw it white; it is tinted per state.")]
         public Sprite holdTailSprite;
-        [Tooltip("Boss HP crown icons. Shown only when all three are assigned.")]
-        public Sprite crownFull, crownLocked, crownBroken;
+        [Tooltip("Crown over the boss picture's head; replaces the boss HP readout. Four blades = the four HP segments (right blade first), " +
+            "the three seams between them = the three noise phases (right seam first). String As a Sword > Art > Set Up Boss Crown bakes crownRegions and crownMaterial.")]
+        public Sprite crown;
+        [Tooltip("Baked region map for the crown: R = part id, G = height within a blade, B = position along a seam.")]
+        public Texture2D crownRegions;
+        [Tooltip("Material on the Crown UI shader.")]
+        public Material crownMaterial;
+        [Tooltip("Crown width as a share of the boss picture's width.")]
+        public float crownWidth = .6f;
+        [Tooltip("Boss picture height (0 = top) where the crown's middle seam sits: the top of the mask.")]
+        public float crownSeamHeight = .1f;
         [Tooltip("Main menu background (Figma 'Main Menu' / MainMenu_Logo_BG). After a clear its left side is inverted to white in code; " +
             "assign mainMenuWhite only to replace that with a hand-made white version.")]
         public Sprite mainMenuDark, mainMenuWhite;
@@ -89,6 +108,9 @@ namespace StringAsASword.Presentation
         public TMP_FontAsset menuFont;
         [Tooltip("Telegraph countdown badges move away from this box around the knight, in board-view pixels.")]
         public Rect knightBadgeBox = new Rect(-26, 5, 52, 76);
+        [Tooltip("Player HP under the knight, one sprite per HP: a bar segment or a knight icon, on = left, off = lost. " +
+            "The style is picked in the menu settings. An empty slot draws a plain white/grey box.")]
+        public Sprite playerHpBarOn, playerHpBarOff, playerHpKnightOn, playerHpKnightOff;
 
         [Header("VFX prefabs (destroyed after 2 seconds)")]
         public GameObject attackVfx;
@@ -100,7 +122,7 @@ namespace StringAsASword.Presentation
         public GameObject bossFireVfx;
         public GameObject phaseVfx;
 
-        public bool HasCrown => crownFull != null && crownLocked != null && crownBroken != null;
+        public bool HasCrown => crown != null && crownRegions != null && crownMaterial != null;
         public bool HasBackground => background != null || (backgroundLayers != null && backgroundLayers.Length > 0);
     }
 

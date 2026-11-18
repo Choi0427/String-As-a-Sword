@@ -21,7 +21,11 @@ MonoBehaviour:
   bossImageSink: {x: 0, y: 110}
   noisePrefab: {fileID: 0}
   noiseDormantMaterial: {fileID: 0}
+  noiseSprite: {fileID: 21300000, guid: 9ada92326268077428fa603fbf6f21be, type: 3}
+  noiseMaterial: {fileID: 2100000, guid: 2046f6a485f00fa4cb59bed7da61a787, type: 2}
   boardPrefab: {fileID: 8618644286574060529, guid: 5fc99c1874e6d4449951e424dbe9d844, type: 3}
+  boardCrack: {fileID: 2100000, guid: 7f6570593389c064aa8474d4594b4f56, type: 2}
+  endingCutscene: {fileID: 0}
   lightTile: {fileID: 0}
   darkTile: {fileID: 0}
   boardEdge: {fileID: 0}
@@ -63,9 +67,11 @@ MonoBehaviour:
   noteSprite: {fileID: 21300000, guid: 2b15bdc155187724d8b107e484c3a5ee, type: 3}
   holdBodySprite: {fileID: 0}
   holdTailSprite: {fileID: 0}
-  crownFull: {fileID: 0}
-  crownLocked: {fileID: 0}
-  crownBroken: {fileID: 0}
+  crown: {fileID: 21300000, guid: c91b259a82202084786a565601b85ddc, type: 3}
+  crownRegions: {fileID: 2800000, guid: b887644898d947945896b165855fa7f7, type: 3}
+  crownMaterial: {fileID: 2100000, guid: 5ae475cc9e4d6084a8ad16485301d8b1, type: 2}
+  crownWidth: 0.6
+  crownSeamHeight: 0.1
   mainMenuDark: {fileID: 21300000, guid: 9777af6bfeec6ff4985b1678bf6e208c, type: 3}
   mainMenuWhite: {fileID: 0}
   menuFont: {fileID: 11400000, guid: 9f923aa8663272541816bacfcefebd7e, type: 2}
@@ -75,6 +81,10 @@ MonoBehaviour:
     y: 5
     width: 52
     height: 76
+  playerHpBarOn: {fileID: 21300000, guid: 8100d0f6468c4e04b43bb825ba59e404, type: 3}
+  playerHpBarOff: {fileID: 21300000, guid: 105bb1444b2d4547a66e4af635c93f64, type: 3}
+  playerHpKnightOn: {fileID: 21300000, guid: 73982b22091846d38a027b39e8b7f7ff, type: 3}
+  playerHpKnightOff: {fileID: 21300000, guid: bc65e1c6f73f409dbe5766649b54276c, type: 3}
   attackVfx: {fileID: 0}
   guardVfx: {fileID: 0}
   hitVfx: {fileID: 0}
