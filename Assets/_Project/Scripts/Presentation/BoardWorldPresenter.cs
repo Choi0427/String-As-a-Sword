@@ -1101,6 +1101,7 @@ namespace StringAsASword.Presentation
             if (noiseSprites == null)
             {
                 noiseSprites = new SpriteRenderer[pickups.Length]; noiseShadows = new SpriteRenderer[pickups.Length]; noiseFloats = new Transform[pickups.Length];
+                noiseBackings = new SpriteRenderer[pickups.Length];
                 spriteMaterial = new Material(Shader.Find("Sprites/Default")) { name = "Noise Sprite" }; resources.Add(spriteMaterial);
             }
             var item = new GameObject($"Noise_{index}").transform; item.SetParent(world.transform, false);
@@ -1111,13 +1112,20 @@ namespace StringAsASword.Presentation
             var hover = new GameObject("Noise Float").transform; hover.SetParent(item, false);
             var picture = new GameObject("Noise Sprite", typeof(SpriteRenderer)).GetComponent<SpriteRenderer>();
             picture.transform.SetParent(hover, false);
-            picture.sprite = art.noiseSprite; picture.sharedMaterial = spriteMaterial;
+            picture.sprite = art.noiseSprite; picture.sharedMaterial = spriteMaterial; picture.sortingOrder = 1;
             // About a cell wide, whatever the picture's pixels-per-unit.
-            picture.transform.localScale = Vector3.one * (NoiseWidth / Mathf.Max(.0001f, art.noiseSprite.bounds.size.x));
-            noiseSprites[index] = picture; noiseShadows[index] = shadow; noiseFloats[index] = hover;
+            float scale = NoiseWidth / Mathf.Max(.0001f, art.noiseSprite.bounds.size.x);
+            picture.transform.localScale = Vector3.one * scale;
+            // The picture is white and the tiles are light: a dark, slightly larger copy right behind it gives the line
+            // an outline and a dark cloud to sit on, so it reads on any tile, not only over a darker attack mark.
+            var backing = new GameObject("Noise Backing", typeof(SpriteRenderer)).GetComponent<SpriteRenderer>();
+            backing.transform.SetParent(hover, false);
+            backing.transform.localPosition = Vector3.forward * .02f; backing.transform.localScale = Vector3.one * scale * 1.1f;
+            backing.sprite = art.noiseSprite; backing.sharedMaterial = spriteMaterial; backing.sortingOrder = 0;
+            noiseSprites[index] = picture; noiseShadows[index] = shadow; noiseFloats[index] = hover; noiseBackings[index] = backing;
             return item;
         }
-        private const float NoiseWidth = .95f, NoiseHover = .5f, NoiseBob = .08f;
+        private const float NoiseWidth = 1.15f, NoiseHover = .5f, NoiseBob = .08f;
         /// <summary>Height above its cell at which a noise pickup is drawn (where collected noise starts its flight).</summary>
         public float NoiseHeight => noiseSprites != null ? NoiseHover : .12f;
         public bool NoiseUsesSprite => noiseSprites != null;
@@ -1134,8 +1142,9 @@ namespace StringAsASword.Presentation
             noiseShadows[index].transform.localScale = new Vector3(.62f, .26f, 1) * Mathf.Lerp(.85f, 1.1f, lift) / ShadowSpriteSize;
             noiseShadows[index].color = new Color(0, 0, 0, Mathf.Lerp(.55f, .3f, lift) * (dormant ? .5f : 1));
             noiseSprites[index].color = dormant ? new Color(.42f, .42f, .42f, .7f) : Color.white;
+            noiseBackings[index].color = new Color(.03f, .03f, .035f, dormant ? .45f : .85f);
         }
-        private SpriteRenderer[] noiseSprites, noiseShadows;
+        private SpriteRenderer[] noiseSprites, noiseShadows, noiseBackings;
         private Transform[] noiseFloats;
         private Material spriteMaterial;
         private static Sprite shadowSprite;

@@ -84,7 +84,13 @@ namespace StringAsASword.Tests
             Assert.That(pickup.gameObject.activeSelf, Is.True);
             var hover = pickup.Find("Noise Float");
             Assert.That(hover.localPosition.y, Is.GreaterThan(.35f), "The picture hovers well above its cell.");
-            Assert.That(hover.GetComponentInChildren<SpriteRenderer>().sprite, Is.SameAs(view.Art.noiseSprite));
+            var picture = hover.Find("Noise Sprite").GetComponent<SpriteRenderer>();
+            Assert.That(picture.sprite, Is.SameAs(view.Art.noiseSprite));
+            // A dark copy drawn behind the white picture keeps it visible on light tiles.
+            var backing = hover.Find("Noise Backing").GetComponent<SpriteRenderer>();
+            Assert.That(backing.sortingOrder, Is.LessThan(picture.sortingOrder));
+            Assert.That(backing.color.grayscale, Is.LessThan(.1f));
+            Assert.That(backing.color.a, Is.GreaterThan(.5f));
             Assert.That(pickup.Find("Noise Shadow").GetComponent<SpriteRenderer>().color.a, Is.GreaterThan(0), "A shadow sits on the cell under it.");
             LogAssert.NoUnexpectedReceived();
         }
