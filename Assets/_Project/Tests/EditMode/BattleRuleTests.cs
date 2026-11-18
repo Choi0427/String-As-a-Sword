@@ -81,7 +81,6 @@ namespace StringAsASword.Tests
             var settings = Settings(32);
             settings.PlayerMaxHp = 1;
             settings.Health = new[] { 1, 1, 1, 1 };
-            settings.NoiseTargets = new[] { 1, 1, 1 };
             settings.MaxCollectionCost = 12;
             settings.Patterns = new[]
             {
@@ -93,15 +92,12 @@ namespace StringAsASword.Tests
             battle.Advance(0);
             for (int phase = 0; phase < 3; phase++)
             {
-                battle.Noise.AdvanceToBeat(phase, battle.Session.Position);
-                Assert.That(battle.Noise.Pickups.Count, Is.GreaterThan(0));
-                var pickup = battle.Noise.Pickups[0];
-                Assert.That(battle.Noise.TryCollect(pickup.Cell, battle.Noise.SessionId, battle.Noise.PhaseId), Is.True);
                 Assert.That(battle.Health.ApplyDamage(1, phase), Is.EqualTo(1));
-                Assert.That(battle.Phases.ResolveBeat(phase, phase + 1), Is.True);
+                Assert.That(battle.Phases.ResolveBeat(phase), Is.True);
             }
             Assert.That(battle.Phases.PhaseId, Is.EqualTo(4));
             battle.Patterns.BeginPhase(4, 0);
+            battle.Noise.BeginPhase(1, 0, 0); // no noise on the board: a pickup would hold the lock back until it is reachable
 
             for (int note = 0; note < 4; note++)
             {
@@ -177,9 +173,8 @@ namespace StringAsASword.Tests
                 Assert.That(stage.MaxActiveNoise, Is.EqualTo(2));
                 var settings = Settings(8);
                 var battle = new BattleSession(settings, 1);
-                settings.Health[0] = 999; settings.NoiseTargets[0] = 999;
+                settings.Health[0] = 999;
                 Assert.That(battle.Settings.Health[0], Is.EqualTo(6));
-                Assert.That(battle.Settings.NoiseTargets[0], Is.EqualTo(3));
             }
             finally { UnityEngine.Object.DestroyImmediate(stage); }
         }
@@ -314,12 +309,13 @@ namespace StringAsASword.Tests
             Assert.That(battle.Events.Any(e => e.type == "guard-broken"), Is.False);
         }
 
-        [TestCase(1, "81909ba551a95177cdaa142cba66f7157e5d3b81bbda89b913bf213a26bf18a0")]
-        [TestCase(87, "6e79bc817e5ec1a2adbfb9f91d522b4b580da2cedd637d531b95bc75c687b5d8")]
-        [TestCase(4242, "924d1206ef0fb8cc55ae064e453b1ee9016e3cbcac02ea8e8c6f420c82a84728")]
+        [TestCase(1, "f89e81806afb88226cd8e1ad24171908d2ddd36a644b1547a63695c0630bbe38")]
+        [TestCase(87, "d032318cac5d0de4105a7fcd28600bcee5e24a4e781858313c0317e2f9b51aeb")]
+        [TestCase(4242, "87c43a41d9628684367f392ab58572629c82e04600a5ba9a834c06e7aef2c928")]
         public void FixedModeDefaultsReproduceTheirPreResponseEventsAndStateHashes(int seed, string expected)
         {
-            // Captured from the build before attack responses existed; only pre-existing event fields are hashed.
+            // First captured from the build before attack responses existed; only pre-existing event fields are hashed.
+            // Recaptured for battle-9: noise no longer stops at a phase goal and the state hash carries the resonance state.
             // The capture started at d4, so the start cell is pinned here; the game now starts at g1.
             var settings = new BattleSettings { Bpm = 87, NoteCount = 128, PlayerMaxHp = 1000, StartX = 3, StartY = 3 };
             var battle = new BattleSession(settings, seed);

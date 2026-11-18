@@ -14,13 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: StringAsASword.Runtime::StringAsASword.Stage.StageDefinition
   noiseSeed: 87
   noiseSpawnInterval: 8
-  maxActiveNoise: 2
-  noiseTargets: 040000000500000006000000
+  maxActiveNoise: 1
+  resonanceNotes: 8
   healthSegments: 23000000080000000e00000036000000
   cameraElevation: 45
   playerMaxHp: 5
   maxCollectionCost: 12
-  combatVersion: battle-8
+  combatVersion: battle-9
   patterns:
   - Name: Line
     Kind: 0

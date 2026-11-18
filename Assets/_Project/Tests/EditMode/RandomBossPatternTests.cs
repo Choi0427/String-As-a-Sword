@@ -329,7 +329,6 @@ namespace StringAsASword.Tests
             List<string> Spawns(bool rapid)
             {
                 var settings = Settings(96); settings.PlayerMaxHp = 100;
-                settings.NoiseTargets = new[] { 100, 100, 100 };
                 settings.Schedule.IntervalWeights = rapid ? new[] { 1 } : new int[13];
                 if (!rapid) settings.Schedule.IntervalWeights[12] = 1;
                 settings.Patterns = rapid ? new[] { settings.Patterns[1] } : new[] { settings.Patterns[0] };

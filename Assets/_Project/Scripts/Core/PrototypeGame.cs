@@ -75,6 +75,7 @@ namespace StringAsASword.Core
             Combat.DamageResolved += view.ShowDamage;
             Phases.PhaseUnlocked += view.ShowPhase;
             Noise.CollectedPickup += view.ShowNoiseCollected;
+            Battle.Resonance.Ignited += view.ShowIgnition; Battle.Resonance.GhostStrike += view.ShowGhostStrike;
             int last = song.NoteCount - 1;
             double end = Timeline.TimeOf(last), hold = Session.HoldEnd(last);
             FinaleEndTime = System.Math.Max(end, hold) + .8;
@@ -292,6 +293,7 @@ namespace StringAsASword.Core
                 Combat.DamageResolved -= view.ShowDamage;
                 Phases.PhaseUnlocked -= view.ShowPhase;
                 Noise.CollectedPickup -= view.ShowNoiseCollected;
+                Battle.Resonance.Ignited -= view.ShowIgnition; Battle.Resonance.GhostStrike -= view.ShowGhostStrike;
             }
             clock?.Stop(); if (audioPlayer != null) audioPlayer.Stop();
         }
