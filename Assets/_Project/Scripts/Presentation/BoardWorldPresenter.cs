@@ -1128,7 +1128,7 @@ namespace StringAsASword.Presentation
             noiseSprites[index] = picture; noiseShadows[index] = shadow; noiseFloats[index] = hover; noiseBackings[index] = backing;
             return item;
         }
-        private const float NoiseWidth = 1.7f, NoiseHover = .5f, NoiseBob = .08f;
+        private const float NoiseWidth = 1.4f, NoiseHover = .5f, NoiseBob = .08f;
         public const string NoiseShader = "Universal Render Pipeline/2D/Sprite-Unlit-Default";
         /// <summary>Height above its cell at which a noise pickup is drawn (where collected noise starts its flight).</summary>
         public float NoiseHeight => noiseSprites != null ? NoiseHover : .12f;
@@ -1143,8 +1143,9 @@ namespace StringAsASword.Presentation
             hover.rotation = BoardCamera.transform.rotation * Quaternion.Euler(0, 0, 3 * Mathf.Sin(time * 1.3f + index));
             // Higher = wider, fainter shadow; lower = tighter, darker.
             float lift = Mathf.InverseLerp(NoiseHover - NoiseBob, NoiseHover + NoiseBob, height);
-            noiseShadows[index].transform.localScale = new Vector3(.62f, .26f, 1) * Mathf.Lerp(.85f, 1.1f, lift) / ShadowSpriteSize;
-            noiseShadows[index].color = new Color(0, 0, 0, Mathf.Lerp(.55f, .3f, lift) * (dormant ? .5f : 1));
+            // Most of the cell, so it reads on dark tiles as well as light ones.
+            noiseShadows[index].transform.localScale = new Vector3(.9f, .62f, 1) * Mathf.Lerp(.9f, 1.05f, lift) / ShadowSpriteSize;
+            noiseShadows[index].color = new Color(0, 0, 0, Mathf.Lerp(.85f, .65f, lift) * (dormant ? .55f : 1));
             noiseSprites[index].color = dormant ? new Color(.42f, .42f, .42f, .7f) : Color.white;
             noiseBackings[index].color = new Color(.03f, .03f, .035f, dormant ? .45f : .85f);
         }
@@ -1153,7 +1154,7 @@ namespace StringAsASword.Presentation
         private Material spriteMaterial;
         private static Sprite shadowSprite;
         private const float ShadowSpriteSize = 1;
-        // A soft round shadow: opaque in the middle, fading to nothing at the edge. One unit across.
+        // A soft round shadow: solid in the middle, fading to nothing over the outer part. One unit across.
         private static Sprite ShadowSprite()
         {
             if (shadowSprite != null) return shadowSprite;
@@ -1163,8 +1164,8 @@ namespace StringAsASword.Presentation
                 for (int x = 0; x < size; x++)
                 {
                     float dx = (x + .5f) / size * 2 - 1, dy = (y + .5f) / size * 2 - 1;
-                    float fade = Mathf.Clamp01(1 - Mathf.Sqrt(dx * dx + dy * dy));
-                    texture.SetPixel(x, y, new Color(1, 1, 1, fade * fade));
+                    float fade = 1 - Mathf.SmoothStep(0, 1, Mathf.InverseLerp(.35f, 1, Mathf.Sqrt(dx * dx + dy * dy)));
+                    texture.SetPixel(x, y, new Color(1, 1, 1, fade));
                 }
             texture.Apply();
             shadowSprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(.5f, .5f), size);
