@@ -229,7 +229,7 @@ namespace StringAsASword.Editor
                 if (record.hit) { result.hits++; phase.hits++; }
                 if (record.guardSuccess) { result.guardSuccess++; phase.guardSuccess++; }
                 bool isAttack = record.category == "EffectiveAttack" || record.reason == "Attack" ||
-                    record.reason == "HpFloor" || record.reason == "OutOfRange";
+                    record.reason == "NoDamage" || record.reason == "Ghost" || record.reason == "OutOfRange";
                 effective = record.category == "EffectiveAttack" ? effective + 1 : 0;
                 phaseEffective = record.category == "EffectiveAttack" ? phaseEffective + 1 : 0;
                 attack = isAttack ? attack + 1 : 0;
@@ -248,8 +248,7 @@ namespace StringAsASword.Editor
             for (int i = 0; i < 4; i++)
             {
                 result.phases[i].transition = run.Phases[i].transitionNote < 0 ? -1 : run.Phases[i].transitionNote + 1;
-                result.phases[i].goalRemaining = i + 1 > run.FinalPhase && i < 3
-                    ? run.Battle.Settings.NoiseTargets[i] : run.Phases[i].goalRemaining;
+                result.phases[i].goalRemaining = run.Phases[i].goalRemaining;
             }
             int previous = -1, shortStreak = 0, longStreak = 0;
             foreach (int note in fireNotes.Distinct().OrderBy(n => n))

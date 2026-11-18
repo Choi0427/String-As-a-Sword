@@ -47,8 +47,11 @@ namespace StringAsASword.Presentation
         private BoardWorldPresenter boardWorld;
         private BossPortrait bossPortrait;
         public BossPortrait BossPortrait => bossPortrait;
+        private ResonanceHud resonanceHud;
+        /// <summary>The lane glow, the remaining-notes gauge and the ghost strike of the resonance rule.</summary>
+        public ResonanceHud ResonanceHud => resonanceHud;
         private BossCrownView bossCrown;
-        /// <summary>The crown over the boss picture that shows boss HP and noise; null without crown art or a boss picture.</summary>
+        /// <summary>The crown over the boss picture that shows boss HP; null without crown art or a boss picture.</summary>
         public BossCrownView BossCrown => bossCrown;
         private RectTransform boardRect;
         private TMP_Text attackHint;
@@ -255,6 +258,7 @@ namespace StringAsASword.Presentation
                         new Color(InkWhite.r, InkWhite.g, InkWhite.b, s == 2 ? .55f : .3f));
                 judgeLines[(side + 1) / 2] = Bar("JudgeLine", side * judgeX, laneY, 4, span, InkWhite);
             }
+            BuildResonanceHud(judgeX, laneY, span, 0);
             notes = new NotePresenter(root, art.noteSprite, art.holdBodySprite, art.holdTailSprite, judgeX, ScreenEdge, laneY, span);
         }
         // Delivered lane art: one sprite with strings on both sides and a gap for the board. Its height is fitted to the
@@ -293,8 +297,15 @@ namespace StringAsASword.Presentation
                 line.rectTransform.localRotation = turn;
                 judgeLines[(side + 1) / 2] = line; judgeGlows[(side + 1) / 2] = glow;
             }
+            BuildResonanceHud(middle.x, BoardCenter.y + middle.y, (far - near).magnitude + 8, tilt);
             // No scrolling bar lines here: the art has its own frets, and each note carries a stem.
             notes = new NotePresenter(root, art.noteSprite, art.holdBodySprite, art.holdTailSprite, noteX, ScreenEdge, noteY, 0, tilt);
+        }
+        // Under the notes, over the lanes.
+        private void BuildResonanceHud(float judgeX, float judgeY, float length, float tilt)
+        {
+            resonanceHud = MakeRect(root, "Resonance", Vector2.zero, new Vector2(1600, 900)).gameObject.AddComponent<ResonanceHud>();
+            resonanceHud.Initialize(game, GlowSprite(), judgeX, judgeY, length, tilt, ScreenEdge);
         }
         // A soft white band: opaque along its centre line, fading out to both sides.
         private static Sprite GlowSprite()
@@ -354,6 +365,7 @@ namespace StringAsASword.Presentation
             { dangerBadges[i].SetActive(false); dangerConnectors[i].gameObject.SetActive(false); }
             boardWorld.ResetVisuals();
             if (bossCrown != null) bossCrown.ResetVisuals();
+            resonanceHud.ResetVisuals();
         }
         public void Pulse() => pulseAge=0;
         public void ShowAction(ActionResult result) => boardWorld.ShowAction(result);
@@ -365,12 +377,15 @@ namespace StringAsASword.Presentation
             boardWorld.ShowDamage(damage);
             if (damage > 0 && bossPortrait != null) bossPortrait.Hurt();
         }
-        /// <summary>A noise pickup was collected: it flies from its cell to the crown's seam for its phase.</summary>
-        public void ShowNoiseCollected(NoisePickup pickup)
+        /// <summary>A noise pickup was collected. It charges the string (ResonanceHud shows the glow); nothing flies to the crown, which is boss HP only.</summary>
+        public void ShowNoiseCollected(NoisePickup pickup) { }
+        public void ShowIgnition(int note) => resonanceHud.Ignite();
+        /// <summary>An attack without resonance: the blade passes through the boss.</summary>
+        public void ShowGhostStrike(int note)
         {
-            if (bossCrown == null) return;
-            Vector2 point = boardWorld.ProjectToBoard(BoardWorldPresenter.CellPosition(pickup.Cell) + Vector3.up * boardWorld.NoiseHeight, BoardSize);
-            bossCrown.Fly(boardRect.TransformPoint(point), pickup.PhaseId);
+            var boss = bossPortrait != null ? (RectTransform)bossPortrait.transform : null;
+            resonanceHud.Ghost(boss != null ? boss.TransformPoint(new Vector3(0, boss.sizeDelta.y * .6f, 0))
+                : boardRect.TransformPoint(new Vector3(0, BoardSize.y * .45f, 0)));
         }
         // Beside the knight, because that is where the eye already is. Near the top it drops below instead.
         private void ShowOutcome(string text)
@@ -413,7 +428,7 @@ namespace StringAsASword.Presentation
             RenderOutcome();
             RenderPlayerHp();
             playerHp.text = $"PLAYER HP  {game.Battle.PlayerHp} / {game.Stage.PlayerMaxHp}";
-            attackHint.text = !game.Attacks.IsInRange(cell) ? "J / SWING ONLY - DAMAGE FROM ROW 8" : game.Health.Defeated ? "J / SWING - ALL HP CLEARED" : game.Health.CurrentDepleted ? "J / 0 DAMAGE - COLLECT NOISE" : "J / ATTACK - DAMAGE ENABLED";
+            attackHint.text = !game.Attacks.IsInRange(cell) ? "J / SWING ONLY - DAMAGE FROM ROW 8" : game.Health.Defeated ? "J / SWING - ALL HP CLEARED" : game.Battle.Resonance.Enabled && !game.Battle.Resonance.Busy(game.Battle.LastClosedNote + 1) ? "J / 0 DAMAGE - COLLECT NOISE" : "J / ATTACK - DAMAGE ENABLED";
             stats.text=$"PERFECT     {game.Session.PerfectCount:000}\nGOOD            {game.Session.GoodCount:000}\nMISS              {game.Session.MissCount:000}\nBEST              {game.Session.BestCombo:000}";
             int cellIndex = cell.Y * 8 + cell.X;
             position.text=$"POSITION  {(char)('A'+cell.X)}{cell.Y+1}     /     " + (dangerCounts[cellIndex] > 0 ? TelegraphHud.ThreatText(dangerResponses[cellIndex], dangerRemaining[cellIndex], dangerCounts[cellIndex]) : "SAFE");
@@ -424,6 +439,7 @@ namespace StringAsASword.Presentation
             if (judgeGlows != null)
                 foreach (var glow in judgeGlows) glow.color = new Color(1, 1, 1, Mathf.Lerp(.55f, 1, Mathf.Exp(-8 * pulseAge)));
             else foreach (var line in judgeLines) line.color = Color.Lerp(InkWhite, Accent, Mathf.Exp(-8 * pulseAge));
+            resonanceHud.Render();
             notes.Render(game);
             countIn.text=game.State==PrototypeState.CountIn?$"GET READY  {Mathf.Clamp((int)Math.Ceiling(-game.SongTime/game.Timeline.SecondsPerBeat),1,game.Song.CountInBeats)}": game.Battle.Invincible || game.Battle.IgnoreBossHp ? "DEV MODE" + (game.Battle.Invincible ? " / INVINCIBLE" : "") + (game.Battle.IgnoreBossHp ? " / BOSS HP OFF" : "") : "";
             bool show=game.State==PrototypeState.Ready||game.State==PrototypeState.Paused||game.State==PrototypeState.Finished;

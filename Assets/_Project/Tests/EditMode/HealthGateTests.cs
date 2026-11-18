@@ -8,15 +8,19 @@ namespace StringAsASword.Tests
 {
     public class HealthGateTests
     {
-        [Test] public void DamageStopsAtCurrentFloorAndDoesNotCarryOverflow()
+        [Test] public void DamageCarriesOverIntoTheNextSegmentsAndStopsAtZero()
         {
             var hp = new BossHealthGate(6, 6, 6, 6);
-            Assert.That(hp.ApplyDamage(100, 0), Is.EqualTo(6));
-            Assert.That(hp.TotalHp, Is.EqualTo(18));
-            Assert.That(hp.Floor, Is.EqualTo(18));
-            Assert.That(hp.ApplyDamage(1, 0), Is.Zero);
-            Assert.That(hp.ActiveSegment, Is.Zero);
+            Assert.That(hp.ApplyDamage(8, 0), Is.EqualTo(8));
+            Assert.That(hp.ActiveSegment, Is.EqualTo(1));
+            Assert.That(hp.CurrentHp, Is.EqualTo(4));
+            Assert.That(hp.ApplyDamage(1, 0), Is.Zero, "Damage aimed at an emptied segment is dropped.");
+            Assert.That(hp.ApplyDamage(4, 1), Is.EqualTo(4));
+            Assert.That(hp.ActiveSegment, Is.EqualTo(2), "An emptied segment hands over at once.");
             Assert.That(hp.Defeated, Is.False);
+            Assert.That(hp.ApplyDamage(100, 2), Is.EqualTo(12));
+            Assert.That(hp.TotalHp, Is.Zero);
+            Assert.That(hp.Defeated, Is.True);
         }
         [Test] public void WrongSegmentAndRestartCannotChangeLockedHealth()
         {

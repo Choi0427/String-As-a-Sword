@@ -19,6 +19,9 @@ namespace StringAsASword.Combat
     {
         public int noteIndex, phase, musicBeat, beforeX, beforeY, x, y, damage, playerHp, bossHp, collected;
         public int moves, guards, effectiveAttacks, others;
+        /// <summary>Resonance notes left after this note; whether the string holds a charge.</summary>
+        public int resonance;
+        public bool charged;
         public string category, reason, judgement, stateHash;
         public bool attackOpportunity, guardSuccess, hit;
     }
@@ -37,9 +40,12 @@ namespace StringAsASword.Combat
         public int PhaseId { get; internal set; }
         public int PlayerHp { get; internal set; }
         public int CurrentHp { get; internal set; }
+        /// <summary>1 while the string is empty under the resonance rule (a noise is worth fetching), otherwise 0.</summary>
         public int GoalRemaining { get; internal set; }
         public int RemainingBossHp { get; internal set; }
-        public int FutureNoiseGoals { get; internal set; }
+        public bool Charged { get; internal set; }
+        /// <summary>Resonance notes left, counting the next note.</summary>
+        public int ResonanceRemaining { get; internal set; }
         public int MaxCollectionCost { get; internal set; }
         public int SpawnInterval { get; internal set; }
         public NoisePickup[] Pickups { get; internal set; }
@@ -52,6 +58,7 @@ namespace StringAsASword.Combat
         public RhythmSession Session { get; }
         public BossHealthGate Health { get; }
         public CombatResolver Combat { get; }
+        public ResonanceState Resonance { get; }
         public AttackResolver Attacks { get; }
         public PhaseController Phases { get; }
         public NoisePickupSystem Noise { get; }
@@ -89,14 +96,21 @@ namespace StringAsASword.Combat
             Session = new RhythmSession(board, new RhythmJudge(timeline, settings.PerfectWindow, settings.GoodWindow, settings.InputOffset), new GridPosition(settings.StartX, settings.StartY), settings.NoteCount, settings.HoldEndTimes);
             Noise = new NoisePickupSystem(board, settings.SpawnInterval, settings.MaxNoise);
             Health = new BossHealthGate(settings.Health);
-            Attacks = new AttackResolver(board); Combat = new CombatResolver(Attacks, Health, 1);
-            Phases = new PhaseController(Health, Noise, settings.NoiseTargets);
+            Resonance = new ResonanceState(settings.ResonanceNotes);
+            Attacks = new AttackResolver(board); Combat = new CombatResolver(Attacks, Health, 1, Resonance);
+            Phases = new PhaseController(Health, Noise);
             Session.ActionEvaluated += OnAction; Session.BeatClosed += Close;
             Session.HoldResolved += r => {
                 AddEvent("hold-" + r.Grade.ToString().ToLowerInvariant(), Math.Round(r.ErrorSeconds * 1000).ToString(System.Globalization.CultureInfo.InvariantCulture), Session.Position);
                 Events[Events.Count - 1].noteIndex = r.BeatId;
             };
             Noise.CandidateAllowed = CandidateAllowed;
+            // Charged or resonating: no noise spawns. One that fell due in that time appears right after.
+            Noise.SpawnBlocked = () => Resonance.Enabled && (Resonance.Halted || Resonance.Busy(LastClosedNote + 1));
+            Resonance.ChargeGained += () => AddEvent("resonance-charge", "", Session.Position);
+            Resonance.Ignited += n => { AddEvent("resonance-ignite", Resonance.EndNote.ToString(), Session.Position); Events[Events.Count - 1].noteIndex = n; };
+            Resonance.GhostStrike += n => { AddEvent("ghost-strike", "", Session.Position); Events[Events.Count - 1].noteIndex = n; };
+            Resonance.Cadence += n => { AddEvent("resonance-cadence", "", Session.Position); Events[Events.Count - 1].noteIndex = n; };
             Noise.Spawned += n => AddEvent("noise-spawn", n.Id.ToString(), n.Cell, n.Id);
             Noise.CollectedPickup += n => AddEvent("noise-collect", n.Id.ToString(), n.Cell, n.Id);
             Noise.SpawnStatus += (reason, beat) => Events.Add(new BattleEvent { type = "noise-" + reason, musicBeat = beat, noteIndex = LastClosedNote, phase = Phases.PhaseId });
@@ -105,7 +119,7 @@ namespace StringAsASword.Combat
         public void Reset(int sessionId, int seed)
         {
             Seed = seed; Records.Clear(); Events.Clear(); Inputs.Clear(); accepted = null;
-            Session.Reset(); music.Reset(); Combat.Reset(); Phases.Reset(sessionId, seed);
+            Session.Reset(); music.Reset(); Combat.Reset(); Resonance.Reset(); Phases.Reset(sessionId, seed);
             PlayerHp = Settings.PlayerMaxHp; Outcome = BattleOutcome.Running;
             KingStunned = false; StunnedNote = -1;
             LastClosedNote = CurrentMusicBeat = -1; advancedTime = double.NegativeInfinity; before = Session.Position;
@@ -128,7 +142,7 @@ namespace StringAsASword.Combat
             phase = Math.Min(4, phase);
             while (Outcome == BattleOutcome.Running && Phases.PhaseId < phase)
             {
-                Phases.AdvanceAnalysisPhase(CurrentMusicBeat + 1);
+                Phases.AdvanceAnalysisPhase();
                 AddEvent("dev-phase", Phases.PhaseId.ToString(), Session.Position);
                 Patterns.BeginPhase(Phases.PhaseId, LastClosedNote + 1);
             }
@@ -164,7 +178,13 @@ namespace StringAsASword.Combat
             Events[Events.Count - 1].noteIndex = action.Timing.BeatId;
             if (!action.Accepted) return;
             accepted = action;
-            if (action.Kind == PlayerActionKind.Move) Noise.TryCollect(action.Position, Noise.SessionId, Noise.PhaseId);
+            if (action.Kind == PlayerActionKind.Move)
+            {
+                // Under resonance a noise is the string's charge; a full or sounding string leaves it on its cell.
+                if (!Resonance.Enabled) Noise.TryCollect(action.Position, Noise.SessionId, Noise.PhaseId);
+                else if (!Resonance.Halted && !Resonance.Busy(action.Timing.BeatId) &&
+                    Noise.TryCollect(action.Position, Noise.SessionId, Noise.PhaseId)) Resonance.TryCharge(action.Timing.BeatId);
+            }
             if (analysisEnds == null) Combat.Submit(action);
         }
         private void Close(int note)
@@ -189,7 +209,8 @@ namespace StringAsASword.Combat
                 playerHp = PlayerHp, bossHp = Health.CurrentHp, collected = Noise.Collected,
                 judgement = has ? action.Timing.Grade.ToString() : "Miss",
                 category = has && action.Kind == PlayerActionKind.Move ? "Move" : has && action.Kind == PlayerActionKind.Guard ? "Guard" : damage > 0 ? "EffectiveAttack" : "Other",
-                reason = !has ? "MissOrWait" : opportunity && damage == 0 ? "HpFloor" : has && action.Kind == PlayerActionKind.Attack && !opportunity ? "OutOfRange" : action.Kind.ToString() };
+                reason = !has ? "MissOrWait" : opportunity && damage == 0 ? (Resonance.Enabled && !KingStunned ? "Ghost" : "NoDamage") : has && action.Kind == PlayerActionKind.Attack && !opportunity ? "OutOfRange" : action.Kind.ToString() };
+            record.resonance = Resonance.Remaining(note + 1); record.charged = Resonance.Charged;
             Records.Add(record);
             var previous = Records.Count > 1 ? Records[Records.Count - 2] : null;
             record.moves = (previous?.moves ?? 0) + (record.category == "Move" ? 1 : 0);
@@ -207,18 +228,17 @@ namespace StringAsASword.Combat
                 {
                     // Finale: the king staggers and stops attacking; the finishing run decides the battle later.
                     if (!KingStunned)
-                    { KingStunned = true; StunnedNote = note; AddEvent("king-stunned", note.ToString(), Session.Position); Patterns.Halt(); }
+                    { KingStunned = true; StunnedNote = note; AddEvent("king-stunned", note.ToString(), Session.Position); Patterns.Halt(); Resonance.Halt(); }
                 }
                 else if (PlayerHp == 0) Outcome = BattleOutcome.Dead;
-                else transition = Phases.ResolveBeat(note, CurrentMusicBeat + 1);
+                else transition = Phases.ResolveBeat(note);
             }
             else
             {
                 if (PlayerHp == 0) Outcome = BattleOutcome.Dead;
                 else if (phase < 4 && note + 1 == analysisEnds[phase - 1])
                 {
-                    AddEvent("analysis-goal", Noise.GoalReached ? "met" : "missed", Session.Position);
-                    Phases.AdvanceAnalysisPhase(CurrentMusicBeat + 1); transition = true;
+                    Phases.AdvanceAnalysisPhase(); transition = true;
                 }
             }
             if (transition)
@@ -232,25 +252,20 @@ namespace StringAsASword.Combat
             record.stateHash = BattleLog.StateHash(this);
             NoteResolved?.Invoke(record);
         }
+        public const int ResonanceNoiseTopRow = 4;
         private int NextAvailable => Math.Max(LastClosedNote + 1, Session.Gate.LastConsumedBeat + 1);
-        private int FutureGoals()
-        { int count = 0; for (int p = Phases.PhaseId; p < 3; p++) count += Settings.NoiseTargets[p]; return count; }
         private bool CandidateAllowed(GridPosition candidate, bool fallback)
         {
-            int next = NextAvailable, remaining = Settings.NoteCount - next;
+            int next = NextAvailable;
+            // Resonance: noise appears on the lower five rows so fetching it means leaving the top. The fallback lifts this.
+            if (Resonance.Enabled && !fallback && candidate.Y > ResonanceNoiseTopRow) return false;
             if (fallback && Math.Abs(candidate.X - Session.Position.X) + Math.Abs(candidate.Y - Session.Position.Y) != 1) return false;
             var targets = new List<GridPosition>();
             foreach (var n in Noise.Pickups) targets.Add(n.Cell);
             targets.Add(candidate);
             var route = SafeRoutePlanner.FindAll(Session.Position, targets, next, Patterns.Active,
-                Math.Min(remaining, Settings.MaxCollectionCost * targets.Count));
-            if (!route.Found) return false;
-            int otherGoals = Math.Max(0, Noise.Required - Noise.Collected - targets.Count);
-            // Future positions are unknown. Reserve the advertised per-pickup service bound, not lucky RNG.
-            int attackBudget = analysisEnds == null ? Health.TotalHp : 0;
-            int reserve = route.Cost + (otherGoals + FutureGoals()) * Settings.MaxCollectionCost + attackBudget;
-            // A pessimistic whole-song estimate must not starve a locally safe fallback after a slow phase.
-            return fallback || reserve <= remaining;
+                Math.Min(Settings.NoteCount - next, Settings.MaxCollectionCost * targets.Count));
+            return route.Found;
         }
         private bool CanPublish(IReadOnlyList<BossTelegraph> proposal)
         {
@@ -277,8 +292,9 @@ namespace StringAsASword.Combat
             var warnings = new BossTelegraph[Patterns.Active.Count]; for (int i = 0; i < warnings.Length; i++) warnings[i] = Patterns.Active[i];
             return new BattleObservation { Position = Session.Position, NoteIndex = LastClosedNote + 1,
                 RemainingNotes = Settings.NoteCount - LastClosedNote - 1, PhaseId = Phases.PhaseId,
-                PlayerHp = PlayerHp, CurrentHp = Health.CurrentHp, GoalRemaining = Math.Max(0, Noise.Required - Noise.Collected),
-                RemainingBossHp = analysisEnds == null ? Health.TotalHp : 0, FutureNoiseGoals = FutureGoals(),
+                PlayerHp = PlayerHp, CurrentHp = Health.CurrentHp, GoalRemaining = Resonance.Enabled && !Resonance.Halted && !Resonance.Busy(LastClosedNote + 1) ? 1 : 0,
+                RemainingBossHp = analysisEnds == null ? Health.TotalHp : 0,
+                Charged = Resonance.Charged, ResonanceRemaining = Resonance.Remaining(LastClosedNote + 1),
                 MaxCollectionCost = Settings.MaxCollectionCost, SpawnInterval = Settings.SpawnInterval,
                 Pickups = pickups, Telegraphs = warnings };
         }

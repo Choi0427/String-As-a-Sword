@@ -12,7 +12,8 @@ namespace StringAsASword.Combat
     public static class BattleLog
     {
         // v2: inputs can be key releases (hold notes).
-        private const string RuntimeVersion = "battle-6/xorshift32-v2";
+        // battle-9: no HP floors or noise goals; resonance.
+        private const string RuntimeVersion = "battle-9/xorshift32-v2";
         [Serializable] private sealed class Line
         {
             public string type, chartHash, configHash, runtimeVersion = RuntimeVersion;
@@ -39,7 +40,8 @@ namespace StringAsASword.Combat
         {
             var text = new StringBuilder().Append(b.LastClosedNote).Append('|').Append(b.Session.Position).Append('|')
                 .Append(b.PlayerHp).Append('|').Append(b.Phases.PhaseId).Append('|').Append(b.Health.TotalHp).Append('|')
-                .Append(b.Noise.Collected).Append('|').Append(b.Outcome);
+                .Append(b.Noise.Collected).Append('|').Append(b.Outcome).Append('|')
+                .Append(b.Resonance.Charged ? 'c' : '-').Append(b.Resonance.EndNote);
             foreach (var n in b.Noise.Pickups) text.Append('|').Append(n.Id).Append(':').Append(n.Cell);
             foreach (var p in b.Patterns.Active) text.Append('|').Append(p.Id).Append(':').Append(p.Cells).Append(':').Append(p.ImpactNote);
             return Hash(text.ToString());

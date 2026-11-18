@@ -8,8 +8,8 @@ namespace StringAsASword.Presentation
     /// <summary>
     /// The crown over the boss picture's head, which replaces the boss HP readout. Each hit blackens the active blade
     /// from the tip down (rightmost blade first) with a short white flash, a small shake and a few falling chips; a spent
-    /// blade's glow goes out. Collected noise flies from its cell to the active seam and blackens it from the right; once
-    /// the phase goal is met the seam crackles with static. When the king falls the whole crown goes black.
+    /// blade's glow goes out. A seam goes black and crackles with static once the blade before it is spent. When the
+    /// king falls the whole crown goes black. (Fly is no longer called by the game: noise charges the string instead.)
     /// Greys and the knight's black only. A child of the boss picture, so it breathes, flinches and sinks with it.
     /// </summary>
     public sealed class BossCrownView : MonoBehaviour
@@ -100,18 +100,20 @@ namespace StringAsASword.Presentation
             for (int k = 0; k < 3; k++)
             {
                 seam[k] = seamTarget[k]; seamArrival[k] = seamBurst[k] = 0;
-                crackling[k] = CrownState.SeamCrackles(k, game.Phases.PhaseId, game.Noise.GoalReached);
+                crackling[k] = CrownState.SeamCrackles(k, game.Phases.PhaseId, false);
             }
             body = Fallen ? 1 : 0; shakeAge = shakeSeconds;
             Apply(Time.unscaledTime);
         }
         private bool Fallen => game.Battle.KingStunned || game.Health.Defeated;
+        // The crown is boss HP only: a seam goes black once the blade before it is spent.
+        private static float SeamTarget(int seam, int phase) => CrownState.SeamFill(seam, phase, 0, 1);
         private void ReadTargets()
         {
             for (int i = 0; i < 4; i++) bladeTarget[i] = CrownState.BladeDepletion(game.Health, i);
             int phase = game.Phases.PhaseId;
             for (int k = 0; k < 3; k++)
-                seamTarget[k] = CrownState.SeamFill(k, phase, game.Noise.Collected - (phase == k + 1 ? flying[k] : 0), game.Noise.Required);
+                seamTarget[k] = SeamTarget(k, phase);
         }
 
         private void Update()
@@ -136,7 +138,7 @@ namespace StringAsASword.Presentation
                 if (seamTarget[k] < seamBefore[k] - 1e-4f) seam[k] = seamTarget[k];
                 seam[k] += (seamTarget[k] - seam[k]) * (1 - Mathf.Exp(-10 * dt));
                 // The static starts when the last piece of the phase's noise has landed.
-                bool crackle = CrownState.SeamCrackles(k, phase, game.Noise.GoalReached) && (phase > k + 1 || flying[k] == 0);
+                bool crackle = CrownState.SeamCrackles(k, phase, false);
                 if (crackle && !crackling[k]) seamBurst[k] = 1;
                 crackling[k] = crackle;
                 seamArrival[k] = Mathf.Max(0, seamArrival[k] - dt / ArrivalSeconds);

@@ -80,9 +80,12 @@ namespace StringAsASword.Combat
         public IBeatTimeline CreateTimeline() => HasAuthoredChart ? (IBeatTimeline)new AuthoredBeatTimeline(Bpm, NoteTimes) : new ConstantBeatTimeline(Bpm);
         public double Bpm, PerfectWindow = .07, GoodWindow = .14, InputOffset;
         public int PlayerMaxHp = 3, SpawnInterval = 8, MaxNoise = 2, MaxCollectionCost = 12;
+        /// <summary>Resonance length in notes (see ResonanceState). 0 = rule off: every top-row attack deals 1. The stage sets 8.</summary>
+        public int ResonanceNotes;
+        public const int MaxResonanceNotes = 32;
         /// <summary>The knight's start cell. g1, a real knight's home square. Rule tests written around d4 set (3, 3).</summary>
         public int StartX = 6, StartY = 0;
-        public int[] Health = { 6, 6, 6, 6 }, NoiseTargets = { 3, 4, 5 };
+        public int[] Health = { 6, 6, 6, 6 };
         public PatternDefinition[] Patterns = PatternDefinition.Defaults();
         public RandomAttackSchedule Schedule = new RandomAttackSchedule();
         // The hand-written boss chart's text. When set, it replaces Patterns and Schedule up to its `random N` note. Kept as text so replay logs carry it.
@@ -101,7 +104,7 @@ namespace StringAsASword.Combat
         public BattleSettings Copy()
         {
             var copy = (BattleSettings)MemberwiseClone();
-            copy.Health = (int[])Health.Clone(); copy.NoiseTargets = (int[])NoiseTargets.Clone();
+            copy.Health = (int[])Health.Clone();
             if (NoteTimes != null) copy.NoteTimes = (double[])NoteTimes.Clone();
             if (HoldEndTimes != null) copy.HoldEndTimes = (double[])HoldEndTimes.Clone();
             copy.Patterns = Array.ConvertAll(Patterns, p => p.Copy());
@@ -112,7 +115,7 @@ namespace StringAsASword.Combat
             ChartId = song.ChartName, NoteTimes = song.NoteTimes(), HoldEndTimes = song.HoldEndTimes(), FinishNote = song.FinishNote,
             NoteCount = song.NoteCount, Bpm = song.Bpm, PerfectWindow = song.PerfectWindow,
             GoodWindow = song.GoodWindow, InputOffset = song.InputOffset,
-            Health = stage.HealthSegments, NoiseTargets = stage.NoiseTargets,
+            Health = stage.HealthSegments, ResonanceNotes = stage.ResonanceNotes,
             PlayerMaxHp = stage.PlayerMaxHp, SpawnInterval = stage.NoiseSpawnInterval,
             MaxNoise = stage.MaxActiveNoise, MaxCollectionCost = stage.MaxCollectionCost,
             Patterns = stage.Patterns, Version = stage.CombatVersion, Schedule = stage.AttackSchedule, BossChartText = stage.BossChartText
@@ -121,7 +124,7 @@ namespace StringAsASword.Combat
         {
             if (NoteCount < 1 || Bpm <= 0 || double.IsNaN(Bpm) || double.IsInfinity(Bpm) ||
                 PlayerMaxHp < 1 || SpawnInterval < 1 || MaxNoise < 1 || MaxNoise > 2 || MaxCollectionCost < 2 ||
-                StartX < 0 || StartX > 7 || StartY < 0 || StartY > 7)
+                StartX < 0 || StartX > 7 || StartY < 0 || StartY > 7 || ResonanceNotes < 0 || ResonanceNotes > MaxResonanceNotes)
                 throw new ArgumentException("Invalid battle settings.");
             if (FinishNote < -1 || FinishNote == 0 || FinishNote >= NoteCount) throw new ArgumentException("FinishNote must be -1 or a note after the first.");
             if (HasAuthoredChart && NoteTimes.Length != NoteCount) throw new ArgumentException("NoteTimes must list exactly NoteCount notes.");
@@ -134,10 +137,8 @@ namespace StringAsASword.Combat
                         i + 1 < NoteTimes.Length && HoldEndTimes[i] >= NoteTimes[i + 1]))
                         throw new ArgumentException($"Hold {i} must end after it starts and before the next note.");
             }
-            if (Health == null || Health.Length != 4 || NoiseTargets == null || NoiseTargets.Length != 3)
-                throw new ArgumentException("Four health segments and three collection goals required.");
+            if (Health == null || Health.Length != 4) throw new ArgumentException("Four health segments required.");
             foreach (int h in Health) if (h < 1) throw new ArgumentException("HP must be positive.");
-            foreach (int n in NoiseTargets) if (n < 1) throw new ArgumentException("Goals must be positive.");
             if (Patterns == null || Patterns.Length > 64) throw new ArgumentException("Pattern list must contain at most 64 entries.");
             if (Schedule == null) throw new ArgumentException("Attack schedule is missing.");
             _ = Chart; // Throws BossChartException (an ArgumentException) with the line number.

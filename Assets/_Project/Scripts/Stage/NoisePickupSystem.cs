@@ -27,6 +27,11 @@ namespace StringAsASword.Stage
         private SeededRandom random;
         private int deferredBeat = -1, attempts;
         public Func<GridPosition, bool, bool> CandidateAllowed;
+        /// <summary>While true nothing spawns; a spawn that fell due in that time happens on the first beat after it.</summary>
+        public Func<bool> SpawnBlocked;
+        /// <summary>A goal that is never reached: noise keeps spawning for the whole battle.</summary>
+        public const int Unlimited = int.MaxValue;
+        private bool held;
         public event Action<string, int> SpawnStatus;
         public bool WaitingForSafeSpawn => deferredBeat >= 0;
         private int nextId;
@@ -58,7 +63,7 @@ namespace StringAsASword.Stage
             if (required < 0 || firstSpawnBeat < 0) throw new ArgumentOutOfRangeException(nameof(required));
             PhaseId = phaseId; Required = required; Collected = 0;
             pickups.Clear(); initialSpawnBeat = firstSpawnBeat; lastBeat = firstSpawnBeat - 1;
-            deferredBeat = -1; attempts = 0;
+            deferredBeat = -1; attempts = 0; held = false;
         }
         public void AdvanceToBeat(int beat, GridPosition player)
         {
@@ -66,7 +71,10 @@ namespace StringAsASword.Stage
             while (lastBeat < beat)
             {
                 int current = ++lastBeat;
-                if (!GoalReached && (current == initialSpawnBeat || current % interval == 0 || deferredBeat >= 0 && current > deferredBeat)) Spawn(current, player);
+                bool due = current == initialSpawnBeat || current % interval == 0 || deferredBeat >= 0 && current > deferredBeat;
+                if (GoalReached) continue;
+                if (SpawnBlocked != null && SpawnBlocked()) { held |= due; continue; }
+                if (due || held) { held = false; Spawn(current, player); }
             }
         }
         private void Spawn(int beat, GridPosition player)

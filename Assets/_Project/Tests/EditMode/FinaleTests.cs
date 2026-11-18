@@ -10,7 +10,7 @@ namespace StringAsASword.Tests
     {
         private static BattleSettings Settings(int finish) => new BattleSettings
         {
-            Bpm = 87, NoteCount = 160, FinishNote = finish, Health = new[] { 1, 1, 1, 1 }, NoiseTargets = new[] { 1, 1, 1 },
+            Bpm = 87, NoteCount = 160, FinishNote = finish, Health = new[] { 1, 1, 1, 1 },
             PlayerMaxHp = 5, Patterns = PatternDefinition.Defaults()
         };
         private static double Time(int note) => note * 60.0 / 87;
