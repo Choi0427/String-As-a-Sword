@@ -31,7 +31,8 @@ namespace StringAsASword.Editor
         /// <summary>A baked lookup map (part ids and gradients), not a picture: exact values, no colour space, no blending between texels.</summary>
         public static void SetUpRegionMap(TextureImporter texture)
         {
-            texture.textureType = TextureImporterType.Default; texture.sRGBTexture = false;
+            // Keep its exact size: rounding to a power of two would resample it and blend part ids at their borders.
+            texture.textureType = TextureImporterType.Default; texture.sRGBTexture = false; texture.npotScale = TextureImporterNPOTScale.None;
             texture.mipmapEnabled = false; texture.alphaIsTransparency = false;
             texture.filterMode = UnityEngine.FilterMode.Point; texture.wrapMode = UnityEngine.TextureWrapMode.Clamp;
             texture.textureCompression = TextureImporterCompression.Uncompressed; texture.maxTextureSize = 4096;

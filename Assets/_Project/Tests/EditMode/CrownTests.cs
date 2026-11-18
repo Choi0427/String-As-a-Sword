@@ -81,5 +81,15 @@ namespace StringAsASword.Tests
             byte top = map[(mapHeight - 1) * mapWidth + 40].g, bottom = map[40].g;
             Assert.That(top, Is.LessThan(bottom));
         }
+        [Test] public void ImportedRegionMapKeepsItsBakedSizeAndExactTexels()
+        {
+            var art = UnityEditor.AssetDatabase.LoadAssetAtPath<ArtSet>("Assets/_Project/Art/ArtSet.asset");
+            Assert.That(art.HasCrown, Is.True, "Run String As a Sword > Art > Set Up Boss Crown.");
+            // Half the crown picture, unscaled: any resampling would blend part ids where two parts meet.
+            Assert.That(art.crownRegions.width, Is.EqualTo(art.crown.texture.width / 2));
+            Assert.That(art.crownRegions.height, Is.EqualTo(art.crown.texture.height / 2));
+            Assert.That(art.crownRegions.filterMode, Is.EqualTo(FilterMode.Point));
+            Assert.That(art.crownRegions.isDataSRGB, Is.False);
+        }
     }
 }
