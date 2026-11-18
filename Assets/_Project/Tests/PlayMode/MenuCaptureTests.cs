@@ -108,6 +108,33 @@ namespace StringAsASword.Tests
             board.BreakOverride = -1;
             game.PauseSession();
         }
+        /// <summary>Figma "Game Play" key guide, "Pause" (plain and hovered) and "Game Over" over the running battle.</summary>
+        [UnityTest] public IEnumerator CaptureBattleScreens()
+        {
+            string dir = Arg("-menuCaptureDir", Path.Combine(Application.temporaryCachePath, "MenuCapture"));
+            Directory.CreateDirectory(dir);
+            yield return SceneManager.LoadSceneAsync(GameFlow.BattleScene);
+            yield return null;
+            var game = Object.FindAnyObjectByType<PrototypeGame>();
+            var canvas = Object.FindAnyObjectByType<PrototypeView>().GetComponent<Canvas>();
+            var texture = new RenderTexture(1920, 1080, 24);
+            var camera = new GameObject("Capture Camera").AddComponent<Camera>();
+            camera.clearFlags = CameraClearFlags.SolidColor; camera.backgroundColor = Color.black; camera.targetTexture = texture;
+            canvas.renderMode = RenderMode.ScreenSpaceCamera; canvas.worldCamera = camera; canvas.planeDistance = 5;
+            game.StartSession();
+            float playing = Time.realtimeSinceStartup + 4;
+            while (game.State != PrototypeState.Playing && Time.realtimeSinceStartup < playing) yield return null;
+            yield return Capture(camera, texture, Path.Combine(dir, "battle-keyguide.png"));
+            var screens = game.View.Screens;
+            game.PauseSession(); yield return null;
+            yield return Capture(camera, texture, Path.Combine(dir, "battle-pause.png"));
+            screens.Select(0); yield return Capture(camera, texture, Path.Combine(dir, "battle-pause-hover.png"));
+            screens.Press(0); yield return null;
+            game.Battle.Advance(game.Timeline.TimeOf(game.Song.NoteCount - 1) + game.Song.GoodWindow + .001);
+            yield return null; yield return null;
+            yield return Capture(camera, texture, Path.Combine(dir, "battle-gameover.png"));
+            screens.Select(1); yield return Capture(camera, texture, Path.Combine(dir, "battle-gameover-hover.png"));
+        }
         private static IEnumerator Capture(Camera camera, RenderTexture texture, string path)
         {
             // No WaitForEndOfFrame: it never fires in batch mode. The camera renders the canvas on demand.

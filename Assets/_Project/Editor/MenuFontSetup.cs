@@ -6,25 +6,45 @@ using UnityEngine.TextCore.LowLevel;
 namespace StringAsASword.Editor
 {
     /// <summary>
-    /// Builds the TMP font asset for the delivered menu and story font (학교안심 곧은제목 B, Figma "Hakgyoansim Godeunjemok B")
-    /// and assigns it to ArtSet.menuFont. Re-running rebuilds the asset from the TTF.
+    /// Builds the TMP font assets for the delivered fonts and assigns them to the ArtSet. Re-running rebuilds them from the files.
+    /// Menu and story: 학교안심 곧은제목 B (Figma "Hakgyoansim Godeunjemok B").
+    /// Battle pause / game over: Orbit Regular (items) and Media Sans Extended Black (titles), plus the key guide sprite.
     /// </summary>
     public static class MenuFontSetup
     {
-        private const string Source = "Assets/_Project/Art/Fonts/HakgyoansimGodeunjemokB.ttf";
-        private const string AssetPath = "Assets/_Project/Art/Fonts/HakgyoansimGodeunjemokB SDF.asset";
+        private const string Fonts = "Assets/_Project/Art/Fonts/";
+        private const string KeyGuide = "Assets/_Project/Art/UI/HUD/KeyGuide.png";
 
         [MenuItem("String As a Sword/Art/Set Up Menu Font")]
         public static void Run()
         {
-            var font = AssetDatabase.LoadAssetAtPath<Font>(Source);
-            if (font == null) { Debug.LogError($"Missing {Source}."); return; }
-            AssetDatabase.DeleteAsset(AssetPath);
-            // Dynamic: Korean has too many glyphs to bake, so the atlas fills from the TTF as text appears.
-            // 1024 pages with multi-atlas: menu and story text use a few hundred glyphs, and the asset stays small in git.
+            var art = PrototypeSceneSetup.EnsureArtSet();
+            art.menuFont = Build("HakgyoansimGodeunjemokB.ttf", "HakgyoansimGodeunjemokB SDF");
+            Save(art);
+        }
+
+        [MenuItem("String As a Sword/Art/Set Up Battle Screens")]
+        public static void RunBattleScreens()
+        {
+            var art = PrototypeSceneSetup.EnsureArtSet();
+            art.screenFont = Build("Orbit-Regular.ttf", "Orbit-Regular SDF");
+            art.screenTitleFont = Build("MediaSansExtended-Black.otf", "MediaSansExtended-Black SDF");
+            art.keyGuide = AssetDatabase.LoadAssetAtPath<Sprite>(KeyGuide);
+            if (art.keyGuide == null) Debug.LogError($"Missing {KeyGuide} (import it as a Sprite).");
+            Save(art);
+        }
+
+        private static TMP_FontAsset Build(string file, string name)
+        {
+            string source = Fonts + file, path = Fonts + name + ".asset";
+            var font = AssetDatabase.LoadAssetAtPath<Font>(source);
+            if (font == null) { Debug.LogError($"Missing {source}."); return null; }
+            AssetDatabase.DeleteAsset(path);
+            // Dynamic: Korean has too many glyphs to bake, so the atlas fills from the font file as text appears.
+            // 1024 pages with multi-atlas: menu text uses a few hundred glyphs, and the asset stays small in git.
             var asset = TMP_FontAsset.CreateFontAsset(font, 64, 6, GlyphRenderMode.SDFAA, 1024, 1024, AtlasPopulationMode.Dynamic, true);
-            asset.name = "HakgyoansimGodeunjemokB SDF";
-            AssetDatabase.CreateAsset(asset, AssetPath);
+            asset.name = name;
+            AssetDatabase.CreateAsset(asset, path);
             // The atlas and material must live inside the asset, or they are lost on reload and in builds.
             asset.atlasTextures[0].name = asset.name + " Atlas";
             asset.material.name = asset.name + " Material";
@@ -35,11 +55,10 @@ namespace StringAsASword.Editor
             var serialized = new SerializedObject(asset);
             var clearOnBuild = serialized.FindProperty("m_ClearDynamicDataOnBuild");
             if (clearOnBuild != null) { clearOnBuild.boolValue = true; serialized.ApplyModifiedPropertiesWithoutUndo(); }
-            var art = PrototypeSceneSetup.EnsureArtSet();
-            art.menuFont = asset;
-            EditorUtility.SetDirty(asset); EditorUtility.SetDirty(art);
-            AssetDatabase.SaveAssets();
-            Debug.Log($"Menu font set up: {AssetPath}");
+            EditorUtility.SetDirty(asset);
+            Debug.Log($"Font set up: {path}");
+            return asset;
         }
+        private static void Save(Object art) { EditorUtility.SetDirty(art); AssetDatabase.SaveAssets(); }
     }
 }
