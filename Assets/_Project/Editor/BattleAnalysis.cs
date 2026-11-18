@@ -91,7 +91,7 @@ namespace StringAsASword.Editor
             using (var writer = new StreamWriter(path, false, Encoding.UTF8))
             {
                 writer.WriteLine("set,strategy,phase,metric,count,min,p10,p50,p90,max,mean");
-                foreach (var set in Sets(result)) foreach (StrategyKind strategy in Enum.GetValues(typeof(StrategyKind)))
+                foreach (var set in Sets(result)) foreach (StrategyKind strategy in BattleStrategies.Legacy)
                 {
                     var runs = set.Runs.Where(r => r.Strategy == strategy).ToArray();
                     if (runs.Length == 0) continue;
@@ -132,7 +132,7 @@ namespace StringAsASword.Editor
             if (result.InvalidCandidate != null) text.AppendLine("**Invalid HP candidate; actual and holdout runs were not started.** " + result.InvalidCandidate);
             text.AppendLine().AppendLine("| Set | Strategy | Runs | Clears | Deaths | Timeouts | Analysis goals unfinished | Leftover P10 / P50 / P90 |");
             text.AppendLine("| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |");
-            foreach (var set in Sets(result)) foreach (StrategyKind strategy in Enum.GetValues(typeof(StrategyKind)))
+            foreach (var set in Sets(result)) foreach (StrategyKind strategy in BattleStrategies.Legacy)
             {
                 var runs = set.Runs.Where(r => r.Strategy == strategy).ToArray();
                 if (runs.Length == 0) continue;

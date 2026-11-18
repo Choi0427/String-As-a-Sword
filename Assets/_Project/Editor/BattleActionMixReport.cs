@@ -92,7 +92,7 @@ namespace StringAsASword.Editor
                 var samples = Collect(settings, firstSeed, seedsPerGroup, missRate, name);
                 summary.executedRuns += samples.Count;
                 summary.invariantFailures += samples.Sum(s => s.invariantFailures);
-                foreach (StrategyKind strategy in Enum.GetValues(typeof(StrategyKind)))
+                foreach (StrategyKind strategy in BattleStrategies.Legacy)
                     summary.groups.Add(Summarize(name, strategy.ToString(), samples.Where(s => s.strategy == strategy).ToArray()));
                 summary.groups.Add(Summarize(name, AllStrategies, samples.ToArray()));
                 CheckReplays(settings, outputDir, name, firstSeed, Math.Min(ReplaySeeds, seedsPerGroup), missRate, summary);
@@ -181,7 +181,7 @@ namespace StringAsASword.Editor
         private static void CheckReplays(BattleSettings settings, string outputDir, string group, int firstSeed, int seeds, double missRate, Summary summary)
         {
             string directory = Path.Combine(outputDir, "replay");
-            foreach (StrategyKind strategy in Enum.GetValues(typeof(StrategyKind)))
+            foreach (StrategyKind strategy in BattleStrategies.Legacy)
                 for (int seed = firstSeed; seed < firstSeed + seeds; seed++)
                 {
                     string path = Path.Combine(directory, $"{group}-{strategy}-{seed}.jsonl.gz");
@@ -217,7 +217,7 @@ namespace StringAsASword.Editor
             }
             var holdout = Find("holdout", AllStrategies);
             Shares("share three-bot mean", holdout, .04);
-            foreach (StrategyKind strategy in Enum.GetValues(typeof(StrategyKind)))
+            foreach (StrategyKind strategy in BattleStrategies.Legacy)
                 Shares("share " + strategy, Find("holdout", strategy.ToString()), .08);
             Check("clear no-miss", Percent(holdout.clearRate), ">=90%", holdout.clearRate >= .9);
             var miss = Find("miss5", AllStrategies);

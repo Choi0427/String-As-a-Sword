@@ -100,7 +100,7 @@ namespace StringAsASword.Editor
                 events.WriteLine("set,configuration,strategy,seed,type,note_index,music_beat,phase,pattern_id,kind,cells,impact_note,warning_notes,required_dodge_actions,selected_interval,actual_interval,reason,detail");
                 foreach (string set in new[] { "development", "holdout", "miss5" })
                 foreach (string configuration in Configurations)
-                foreach (StrategyKind strategy in Enum.GetValues(typeof(StrategyKind)))
+                foreach (StrategyKind strategy in BattleStrategies.Legacy)
                 {
                     var group = new Group { Set = set, Configuration = configuration, Strategy = strategy,
                         Settings = Configuration(source, configuration) };

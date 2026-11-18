@@ -8,7 +8,7 @@ using StringAsASword.Player;
 
 namespace StringAsASword.Simulation
 {
-    public enum StrategyKind { CollectFirst, AttackHold, MovementUse }
+    public enum StrategyKind { CollectFirst, AttackHold, MovementUse, Tank, Patient }
 
     public readonly struct BattleDecision
     {
@@ -21,6 +21,8 @@ namespace StringAsASword.Simulation
     // No session, seed, settings, or unrevealed pattern is available to a strategy.
     public static class BattleStrategies
     {
+        /// <summary>The three pre-resonance bots; batch reports keep measuring only these.</summary>
+        public static readonly StrategyKind[] Legacy = { StrategyKind.CollectFirst, StrategyKind.AttackHold, StrategyKind.MovementUse };
         private static readonly BoardState Board = new BoardState();
         private static readonly MoveDirection[] Directions =
             { MoveDirection.Up, MoveDirection.Left, MoveDirection.Down, MoveDirection.Right };
@@ -30,7 +32,8 @@ namespace StringAsASword.Simulation
             var decision = Choose(kind, view);
             // Waiting out a required response is not a guard. Standing still is the same either way, so an unthreatened
             // cell spends the note on an attack; from below row 8 that is a miss rather than an inflated guard count.
-            if (decision.Kind == PlayerActionKind.Guard && !Threatened(view.Position, view.NoteIndex, view.Telegraphs) &&
+            // Patient's wait while charged is a deliberate guard; turning it into an attack would ignite early.
+            if (decision.Kind == PlayerActionKind.Guard && !(kind == StrategyKind.Patient && view.Charged) && !Threatened(view.Position, view.NoteIndex, view.Telegraphs) &&
                 Array.Exists(view.Telegraphs, t => t.Response != AttackResponse.Either))
                 return new BattleDecision(PlayerActionKind.Attack);
             return decision;
@@ -41,6 +44,11 @@ namespace StringAsASword.Simulation
             bool danger = Threatened(view.Position, view.NoteIndex, view.Telegraphs);
             if (GuardRequired(view))
                 return new BattleDecision(PlayerActionKind.Guard);
+            if (kind == StrategyKind.Tank || kind == StrategyKind.Patient)
+            {
+                var fallback = Choose(StrategyKind.CollectFirst, view);
+                return kind == StrategyKind.Tank ? TankOrElse(view, fallback) : PatientOrElse(view, fallback);
+            }
             // An empty string deals no damage, so every strategy fetches a noise first.
             bool collect = view.GoalRemaining > 0;
             var pickup = collect || kind == StrategyKind.MovementUse ? BestPickup(view) : default;
@@ -81,6 +89,37 @@ namespace StringAsASword.Simulation
                 return new BattleDecision(PlayerActionKind.Guard);
             }
             return new BattleDecision(PlayerActionKind.Attack);
+        }
+
+        // Inside the window every note on the top row should be an attack; guard only when the hit lands on this cell.
+        private static BattleDecision TankOrElse(BattleObservation view, BattleDecision fallback)
+        {
+            if (view.ResonanceRemaining <= 0 || view.Position.Y != 7) return fallback;
+            int note = view.NoteIndex;
+            if (!Threatened(view.Position, note, view.Telegraphs)) return new BattleDecision(PlayerActionKind.Attack);
+            ulong bit = SafeRoutePlanner.Bit(view.Position);
+            bool dodgeOnly = false;
+            foreach (var t in view.Telegraphs)
+                if (t.ImpactNote == note && (t.Cells & bit) != 0 && t.Response == AttackResponse.DodgeOnly) dodgeOnly = true;
+            if (!dodgeOnly) return new BattleDecision(PlayerActionKind.Guard);
+            // A guard would break, so sidestep along the row.
+            foreach (var direction in new[] { MoveDirection.Left, MoveDirection.Right })
+                if (Board.TryGetDestination(view.Position, direction, out var cell) && cell.Y == 7 &&
+                    !Threatened(cell, note, view.Telegraphs))
+                    return new BattleDecision(PlayerActionKind.Move, direction);
+            return fallback;
+        }
+
+        // Igniting into a top-row hit wastes the window on dodging, so wait (guard) while the song still has plenty left.
+        private static BattleDecision PatientOrElse(BattleObservation view, BattleDecision fallback)
+        {
+            if (!view.Charged || view.ResonanceRemaining > 0 || view.Position.Y != 7 ||
+                fallback.Kind != PlayerActionKind.Attack || view.RemainingNotes <= 40) return fallback;
+            foreach (var t in view.Telegraphs)
+                if (t.ImpactNote >= view.NoteIndex && t.ImpactNote <= view.NoteIndex + 7 &&
+                    (t.Cells & 0xFF00000000000000UL) != 0)
+                    return new BattleDecision(PlayerActionKind.Guard);
+            return fallback;
         }
 
         // Decides only what a pending DodgeOnly sequence forces; false leaves the note to the strategy's normal work.
@@ -285,7 +324,7 @@ namespace StringAsASword.Simulation
             if (count < 1) throw new ArgumentOutOfRangeException(nameof(count));
             var runs = new List<BattleRun>(count * 3);
             for (int seed = firstSeed; seed < firstSeed + count; seed++)
-                foreach (StrategyKind strategy in Enum.GetValues(typeof(StrategyKind)))
+                foreach (StrategyKind strategy in BattleStrategies.Legacy)
                 {
                     var run = Run(settings, seed, strategy, analysis, missRate);
                     sink?.Invoke(run, label);
