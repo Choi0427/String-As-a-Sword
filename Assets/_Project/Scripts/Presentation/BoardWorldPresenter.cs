@@ -1128,7 +1128,7 @@ namespace StringAsASword.Presentation
             noiseSprites[index] = picture; noiseShadows[index] = shadow; noiseFloats[index] = hover; noiseBackings[index] = backing;
             return item;
         }
-        private const float NoiseWidth = 1.15f, NoiseHover = .5f, NoiseBob = .08f;
+        private const float NoiseWidth = 1.7f, NoiseHover = .5f, NoiseBob = .08f;
         public const string NoiseShader = "Universal Render Pipeline/2D/Sprite-Unlit-Default";
         /// <summary>Height above its cell at which a noise pickup is drawn (where collected noise starts its flight).</summary>
         public float NoiseHeight => noiseSprites != null ? NoiseHover : .12f;
