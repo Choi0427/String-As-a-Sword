@@ -192,13 +192,6 @@ namespace StringAsASword.Presentation
                 dangerLabels[i].fontStyle = FontStyles.Bold;
                 badge.gameObject.SetActive(false);
             }
-            for (int i = 0; i < 8; i++)
-            {
-                Vector2 column = boardWorld.ProjectToBoard(new Vector3(i-3.5f,0,-4.43f),size);
-                Vector2 row = boardWorld.ProjectToBoard(new Vector3(-4.43f,0,i-3.5f),size);
-                Text(board,"Column",((char)('A'+i)).ToString(),column,new Vector2(22,22),12,Muted);
-                Text(board,"Row",(i+1).ToString(),row,new Vector2(22,22),12,Muted);
-            }
             BuildPlayerHp(board);
             // Built after the badges so it reads above them; the menu overlay is still built later and covers it.
             outcomeFlash = MakeRect(board, "OutcomeFlash", Vector2.zero, new Vector2(264,48));
@@ -376,7 +369,7 @@ namespace StringAsASword.Presentation
         public void ShowNoiseCollected(NoisePickup pickup)
         {
             if (bossCrown == null) return;
-            Vector2 point = boardWorld.ProjectToBoard(BoardWorldPresenter.CellPosition(pickup.Cell) + Vector3.up * .12f, BoardSize);
+            Vector2 point = boardWorld.ProjectToBoard(BoardWorldPresenter.CellPosition(pickup.Cell) + Vector3.up * boardWorld.NoiseHeight, BoardSize);
             bossCrown.Fly(boardRect.TransformPoint(point), pickup.PhaseId);
         }
         // Beside the knight, because that is where the eye already is. Near the top it drops below instead.

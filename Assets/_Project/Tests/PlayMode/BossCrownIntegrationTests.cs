@@ -66,5 +66,27 @@ namespace StringAsASword.Tests
             Assert.That(GameObject.Find("Noise Mote"), Is.Null);
             LogAssert.NoUnexpectedReceived();
         }
+        [UnityTest] public IEnumerator NoiseFloatsAsTheDeliveredSpriteAndTheBoardHasNoEdgeMarksOrLabels()
+        {
+            var board = Object.FindAnyObjectByType<BoardWorldPresenter>();
+            Assert.That(view.Art.noiseSprite, Is.Not.Null, "Run String As a Sword > Art > Set Up Noise Sprite.");
+            Assert.That(board.NoiseUsesSprite, Is.True);
+            var world = GameObject.Find("Board World").transform;
+            for (int x = 0; x < 8; x++) Assert.That(world.Find($"AttackEdge_{x}"), Is.Null, "The orange row-8 strips are gone.");
+            foreach (var label in view.GetComponentsInChildren<TMP_Text>(true))
+                Assert.That(label.name, Is.Not.EqualTo("Column").And.Not.EqualTo("Row"), "The board's A-H and 1-8 labels are gone.");
+            game.StartSession();
+            float waited = 0;
+            while (game.Noise.Pickups.Count == 0 && waited < 10) { waited += Time.unscaledDeltaTime; yield return null; }
+            Assert.That(game.Noise.Pickups.Count, Is.GreaterThan(0), "A noise pickup spawns early in the battle.");
+            yield return null;
+            var pickup = world.Find("Noise_0");
+            Assert.That(pickup.gameObject.activeSelf, Is.True);
+            var hover = pickup.Find("Noise Float");
+            Assert.That(hover.localPosition.y, Is.GreaterThan(.35f), "The picture hovers well above its cell.");
+            Assert.That(hover.GetComponentInChildren<SpriteRenderer>().sprite, Is.SameAs(view.Art.noiseSprite));
+            Assert.That(pickup.Find("Noise Shadow").GetComponent<SpriteRenderer>().color.a, Is.GreaterThan(0), "A shadow sits on the cell under it.");
+            LogAssert.NoUnexpectedReceived();
+        }
     }
 }

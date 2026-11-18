@@ -155,8 +155,6 @@ namespace StringAsASword.Presentation
                 if (art.boardPrefab == null)
                     cellPieces.Add(Box($"Cell_{x}_{y}", world.transform, CellPosition(new GridPosition(x, y)) - Vector3.up * .05f,
                         new Vector3(.975f, .10f, .975f), (x + y) % 2 == 0 ? dark : ivory));
-                if (y == 7)
-                    Box($"AttackEdge_{x}", world.transform, new Vector3(x - 3.5f, .014f, 3.90f), new Vector3(.83f, .028f, .065f), gold);
                 TileCount++;
             }
             selection = new GameObject("Player Cell Outline").transform; selection.SetParent(world.transform, false);
@@ -560,6 +558,12 @@ namespace StringAsASword.Presentation
                 if (!active) continue;
                 // Re-sent every frame: an Animator forgets its parameters while the pickup is inactive.
                 if (art.noisePrefab != null) ArtCue.SetBool(pickups[i].gameObject, "Dormant", game.Noise.GoalReached);
+                if (noiseSprites != null)
+                {
+                    pickups[i].localPosition = CellPosition(game.Noise.Pickups[i].Cell);
+                    RenderNoiseSprite(i, game.Noise.GoalReached);
+                    continue;
+                }
                 pickups[i].localPosition = CellPosition(game.Noise.Pickups[i].Cell) + Vector3.up * (.12f + .025f * Mathf.Sin(Time.unscaledTime * 3 + i));
             }
             lastNoiseDormant = game.Noise.GoalReached;
@@ -1059,6 +1063,15 @@ namespace StringAsASword.Presentation
             {
                 Transform item;
                 if (art.noisePrefab != null) { item = Instantiate(art.noisePrefab, world.transform, false).transform; item.name = $"Noise_{i}"; }
+                else if (art.noiseSprite != null)
+                {
+                    item = BuildNoiseSprite(i);
+                    pickups[i] = item;
+                    // Tinted per frame instead of swapping materials, so the sprite keeps its sprite material.
+                    pickupRenderers[i] = new Renderer[0]; pickupActive[i] = pickupDormant[i] = new Material[0][];
+                    item.gameObject.SetActive(false);
+                    continue;
+                }
                 else
                 {
                     item = new GameObject($"Noise_{i}").transform; item.SetParent(world.transform, false);
@@ -1080,6 +1093,70 @@ namespace StringAsASword.Presentation
                 }
                 item.gameObject.SetActive(false);
             }
+        }
+        // The delivered noise picture: a camera-facing sprite that hovers well above its cell, with a soft shadow
+        // on the cell that tightens and darkens as the sprite dips, so it reads as floating rather than lying on the board.
+        private Transform BuildNoiseSprite(int index)
+        {
+            if (noiseSprites == null)
+            {
+                noiseSprites = new SpriteRenderer[pickups.Length]; noiseShadows = new SpriteRenderer[pickups.Length]; noiseFloats = new Transform[pickups.Length];
+                spriteMaterial = new Material(Shader.Find("Sprites/Default")) { name = "Noise Sprite" }; resources.Add(spriteMaterial);
+            }
+            var item = new GameObject($"Noise_{index}").transform; item.SetParent(world.transform, false);
+            var shadow = new GameObject("Noise Shadow", typeof(SpriteRenderer)).GetComponent<SpriteRenderer>();
+            shadow.transform.SetParent(item, false);
+            shadow.transform.localPosition = Vector3.up * .012f; shadow.transform.localRotation = Quaternion.Euler(90, 0, 0);
+            shadow.sprite = ShadowSprite(); shadow.sharedMaterial = spriteMaterial; shadow.color = new Color(0, 0, 0, 0);
+            var hover = new GameObject("Noise Float").transform; hover.SetParent(item, false);
+            var picture = new GameObject("Noise Sprite", typeof(SpriteRenderer)).GetComponent<SpriteRenderer>();
+            picture.transform.SetParent(hover, false);
+            picture.sprite = art.noiseSprite; picture.sharedMaterial = spriteMaterial;
+            // About a cell wide, whatever the picture's pixels-per-unit.
+            picture.transform.localScale = Vector3.one * (NoiseWidth / Mathf.Max(.0001f, art.noiseSprite.bounds.size.x));
+            noiseSprites[index] = picture; noiseShadows[index] = shadow; noiseFloats[index] = hover;
+            return item;
+        }
+        private const float NoiseWidth = .95f, NoiseHover = .5f, NoiseBob = .08f;
+        /// <summary>Height above its cell at which a noise pickup is drawn (where collected noise starts its flight).</summary>
+        public float NoiseHeight => noiseSprites != null ? NoiseHover : .12f;
+        public bool NoiseUsesSprite => noiseSprites != null;
+        private void RenderNoiseSprite(int index, bool dormant)
+        {
+            float time = Time.unscaledTime, wave = Mathf.Sin(time * 2.2f + index * 1.7f);
+            float height = NoiseHover + NoiseBob * wave;
+            var hover = noiseFloats[index];
+            hover.localPosition = Vector3.up * height;
+            // Face the board camera, with a slow sway so it never sits still like a decal.
+            hover.rotation = BoardCamera.transform.rotation * Quaternion.Euler(0, 0, 3 * Mathf.Sin(time * 1.3f + index));
+            // Higher = wider, fainter shadow; lower = tighter, darker.
+            float lift = Mathf.InverseLerp(NoiseHover - NoiseBob, NoiseHover + NoiseBob, height);
+            noiseShadows[index].transform.localScale = new Vector3(.62f, .26f, 1) * Mathf.Lerp(.85f, 1.1f, lift) / ShadowSpriteSize;
+            noiseShadows[index].color = new Color(0, 0, 0, Mathf.Lerp(.55f, .3f, lift) * (dormant ? .5f : 1));
+            noiseSprites[index].color = dormant ? new Color(.42f, .42f, .42f, .7f) : Color.white;
+        }
+        private SpriteRenderer[] noiseSprites, noiseShadows;
+        private Transform[] noiseFloats;
+        private Material spriteMaterial;
+        private static Sprite shadowSprite;
+        private const float ShadowSpriteSize = 1;
+        // A soft round shadow: opaque in the middle, fading to nothing at the edge. One unit across.
+        private static Sprite ShadowSprite()
+        {
+            if (shadowSprite != null) return shadowSprite;
+            const int size = 64;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = (x + .5f) / size * 2 - 1, dy = (y + .5f) / size * 2 - 1;
+                    float fade = Mathf.Clamp01(1 - Mathf.Sqrt(dx * dx + dy * dy));
+                    texture.SetPixel(x, y, new Color(1, 1, 1, fade * fade));
+                }
+            texture.Apply();
+            shadowSprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(.5f, .5f), size);
+            shadowSprite.hideFlags = HideFlags.HideAndDontSave;
+            return shadowSprite;
         }
         private void BuildShield()
         {

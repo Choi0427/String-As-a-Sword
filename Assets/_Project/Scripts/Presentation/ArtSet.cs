@@ -25,6 +25,9 @@ namespace StringAsASword.Presentation
         public GameObject noisePrefab;
         [Tooltip("Optional: replaces every material of the noise prefab once the phase goal is reached.")]
         public Material noiseDormantMaterial;
+        [Tooltip("Noise pickup picture (Art/UI/Noise/Noise.png). Used when noisePrefab is empty: it floats above its cell, facing the camera, " +
+            "over a soft shadow on the cell, and greys out once the phase goal is reached.")]
+        public Sprite noiseSprite;
 
         [Tooltip("Replaces the procedural plinth, rim, deck and cells. It is cut into one shard per cell so the board can break. " +
             "Fit its 8x8 squares to 1-unit cells centred on the origin, playing surface at y = 0.")]
