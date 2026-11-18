@@ -17,7 +17,7 @@
 | 컷신 | 〃 | `CutscenePlayer` | 잡음에 닿으면 검정 띠가 위아래에서 1.2초 동안 들어와 2.39:1이 되고 `ArtSet.endingCutscene` 영상이 재생된다(비어 있으면 검정 화면 2초). Space·Enter·Esc로 건너뛴다. 끝나면 흰색으로 덮고 클리어 저장 → 메인화면 |
 | 흰 메인화면 | `MainMenu` | `MainMenuView` | 체스판·나이트는 그대로, 왼쪽(여백·로고·메뉴)만 반전되어 흰색 |
 
-3연노트까지 HP를 다 깎지 못하면 실패(시간 초과)다. 전투 중 일시정지 메뉴의 버튼은 메인화면으로 돌아간다.
+3연노트까지 HP를 다 깎지 못하면 실패(시간 초과)다. 실패하면 Game Over 화면, Esc는 Pause 화면이다(아래 "전투 화면").
 
 ## 규칙 (battle-6)
 
@@ -36,6 +36,19 @@
 - 설정: 음악 볼륨(0~100%), 입력 싱크·화면 싱크(±200ms). 저장되며 곡 에셋 값 위에 더해진다.
 - 키보드: W/S·방향키로 고르고 Enter·Space로 누른다.
 
+## 전투 화면 (키 가이드 · Pause · Game Over)
+
+피그마 `Game Play`의 `키 가이드`(node 373:184), `Pause`(389:255), `Game Over`(389:239)를 `BattleScreens`가 1920×1080 좌표 그대로 만든다(전투 캔버스 1600×900에 0.833배). 게임 화면이 뒤에 그대로 보인다.
+
+- 키 가이드: `Art/UI/HUD/KeyGuide.png`(피그마 2배 내보내기, 검은 배경을 알파로 바꿈) → `ArtSet.keyGuide`. 보드 아래 (598, 939) 723×104. 에필로그(하얀 세계)에서는 숨는다. 카운트인 "GET READY"는 보드 가운데로 옮겼고, 개발자 모드 표시는 왼쪽 아래.
+- Pause(Esc, 창 포커스 잃음): PAUSED / 판으로 복귀 / 설정 / 메인 메뉴. Esc를 다시 누르면 복귀(설정이 열려 있으면 설정만 닫힘). 복귀하면 멈춘 곳보다 카운트인 길이(4박)만큼 앞에서 곡이 다시 흐르고 "GET READY" 숫자가 멈춘 곳까지 센다. 이 구간의 노트는 이미 판정된 것이라 다시 판정하지 않는다.
+- Game Over(플레이어 HP 0 또는 시간 초과): FALLEN / 첫 수부터 / 메인 메뉴. 첫 수부터는 새 판(4박 카운트인). 설정에서 입력 싱크를 바꿨다면 판정기를 새로 만들려고 씬을 다시 연다. R은 여전히 바로 재시작.
+- 조작: 마우스 호버·클릭, 또는 W/S·방향키로 고르고 Enter·Space. 호버 모양은 메인화면과 같다(`#929292` 상자 + `#0C0C0C` 글자).
+- 설정: 메인화면과 같은 `SettingsPanel`. 볼륨·화면 싱크는 복귀하면 바로, 체력 표시는 즉시, 개발자 무적·보스 HP는 닫을 때, 시작 페이즈는 첫 수부터에서 적용된다.
+- 폰트: 항목 Orbit Regular 65px 자간 -10%(`Art/Fonts/Orbit-Regular.ttf`, OFL), 제목 Media Sans Extended Black 80px(`Art/Fonts/MediaSansExtended-Black.otf`). `String As a Sword > Art > Set Up Battle Screens`가 두 TMP 폰트 에셋을 만들고 키 가이드와 함께 `ArtSet.screenFont`·`screenTitleFont`·`keyGuide`에 지정한다. **Media Sans는 체험판(Trial) 라이선스**라 배포 전 정식 라이선스를 사거나 다른 폰트로 바꿔야 한다.
+- 메인화면 없이 전투 씬만 실행하면 예전 준비 카드(START / QUIT)가 먼저 뜬다.
+- 캡처: [BattleVisual/Screens](BattleVisual/Screens/). 프로젝트가 선형(Linear) 색 공간이라 피그마의 반투명(검정 90%, 키 상자 30%)은 알파를 감마 보정해 같은 밝기로 맞췄다.
+
 ## 스토리 문구 수정
 
 `Data/Story/IntroStory.asset`의 카드 목록. 카드마다 문장과 선택 그림(`image`). 현재 문구는 GDD 콘셉트(잡음·주선율·흑백 체스판)로 쓴 초안이다.
@@ -47,5 +60,6 @@
 ## 확인
 
 - EditMode `FinaleTests`: 무력화·결정 노트·실패·이전 규칙.
+- PlayMode `PrototypeIntegrationTests.ReadyCardThenPauseAndGameOverScreens`: Esc 일시정지 → 설정 열고 Esc로 닫기 → S로 고르기 → 판으로 복귀(되감기) → 시간 초과 → FALLEN → 첫 수부터.
 - PlayMode `GameFlowTests`: 피그마 위치·호버·흰 버전 / 시작 → 스토리(Space·Esc) → 전투 자동 카운트인 / 자유 이동(대각선 정규화) → 잡음에 닿기 전에는 머무름 → 닿으면 컷신 → Space로 건너뛰기 → 흰 메인화면 복귀.
-- 화면 캡처(필요할 때만): `-testFilter StringAsASword.Tests.MenuCaptureTests -menuCaptureDir <폴더>` → 메뉴(어두운/호버/흰/설정), 체스판 균열 1~3단계, 가운데가 갈라지는 과정과 터짐, 엔딩 단계별 PNG. 배치 모드에서는 `WaitForEndOfFrame`이 오지 않으므로 캔버스를 카메라로 직접 렌더한다.
+- 화면 캡처(필요할 때만): `-testFilter StringAsASword.Tests.MenuCaptureTests -menuCaptureDir <폴더>` → 메뉴(어두운/호버/흰/설정), 전투 화면(키 가이드, Pause, Game Over와 호버), 체스판 균열 1~3단계, 가운데가 갈라지는 과정과 터짐, 엔딩 단계별 PNG. 배치 모드에서는 `WaitForEndOfFrame`이 오지 않으므로 캔버스를 카메라로 직접 렌더한다.

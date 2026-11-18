@@ -75,6 +75,9 @@ MonoBehaviour:
   mainMenuDark: {fileID: 21300000, guid: 9777af6bfeec6ff4985b1678bf6e208c, type: 3}
   mainMenuWhite: {fileID: 0}
   menuFont: {fileID: 11400000, guid: 9f923aa8663272541816bacfcefebd7e, type: 2}
+  keyGuide: {fileID: 21300000, guid: 53027492787f48944b8aa2b5dee06f0c, type: 3}
+  screenFont: {fileID: 11400000, guid: cddfb65d7ebf8724d8854d7fb095a58e, type: 2}
+  screenTitleFont: {fileID: 11400000, guid: 463bb0403a855ea49ae21e168c3b27c5, type: 2}
   knightBadgeBox:
     serializedVersion: 2
     x: -26

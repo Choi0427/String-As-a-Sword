@@ -106,6 +106,12 @@ namespace StringAsASword.Presentation
         public Sprite mainMenuDark, mainMenuWhite;
         [Tooltip("Main menu and story text (Figma: Hakgyoansim Godeunjemok B). Empty = the OS Korean font at runtime.")]
         public TMP_FontAsset menuFont;
+        [Tooltip("Key guide under the board in battle (Figma 'Game Play' / 키 가이드, exported at 2x). Empty = no guide.")]
+        public Sprite keyGuide;
+        [Tooltip("Pause and game-over menu items (Figma: Orbit Regular). Empty = menuFont.")]
+        public TMP_FontAsset screenFont;
+        [Tooltip("PAUSED / FALLEN titles (Figma: Media Sans Extended Black). Empty = screenFont.")]
+        public TMP_FontAsset screenTitleFont;
         [Tooltip("Telegraph countdown badges move away from this box around the knight, in board-view pixels.")]
         public Rect knightBadgeBox = new Rect(-26, 5, 52, 76);
         [Tooltip("Player HP under the knight, one sprite per HP: a bar segment or a knight icon, on = left, off = lost. " +

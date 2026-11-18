@@ -36,12 +36,14 @@ namespace StringAsASword.Presentation
         public Material BoardMaterial => boardMaterial;
         public ArtSet Art => art;
         public BoardWorldPresenter BoardWorld => boardWorld;
+        /// <summary>Key guide, pause and game-over screens (Figma "Game Play", "Pause", "Game Over").</summary>
+        public BattleScreens Screens { get; private set; }
         /// <summary>The canvas itself, for full-screen overlays drawn above the HUD.</summary>
         public RectTransform CanvasRect => (RectTransform)transform;
         public TMP_FontAsset LatinFont => art.font != null ? art.font : font;
         private PrototypeGame game;
         private RectTransform root;
-        private TMP_Text stats, beatLabel, position, mode, overlayTitle, overlayBody, buttonLabel, countIn;
+        private TMP_Text stats, beatLabel, position, mode, countIn, devLabel;
         private GameObject overlay;
         private NotePresenter notes;
         private BoardWorldPresenter boardWorld;
@@ -124,8 +126,11 @@ namespace StringAsASword.Presentation
             layer = root;
             BuildBoard();
             BuildLanes();
-            // No text HUD in play: the crown over the boss carries boss HP and noise. Only the count-in is written out.
-            countIn = Label("", new Vector2(0,-405), new Vector2(430,40), 21, InkWhite);
+            // No text HUD in play: the crown over the boss carries boss HP and noise. Only the count-in is written out,
+            // over the board's middle: the key guide holds the bottom edge.
+            countIn = Label("", new Vector2(0,-40), new Vector2(430,40), 28, InkWhite);
+            devLabel = Label("", new Vector2(-560,-428), new Vector2(460,30), 15, Muted);
+            devLabel.alignment = TextAlignmentOptions.Left;
             // Collected noise flies over the board and the strings to the crown; the menu overlay, built later, covers it.
             if (bossCrown != null) bossCrown.MoteLayer = MakeRect(root, "Noise Motes", Vector2.zero, new Vector2(1600,900));
 
@@ -157,6 +162,7 @@ namespace StringAsASword.Presentation
             Label("SPACE  START     R  RESTART     ESC  PAUSE     M  CLICK SOUND", new Vector2(0,-423), new Vector2(1200,30), 14, Muted);
             layer = root;
             BuildOverlay();
+            Screens = BattleScreens.Create(root, game, art);
         }
         private void BuildBoard()
         {
@@ -217,6 +223,11 @@ namespace StringAsASword.Presentation
         // so it sits just inside the cell's near edge like the mockup. Lost HP turns off from the right.
         private void RenderPlayerHp()
         {
+            if (hpStyle != GameFlow.HpStyle)
+            {
+                hpStyle = GameFlow.HpStyle;
+                foreach (var icon in hpIcons) icon.preserveAspect = hpStyle == PlayerHpStyle.Knights;
+            }
             Vector3 at = boardWorld.PlayerTransform.localPosition; at.y = 0;
             Vector2 left = boardWorld.ProjectToBoard(at + new Vector3(-.5f, 0, -.5f), BoardSize);
             Vector2 right = boardWorld.ProjectToBoard(at + new Vector3(.5f, 0, -.5f), BoardSize);
@@ -317,13 +328,12 @@ namespace StringAsASword.Presentation
             var dim=MakeRect(root,"MenuOverlay",Vector2.zero,new Vector2(1600,900)); overlay=dim.gameObject;
             var dimImage=Image(dim,new Color(.015f,.02f,.025f,.87f)); dimImage.raycastTarget=true;
             var card=MakeRect(dim,"MenuCard",Vector2.zero,new Vector2(660,365)); Image(card,new Color(.07f,.085f,.10f));
-            overlayTitle=Text(card,"Title","",new Vector2(0,110),new Vector2(610,55),32,InkWhite);
-            overlayBody=Text(card,"Instructions","",new Vector2(0,22),new Vector2(590,115),18,Muted);
+            Text(card,"Instructions","WASD move / J attack / K guard this note\nHatched: guard or move. Shield: guard. Arrows: move.\nNumbers count down to impact.\nAttack from row 8. Collect waves to unlock each phase.",new Vector2(0,40),new Vector2(590,150),18,Muted);
             var buttonRect=MakeRect(card,"StartButton",new Vector2(-150,-105),new Vector2(280,55));
             var buttonImage=Image(buttonRect,InkWhite); buttonImage.raycastTarget=true;
             var button=buttonRect.gameObject.AddComponent<UnityEngine.UI.Button>(); button.targetGraphic=buttonImage;
             button.onClick.AddListener(()=>game.StartSession());
-            buttonLabel=Text(buttonRect,"Label","START / SPACE",Vector2.zero,new Vector2(270,50),17,new Color(.06f,.08f,.09f));
+            Text(buttonRect,"Label","START / SPACE",Vector2.zero,new Vector2(270,50),17,new Color(.06f,.08f,.09f));
             var quitRect=MakeRect(card,"QuitButton",new Vector2(150,-105),new Vector2(280,55));
             var quitImage=Image(quitRect,new Color(.17f,.20f,.23f)); quitImage.raycastTarget=true;
             var quit=quitRect.gameObject.AddComponent<UnityEngine.UI.Button>(); quit.targetGraphic=quitImage;
@@ -425,15 +435,15 @@ namespace StringAsASword.Presentation
                 foreach (var glow in judgeGlows) glow.color = new Color(1, 1, 1, Mathf.Lerp(.55f, 1, Mathf.Exp(-8 * pulseAge)));
             else foreach (var line in judgeLines) line.color = Color.Lerp(InkWhite, Accent, Mathf.Exp(-8 * pulseAge));
             notes.Render(game);
-            countIn.text=game.State==PrototypeState.CountIn?$"GET READY  {Mathf.Clamp((int)Math.Ceiling(-game.SongTime/game.Timeline.SecondsPerBeat),1,game.Song.CountInBeats)}": game.Battle.Invincible || game.Battle.IgnoreBossHp ? "DEV MODE" + (game.Battle.Invincible ? " / INVINCIBLE" : "") + (game.Battle.IgnoreBossHp ? " / BOSS HP OFF" : "") : "";
-            bool show=game.State==PrototypeState.Ready||game.State==PrototypeState.Paused||game.State==PrototypeState.Finished;
+            // Counts down to the first note, or after a resume to the place the song was paused.
+            double readyAt=game.State==PrototypeState.CountIn?0:game.State==PrototypeState.Playing&&game.SongTime<game.ResumeAt?game.ResumeAt:double.NaN;
+            countIn.text=double.IsNaN(readyAt)?"":$"GET READY  {Mathf.Clamp((int)Math.Ceiling((readyAt-game.SongTime)/game.Timeline.SecondsPerBeat),1,game.Song.CountInBeats)}";
+            devLabel.text=game.Battle.Invincible || game.Battle.IgnoreBossHp ? "DEV MODE" + (game.Battle.Invincible ? " / INVINCIBLE" : "") + (game.Battle.IgnoreBossHp ? " / BOSS HP OFF" : "") : "";
+            // The ready card is only seen when the battle scene is played without the menu; pause and game over are BattleScreens.
+            bool show=game.State==PrototypeState.Ready;
             overlay.SetActive(show);
             if(show)
             {
-                string result = game.Battle.Outcome == BattleOutcome.Won ? "WON / BOSS DEFEATED" : game.Battle.Outcome == BattleOutcome.Dead ? "DEAD / PLAYER HP EMPTY" : "TIMEOUT / NOTES EXHAUSTED";
-                overlayTitle.text=game.State==PrototypeState.Paused?"SESSION PAUSED":game.State==PrototypeState.Finished?result:"";
-                overlayBody.text=game.State==PrototypeState.Ready?"WASD move / J attack / K guard this note\nHatched: guard or move. Shield: guard. Arrows: move.\nNumbers count down to impact.\nAttack from row 8. Collect waves to unlock each phase.":$"Player HP {game.Battle.PlayerHp} / {game.Stage.PlayerMaxHp}    Phase {game.Phases.PhaseId} / 4\nPerfect {game.Session.PerfectCount}    Good {game.Session.GoodCount}    Miss {game.Session.MissCount}\nStart again with a fresh four-beat count-in.";
-                buttonLabel.text=game.State==PrototypeState.Ready?"START / SPACE":"RESTART / R OR SPACE";
                 devStrip.SetActive(Core.GameFlow.DevMode);
                 if(devStrip.activeSelf)
                     for(int i=0;i<6;i++)

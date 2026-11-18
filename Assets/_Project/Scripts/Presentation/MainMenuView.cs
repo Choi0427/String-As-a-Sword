@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
+using static StringAsASword.Presentation.UiKit;
 
 namespace StringAsASword.Presentation
 {
@@ -32,7 +33,8 @@ namespace StringAsASword.Presentation
         private readonly UnityEngine.UI.Image[] boxes = new UnityEngine.UI.Image[3];
         private TMP_Text footer;
         private int selected = -1;
-        private GameObject settingsPanel, storyPanel;
+        private GameObject storyPanel;
+        private SettingsPanel settings;
         private TMP_Text storyText, storyHint;
         private UnityEngine.UI.Image storyImage;
         private CanvasGroup storyGroup;
@@ -42,8 +44,10 @@ namespace StringAsASword.Presentation
         public bool White { get; private set; }
         public bool StoryPlaying => storyIndex >= 0;
         public int StoryIndex => storyIndex;
-        public bool SettingsOpen => settingsPanel != null && settingsPanel.activeSelf;
+        public bool SettingsOpen => settings != null && settings.IsOpen;
         public int Selected => selected;
+        /// <summary>Developer mode: picks an option of a settings row as if it were clicked (0 = first).</summary>
+        public void ChooseSetting(string row, int option) => settings.Choose(row, option);
         public string LabelColorHex(int index) => ColorUtility.ToHtmlStringRGB(labels[index].color);
 
         private void Awake()
@@ -83,7 +87,7 @@ namespace StringAsASword.Presentation
                 button.Hovered = () => Select(index); button.Clicked = () => Activate(index);
             }
             footer = Label(TopLeft(Rect(root, "Credit"), 15, 1052, 400, 21), "Inspired by 이승윤 <검을 현>", 16, Footer, TextAlignmentOptions.TopLeft);
-            BuildSettings(root);
+            settings = SettingsPanel.Create(root, font);
             BuildStory(root);
             ApplyTheme();
             Select(-1);
@@ -93,7 +97,7 @@ namespace StringAsASword.Presentation
             var keyboard = Keyboard.current;
             if (storyIndex >= 0) { UpdateStory(keyboard); return; }
             if (keyboard == null) return;
-            if (SettingsOpen) { if (keyboard.escapeKey.wasPressedThisFrame) settingsPanel.SetActive(false); return; }
+            if (SettingsOpen) { if (keyboard.escapeKey.wasPressedThisFrame) settings.Close(); return; }
             if (keyboard.wKey.wasPressedThisFrame || keyboard.upArrowKey.wasPressedThisFrame) Select(selected <= 0 ? 2 : selected - 1);
             if (keyboard.sKey.wasPressedThisFrame || keyboard.downArrowKey.wasPressedThisFrame) Select(selected < 0 || selected == 2 ? 0 : selected + 1);
             if ((keyboard.enterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame) && selected >= 0) Activate(selected);
@@ -115,7 +119,7 @@ namespace StringAsASword.Presentation
         {
             if (leaving) return;
             if (index == 0) BeginStory();
-            else if (index == 1) settingsPanel.SetActive(true);
+            else if (index == 1) settings.Open();
             else
             {
 #if UNITY_EDITOR
@@ -186,93 +190,6 @@ namespace StringAsASword.Presentation
             storyHint = Label(Rect(panel, "Hint", new Vector2(0, -470), new Vector2(800, 40)), "SPACE  다음        ESC  건너뛰기", 20, Footer, TextAlignmentOptions.Center);
             storyPanel = panel.gameObject; storyPanel.SetActive(false);
         }
-        private void BuildSettings(RectTransform root)
-        {
-            var shade = Stretch(Rect(root, "Settings"));
-            Image(shade, new Color(0, 0, 0, .72f)).raycastTarget = true;
-            var card = Rect(shade, "Card", Vector2.zero, new Vector2(820, 895));
-            Image(card, Hex(0x0C0C0C)).raycastTarget = true;
-            Label(Rect(card, "Title", new Vector2(0, 392), new Vector2(700, 80)), "설정", 56, Menu, TextAlignmentOptions.Center);
-            SliderRow(card, 282, "음악 볼륨", 0, 100, Mathf.RoundToInt(GameFlow.MusicVolume * 100), v => GameFlow.MusicVolume = v / 100f, v => v + "%");
-            SliderRow(card, 187, "입력 싱크", -200, 200, GameFlow.InputOffsetMs, v => GameFlow.InputOffsetMs = v, v => (v > 0 ? "+" : "") + v + " ms");
-            SliderRow(card, 92, "화면 싱크", -200, 200, GameFlow.VisualOffsetMs, v => GameFlow.VisualOffsetMs = v, v => (v > 0 ? "+" : "") + v + " ms");
-            ChoiceRow(card, 10, "체력 표시", new[] { "막대", "기사" }, () => (int)GameFlow.HpStyle, i => GameFlow.HpStyle = (PlayerHpStyle)i);
-            Label(Rect(card, "Help", new Vector2(0, -50), new Vector2(760, 40)), "입력 싱크: 판정이 늦으면 +   /   화면 싱크: 노트가 소리보다 늦게 보이면 -", 18, Footer, TextAlignmentOptions.Center);
-            // Developer mode: the two rows under it only show while it is on.
-            Image(Rect(card, "Rule", new Vector2(0, -90), new Vector2(720, 2)), Hex(0x333333));
-            ChoiceRow(card, -133, "개발자 모드", new[] { "꺼짐", "켜짐" }, () => GameFlow.DevMode ? 1 : 0, i => GameFlow.DevMode = i == 1);
-            var invincible = ChoiceRow(card, -198, "무적", new[] { "꺼짐", "켜짐" }, () => GameFlow.Invincible ? 1 : 0, i => GameFlow.Invincible = i == 1);
-            var bossHp = ChoiceRow(card, -263, "보스 HP", new[] { "꺼짐", "켜짐" }, () => GameFlow.BossHpOff ? 0 : 1, i => GameFlow.BossHpOff = i == 0);
-            var phase = ChoiceRow(card, -328, "시작 페이즈", new[] { "1", "2", "3", "4" }, () => GameFlow.StartPhase - 1, i => GameFlow.StartPhase = i + 1);
-            devRefresh += () => { invincible.SetActive(GameFlow.DevMode); phase.SetActive(GameFlow.DevMode); bossHp.SetActive(GameFlow.DevMode); };
-            devRefresh();
-            var close = Rect(card, "Close", new Vector2(0, -403), new Vector2(200, 56));
-            Image(close, HoverBox).raycastTarget = true;
-            Label(Stretch(Rect(close, "Label")), "닫기  ESC", 26, HoverText, TextAlignmentOptions.Center);
-            close.gameObject.AddComponent<MenuButton>().Clicked = () => settingsPanel.SetActive(false);
-            settingsPanel = shade.gameObject; settingsPanel.SetActive(false);
-        }
-        private Action devRefresh = () => { };
-        /// <summary>Developer mode: picks an option of a settings row as if it were clicked (0 = first).</summary>
-        public void ChooseSetting(string row, int option) => devChoices[row](option);
-        private readonly System.Collections.Generic.Dictionary<string, Action<int>> devChoices = new System.Collections.Generic.Dictionary<string, Action<int>>();
-        // A label and a few boxes to click; the chosen one is filled.
-        private GameObject ChoiceRow(RectTransform card, float y, string name, string[] options, Func<int> current, Action<int> set)
-        {
-            var row = Rect(card, name, new Vector2(0, y), new Vector2(760, 50));
-            Label(Rect(row, "Name", new Vector2(-250, 0), new Vector2(220, 50)), name, 30, Menu, TextAlignmentOptions.Left);
-            for (int i = 0; i < options.Length; i++)
-            {
-                int index = i;
-                var box = Rect(row, "Option " + options[i], new Vector2(-80 + 110 * i, 0), new Vector2(100, 46));
-                var fill = Image(box, HoverBox); fill.raycastTarget = true;
-                var text = Label(Stretch(Rect(box, "Label")), options[i], 24, Menu, TextAlignmentOptions.Center);
-                box.gameObject.AddComponent<MenuButton>().Clicked = () => devChoices[name](index);
-                devRefresh += () => { bool on = current() == index; fill.color = on ? HoverBox : Hex(0x1E1E1E); text.color = on ? HoverText : Menu; };
-            }
-            devChoices[name] = i => { set(i); devRefresh(); };
-            return row.gameObject;
-        }
-        private void SliderRow(RectTransform card, float y, string name, int min, int max, int value, Action<int> set, Func<int, string> show)
-        {
-            Label(Rect(card, name, new Vector2(-250, y), new Vector2(220, 50)), name, 30, Menu, TextAlignmentOptions.Left);
-            var valueText = Label(Rect(card, name + " Value", new Vector2(300, y), new Vector2(150, 50)), show(value), 26, Menu, TextAlignmentOptions.Right);
-            var area = Rect(card, name + " Slider", new Vector2(40, y), new Vector2(360, 24));
-            Image(Stretch(Rect(area, "Track")), Hex(0x333333));
-            var fillArea = Stretch(Rect(area, "Fill Area"));
-            var fill = Stretch(Rect(fillArea, "Fill")); Image(fill, HoverBox);
-            var handleArea = Stretch(Rect(area, "Handle Area"));
-            var handle = Rect(handleArea, "Handle", Vector2.zero, new Vector2(20, 40)); Image(handle, Menu).raycastTarget = true;
-            var slider = area.gameObject.AddComponent<UnityEngine.UI.Slider>();
-            slider.fillRect = fill; slider.handleRect = handle; slider.targetGraphic = handle.GetComponent<UnityEngine.UI.Image>();
-            slider.wholeNumbers = true; slider.minValue = min; slider.maxValue = max; slider.value = value;
-            slider.onValueChanged.AddListener(v => { set((int)v); valueText.text = show((int)v); });
-        }
-
-        private static RectTransform Rect(Transform parent, string name) => PrototypeView.MakeRect(parent, name, Vector2.zero, Vector2.zero);
-        private static RectTransform Rect(Transform parent, string name, Vector2 position, Vector2 size) => PrototypeView.MakeRect(parent, name, position, size);
-        private static RectTransform Stretch(RectTransform rect) { rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one; rect.sizeDelta = Vector2.zero; rect.anchoredPosition = Vector2.zero; return rect; }
-        // Figma coordinates: (left, top) from the frame's top-left corner, y down.
-        private static RectTransform TopLeft(RectTransform rect, float left, float top, float width, float height)
-        {
-            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0, 1);
-            rect.anchoredPosition = new Vector2(left, -top); rect.sizeDelta = new Vector2(width, height);
-            return rect;
-        }
-        private static UnityEngine.UI.Image Image(RectTransform rect, Color color)
-        {
-            var image = rect.gameObject.AddComponent<UnityEngine.UI.Image>(); image.color = color; image.raycastTarget = false;
-            return image;
-        }
-        private TMP_Text Label(RectTransform rect, string text, float size, Color color, TextAlignmentOptions align)
-        {
-            var label = rect.gameObject.AddComponent<TextMeshProUGUI>();
-            if (font != null) label.font = font;
-            label.text = text; label.fontSize = size; label.color = color; label.alignment = align;
-            label.textWrappingMode = TextWrappingModes.NoWrap; label.raycastTarget = false; label.overflowMode = TextOverflowModes.Overflow;
-            return label;
-        }
-        private static Color Hex(int rgb) => new Color((rgb >> 16 & 255) / 255f, (rgb >> 8 & 255) / 255f, (rgb & 255) / 255f);
-        private static Color Invert(Color c) => new Color(1 - c.r, 1 - c.g, 1 - c.b, c.a);
+        private TMP_Text Label(RectTransform rect, string text, float size, Color color, TextAlignmentOptions align) => UiKit.Label(rect, text, size, color, align, font);
     }
 }

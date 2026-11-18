@@ -23,6 +23,8 @@ namespace StringAsASword.Core
         private PrototypeView view;
         private double previousTime;
         private bool runSaved;
+        // The judge's input sync is fixed when the battle is built; a change in the pause settings needs a fresh scene.
+        private int inputOffsetMs;
         public SongDefinition Song => song;
         public IBeatTimeline Timeline { get; private set; }
         public RhythmSession Session { get; private set; }
@@ -46,6 +48,9 @@ namespace StringAsASword.Core
         public event System.Action FinaleStarted, EpilogueStarted;
         public event System.Action<PlayerActionKind> FinaleTap;
         public ScheduledSongAudio Audio => audioPlayer;
+        public PrototypeView View => view;
+        /// <summary>After a resume the song rewinds a count-in; actions count again from here (song time). -inf otherwise.</summary>
+        public double ResumeAt { get; private set; } = double.NegativeInfinity;
 
         private void Awake()
         {
@@ -53,7 +58,8 @@ namespace StringAsASword.Core
             clock = new SongClock(() => AudioSettings.dspTime);
             if (stage == null) stage = ScriptableObject.CreateInstance<StageDefinition>();
             var settings = BattleSettings.From(song, stage);
-            settings.InputOffset += GameFlow.InputOffsetMs / 1000.0;
+            inputOffsetMs = GameFlow.InputOffsetMs;
+            settings.InputOffset += inputOffsetMs / 1000.0;
             Timeline = settings.CreateTimeline();
             Battle = new BattleSession(settings, stage.NoiseSeed);
             Noise = Battle.Noise; Attacks = Battle.Attacks; Health = Battle.Health; Combat = Battle.Combat;
@@ -85,7 +91,7 @@ namespace StringAsASword.Core
             SaveRun("Restarted");
             input.Clear(); audioPlayer.Stop();
             CurrentBeat = -1; SessionId++;
-            runSaved = false;
+            runSaved = false; ResumeAt = double.NegativeInfinity;
             Battle.Reset(SessionId, stage.NoiseSeed);
             Battle.SkipToPhase(GameFlow.StartPhase);
             // Developer mode: a later phase also starts later in the song, a count-in's length before its note.
@@ -113,6 +119,31 @@ namespace StringAsASword.Core
         {
             if (State != PrototypeState.Playing && State != PrototypeState.CountIn) return;
             clock.Stop(); audioPlayer.Stop(); input.Clear(); State = PrototypeState.Paused;
+        }
+        /// <summary>
+        /// Pause screen "판으로 복귀": the song picks up a count-in before where it stopped, so the player can find the beat.
+        /// The notes in that stretch were already judged; nothing in it is judged again.
+        /// </summary>
+        public void ResumeSession()
+        {
+            if (State != PrototypeState.Paused) return;
+            double at = clock.SongTime, rewind = song.CountInBeats * Timeline.SecondsPerBeat;
+            ResumeAt = at;
+            clock.Start(.30 + rewind - at);
+            previousTime = SongTime; input.Clear();
+            State = at < 0 ? PrototypeState.CountIn : PrototypeState.Playing;
+            audioPlayer.Begin(song, clock, Timeline);
+        }
+        /// <summary>Game over "첫 수부터": a fresh battle, in a fresh scene when the input sync changed since this one was built.</summary>
+        public void RestartFromMenu()
+        {
+            if (inputOffsetMs != GameFlow.InputOffsetMs && GameFlow.HasMenu) { SaveRun("Restarted"); GameFlow.StartBattle(); return; }
+            StartSession();
+        }
+        /// <summary>The pause settings closed: apply what can change mid-battle (developer switches; volume and sync apply on resume).</summary>
+        public void ApplySettings()
+        {
+            Battle.Invincible = GameFlow.Invincible; Battle.IgnoreBossHp = GameFlow.BossHpOff;
         }
         public void QuitGame()
         {
@@ -167,8 +198,14 @@ namespace StringAsASword.Core
             if (command.StartsWith("dev-phase")) { DevGoToPhase(command[command.Length - 1] - '0'); return; }
             if (command == "dev-invincible") { DevSetInvincible(!GameFlow.Invincible); return; }
             if (command == "dev-bosshp") { DevSetBossHp(GameFlow.BossHpOff); return; }
-            if (command == "restart" || command == "start" && State != PrototypeState.Playing && State != PrototypeState.CountIn) StartSession();
-            else if (command == "pause") PauseSession();
+            if (command == "restart") StartSession();
+            // Pause and game over have their own menus (Enter/Space press the picked item); Space starts only from the ready card.
+            else if (command == "start" && State == PrototypeState.Ready) StartSession();
+            else if (command == "pause")
+            {
+                if (State != PrototypeState.Paused) PauseSession();
+                else if (!view.Screens.Back()) ResumeSession();
+            }
             else if (command == "mute") audioPlayer.ToggleMute();
         }
         private void OnAction(PlayerInputAdapter.TimedAction request)
@@ -185,6 +222,8 @@ namespace StringAsASword.Core
             }
             // The first note has the same early Good window as all later notes.
             if (time < -song.GoodWindow + song.InputOffset) return;
+            // After a resume the rewound notes are already judged.
+            if (time < ResumeAt - song.GoodWindow) return;
             Battle.Request(request.Kind, request.Direction, time);
         }
         private void OnRelease(PlayerInputAdapter.TimedAction request)

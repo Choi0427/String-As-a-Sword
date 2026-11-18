@@ -327,25 +327,53 @@ namespace StringAsASword.Tests
             Assert.That(game.Battle.Events.Exists(e => e.type == "hold-perfect" && e.noteIndex == hold));
             LogAssert.NoUnexpectedReceived();
         }
-        [UnityTest] public IEnumerator QuitButtonIsAvailableOnReadyPausedAndFinishedMenus()
+        [UnityTest] public IEnumerator ReadyCardThenPauseAndGameOverScreens()
         {
+            var screens = game.GetComponentInChildren<BattleScreens>(true);
             var buttons = game.GetComponentsInChildren<UnityEngine.UI.Button>(true);
-            var start = System.Array.Find(buttons, b => b.name == "StartButton");
             var quit = System.Array.Find(buttons, b => b.name == "QuitButton");
-            Assert.That(start, Is.Not.Null);
-            Assert.That(quit, Is.Not.Null);
-            Assert.That(quit.gameObject.activeInHierarchy, Is.True);
-            start.onClick.Invoke();
+            Assert.That(quit.gameObject.activeInHierarchy, Is.True, "Played without the menu, the battle opens on the ready card.");
+            Assert.That(screens.Showing, Is.EqualTo(BattleScreens.ScreenKind.None));
+            System.Array.Find(buttons, b => b.name == "StartButton").onClick.Invoke();
             yield return null;
             Assert.That(quit.gameObject.activeInHierarchy, Is.False);
-            game.PauseSession();
+            Assert.That(screens.KeyGuideVisible, Is.EqualTo(game.View.Art.keyGuide != null), "The key guide stays under the board in play.");
+
+            // Esc pauses, Esc again resumes a count-in before the paused place; settings close before a resume.
+            yield return UntilSongTime(FirstNote + .5);
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Escape)); yield return null; yield return null;
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
+            Assert.That(game.State, Is.EqualTo(PrototypeState.Paused));
+            Assert.That(screens.Showing, Is.EqualTo(BattleScreens.ScreenKind.Pause));
+            double paused = game.SongTime;
+            screens.Press(1);
+            Assert.That(screens.SettingsOpen);
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Escape)); yield return null; yield return null;
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
+            Assert.That(screens.SettingsOpen, Is.False);
+            Assert.That(game.State, Is.EqualTo(PrototypeState.Paused), "The first Esc only closed the settings.");
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.S)); yield return null; yield return null;
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
+            Assert.That(screens.Selected, Is.EqualTo(2), "S moves down from 설정, the item last pressed.");
+            screens.Press(0);
             yield return null;
-            Assert.That(quit.gameObject.activeInHierarchy, Is.True);
-            game.StartSession();
+            Assert.That(game.State, Is.EqualTo(PrototypeState.Playing));
+            Assert.That(screens.Showing, Is.EqualTo(BattleScreens.ScreenKind.None));
+            Assert.That(game.ResumeAt, Is.EqualTo(paused).Within(1e-6));
+            Assert.That(game.SongTime, Is.LessThan(paused - game.Timeline.SecondsPerBeat), "The song rewinds before the paused place.");
+
+            // Running out of notes ends on the game-over screen; 첫 수부터 restarts.
             game.Battle.Advance(game.Timeline.TimeOf(game.Song.NoteCount - 1) + game.Song.GoodWindow + .001);
-            yield return null;
+            yield return null; yield return null;
             Assert.That(game.State, Is.EqualTo(PrototypeState.Finished));
-            Assert.That(quit.gameObject.activeInHierarchy, Is.True);
+            Assert.That(screens.Showing, Is.EqualTo(BattleScreens.ScreenKind.GameOver));
+            Assert.That(screens.GameOverTitle, Is.EqualTo("FALLEN"));
+            int session = game.SessionId;
+            screens.Press(0);
+            yield return null;
+            Assert.That(game.SessionId, Is.EqualTo(session + 1));
+            Assert.That(game.State, Is.EqualTo(PrototypeState.CountIn));
+            Assert.That(screens.Showing, Is.EqualTo(BattleScreens.ScreenKind.None));
             LogAssert.NoUnexpectedReceived();
         }
         [UnityTest] public IEnumerator LandingCollectsNoiseAndRestartClearsIt()
