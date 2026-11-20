@@ -6,10 +6,11 @@ using UnityEngine.UI;
 namespace StringAsASword.Presentation
 {
     /// <summary>
-    /// The crown over the boss picture's head, which replaces the boss HP readout. Each hit blackens the active blade
-    /// from the tip down (rightmost blade first) with a short white flash, a small shake and a few falling chips; a spent
-    /// blade's glow goes out. A seam goes black and crackles with static once the blade before it is spent. When the
-    /// king falls the whole crown goes black. (Fly is no longer called by the game: noise charges the string instead.)
+    /// The crown over the boss picture's head, which replaces the boss HP readout. Each hit carves the active blade from
+    /// the tip down (rightmost blade first) into the artist's spent blade (ArtSet.crownSpent: black inside, thin white
+    /// outline, no glow), with a short white flash, a small shake and a few falling chips. A seam fades out and crackles
+    /// with static once the blade before it is spent. The ring and the hooks stay lit to the end, as in the art's last
+    /// state. (Fly is no longer called by the game: noise charges the string instead.)
     /// Greys and the knight's black only. A child of the boss picture, so it breathes, flinches and sinks with it.
     /// </summary>
     public sealed class BossCrownView : MonoBehaviour
@@ -18,7 +19,7 @@ namespace StringAsASword.Presentation
         private static readonly int BladeId = Shader.PropertyToID("_Blade"), BladeGlowId = Shader.PropertyToID("_BladeGlow"),
             BladeFlashId = Shader.PropertyToID("_BladeFlash"), SeamFillId = Shader.PropertyToID("_SeamFill"),
             SeamNoiseId = Shader.PropertyToID("_SeamNoise"), BodyId = Shader.PropertyToID("_Body"), GlowBoostId = Shader.PropertyToID("_GlowBoost"),
-            RegionId = Shader.PropertyToID("_RegionTex");
+            RegionId = Shader.PropertyToID("_RegionTex"), SpentId = Shader.PropertyToID("_SpentTex");
 
         private PrototypeGame game;
         private BossPortrait portrait;
@@ -60,7 +61,7 @@ namespace StringAsASword.Presentation
             image = gameObject.AddComponent<Image>();
             image.sprite = sprite; image.raycastTarget = false;
             material = new Material(art.crownMaterial) { name = "Crown (instance)", hideFlags = HideFlags.DontSave };
-            material.SetTexture(RegionId, art.crownRegions);
+            material.SetTexture(RegionId, art.crownRegions); material.SetTexture(SpentId, art.crownSpent);
             image.material = material;
             Snap();
         }
@@ -102,10 +103,9 @@ namespace StringAsASword.Presentation
                 seam[k] = seamTarget[k]; seamArrival[k] = seamBurst[k] = 0;
                 crackling[k] = CrownState.SeamCrackles(k, game.Phases.PhaseId, false);
             }
-            body = Fallen ? 1 : 0; shakeAge = shakeSeconds;
+            body = 0; shakeAge = shakeSeconds;
             Apply(Time.unscaledTime);
         }
-        private bool Fallen => game.Battle.KingStunned || game.Health.Defeated;
         // The crown is boss HP only: a seam goes black once the blade before it is spent.
         private static float SeamTarget(int seam, int phase) => CrownState.SeamFill(seam, phase, 0, 1);
         private void ReadTargets()
@@ -144,7 +144,8 @@ namespace StringAsASword.Presentation
                 seamArrival[k] = Mathf.Max(0, seamArrival[k] - dt / ArrivalSeconds);
                 seamBurst[k] = Mathf.Max(0, seamBurst[k] - dt / BurstSeconds);
             }
-            body = Mathf.MoveTowards(body, Fallen ? 1 : 0, dt);
+            // The ring and the hooks stay lit even when the king falls: the art's last state (CrownStates/4.png) keeps them.
+            body = 0;
             shakeAge += dt;
             float shake = shakeSize * Mathf.Clamp01(1 - shakeAge / shakeSeconds);
             rect.anchoredPosition = home + Random.insideUnitCircle * shake;

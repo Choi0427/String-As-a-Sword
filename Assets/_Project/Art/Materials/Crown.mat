@@ -31,6 +31,10 @@ Material:
         m_Texture: {fileID: 2800000, guid: b887644898d947945896b165855fa7f7, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _SpentTex:
+        m_Texture: {fileID: 2800000, guid: 9bfbce1b968228d4abc95604bc5ad22f, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
     - _ColorMask: 15

@@ -6,13 +6,16 @@ using UnityEngine;
 namespace StringAsASword.Editor
 {
     /// <summary>
-    /// Bakes the boss crown's region map from Art/UI/Boss/Crown.png, builds Crown.mat on the Crown UI shader and wires
-    /// both into ArtSet.asset. Re-run it whenever Crown.png or CrownLayout changes. It also writes a grey-scale picture of
-    /// the parts to Logs/CrownRegions.png for checking the split by eye.
+    /// Builds the boss crown from the HP-state pictures in Art/UI/Boss/CrownStates (0.png = whole crown, 4.png = every blade
+    /// spent; 1-3 are the steps in between and are only used for checking). Writes Crown.png (0.png) and Crown_Spent.png
+    /// (4.png moved onto 0.png's canvas: the exports are cropped differently), bakes the region map, builds Crown.mat on the
+    /// Crown UI shader and wires all of it into ArtSet.asset. Re-run it whenever the pictures or CrownLayout change. It also
+    /// writes a grey-scale picture of the parts to Logs/CrownRegions.png for checking the split by eye.
     /// </summary>
     public static class CrownArtSetup
     {
         private const string Crown = "Assets/_Project/Art/UI/Boss/Crown.png", Regions = "Assets/_Project/Art/UI/Boss/Crown_Regions.png";
+        private const string Spent = "Assets/_Project/Art/UI/Boss/Crown_Spent.png", States = "Assets/_Project/Art/UI/Boss/CrownStates/";
         private const string MaterialPath = "Assets/_Project/Art/Materials/Crown.mat", ShaderName = "String As a Sword/Crown UI";
         public const string DebugPicture = "Logs/CrownRegions.png";
         /// <summary>The knight's black: the mean of the darker half of Knight_BaseColor.jpg (23, 22, 20).</summary>
@@ -21,6 +24,7 @@ namespace StringAsASword.Editor
         [MenuItem("String As a Sword/Art/Set Up Boss Crown")]
         public static void Run()
         {
+            if (File.Exists(States + "0.png") && File.Exists(States + "4.png")) BuildFromStates();
             var source = new Texture2D(2, 2);
             source.LoadImage(File.ReadAllBytes(Crown));
             var map = CrownLayout.Bake(source.GetPixels32(), source.width, source.height, out int width, out int height);
@@ -36,24 +40,44 @@ namespace StringAsASword.Editor
             AssetDatabase.ImportAsset(Regions, ImportAssetOptions.ForceUpdate);
             var regionImporter = (TextureImporter)AssetImporter.GetAtPath(Regions);
             ArtImportRules.SetUpRegionMap(regionImporter); regionImporter.SaveAndReimport();
-            var crownImporter = (TextureImporter)AssetImporter.GetAtPath(Crown);
-            // The glow is a long soft alpha ramp; block compression would band it.
-            crownImporter.textureCompression = TextureImporterCompression.CompressedHQ; crownImporter.SaveAndReimport();
+            foreach (var path in new[] { Crown, Spent })
+            {
+                if (!File.Exists(path)) continue;
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+                var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+                // The glow is a long soft alpha ramp; block compression would band it.
+                importer.textureCompression = TextureImporterCompression.CompressedHQ; importer.SaveAndReimport();
+            }
 
             var material = AssetDatabase.LoadAssetAtPath<Material>(MaterialPath);
             if (material == null) { material = new Material(Shader.Find(ShaderName)); AssetDatabase.CreateAsset(material, MaterialPath); }
             material.shader = Shader.Find(ShaderName);
             material.SetTexture("_RegionTex", AssetDatabase.LoadAssetAtPath<Texture2D>(Regions));
+            material.SetTexture("_SpentTex", AssetDatabase.LoadAssetAtPath<Texture2D>(Spent));
             material.SetColor("_KnightBlack", KnightBlack);
             EditorUtility.SetDirty(material);
 
             var art = PrototypeSceneSetup.EnsureArtSet();
             art.crown = AssetDatabase.LoadAssetAtPath<Sprite>(Crown);
             art.crownRegions = AssetDatabase.LoadAssetAtPath<Texture2D>(Regions);
+            art.crownSpent = AssetDatabase.LoadAssetAtPath<Texture2D>(Spent);
             art.crownMaterial = material;
             EditorUtility.SetDirty(art);
             AssetDatabase.SaveAssets();
-            Debug.Log($"Boss crown set up: {Regions} ({width}x{height}), Crown.mat. Part check picture: {DebugPicture}.");
+            Debug.Log($"Boss crown set up: {Regions} ({width}x{height}), {Spent}, Crown.mat. Part check picture: {DebugPicture}.");
+        }
+        // Crown.png = 0.png as it is; Crown_Spent.png = 4.png shifted onto 0.png's canvas so the two overlap exactly.
+        private static void BuildFromStates()
+        {
+            var full = new Texture2D(2, 2); full.LoadImage(File.ReadAllBytes(States + "0.png"));
+            var spent = new Texture2D(2, 2); spent.LoadImage(File.ReadAllBytes(States + "4.png"));
+            var aligned = CrownLayout.AlignOnto(full.GetPixels32(), full.width, full.height, spent.GetPixels32(), spent.width, spent.height, out int dx, out int dy);
+            File.Copy(States + "0.png", Crown, true);
+            var output = new Texture2D(full.width, full.height, TextureFormat.RGBA32, false);
+            output.SetPixels32(aligned); output.Apply();
+            File.WriteAllBytes(Spent, output.EncodeToPNG());
+            Debug.Log($"Crown states: 4.png ({spent.width}x{spent.height}) moved by ({dx}, {dy}) onto 0.png ({full.width}x{full.height}).");
+            Object.DestroyImmediate(full); Object.DestroyImmediate(spent); Object.DestroyImmediate(output);
         }
         // Body grey, blades in rising greys with the tip-to-base gradient, seams light with the right-to-left gradient.
         private static void WriteDebugPicture(Color32[] map, Color32[] crown, int crownWidth, int width, int height)
