@@ -1,0 +1,20 @@
+== ghost0 (target stun note 268.0) ==
+iter 1: scale 1.9500 health 68/16/27/105 medianStun never
+iter 2: scale 1.1750 health 41/9/16/63 medianStun 195.0
+iter 3: scale 1.5625 health 55/12/22/84 medianStun never
+iter 4: scale 1.3688 health 48/11/19/74 medianStun 231.0
+iter 5: scale 1.4656 health 51/12/21/79 medianStun 271.0
+iter 6: scale 1.4172 health 50/11/20/77 medianStun 245.0
+iter 7: scale 1.4414 health 50/12/20/78 medianStun 257.5
+iter 8: scale 1.4535 health 51/12/20/78 medianStun 264.0
+final: scale 1.4596 health 51/12/20/79
+== ghost1 (target stun note 268.0) ==
+iter 1: scale 1.9500 health 68/16/27/105 medianStun never
+iter 2: scale 1.1750 health 41/9/16/63 medianStun 188.0
+iter 3: scale 1.5625 health 55/12/22/84 medianStun 277.0
+iter 4: scale 1.3688 health 48/11/19/74 medianStun 221.0
+iter 5: scale 1.4656 health 51/12/21/79 medianStun 245.0
+iter 6: scale 1.5141 health 53/12/21/82 medianStun 271.0
+iter 7: scale 1.4898 health 52/12/21/80 medianStun 258.0
+iter 8: scale 1.5020 health 53/12/21/81 medianStun 270.0
+final: scale 1.4959 health 52/12/21/81

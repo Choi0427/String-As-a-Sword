@@ -83,6 +83,8 @@ namespace StringAsASword.Combat
         /// <summary>Resonance length in notes (see ResonanceState). 0 = rule off: every top-row attack deals 1. The stage sets 8.</summary>
         public int ResonanceNotes;
         public const int MaxResonanceNotes = 32;
+        /// <summary>Resonance damage: Perfect / Good hits, the Perfect-on-last-note cadence bonus, and the damage of an attack without resonance.</summary>
+        public int ResonancePerfect = 2, ResonanceGood = 1, ResonanceCadence = 2, GhostDamage;
         /// <summary>The knight's start cell. g1, a real knight's home square. Rule tests written around d4 set (3, 3).</summary>
         public int StartX = 6, StartY = 0;
         public int[] Health = { 6, 6, 6, 6 };
@@ -116,6 +118,7 @@ namespace StringAsASword.Combat
             NoteCount = song.NoteCount, Bpm = song.Bpm, PerfectWindow = song.PerfectWindow,
             GoodWindow = song.GoodWindow, InputOffset = song.InputOffset,
             Health = stage.HealthSegments, ResonanceNotes = stage.ResonanceNotes,
+            ResonancePerfect = stage.ResonancePerfect, ResonanceGood = stage.ResonanceGood, ResonanceCadence = stage.ResonanceCadence, GhostDamage = stage.GhostDamage,
             PlayerMaxHp = stage.PlayerMaxHp, SpawnInterval = stage.NoiseSpawnInterval,
             MaxNoise = stage.MaxActiveNoise, MaxCollectionCost = stage.MaxCollectionCost,
             Patterns = stage.Patterns, Version = stage.CombatVersion, Schedule = stage.AttackSchedule, BossChartText = stage.BossChartText
@@ -124,7 +127,9 @@ namespace StringAsASword.Combat
         {
             if (NoteCount < 1 || Bpm <= 0 || double.IsNaN(Bpm) || double.IsInfinity(Bpm) ||
                 PlayerMaxHp < 1 || SpawnInterval < 1 || MaxNoise < 1 || MaxNoise > 2 || MaxCollectionCost < 2 ||
-                StartX < 0 || StartX > 7 || StartY < 0 || StartY > 7 || ResonanceNotes < 0 || ResonanceNotes > MaxResonanceNotes)
+                StartX < 0 || StartX > 7 || StartY < 0 || StartY > 7 || ResonanceNotes < 0 || ResonanceNotes > MaxResonanceNotes ||
+                ResonancePerfect < 0 || ResonancePerfect > 20 || ResonanceGood < 0 || ResonanceGood > 20 ||
+                ResonanceCadence < 0 || ResonanceCadence > 20 || GhostDamage < 0 || GhostDamage > 20)
                 throw new ArgumentException("Invalid battle settings.");
             if (FinishNote < -1 || FinishNote == 0 || FinishNote >= NoteCount) throw new ArgumentException("FinishNote must be -1 or a note after the first.");
             if (HasAuthoredChart && NoteTimes.Length != NoteCount) throw new ArgumentException("NoteTimes must list exactly NoteCount notes.");

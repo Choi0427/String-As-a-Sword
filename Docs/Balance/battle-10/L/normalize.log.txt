@@ -1,0 +1,50 @@
+== L4 (target stun note 268.0) ==
+iter 1: scale 1.9500 health 68/16/27/105 medianStun never
+iter 2: scale 1.1750 health 41/9/16/63 medianStun never
+iter 3: scale 0.7875 health 28/6/11/43 medianStun 182.0
+iter 4: scale 0.9813 health 34/8/14/53 medianStun 229.5
+iter 5: scale 1.0781 health 38/9/15/58 medianStun 271.0
+iter 6: scale 1.0297 health 36/8/14/56 medianStun 245.0
+iter 7: scale 1.0539 health 37/8/15/57 medianStun 257.0
+iter 8: scale 1.0660 health 37/9/15/58 medianStun 269.5
+final: scale 1.0600 health 37/8/15/57
+== L6 (target stun note 268.0) ==
+iter 1: scale 1.9500 health 68/16/27/105 medianStun never
+iter 2: scale 1.1750 health 41/9/16/63 medianStun 223.5
+iter 3: scale 1.5625 health 55/12/22/84 medianStun never
+iter 4: scale 1.3688 health 48/11/19/74 medianStun 1073741973.5
+iter 5: scale 1.2719 health 45/10/18/69 medianStun 258.5
+iter 6: scale 1.3203 health 46/11/18/71 medianStun 274.0
+iter 7: scale 1.2961 health 45/10/18/70 medianStun 269.0
+iter 8: scale 1.2840 health 45/10/18/69 medianStun 258.5
+final: scale 1.2900 health 45/10/18/70
+== L8 (target stun note 268.0) ==
+iter 1: scale 1.9500 health 68/16/27/105 medianStun never
+iter 2: scale 1.1750 health 41/9/16/63 medianStun 195.0
+iter 3: scale 1.5625 health 55/12/22/84 medianStun never
+iter 4: scale 1.3688 health 48/11/19/74 medianStun 231.0
+iter 5: scale 1.4656 health 51/12/21/79 medianStun 271.0
+iter 6: scale 1.4172 health 50/11/20/77 medianStun 245.0
+iter 7: scale 1.4414 health 50/12/20/78 medianStun 257.5
+iter 8: scale 1.4535 health 51/12/20/78 medianStun 264.0
+final: scale 1.4596 health 51/12/20/79
+== L12 (target stun note 268.0) ==
+iter 1: scale 1.9500 health 68/16/27/105 medianStun never
+iter 2: scale 1.1750 health 41/9/16/63 medianStun 163.5
+iter 3: scale 1.5625 health 55/12/22/84 medianStun 213.0
+iter 4: scale 1.7563 health 61/14/25/95 medianStun 275.0
+iter 5: scale 1.6594 health 58/13/23/90 medianStun 234.5
+iter 6: scale 1.7078 health 60/14/24/92 medianStun 257.5
+iter 7: scale 1.7320 health 61/14/24/94 medianStun 270.5
+iter 8: scale 1.7199 health 60/14/24/93 medianStun 269.0
+final: scale 1.7139 health 60/14/24/93
+== L16 (target stun note 268.0) ==
+iter 1: scale 1.9500 health 68/16/27/105 medianStun 278.0
+iter 2: scale 1.1750 health 41/9/16/63 medianStun 137.0
+iter 3: scale 1.5625 health 55/12/22/84 medianStun 198.0
+iter 4: scale 1.7563 health 61/14/25/95 medianStun 223.0
+iter 5: scale 1.8531 health 65/15/26/100 medianStun 247.0
+iter 6: scale 1.9016 health 67/15/27/103 medianStun 271.0
+iter 7: scale 1.8773 health 66/15/26/101 medianStun 253.5
+iter 8: scale 1.8895 health 66/15/26/102 medianStun 257.5
+final: scale 1.8955 health 66/15/27/102

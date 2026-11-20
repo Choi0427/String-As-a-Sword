@@ -300,7 +300,7 @@ namespace StringAsASword.Simulation
                     Increment(result.InvariantFailures, "board-bounds");
                 int distance = Math.Abs(record.x - record.beforeX) + Math.Abs(record.y - record.beforeY);
                 if (distance != (record.category == "Move" ? 1 : 0)) Increment(result.InvariantFailures, "move-distance");
-                if (record.damage < 0 || record.damage > ResonanceState.PerfectDamage + ResonanceState.CadenceBonus || record.damage > 0 && record.y != 7)
+                if (record.damage < 0 || record.damage > Math.Max(1, battle.Resonance.MaxStrike) || record.damage > 0 && record.y != 7)
                     Increment(result.InvariantFailures, "attack-damage");
                 if ((record.category == "EffectiveAttack") != (record.damage > 0))
                     Increment(result.InvariantFailures, "attack-category");

@@ -96,7 +96,7 @@ namespace StringAsASword.Combat
             Session = new RhythmSession(board, new RhythmJudge(timeline, settings.PerfectWindow, settings.GoodWindow, settings.InputOffset), new GridPosition(settings.StartX, settings.StartY), settings.NoteCount, settings.HoldEndTimes);
             Noise = new NoisePickupSystem(board, settings.SpawnInterval, settings.MaxNoise);
             Health = new BossHealthGate(settings.Health);
-            Resonance = new ResonanceState(settings.ResonanceNotes);
+            Resonance = new ResonanceState(settings.ResonanceNotes, settings.ResonancePerfect, settings.ResonanceGood, settings.ResonanceCadence, settings.GhostDamage);
             Attacks = new AttackResolver(board); Combat = new CombatResolver(Attacks, Health, 1, Resonance);
             Phases = new PhaseController(Health, Noise);
             Session.ActionEvaluated += OnAction; Session.BeatClosed += Close;

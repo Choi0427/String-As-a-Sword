@@ -9,7 +9,14 @@ namespace StringAsASword.Combat
     /// </summary>
     public sealed class ResonanceState
     {
-        public const int PerfectDamage = 2, GoodDamage = 1, CadenceBonus = 2;
+        public const int DefaultPerfect = 2, DefaultGood = 1, DefaultCadence = 2;
+        public int PerfectDamage { get; }
+        public int GoodDamage { get; }
+        public int CadenceBonus { get; }
+        /// <summary>Damage of an attack in range without resonance (default 0).</summary>
+        public int GhostDamage { get; }
+        /// <summary>Largest damage one accepted strike can request.</summary>
+        public int MaxStrike => Math.Max(PerfectDamage + CadenceBonus, Math.Max(GoodDamage, GhostDamage));
         public int Length { get; }
         public bool Enabled => Length > 0;
         public bool Charged { get; private set; }
@@ -25,10 +32,14 @@ namespace StringAsASword.Combat
         /// <summary>A Perfect attack on the resonance's last note.</summary>
         public event Action<int> Cadence;
 
-        public ResonanceState(int length)
+        public ResonanceState(int length, int perfectDamage = DefaultPerfect, int goodDamage = DefaultGood, int cadenceBonus = DefaultCadence, int ghostDamage = 0)
         {
             if (length < 0) throw new ArgumentOutOfRangeException(nameof(length));
-            Length = length;
+            if (perfectDamage < 0) throw new ArgumentOutOfRangeException(nameof(perfectDamage));
+            if (goodDamage < 0) throw new ArgumentOutOfRangeException(nameof(goodDamage));
+            if (cadenceBonus < 0) throw new ArgumentOutOfRangeException(nameof(cadenceBonus));
+            if (ghostDamage < 0) throw new ArgumentOutOfRangeException(nameof(ghostDamage));
+            Length = length; PerfectDamage = perfectDamage; GoodDamage = goodDamage; CadenceBonus = cadenceBonus; GhostDamage = ghostDamage;
         }
         public void Reset() { Charged = false; EndNote = -1; Halted = false; }
         public void Halt() { Charged = false; EndNote = -1; Halted = true; }
@@ -50,7 +61,7 @@ namespace StringAsASword.Combat
             if (Halted) return 0;
             if (!ActiveAt(note))
             {
-                if (!Charged) { GhostStrike?.Invoke(note); return 0; }
+                if (!Charged) { GhostStrike?.Invoke(note); return GhostDamage; }
                 Charged = false; EndNote = note + Length - 1; Ignited?.Invoke(note);
             }
             int damage = perfect ? PerfectDamage : GoodDamage;

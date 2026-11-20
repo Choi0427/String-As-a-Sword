@@ -42,6 +42,7 @@ namespace StringAsASword.Simulation
         public int HitsTaken;                        // player-hit events
         public int StunnedNote = -1;                 // -1 when the king was never stunned
         public int ClosedNotes;                      // Records.Count
+        public int Moves, Guards, EffectiveAttacks, OtherActions;   // Records[].category counts
         public double Uptime => ClosedNotes == 0 ? 0 : ResonanceNotes / (double)ClosedNotes;
         public double DamagePerIgnition => Ignitions == 0 ? 0 : DamageDealt / (double)Ignitions;
     }
@@ -118,6 +119,13 @@ namespace StringAsASword.Simulation
                 else if (r.judgement == "Good") skilled.Goods++;
                 else if (r.judgement == "Miss") skilled.Misses++;
                 skilled.DamageDealt += r.damage;
+                switch (r.category)
+                {
+                    case "Move": skilled.Moves++; break;
+                    case "Guard": skilled.Guards++; break;
+                    case "EffectiveAttack": skilled.EffectiveAttacks++; break;
+                    default: skilled.OtherActions++; break;
+                }
             }
             foreach (var e in battle.Events)
             {
@@ -214,7 +222,7 @@ namespace StringAsASword.Simulation
                     Bump(result.InvariantFailures, "board-bounds");
                 int distance = Math.Abs(record.x - record.beforeX) + Math.Abs(record.y - record.beforeY);
                 if (distance != (record.category == "Move" ? 1 : 0)) Bump(result.InvariantFailures, "move-distance");
-                if (record.damage < 0 || record.damage > ResonanceState.PerfectDamage + ResonanceState.CadenceBonus || record.damage > 0 && record.y != 7)
+                if (record.damage < 0 || record.damage > Math.Max(1, battle.Resonance.MaxStrike) || record.damage > 0 && record.y != 7)
                     Bump(result.InvariantFailures, "attack-damage");
                 if ((record.category == "EffectiveAttack") != (record.damage > 0))
                     Bump(result.InvariantFailures, "attack-category");

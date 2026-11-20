@@ -16,11 +16,15 @@ MonoBehaviour:
   noiseSpawnInterval: 8
   maxActiveNoise: 1
   resonanceNotes: 8
-  healthSegments: 23000000080000000e00000036000000
+  resonancePerfect: 3
+  resonanceGood: 1
+  resonanceCadence: 2
+  ghostDamage: 0
+  healthSegments: 410000000f0000001a00000064000000
   cameraElevation: 45
   playerMaxHp: 5
   maxCollectionCost: 12
-  combatVersion: battle-9
+  combatVersion: battle-10
   patterns:
   - Name: Line
     Kind: 0

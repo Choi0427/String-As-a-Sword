@@ -1,0 +1,10 @@
+== L8_3/1/2_g0 (target stun note 195.0) ==
+iter 1: scale 1.9500 health 68/16/27/105 medianStun 230.0
+iter 2: scale 1.1750 health 41/9/16/63 medianStun 136.0
+iter 3: scale 1.5625 health 55/12/22/84 medianStun 182.0
+iter 4: scale 1.7563 health 61/14/25/95 medianStun 204.0
+iter 5: scale 1.6594 health 58/13/23/90 medianStun 196.0
+iter 6: scale 1.6109 health 56/13/23/87 medianStun 191.0
+iter 7: scale 1.6352 health 57/13/23/88 medianStun 193.0
+iter 8: scale 1.6473 health 58/13/23/89 medianStun 195.0
+final: scale 1.6533 health 58/13/23/89
