@@ -16,21 +16,24 @@ namespace StringAsASword.Presentation
         public const int Body = 0, FirstBlade = 1, FirstSeam = 5;
         /// <summary>Pixels at least this opaque are the drawn line; fainter ones are its glow.</summary>
         public const float CoreAlpha = .85f;
-        // Measured on Crown.png (2718x1409): the blades' column bands and their tip-to-base heights.
-        public static readonly float[] BladeLeft = { .185f, .365f, .565f, .745f };
-        public static readonly float[] BladeRight = { .255f, .435f, .635f, .815f };
-        public static readonly float[] BladeTop = { .195f, .075f, .075f, .195f };
-        public static readonly float[] BladeBottom = { .84f, .721f, .721f, .84f };
-        /// <summary>The outer blades stop above the ring that crosses their base, so the ring stays body.</summary>
-        public const float OuterBladeFloor = .84f;
-        /// <summary>The side seams stop above the ring that sweeps under them.</summary>
-        public const float SeamFloor = .6f;
+        /// <summary>The seams are drawn faintly; inside a seam band, pixels this opaque already count as seam.</summary>
+        public const float SeamAlpha = .04f;
+        // Measured on Crown.png (0.png of the HP-state set, 2832x1472): the blades' column bands and their tip-to-base heights.
+        // Outside the blades the full and the spent pictures are identical, so a generous band costs nothing.
+        public static readonly float[] BladeLeft = { .165f, .345f, .545f, .705f };
+        public static readonly float[] BladeRight = { .28f, .445f, .655f, .845f };
+        public static readonly float[] BladeTop = { .31f, .13f, .13f, .31f };
+        public static readonly float[] BladeBottom = { .93f, .76f, .76f, .92f };
+        /// <summary>The outer blades reach down into the ring; the ring under them is the same in both pictures, so no floor.</summary>
+        public const float OuterBladeFloor = 1;
+        /// <summary>The side seams lie between these heights; below them the ring sweeps under.</summary>
+        public const float SeamTop = .55f, SeamFloor = .78f;
         /// <summary>Seam centre lines, right to left; each runs from its right end to its left end.</summary>
         public static readonly Vector2[][] Seams =
         {
-            new[] { new Vector2(.745f, .595f), new Vector2(.73f, .577f), new Vector2(.70f, .55f), new Vector2(.67f, .529f), new Vector2(.635f, .524f) },
-            new[] { new Vector2(.565f, .525f), new Vector2(.53f, .511f), new Vector2(.50f, .508f), new Vector2(.47f, .514f), new Vector2(.435f, .526f) },
-            new[] { new Vector2(.365f, .523f), new Vector2(.35f, .526f), new Vector2(.32f, .549f), new Vector2(.29f, .571f), new Vector2(.255f, .596f) },
+            new[] { new Vector2(.705f, .698f), new Vector2(.68f, .689f), new Vector2(.655f, .684f) },
+            new[] { new Vector2(.545f, .672f), new Vector2(.53f, .670f), new Vector2(.50f, .668f), new Vector2(.47f, .669f), new Vector2(.445f, .668f) },
+            new[] { new Vector2(.345f, .692f), new Vector2(.33f, .694f), new Vector2(.31f, .698f), new Vector2(.28f, .701f) },
         };
 
         /// <summary>Blade (0 = leftmost) that shows HP segment <paramref name="segment"/>: the first segment is the rightmost blade.</summary>
@@ -40,12 +43,72 @@ namespace StringAsASword.Presentation
         {
             for (int i = 0; i < BladeCount; i++)
                 if (u >= BladeLeft[i] && u < BladeRight[i] && (i == 1 || i == 2 || v < OuterBladeFloor)) return FirstBlade + i;
-            if (u >= BladeRight[2] && u < BladeLeft[3] && v < SeamFloor) return FirstSeam;
-            if (u >= BladeRight[1] && u < BladeLeft[2]) return FirstSeam + 1;
-            if (u >= BladeRight[0] && u < BladeLeft[1] && v < SeamFloor) return FirstSeam + 2;
+            // A seam is a thin line: only pixels close to its centre line belong to it, so the glow that the
+            // neighbouring blades throw into the gap stays with those blades.
+            for (int seam = 0; seam < SeamCount; seam++)
+            {
+                var line = Seams[seam];
+                if (u > line[0].x || u < line[line.Length - 1].x) continue;
+                if (v >= SeamTop && v < SeamFloor && Mathf.Abs(v - SeamLine(seam, u)) < SeamHalfWidth) return FirstSeam + seam;
+            }
             return Body;
         }
+        /// <summary>Half the height of the band around a seam's centre line that counts as the seam.</summary>
+        public const float SeamHalfWidth = .03f;
+        /// <summary>Height (v from top) of seam <paramref name="seam"/>'s centre line at <paramref name="u"/>.</summary>
+        public static float SeamLine(int seam, float u)
+        {
+            var line = Seams[seam];
+            for (int i = 1; i < line.Length; i++)
+                if (u >= line[i].x) return Mathf.Lerp(line[i - 1].y, line[i].y, Mathf.InverseLerp(line[i - 1].x, line[i].x, u));
+            return line[line.Length - 1].y;
+        }
+        private static bool IsSeam(int id) => id >= FirstSeam;
         public static int DecodeId(byte red) => (red + 16) / 32;
+
+        /// <summary>The side hooks are the same in every HP state; columns this close to either edge are used to line pictures up.</summary>
+        public const float HookBand = .115f;
+        /// <summary>
+        /// Moves <paramref name="picture"/> onto a canvas the size of <paramref name="reference"/> so their side hooks overlap:
+        /// the state exports are cropped differently. Tries every shift and keeps the one with the least alpha difference over
+        /// the hooks. Rows run bottom to top; row y of the picture lands on row y + dy of the canvas, column x on x + dx.
+        /// </summary>
+        public static Color32[] AlignOnto(Color32[] reference, int referenceWidth, int referenceHeight,
+            Color32[] picture, int pictureWidth, int pictureHeight, out int dx, out int dy, int slack = 40)
+        {
+            long best = long.MaxValue; dx = dy = 0;
+            int hook = Mathf.RoundToInt(pictureWidth * HookBand);
+            for (int sx = -8; sx <= 8; sx++)
+                for (int sy = -slack; sy <= referenceHeight - pictureHeight + slack; sy++)
+                {
+                    long error = 0; int samples = 0;
+                    for (int y = 0; y < pictureHeight; y += 3)
+                    {
+                        int ry = y + sy; if (ry < 0 || ry >= referenceHeight) continue;
+                        for (int x = 0; x < pictureWidth; x += 3)
+                        {
+                            if (x >= hook && x < pictureWidth - hook) continue;
+                            int rx = x + sx; if (rx < 0 || rx >= referenceWidth) continue;
+                            int d = picture[y * pictureWidth + x].a - reference[ry * referenceWidth + rx].a;
+                            error += d * d; samples++;
+                        }
+                    }
+                    if (samples == 0) continue;
+                    error /= samples;
+                    if (error < best) { best = error; dx = sx; dy = sy; }
+                }
+            var canvas = new Color32[referenceWidth * referenceHeight];
+            for (int y = 0; y < pictureHeight; y++)
+            {
+                int ry = y + dy; if (ry < 0 || ry >= referenceHeight) continue;
+                for (int x = 0; x < pictureWidth; x++)
+                {
+                    int rx = x + dx; if (rx < 0 || rx >= referenceWidth) continue;
+                    canvas[ry * referenceWidth + rx] = picture[y * pictureWidth + x];
+                }
+            }
+            return canvas;
+        }
 
         /// <summary>
         /// Region map at half the picture's size. Drawn pixels get their part by <see cref="Classify"/>; every other pixel,
@@ -71,8 +134,12 @@ namespace StringAsASword.Presentation
                         }
                     int index = y * width + x;
                     ids[index] = -1;
-                    if (sum / (255f * samples) < CoreAlpha) continue;
-                    ids[index] = Classify((x + .5f) / width, 1 - (y + .5f) / height);
+                    float alpha = sum / (255f * samples);
+                    if (alpha < SeamAlpha) continue;
+                    int id = Classify((x + .5f) / width, 1 - (y + .5f) / height);
+                    // Faint pixels seed only the seams (drawn faintly); everything else needs to be the drawn line.
+                    if (alpha < CoreAlpha && !IsSeam(id)) continue;
+                    ids[index] = id;
                     queue.Enqueue(index);
                 }
             if (queue.Count == 0) for (int i = 0; i < count; i++) { ids[i] = Body; }

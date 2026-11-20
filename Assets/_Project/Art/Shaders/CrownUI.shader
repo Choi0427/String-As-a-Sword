@@ -1,8 +1,9 @@
 // The boss crown on the UI canvas (Art/UI/Boss/Crown.png). The picture's opaque lines are the crown, its soft alpha is the glow.
 // A baked region map (CrownLayout.Bake) says which part every pixel belongs to:
-//   blades (boss HP): turn the knight's black from the tip down by _Blade, their glow dims with _BladeGlow;
-//   seams (noise):    turn black from the right end by _SeamFill and crackle with static by _SeamNoise;
-//   body (ring, hooks): goes black with _Body.x once the king falls.
+//   blades (boss HP): carved from the tip down by _Blade into the artist's spent picture (_SpentTex: black inside,
+//                     thin white outline, no glow), with a short white flash on the fresh cut (_BladeFlash);
+//   seams:            fade out from the right end by _SeamFill and crackle with static by _SeamNoise;
+//   body (ring, hooks): goes black with _Body.x (the crown keeps it at 0: the art's last state keeps them lit).
 // Only white, greys and the knight's black are ever drawn.
 Shader "String As a Sword/Crown UI"
 {
@@ -10,6 +11,7 @@ Shader "String As a Sword/Crown UI"
     {
         [PerRendererData] _MainTex ("Crown", 2D) = "white" {}
         [NoScaleOffset] _RegionTex ("Region Map", 2D) = "black" {}
+        [NoScaleOffset] _SpentTex ("Crown With Every Blade Spent", 2D) = "black" {}
         _Color ("Tint", Color) = (1, 1, 1, 1)
         _KnightBlack ("Knight Black", Color) = (0.09, 0.086, 0.078, 1)
         _RimColor ("Dark Outline", Color) = (0.23, 0.23, 0.23, 1)
@@ -54,7 +56,7 @@ Shader "String As a Sword/Crown UI"
             #pragma fragment Frag
             #include "UnityCG.cginc"
 
-            sampler2D _MainTex, _RegionTex;
+            sampler2D _MainTex, _RegionTex, _SpentTex;
             fixed4 _Color, _KnightBlack, _RimColor;
             half _RimAlpha, _GlowBoost;
             float4 _Blade, _BladeGlow, _BladeFlash, _SeamFill, _SeamNoise, _Body;
@@ -80,25 +82,34 @@ Shader "String As a Sword/Crown UI"
                 int id = (int)floor(region.r * 255.0 / 32.0 + 0.5);
                 float time = _Time.y;
 
-                float dark = 0, glow = 1, flash = 0, crackle = 0;
+                float dark = 0, glow = 1, flash = 0, crackle = 0, fade = 0;
                 if (id >= 1 && id <= 4)
                 {
                     int blade = id - 1;
                     float gone = Pick(_Blade, blade);
-                    // From the tip (0) down to the base (1); overshoot so a spent blade is black to its last pixel.
+                    // From the tip (0) down to the base (1); overshoot so a spent blade is spent to its last pixel.
                     float front = gone > 0 ? gone * 1.03 : -1;
-                    dark = saturate((front - region.g) / 0.02 + 0.5);
-                    glow = Pick(_BladeGlow, blade);
-                    // The freshly cut slice just above the front flashes white before it settles to black.
-                    flash = Pick(_BladeFlash, blade) * dark * saturate(1 - (front - region.g) / 0.12);
+                    float carved = saturate((front - region.g) / 0.02 + 0.5);
+                    // The carved part shows the artist's spent blade (black inside, thin white outline, no glow);
+                    // the rest is the whole crown, whose glow breathes.
+                    fixed4 whole = tex2D(_MainTex, uv);
+                    float wholeCore = smoothstep(0.80, 0.95, whole.a);
+                    whole.a = saturate(wholeCore + whole.a * (1 - wholeCore) * _GlowBoost);
+                    fixed4 spent = tex2D(_SpentTex, uv);
+                    fixed4 bladeColour = lerp(whole, spent, carved);
+                    // The freshly cut slice just above the front flashes white before it settles.
+                    float cut = Pick(_BladeFlash, blade) * carved * saturate(1 - (front - region.g) / 0.12);
+                    bladeColour.rgb = lerp(bladeColour.rgb, float3(1, 1, 1), saturate(cut));
+                    return fixed4(bladeColour.rgb * input.color.rgb, bladeColour.a * input.color.a);
                 }
                 else if (id >= 5)
                 {
                     int seam = id - 5;
                     float fill = Pick(_SeamFill, seam);
                     float front = fill > 0 ? fill * 1.03 : -1;
-                    dark = saturate((front - region.b) / 0.03 + 0.5);
-                    glow = 1 - dark;
+                    // A spent seam just fades out: painting it black with an outline left smudges over the boss's hood,
+                    // and the art keeps its seams unchanged. Its static still shows as grey specks.
+                    fade = saturate((front - region.b) / 0.03 + 0.5);
                     crackle = Pick(_SeamNoise, seam);
                     if (crackle > 0)
                     {
@@ -117,11 +128,11 @@ Shader "String As a Sword/Crown UI"
 
                 fixed4 picture = tex2D(_MainTex, uv);
                 float a = picture.a;
-                float core = smoothstep(0.80, 0.95, a);
-                float halo = a * (1 - core);
+                float halo = a * (1 - smoothstep(0.80, 0.95, a));
+                float core = smoothstep(0.80, 0.95, a) * (1 - fade);
                 // A thin dark-grey edge keeps a blackened part readable against the dark background.
-                float rim = smoothstep(0.45, 0.8, a) * (1 - core) * dark * _RimAlpha;
-                float haloAlpha = halo * glow * (1 - dark) * _GlowBoost;
+                float rim = smoothstep(0.45, 0.8, a) * (1 - smoothstep(0.80, 0.95, a)) * dark * _RimAlpha;
+                float haloAlpha = halo * glow * (1 - dark) * (1 - fade) * _GlowBoost;
 
                 float3 coreColour = lerp(float3(1, 1, 1), _KnightBlack.rgb, dark);
                 coreColour = lerp(coreColour, float3(1, 1, 1), saturate(flash));

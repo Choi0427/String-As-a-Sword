@@ -95,6 +95,9 @@ namespace StringAsASword.Presentation
         public Sprite crown;
         [Tooltip("Baked region map for the crown: R = part id, G = height within a blade, B = position along a seam.")]
         public Texture2D crownRegions;
+        [Tooltip("The crown with every blade spent (black inside, thin white outline, no glow), on the same canvas as crown. " +
+            "Set Up Boss Crown lines it up from Art/UI/Boss/CrownStates/4.png. A hit carves the blade from crown into this picture.")]
+        public Texture2D crownSpent;
         [Tooltip("Material on the Crown UI shader.")]
         public Material crownMaterial;
         [Tooltip("Crown width as a share of the boss picture's width.")]
@@ -128,7 +131,7 @@ namespace StringAsASword.Presentation
         public GameObject bossFireVfx;
         public GameObject phaseVfx;
 
-        public bool HasCrown => crown != null && crownRegions != null && crownMaterial != null;
+        public bool HasCrown => crown != null && crownRegions != null && crownSpent != null && crownMaterial != null;
         public bool HasBackground => background != null || (backgroundLayers != null && backgroundLayers.Length > 0);
     }
 

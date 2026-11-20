@@ -51,7 +51,8 @@ namespace StringAsASword.Tests
             Assert.That(crown.Material.shader.isSupported, Is.True);
             game.StartSession();
             yield return null;
-            game.Health.ApplyDamage(5, 0);
+            // A fifth of the first segment, whatever the stage's HP.
+            game.Health.ApplyDamage(Mathf.Max(1, game.Health.Maximum(0) / 5), 0);
             yield return new WaitForSecondsRealtime(.4f);
             Assert.That(crown.Blade(3), Is.GreaterThan(.1f), "The first HP segment is the rightmost blade.");
             for (int blade = 0; blade < 3; blade++) Assert.That(crown.Blade(blade), Is.Zero);
