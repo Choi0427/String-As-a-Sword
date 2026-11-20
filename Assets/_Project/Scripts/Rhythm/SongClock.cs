@@ -12,6 +12,8 @@ namespace StringAsASword.Rhythm
         public double SongTime => Running ? dspTime() - Origin : frozenTime;
         public SongClock(Func<double> dspTime) { this.dspTime = dspTime; }
         public void Start(double leadIn) { Origin = dspTime() + leadIn; frozenTime = -leadIn; Running = true; }
+        /// <summary>Starts with song time 0 at the given DSP time (the prologue hands over on a beat it fixed itself).</summary>
+        public void StartAt(double origin) { Origin = origin; frozenTime = dspTime() - origin; Running = true; }
         public void Stop() { frozenTime = SongTime; Running = false; }
         public double ToSongTime(double inputDspTime) => inputDspTime - Origin;
     }

@@ -6,20 +6,30 @@ namespace StringAsASword.Core
     /// <summary>Player HP under the knight: a row of bar segments, or a row of knight icons.</summary>
     public enum PlayerHpStyle { Bar = 0, Knights = 1 }
 
-    /// <summary>Scene flow and saved player settings: main menu → story → battle → ending → main menu.</summary>
+    /// <summary>
+    /// Scene flow and saved player settings: main menu → (first run: prologue) → battle → ending → main menu.
+    /// The prologue plays by itself only the first time; after that it is in the menu.
+    /// </summary>
     public static class GameFlow
     {
         public const string MenuScene = "MainMenu", BattleScene = "RhythmPrototype";
         private const string ClearedKey = "StringAsASword.Cleared", VolumeKey = "StringAsASword.MusicVolume",
             InputKey = "StringAsASword.InputOffsetMs", VisualKey = "StringAsASword.VisualOffsetMs", DevKey = "StringAsASword.DevMode",
-            HpStyleKey = "StringAsASword.PlayerHpStyle";
+            HpStyleKey = "StringAsASword.PlayerHpStyle", PrologueKey = "StringAsASword.PrologueSeen";
 
         /// <summary>Set by the menu so the battle starts its count-in without the ready overlay.</summary>
         public static bool AutoStartBattle { get; private set; }
+        /// <summary>Set with <see cref="AutoStartBattle"/> when the battle should open with the prologue instead of the count-in.</summary>
+        public static bool PlayPrologue { get; private set; }
 
         public static bool Cleared => PlayerPrefs.GetInt(ClearedKey, 0) == 1;
         public static void MarkCleared() { PlayerPrefs.SetInt(ClearedKey, 1); PlayerPrefs.Save(); }
         public static void ResetCleared() { PlayerPrefs.DeleteKey(ClearedKey); PlayerPrefs.Save(); }
+
+        /// <summary>The prologue has been seen (played through or skipped) once: 시작 then goes straight to the battle.</summary>
+        public static bool PrologueSeen => PlayerPrefs.GetInt(PrologueKey, 0) == 1;
+        public static void MarkPrologueSeen() { PlayerPrefs.SetInt(PrologueKey, 1); PlayerPrefs.Save(); }
+        public static void ResetPrologueSeen() { PlayerPrefs.DeleteKey(PrologueKey); PlayerPrefs.Save(); }
 
         /// <summary>Multiplier on the song's own volume, 0..1.</summary>
         public static float MusicVolume
@@ -61,10 +71,10 @@ namespace StringAsASword.Core
             set { PlayerPrefs.SetInt(HpStyleKey, (int)value); PlayerPrefs.Save(); }
         }
 
-        public static void StartBattle() { AutoStartBattle = true; SceneManager.LoadScene(BattleScene); }
+        public static void StartBattle(bool prologue = false) { AutoStartBattle = true; PlayPrologue = prologue; SceneManager.LoadScene(BattleScene); }
         /// <summary>Called by the battle once it has consumed the request.</summary>
-        public static void ConsumeAutoStart() => AutoStartBattle = false;
-        public static void ReturnToMenu() { AutoStartBattle = false; SceneManager.LoadScene(MenuScene); }
+        public static void ConsumeAutoStart() { AutoStartBattle = false; PlayPrologue = false; }
+        public static void ReturnToMenu() { AutoStartBattle = false; PlayPrologue = false; SceneManager.LoadScene(MenuScene); }
         /// <summary>The menu scene is in the build (it is absent when only the battle scene is played).</summary>
         public static bool HasMenu => Application.CanStreamedLevelBeLoaded(MenuScene);
     }

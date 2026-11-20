@@ -91,6 +91,10 @@ namespace StringAsASword.Presentation
         public Camera BoardCamera { get; private set; }
         public RenderTexture Texture { get; private set; }
         public Transform PlayerTransform => player;
+        /// <summary>The mint outline of the knight's cell. The prologue hides it until it hands over to the battle.</summary>
+        public Transform CellOutline => selection;
+        /// <summary>The root every board object hangs under (cells are its local space).</summary>
+        public Transform WorldRoot => world.transform;
         public int TileCount { get; private set; }
         /// <summary>Board camera angle above the board; upright silhouettes tilt by it to face the camera.</summary>
         public float Elevation { get; private set; }

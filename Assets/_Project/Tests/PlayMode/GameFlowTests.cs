@@ -13,7 +13,7 @@ namespace StringAsASword.Tests
 {
     public sealed class GameFlowTests
     {
-        private bool hadCleared, originalBackground;
+        private bool hadCleared, hadPrologue, originalBackground;
         private InputSettings.BackgroundBehavior originalInputBackground;
 #if UNITY_EDITOR
         private InputSettings.EditorInputBehaviorInPlayMode originalEditorInput;
@@ -25,6 +25,7 @@ namespace StringAsASword.Tests
         {
             // The player's saved clear must survive the tests.
             hadCleared = GameFlow.Cleared; GameFlow.ResetCleared();
+            hadPrologue = GameFlow.PrologueSeen;
             originalBackground = Application.runInBackground; Application.runInBackground = true;
             originalInputBackground = InputSystem.settings.backgroundBehavior;
             InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
@@ -45,6 +46,7 @@ namespace StringAsASword.Tests
             if (keyboard != null) InputSystem.RemoveDevice(keyboard);
             foreach (var existing in externalKeyboards) if (existing.added) InputSystem.EnableDevice(existing);
             if (hadCleared) GameFlow.MarkCleared(); else GameFlow.ResetCleared();
+            if (hadPrologue) GameFlow.MarkPrologueSeen(); else GameFlow.ResetPrologueSeen();
             InputSystem.settings.backgroundBehavior = originalInputBackground;
 #if UNITY_EDITOR
             InputSystem.settings.editorInputBehaviorInPlayMode = originalEditorInput;
@@ -87,20 +89,68 @@ namespace StringAsASword.Tests
             Assert.That(menu.LabelColorHex(1), Is.EqualTo("262626"));
             LogAssert.NoUnexpectedReceived();
         }
-        [UnityTest] public IEnumerator StartPlaysTheStoryCardsThenTheBattleCountsInByItself()
+        private IEnumerator Press(Key key)
         {
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(key)); yield return null;
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
+        }
+        [UnityTest] public IEnumerator StartOpensWithThePrologueTheFirstTimeAndEscSkipsToTheCountIn()
+        {
+            GameFlow.ResetPrologueSeen();
             yield return LoadAndWait(GameFlow.MenuScene);
             var menu = Object.FindAnyObjectByType<MainMenuView>();
-            menu.Activate(0);
-            Assert.That(menu.StoryPlaying); Assert.That(menu.StoryIndex, Is.Zero);
-            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Space)); yield return null;
-            InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
-            Assert.That(menu.StoryIndex, Is.EqualTo(1), "Space turns the card.");
-            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Escape)); yield return null;
-            InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+            Assert.That(menu.ItemCount, Is.EqualTo(4), "시작, 프롤로그, 설정, 종료.");
+            menu.Activate(MainMenuView.StartItem);
             yield return UntilScene(GameFlow.BattleScene, 10);
             var game = Object.FindAnyObjectByType<PrototypeGame>();
-            Assert.That(game.State, Is.EqualTo(PrototypeState.CountIn), "No ready overlay after the story.");
+            Assert.That(game.State, Is.EqualTo(PrototypeState.Prologue));
+            Assert.That(game.Intro.Playing);
+            Assert.That(game.View.ContentRect.GetComponent<CanvasGroup>().alpha, Is.Zero, "The battle screen waits under the prologue.");
+            yield return Press(Key.Escape);
+            Assert.That(game.State, Is.EqualTo(PrototypeState.CountIn), "Skipping goes to the usual count-in.");
+            Assert.That(game.Intro.Playing, Is.False);
+            Assert.That(game.View.ContentRect.GetComponent<CanvasGroup>().alpha, Is.EqualTo(1));
+            Assert.That(GameFlow.PrologueSeen);
+            LogAssert.NoUnexpectedReceived();
+        }
+        [UnityTest] public IEnumerator OnceSeenStartGoesStraightToTheBattleAndThePrologueItemReplaysIt()
+        {
+            GameFlow.MarkPrologueSeen();
+            yield return LoadAndWait(GameFlow.MenuScene);
+            Object.FindAnyObjectByType<MainMenuView>().Activate(MainMenuView.StartItem);
+            yield return UntilScene(GameFlow.BattleScene, 10);
+            Assert.That(Object.FindAnyObjectByType<PrototypeGame>().State, Is.EqualTo(PrototypeState.CountIn), "No story and no prologue the second time.");
+            yield return LoadAndWait(GameFlow.MenuScene);
+            Object.FindAnyObjectByType<MainMenuView>().Activate(MainMenuView.PrologueItem);
+            yield return UntilScene(GameFlow.BattleScene, 10);
+            Assert.That(Object.FindAnyObjectByType<PrototypeGame>().State, Is.EqualTo(PrototypeState.Prologue));
+            LogAssert.NoUnexpectedReceived();
+        }
+        [UnityTest] public IEnumerator JTearsTheStringOnTheBeatAndTheBattleTakesOverOnTheSongsDownbeat()
+        {
+            GameFlow.ResetPrologueSeen();
+            yield return LoadAndWait(GameFlow.MenuScene);
+            GameFlow.StartBattle(prologue: true);
+            yield return UntilScene(GameFlow.BattleScene, 10);
+            var game = Object.FindAnyObjectByType<PrototypeGame>();
+            var intro = game.Intro;
+            yield return Press(Key.J);
+            Assert.That(intro.Torn, Is.False, "J does nothing before the knight grips the string.");
+            intro.JumpForTests(IntroTimeline.LoopStart + 1.4);
+            yield return null;
+            Assert.That(intro.StoryBeat, Is.InRange(32f, 36f), "The waiting bar.");
+            yield return Press(Key.J);
+            Assert.That(intro.Torn);
+            // The song is scheduled from the tear: the handover beat falls on the song time set by the timeline.
+            double handoverSongTime = intro.HandoverDsp - game.SongClockOrigin;
+            Assert.That(handoverSongTime, Is.EqualTo(IntroTimeline.HandoverSongTime(game.Timeline)).Within(1e-6));
+            Assert.That(game.State, Is.EqualTo(PrototypeState.Prologue));
+            float deadline = Time.realtimeSinceStartup + 18;
+            while (game.State == PrototypeState.Prologue && Time.realtimeSinceStartup < deadline) yield return null;
+            Assert.That(game.State, Is.EqualTo(PrototypeState.Playing), "The last downbeat hands over straight to play, no count-in.");
+            Assert.That(game.SongTime, Is.EqualTo(handoverSongTime).Within(.1));
+            Assert.That(game.View.ContentRect.GetComponent<CanvasGroup>().alpha, Is.EqualTo(1));
+            Assert.That(GameFlow.PrologueSeen);
             LogAssert.NoUnexpectedReceived();
         }
         [UnityTest] public IEnumerator EpilogueLetsTheKnightRoamToTheNoiseThenTheCutsceneReturnsToAWhiteMenu()

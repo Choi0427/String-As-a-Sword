@@ -25,7 +25,7 @@ namespace StringAsASword.Tests
             yield return SceneManager.LoadSceneAsync(GameFlow.MenuScene);
             yield return null;
             var menu = Object.FindAnyObjectByType<MainMenuView>();
-            menu.Activate(1);
+            menu.Activate(MainMenuView.SettingsItem);
             Assert.That(menu.transform.Find("Settings/Card/무적").gameObject.activeSelf, Is.False, "Hidden until developer mode is on.");
             menu.ChooseSetting("무적", 1); menu.ChooseSetting("시작 페이즈", 2);
             Assert.That(GameFlow.Invincible, Is.False, "Without developer mode nothing applies.");
