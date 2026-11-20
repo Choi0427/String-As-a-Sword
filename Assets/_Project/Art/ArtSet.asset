@@ -16,7 +16,7 @@ MonoBehaviour:
   kingPrefab: {fileID: 0}
   kingAnchor: {x: 0, y: 0, z: 5.5}
   kingScale: 1
-  bossImage: {fileID: 21300000, guid: 6b0551e7a3c94d0f9a1e5d2c7f48b316, type: 3}
+  bossImage: {fileID: 21300000, guid: a2f549f2158424943a1ccf15d710ce69, type: 3}
   bossImageHeight: 400
   bossImageSink: {x: 0, y: 110}
   noisePrefab: {fileID: 0}
