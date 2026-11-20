@@ -5,7 +5,7 @@ using UnityEngine;
 namespace StringAsASword.Editor
 {
     /// <summary>
-    /// Builds the board crack material from the Board Crack shader and assigns it to the ArtSet.
+    /// Builds the board crack material from the Board Crack shader and its baked crack map, and assigns it to the ArtSet.
     /// The material is referenced by an asset so the shader is included in standalone builds.
     /// </summary>
     public static class BoardCrackSetup
@@ -21,6 +21,8 @@ namespace StringAsASword.Editor
             material.shader = Shader.Find(ShaderName);
             // The game drives these three on its own copy; the asset stays at "intact".
             material.SetFloat("_Crack", 0); material.SetFloat("_Light", 0); material.SetFloat("_Hole", 0);
+            // The cracks themselves: grown once and baked, so every run breaks the same way. The copies the game makes keep it.
+            material.SetTexture("_CrackMap", BoardCrackBaker.Bake());
             EditorUtility.SetDirty(material);
             art.boardCrack = material;
             EditorUtility.SetDirty(art);

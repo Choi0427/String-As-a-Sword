@@ -229,10 +229,14 @@ namespace StringAsASword.Presentation
             int count = cellHome.Length;
             cellSink = new float[count]; cellTilt = new Vector3[count];
             cellZone = new int[count]; cellFalls = new bool[count]; cellChance = new float[count]; cellSpin = new Vector3[count];
+            int firstFragment = count - fragmentCount;
             for (int i = 0; i < count; i++)
             {
-                // About one cell in five settles. The sink is deeper than a tilted corner rises, so nothing pokes through the tiles.
-                bool settles = Next() < .2f; float sink = .04f + .04f * Next(); var tilt = new Vector3(Next() * 5 - 2.5f, 0, Next() * 5 - 2.5f);
+                // About one piece in five settles. The sink is deeper than a tilted corner rises, so nothing pokes through the tiles,
+                // and shallow enough that the wall it bares stays inside the crack drawn along its edge.
+                bool settles = Next() < .2f; float sink = .025f + .015f * Next(); var tilt = new Vector3(Next() * 2.4f - 1.2f, 0, Next() * 2.4f - 1.2f);
+                // Fragments follow the rule the crack map is baked with, so every edge of one that settles lies in a crack.
+                if (i >= firstFragment) settles = FragmentSettles(i - firstFragment);
                 if (settles) { cellSink[i] = sink; cellTilt[i] = tilt; }
                 float reach = Mathf.Max(Mathf.Abs(cellHome[i].x), Mathf.Abs(cellHome[i].z));
                 float radius = new Vector2(cellHome[i].x, cellHome[i].z).magnitude;
@@ -816,17 +820,24 @@ namespace StringAsASword.Presentation
                 core.GetComponent<MeshFilter>().sharedMesh = mesh; core.GetComponent<MeshRenderer>().sharedMaterial = edgeMaterial;
             }
             foreach (var cell in cells) if (cell != null) cellPieces.Add(cell);
-            cellPieces.AddRange(fragments);
+            cellPieces.AddRange(fragments); fragmentCount = fragments.Length;
             boardShards.SetActive(false);
             return true;
         }
-        private const float FragmentHalf = 3, PlateDepth = .2f;
+        /// <summary>Half the side of the middle square that is cut into fragments (board units).</summary>
+        public const float FragmentHalf = 3;
+        private const float PlateDepth = .2f;
+        // The fragments are the last pieces in cellPieces (none without a cut board).
+        private int fragmentCount;
+        /// <summary>Whether a fragment (by its index in FragmentOutlines) settles at the second break. Shared with the crack map baker.</summary>
+        public static bool FragmentSettles(int fragment) => new System.Random(7919 * (fragment + 1)).NextDouble() < .2;
         private static bool Central(int index) => index >= 1 && index <= 6;
         /// <summary>
         /// Convex outlines that tile the middle 6x6 cells: small near the centre, larger toward its edge.
         /// Each is the square cut down by the bisectors between one seed point and every other.
+        /// The crack map baker draws its cracks along these, so the seams of sinking fragments lie in a crack.
         /// </summary>
-        private static List<List<Vector2>> FragmentOutlines()
+        public static List<List<Vector2>> FragmentOutlines()
         {
             var random = new System.Random(31);
             float Next() => (float)random.NextDouble();

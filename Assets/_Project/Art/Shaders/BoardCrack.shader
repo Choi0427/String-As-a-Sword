@@ -1,5 +1,6 @@
-// Cracks over the whole chessboard, drawn from one board-sized quad's UVs with no texture:
-// dark cracks that spread as _Crack rises, then white light that runs along them from the centre outward (_Light).
+// Cracks over the whole chessboard, read from a crack map grown in the editor (BoardCrackBaker) on one board-sized quad:
+// each crack grows from where it starts as _Crack passes the time baked into it, as a dark core with a light chipped lip
+// and flakes beside it, so it shows on light and dark tiles. Then white light runs along the main ones from the centre (_Light).
 // The centre itself is real geometry (fragments over a white floor), so _Hole hides this overlay there.
 // _Mode draws the light that goes with it from the same shader: 1 a soft glow, 2 rays from the centre, 3 plain light,
 // 4 blades of light standing in the cracks (their own mesh: the normal is how far an upper vertex is lifted).
@@ -8,6 +9,8 @@ Shader "String As a Sword/Board Crack"
     Properties
     {
         _Crack ("Cracks (0.5 = first break, 1 = second)", Range(0, 1)) = 0
+        [NoScaleOffset] _CrackMap ("Crack Map (R core, G time, B lip, A rank)", 2D) = "black" {}
+        _LipColor ("Lip Color (A strength)", Color) = (0.66, 0.67, 0.66, 0.8)
         _Light ("Light along the cracks, from the centre out (modes 1-2: brightness)", Range(0, 1)) = 0
         _Hole ("Hide the overlay over the centre fragments", Range(0, 1)) = 0
         _CrackColor ("Crack Color", Color) = (0.02, 0.022, 0.028, 1)
@@ -35,9 +38,10 @@ Shader "String As a Sword/Board Crack"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
-                half4 _CrackColor, _LightColor;
+                half4 _CrackColor, _LightColor, _LipColor;
                 half _Crack, _Light, _Hole, _HoleRadius, _Mode, _Reach;
             CBUFFER_END
+            TEXTURE2D(_CrackMap); SAMPLER(sampler_CrackMap);
 
             struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; float2 uv : TEXCOORD0; float2 trait : TEXCOORD1; };
             struct Varyings { float4 positionCS : SV_POSITION; float2 uv : TEXCOORD0; float3 blade : TEXCOORD1; };
@@ -70,30 +74,6 @@ Shader "String As a Sword/Board Crack"
                 f = f * f * (3 - 2 * f);
                 return lerp(lerp(Hash2(i).x, Hash2(i + float2(1, 0)).x, f.x),
                             lerp(Hash2(i + float2(0, 1)).x, Hash2(i + float2(1, 1)).x, f.x), f.y);
-            }
-            // x: distance to the nearest cell border, yz: vector to the nearest seed.
-            float3 Voronoi(float2 x)
-            {
-                float2 n = floor(x), f = frac(x), nearCell = 0, nearSeed = 0;
-                float best = 8;
-                for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++)
-                {
-                    float2 g = float2(i, j), r = g + Hash2(n + g) - f;
-                    float d = dot(r, r);
-                    if (d < best) { best = d; nearSeed = r; nearCell = g; }
-                }
-                best = 8;
-                for (int v = -2; v <= 2; v++) for (int u = -2; u <= 2; u++)
-                {
-                    float2 g = nearCell + float2(u, v), r = g + Hash2(n + g) - f;
-                    if (dot(nearSeed - r, nearSeed - r) > 0.00001) best = min(best, dot(0.5 * (nearSeed + r), normalize(r - nearSeed)));
-                }
-                return float3(best, nearSeed);
-            }
-            float Line(float distance, float width)
-            {
-                float soft = fwidth(distance) + 0.004;
-                return 1 - smoothstep(width, width + soft, distance);
             }
 
             half4 Frag(Varyings input) : SV_Target
@@ -134,25 +114,28 @@ Shader "String As a Sword/Board Crack"
                 }
                 float2 p = (input.uv - 0.5) * 8; // board units: one cell is 1
                 float r = length(p);
-                float2 q = p + (float2(Noise(p * 1.7 + 3.1), Noise(p * 1.7 + 9.4)) - 0.5) * 0.35;
-                float3 coarse = Voronoi(q * 0.55 + 11.3);
-                float3 fine = Voronoi(q * 1.45 + 4.7);
+                half4 map = SAMPLE_TEXTURE2D(_CrackMap, sampler_CrackMap, input.uv);
+                // A pixel shows once the crack front has passed it; the front's own edge is soft, so the tip of a
+                // growing crack fades in instead of stepping.
+                float grown = saturate((_Crack - map.g) / 0.02);
+                float core = map.r * grown;
+                float lip = map.b * grown * _LipColor.a;
+                // The dark core lies over the light lip.
+                float alpha = core + lip * (1 - core);
+                float3 color = (_CrackColor.rgb * core + _LipColor.rgb * lip * (1 - core)) / max(alpha, 0.0001);
 
-                // Cracks reach further from the centre, patch by patch, as _Crack rises. Fine ones join in the second half.
-                float reach = Noise(p * 0.45 + 20) * 0.75 + r / 5.66 * 0.45;
-                float showCoarse = smoothstep(-0.08, 0.02, _Crack * 1.25 - reach);
-                float showFine = smoothstep(-0.08, 0.02, (_Crack - 0.5) * 1.05 - reach);
-                float crack = max(showCoarse * Line(coarse.x, 0.007 + 0.012 * _Crack), showFine * 0.6 * Line(fine.x, 0.012));
-
-                // Light: the large cracks turn white from the centre outward, each with a soft halo.
+                // Light: the main cracks turn white from the centre outward, each with a soft halo (a coarse mip of the map).
                 float front = _Light * 7.2 - (r + Noise(p * 0.8 + 40) * 1.2);
                 float lit = smoothstep(0, 1.2, front) * step(0.001, _Light);
-                float glow = lit * saturate(Line(coarse.x, 0.008 + 0.006 * _Light) + 0.35 * (1 - smoothstep(0, 0.12, coarse.x)));
+                float main = saturate((map.a - 0.45) * 4);
+                float halo = SAMPLE_TEXTURE2D_BIAS(_CrackMap, sampler_CrackMap, input.uv, 3).a;
+                float glow = lit * saturate(core * main + 1.6 * halo);
 
-                float alpha = saturate(max(crack * 0.92, glow));
+                color = lerp(color, _LightColor.rgb, glow / max(max(alpha, glow), 0.0001));
+                alpha = saturate(max(alpha * 0.95, glow));
                 // The fragments in the centre move; a flat drawing over them would hang in the air.
                 alpha *= 1 - _Hole * step(r, _HoleRadius);
-                return half4(lerp(_CrackColor.rgb, _LightColor.rgb, glow), alpha);
+                return half4(color, alpha);
             }
             ENDHLSL
         }
