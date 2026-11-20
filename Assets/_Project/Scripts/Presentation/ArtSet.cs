@@ -10,6 +10,8 @@ namespace StringAsASword.Presentation
         [Header("3D models (1 unit = 1 cell, pivot at bottom centre, front faces -Z)")]
         [Tooltip("Replaces the procedural knight. Animator triggers: Move, Attack, Guard, Hit, Block.")]
         public GameObject knightPrefab;
+        [Tooltip("The knight's sword in the prologue (the torn string). Pivot at the grip, blade along +Y. Empty = a white line.")]
+        public GameObject swordPrefab;
         [Tooltip("Placed only when assigned. Animator triggers: Telegraph, Attack, Hurt, PhaseUp.")]
         public GameObject kingPrefab;
         [Tooltip("Board-local position of the king's pivot. Row 8's far edge is z = 4.")]

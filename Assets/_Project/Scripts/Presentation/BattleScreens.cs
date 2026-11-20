@@ -122,20 +122,9 @@ namespace StringAsASword.Presentation
                 var card = TopLeft(Rect(frame, name), 598.18f, top, 723.63f, height);
                 root = card.gameObject;
                 // Figma: black at 90%, inside stroke 5 px #D9D9D9.
-                // Figma's 90% is blended in sRGB; the project blends in linear space, where the same look needs 1 - 0.1^2.2.
-                var fill = Image(Stretch(Rect(card, "Fill")), new Color(0, 0, 0, 1 - Mathf.Pow(.1f, 2.2f)));
+                var fill = Image(Stretch(Rect(card, "Fill")), CardFill);
                 fill.raycastTarget = true; // Clicks on the card do not fall through to the game.
-                // The stroke as four edges, so the game shows through the fill as in the mockup.
-                for (int side = 0; side < 4; side++)
-                {
-                    var edge = Image(Rect(card, "Stroke"), Ink).rectTransform;
-                    bool vertical = side >= 2;
-                    edge.anchorMin = new Vector2(side == 3 ? 1 : 0, side == 1 ? 1 : 0);
-                    edge.anchorMax = new Vector2(side == 2 ? 0 : 1, side == 0 ? 0 : 1);
-                    edge.pivot = new Vector2(side == 3 ? 1 : 0, side == 1 ? 1 : 0);
-                    edge.anchoredPosition = Vector2.zero;
-                    edge.sizeDelta = vertical ? new Vector2(5, 0) : new Vector2(0, 5);
-                }
+                Stroke(card, Ink, 5);
                 Title = Label(TopLeft(Rect(frame, name + " Title"), 960 - titleWidth / 2, titleTop, titleWidth, 88), title, 80, Ink, TextAlignmentOptions.Center, owner.titleFont);
                 Title.transform.SetParent(card, true);
                 labels = new TMP_Text[items.Length]; boxes = new UnityEngine.UI.Image[items.Length];

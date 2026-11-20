@@ -43,7 +43,8 @@ namespace StringAsASword.Presentation
         private RectTransform layer;
         private UnityEngine.UI.RawImage introView;
         private UnityEngine.UI.Image voidCover, flash, barTop, barBottom;
-        private TMP_Text prompt, skipHint;
+        private TMP_Text skipHint;
+        private RectTransform prompt, promptKey;
         private CanvasGroup contentGroup, bossGroup;
         private Material flatTemplate;
         private Texture2D whiteMarble, blackMarble;
@@ -404,6 +405,7 @@ namespace StringAsASword.Presentation
         // ---------------------------------------------------------------- strings and lanes
         private LineRenderer[] strings, lanes;
         private LineRenderer blade;
+        private Transform sword;
         private Vector3[] kingBase, anchors;
         private const int Segments = 32;
         private static readonly float[] LaneZ = { -1.6f, -.8f, 0, .8f, 1.6f };
@@ -419,6 +421,11 @@ namespace StringAsASword.Presentation
             lanes = new LineRenderer[10];
             for (int i = 0; i < 10; i++) lanes[i] = MakeLine(parent, "Lane " + i, 2, i % 5 == 2 ? .05f : .035f);
             blade = MakeLine(parent, "String Blade", 2, .035f);
+            if (view.Art.swordPrefab != null)
+            {
+                sword = Instantiate(view.Art.swordPrefab, parent, false).transform; sword.name = "Sword";
+                sword.gameObject.SetActive(false);
+            }
         }
         private void RenderStrings(float s)
         {
@@ -454,16 +461,23 @@ namespace StringAsASword.Presentation
                 lane.SetPosition(1, new Vector3(side * (4.45f + length), .03f, LaneZ[j]));
                 SetLineAlpha(lane, (j == 2 ? .8f : .5f) * fadeOut);
             }
-            // The torn string in the knight's hand: a short white blade until the king's wave pushes the knight home.
-            bool held = s >= TearStory + 1.4f && s < Push;
-            blade.gameObject.SetActive(held);
-            if (held)
+            // The torn string becomes the sword in the knight's hand: the string straightens into the blade from the hand out,
+            // with a white flash along it, and the sword is put away when the king's wave pushes the knight home.
+            float swing = 0; { float u = (s - Swing) / .32f; if (u > 0 && u < 1) swing = Mathf.Sin(Mathf.PI * u) * 2.2f; }
+            var tilt = Quaternion.AngleAxis(-14 + swing * Mathf.Rad2Deg, Vector3.forward);
+            Vector3 up = tilt * Vector3.up;
+            float drawn = Smooth(s, TearStory + 1.35f, TearStory + 1.75f) * (1 - Smooth(s, Push, Push + .3f));
+            if (sword != null)
             {
-                float swing = 0; { float u = (s - Swing) / .32f; if (u > 0 && u < 1) swing = Mathf.Sin(Mathf.PI * u) * 2.2f; }
-                Vector3 up = Quaternion.AngleAxis(-14 + swing * Mathf.Rad2Deg, Vector3.forward) * Vector3.up;
-                blade.SetPosition(0, hand); blade.SetPosition(1, hand + up * .95f);
-                SetLineAlpha(blade, Smooth(s, TearStory + 1.3f, TearStory + 1.6f));
+                sword.gameObject.SetActive(drawn > .001f);
+                sword.localPosition = hand; sword.localRotation = tilt;
+                sword.localScale = new Vector3(1, drawn, 1);
             }
+            // Without the model the line is the blade; with it, the line is only the flash of the string becoming it.
+            float glint = sword == null ? (s >= TearStory + 1.4f && s < Push ? Smooth(s, TearStory + 1.3f, TearStory + 1.6f) : 0)
+                : Smooth(s, TearStory + 1.3f, TearStory + 1.5f) * (1 - Smooth(s, TearStory + 1.6f, TearStory + 2.4f));
+            blade.gameObject.SetActive(glint > .001f);
+            if (glint > .001f) { blade.SetPosition(0, hand); blade.SetPosition(1, hand + up * .95f); SetLineAlpha(blade, glint); }
         }
         private Vector3 BladeTip => board.PlayerTransform.localPosition + new Vector3(.18f, 1.55f, -.05f);
 
@@ -650,10 +664,7 @@ namespace StringAsASword.Presentation
             flash = FullScreen("Crack Flash", Color.white);
             barTop = Bar("Letterbox Top", 1); barBottom = Bar("Letterbox Bottom", 0);
             var font = UiFonts.Korean(view.Art.menuFont, view.LatinFont);
-            prompt = PrototypeView.MakeRect(layer, "Prompt", Vector2.zero, new Vector2(520, 60)).gameObject.AddComponent<TextMeshProUGUI>();
-            if (font != null) prompt.font = font;
-            prompt.fontSize = 30; prompt.alignment = TextAlignmentOptions.Center; prompt.raycastTarget = false; prompt.color = Color.white;
-            prompt.textWrappingMode = TextWrappingModes.NoWrap;
+            BuildPrompt();
             skipHint = PrototypeView.MakeRect(barBottom.rectTransform, "Skip Hint", Vector2.zero, new Vector2(400, 40)).gameObject.AddComponent<TextMeshProUGUI>();
             var hintRect = skipHint.rectTransform; hintRect.anchorMin = hintRect.anchorMax = hintRect.pivot = new Vector2(1, .5f);
             hintRect.anchoredPosition = new Vector2(-40, 0);
@@ -663,6 +674,27 @@ namespace StringAsASword.Presentation
             contentGroup = Group(view.ContentRect);
             if (view.BossPortrait != null) bossGroup = Group((RectTransform)view.BossPortrait.transform);
             layer.gameObject.SetActive(false);
+        }
+        private static readonly Color Ink = UiKit.Hex(0xD9D9D9), KeyInk = UiKit.Hex(0x0C0C0C);
+        private static readonly Vector2 PromptSize = new Vector2(300, 84);
+        /// <summary>
+        /// The J prompt as a card like the pause screen's (black at 90%, inside stroke #D9D9D9, Orbit), with J on a keycap,
+        /// so it reads over any part of the board. 5 px in the 1920 frame is about 4 on this 1600 canvas.
+        /// </summary>
+        private void BuildPrompt()
+        {
+            var art = view.Art;
+            var itemFont = UiFonts.Korean(art.screenFont != null ? art.screenFont : art.menuFont, view.LatinFont);
+            var keyFont = art.screenTitleFont != null ? art.screenTitleFont : itemFont;
+            prompt = PrototypeView.MakeRect(layer, "Prompt", Vector2.zero, PromptSize);
+            UiKit.Image(UiKit.Stretch(UiKit.Rect(prompt, "Fill")), UiKit.CardFill);
+            UiKit.Stroke(prompt, Ink, 4);
+            promptKey = PrototypeView.MakeRect(prompt, "Key", new Vector2(-PromptSize.x / 2 + 22 + 27, 0), new Vector2(54, 54));
+            UiKit.Image(promptKey, Ink);
+            UiKit.Label(UiKit.Stretch(UiKit.Rect(promptKey, "J")), "J", 40, KeyInk, TextAlignmentOptions.Center, keyFont);
+            var label = UiKit.Label(PrototypeView.MakeRect(prompt, "Label", new Vector2(-PromptSize.x / 2 + 96 + 95, 0), new Vector2(190, 60)),
+                "줄을 끊는다", 36, Ink, TextAlignmentOptions.Left, itemFont);
+            label.characterSpacing = -5;
         }
         private void RenderLayer(float s)
         {
@@ -688,15 +720,15 @@ namespace StringAsASword.Presentation
             prompt.gameObject.SetActive(waiting);
             if (waiting)
             {
-                prompt.text = "<b>J</b>   줄을 끊는다";
-                prompt.alpha = .65f + .35f * Mathf.Exp(-(s % 1) * 4);
+                // The keycap kicks on every beat of the waiting bar.
+                promptKey.localScale = Vector3.one * (1 + .14f * Mathf.Exp(-(s % 1) * 5));
                 // Beside the knight's hand on the lowest string; the intro camera renders at screen size, so its screen point is a screen point.
                 var screen = cam.WorldToScreenPoint(world.TransformPoint(board.PlayerTransform.localPosition + new Vector3(0, .6f, 0)));
                 if (RectTransformUtility.ScreenPointToLocalPointInRectangle(layer, screen, null, out var local))
                 {
                     // Kept inside the letterbox's picture, clear of its edges.
-                    float limit = size.y * .5f - bar - 40;
-                    prompt.rectTransform.anchoredPosition = new Vector2(Mathf.Clamp(local.x + 230, -size.x * .5f + 280, size.x * .5f - 280), Mathf.Clamp(local.y, -limit, limit));
+                    float limitX = size.x * .5f - PromptSize.x * .5f - 40, limitY = size.y * .5f - bar - PromptSize.y * .5f - 24;
+                    prompt.anchoredPosition = new Vector2(Mathf.Clamp(local.x + 60 + PromptSize.x * .5f, -limitX, limitX), Mathf.Clamp(local.y, -limitY, limitY));
                 }
             }
         }
