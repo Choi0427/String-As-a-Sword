@@ -48,11 +48,11 @@ namespace StringAsASword.Presentation
         private Transform boardModel;
         private GameObject boardShards;
         public bool BoardShatters => boardShards != null;
-        // The board breaks in steps: cracks after chorus 1, sunken cells and rubble after chorus 2,
+        // The board breaks in steps: cracks after chorus 1, sunken cells and chips breaking off after chorus 2,
         // light through the centre once the king falls, and the centre bursting open when the song ends.
         private Material crackMaterial;
         private GameObject crackOverlay;
-        private Vector3[] cellHome, cellTilt, cellScale, cellSpin, rubbleScale;
+        private Vector3[] cellHome, cellTilt, cellScale, cellSpin;
         private float[] cellSink, cellChance;
         // Where a piece lies, from the outside in: untouched, tipping at the hole's edge, thrown late, thrown first.
         private const int Outer = 0, Rim = 1, Ring = 2, Centre = 3;
@@ -68,7 +68,7 @@ namespace StringAsASword.Presentation
         private float stoneLow;
         private Material glowMaterial, rayMaterial;
         public bool LightBelow => lightFloor != null && lightFloor.gameObject.activeSelf;
-        private readonly List<Transform> rubble = new List<Transform>();
+        private Material tileLight, tileDark;
         private float breakEased, burst, shakeAge = 1;
         private Vector2 viewHome;
         private bool whiteWorld;
@@ -129,6 +129,7 @@ namespace StringAsASword.Presentation
             edgeMaterial = art.boardEdge != null ? art.boardEdge : Material(new Color(.075f, .095f, .105f));
             var ivory = art.lightTile != null ? art.lightTile : Material(new Color(.72f, .74f, .70f));
             var dark = art.darkTile != null ? art.darkTile : Material(new Color(.15f, .20f, .22f));
+            tileLight = ivory; tileDark = dark;
             if (art.useLighting)
             {
                 var light = new GameObject("Board Light", typeof(Light)).GetComponent<Light>(); light.transform.SetParent(world.transform, false);
@@ -247,15 +248,215 @@ namespace StringAsASword.Presentation
             }
             // The four pieces nearest the centre drop out first and leave the hole.
             foreach (int i in Enumerable.Range(0, count).OrderBy(i => new Vector2(cellHome[i].x, cellHome[i].z).sqrMagnitude).Take(4)) cellFalls[i] = true;
+            BuildChips();
+        }
+        // ---- Chips: bits of the surface that break off along the cracks at the second break and slide aside ----
+        private sealed class Chip { public Transform Root, Scar; public Vector3 From, To; public Quaternion Turn; public float Delay; }
+        private readonly List<Chip> chips = new List<Chip>();
+        public int ChipCount => chips.Count;
+        /// <summary>Chips shown now that have left the spot they broke from.</summary>
+        public int ChipsMoved => chips.Count(c => c.Root.gameObject.activeSelf && (c.Root.localPosition - c.From).sqrMagnitude > .0004f);
+        private struct ChipPlan
+        {
+            public List<Vector2> Outline; public Vector2 Centre, Destination, Low, High;
+            public float Thickness, Yaw, Delay; public Vector2 Tilt;
+        }
+        private void BuildChips()
+        {
+            var plans = ChipLayout();
+            var surfaces = CutChipSurfaces(plans);
+            var parent = new GameObject("Board Chips").transform; parent.SetParent(world.transform, false);
+            // The stone under the surface: darker than a light tile and lighter than a dark one, like the lip of a crack.
             var stone = Material(new Color(.42f, .43f, .42f));
-            rubbleScale = new Vector3[14];
-            for (int i = 0; i < rubbleScale.Length; i++)
+            // The spot a chip left is a shallow pit in shadow, a shade darker than the stone.
+            var pit = Material(new Color(.27f, .28f, .28f));
+            for (int i = 0; i < plans.Count; i++)
             {
-                rubbleScale[i] = new Vector3(.05f + .08f * Next(), .03f + .04f * Next(), .05f + .08f * Next());
-                var chip = Box($"Rubble_{i}", world.transform, new Vector3(Next() * 7.2f - 3.6f, .02f, Next() * 7.2f - 3.6f), rubbleScale[i], i % 2 == 0 ? stone : edgeMaterial);
-                chip.localRotation = Quaternion.Euler(Next() * 30 - 15, Next() * 360, Next() * 30 - 15);
-                rubble.Add(chip);
+                var plan = plans[i]; var surface = surfaces[i];
+                var origin = new Vector3(plan.Centre.x, 0, plan.Centre.y);
+                var root = new GameObject($"Chip_{i}").transform; root.SetParent(parent, false); root.localPosition = origin;
+                float top;
+                if (surface.Parts.Count > 0)
+                {
+                    // The chip's face is the board's own surface, cut out where it broke off.
+                    foreach (var (mesh, materials) in surface.Parts)
+                    {
+                        var face = new GameObject("Face", typeof(MeshFilter), typeof(MeshRenderer));
+                        face.transform.SetParent(root, false);
+                        face.GetComponent<MeshFilter>().sharedMesh = mesh; face.GetComponent<MeshRenderer>().sharedMaterials = materials;
+                    }
+                    top = surface.Low;
+                    // The broken sides are bare stone, lighter than the board's dark core, so the flake's edge catches the eye.
+                    AddPrism(root, "Core", plan.Outline, origin, top - .0005f, top - .002f, top - plan.Thickness, stone);
+                }
+                else
+                {
+                    // A board of plain cells: the chip is a slab of the tile it came off.
+                    top = 0;
+                    int x = Mathf.FloorToInt(plan.Centre.x + 4), z = Mathf.FloorToInt(plan.Centre.y + 4);
+                    AddPrism(root, "Core", plan.Outline, origin, top, top, top - plan.Thickness, (x + z) % 2 == 0 ? tileDark : tileLight);
+                }
+                // Where it broke off, the stone underneath shows: a little smaller than the chip, just over the surface.
+                float scarY = (surface.Parts.Count > 0 ? surface.High : top) + .0015f;
+                var scarOutline = plan.Outline.Select(p => plan.Centre + (p - plan.Centre) * .85f).ToList();
+                var scar = new GameObject($"Scar_{i}").transform; scar.SetParent(parent, false); scar.localPosition = origin;
+                AddPrism(scar, "Scar", scarOutline, origin, scarY, scarY, scarY - .001f, pit);
+                // It lands with most of its thickness above the surface and lies nearly flat, so no edge hangs in the air.
+                var destination = new Vector3(plan.Destination.x, plan.Thickness * .65f, plan.Destination.y);
+                var turn = Quaternion.Euler(0, plan.Yaw, 0) * Quaternion.Euler(plan.Tilt.x, 0, plan.Tilt.y);
+                chips.Add(new Chip { Root = root, Scar = scar, From = origin, To = destination, Turn = turn, Delay = plan.Delay });
             }
+        }
+        private void AddPrism(Transform parent, string label, List<Vector2> outline, Vector3 origin, float wallTop, float lidTop, float bottom, Material material)
+        {
+            var mesh = Prism($"{label} {parent.name}", outline, origin, wallTop, lidTop, bottom); resources.Add(mesh);
+            var item = new GameObject(label, typeof(MeshFilter), typeof(MeshRenderer));
+            item.transform.SetParent(parent, false);
+            item.GetComponent<MeshFilter>().sharedMesh = mesh; item.GetComponent<MeshRenderer>().sharedMaterial = material;
+        }
+        /// <summary>
+        /// Where chips break off: on cracks the crack map always draws by the second break (the outlines near the impact
+        /// and the seams of fragments that settle), mostly near the impact. A few large chips, many small ones.
+        /// </summary>
+        private static List<ChipPlan> ChipLayout()
+        {
+            var random = new System.Random(61);
+            float Next() => (float)random.NextDouble();
+            var outlines = FragmentOutlines();
+            var centroids = outlines.Select(o => o.Aggregate(Vector2.zero, (sum, p) => sum + p) / o.Count).ToList();
+            long Key(Vector2 p) => (long)Mathf.RoundToInt((p.x + 8) * 500) * 100000 + Mathf.RoundToInt((p.y + 8) * 500);
+            var sides = new Dictionary<long, (Vector2 a, Vector2 b, List<int> fragments)>();
+            for (int f = 0; f < outlines.Count; f++)
+                for (int i = 0; i < outlines[f].Count; i++)
+                {
+                    Vector2 a = outlines[f][i], b = outlines[f][(i + 1) % outlines[f].Count], middle = (a + b) / 2;
+                    if (Mathf.Max(Mathf.Abs(middle.x), Mathf.Abs(middle.y)) > FragmentHalf - .01f || (b - a).sqrMagnitude < .01f) continue;
+                    long ka = Key(a), kb = Key(b), key = System.Math.Min(ka, kb) * 10000000000L + System.Math.Max(ka, kb);
+                    if (!sides.TryGetValue(key, out var edge)) sides[key] = edge = (a, b, new List<int>());
+                    edge.fragments.Add(f);
+                }
+            var candidates = new List<(Vector2 a, Vector2 b, int settling, float weight)>();
+            foreach (var (a, b, fragments) in sides.Values)
+            {
+                var settling = fragments.Where(FragmentSettles).ToList();
+                float radius = ((a + b) / 2).magnitude;
+                if (settling.Count == fragments.Count || (radius >= 1.5f && settling.Count == 0)) continue;
+                candidates.Add((a, b, settling.Count > 0 ? settling[0] : -1, Mathf.Exp(-radius / 1.2f) * (b - a).magnitude));
+            }
+            float total = candidates.Sum(c => c.weight);
+            var plans = new List<ChipPlan>();
+            for (int n = 0; n < 36; n++)
+            {
+                float pick = Next() * total; var edge = candidates[candidates.Count - 1];
+                foreach (var c in candidates) { if (pick < c.weight) { edge = c; break; } pick -= c.weight; }
+                Vector2 along = (edge.b - edge.a).normalized, across = new Vector2(-along.y, along.x);
+                var at = Vector2.Lerp(edge.a, edge.b, .15f + .7f * Next());
+                // Away from a fragment that settles: a chip on it would be left in the air.
+                float side = edge.settling >= 0 ? -Mathf.Sign(Vector2.Dot(centroids[edge.settling] - at, across)) : Next() < .5f ? -1 : 1;
+                float radius = .028f + .1f * Mathf.Pow(Next(), 2), stretch = Mathf.Sqrt(1 + .8f * Next());
+                var centre = at + across * side * radius * .5f;
+                var corners = new List<Vector2>();
+                int count = 5 + random.Next(3); float turn = Next() * Mathf.PI * 2;
+                for (int k = 0; k < count; k++)
+                {
+                    float angle = turn + (k + (Next() - .5f) * .5f) * Mathf.PI * 2 / count, reach = radius * (.75f + .25f * Next());
+                    // Longer along the crack than across it: a chip splits off the edge.
+                    corners.Add(centre + along * (Mathf.Cos(angle) * reach * stretch) + across * (Mathf.Sin(angle) * reach / stretch));
+                }
+                var outline = ConvexHull(corners);
+                float lean = 3 + 4 * Next(), lean2 = Next() * Mathf.PI * 2;
+                plans.Add(new ChipPlan
+                {
+                    Outline = outline, Centre = centre,
+                    Destination = centre + across * side * (.04f + .11f * Next()) + along * ((Next() - .5f) * .06f),
+                    Low = new Vector2(outline.Min(p => p.x), outline.Min(p => p.y)), High = new Vector2(outline.Max(p => p.x), outline.Max(p => p.y)),
+                    // Flakes: thin for their size.
+                    Thickness = Mathf.Max(.01f, radius * (.28f + .17f * Next())),
+                    Yaw = (Next() - .5f) * 140, Tilt = new Vector2(Mathf.Cos(lean2), Mathf.Sin(lean2)) * lean,
+                    // Near the impact first.
+                    Delay = .5f * Mathf.Clamp01(centre.magnitude / 2.5f),
+                });
+            }
+            return plans;
+        }
+        // Counter-clockwise seen from above, as Clip and Prism expect.
+        private static List<Vector2> ConvexHull(List<Vector2> points)
+        {
+            var sorted = points.OrderBy(p => p.x).ThenBy(p => p.y).ToList();
+            float Cross(Vector2 o, Vector2 a, Vector2 b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+            var hull = new List<Vector2>();
+            for (int pass = 0; pass < 2; pass++)
+            {
+                int start = hull.Count;
+                foreach (var p in sorted)
+                {
+                    while (hull.Count >= start + 2 && Cross(hull[hull.Count - 2], hull[hull.Count - 1], p) <= 0) hull.RemoveAt(hull.Count - 1);
+                    hull.Add(p);
+                }
+                hull.RemoveAt(hull.Count - 1);
+                sorted.Reverse();
+            }
+            return hull;
+        }
+        private sealed class ChipSurface { public readonly List<(Mesh mesh, Material[] materials)> Parts = new List<(Mesh, Material[])>(); public float Low = float.MaxValue, High = float.MinValue; }
+        /// <summary>Cuts each chip's outline out of the delivered board's playing surface, with its own UVs and materials.</summary>
+        private ChipSurface[] CutChipSurfaces(List<ChipPlan> plans)
+        {
+            var result = plans.Select(_ => new ChipSurface()).ToArray();
+            if (boardModel == null) return result;
+            var polygon = new List<ShardVertex>(12); var scratch = new List<ShardVertex>(12);
+            foreach (var filter in boardModel.GetComponentsInChildren<MeshFilter>(true))
+            {
+                var source = filter.sharedMesh; var renderer = filter.GetComponent<MeshRenderer>();
+                if (source == null || !source.isReadable || renderer == null) continue;
+                var toBoard = world.transform.worldToLocalMatrix * filter.transform.localToWorldMatrix;
+                var normalToBoard = toBoard.inverse.transpose;
+                var positions = source.vertices; var normals = source.normals; var uvs = source.uv;
+                bool hasNormals = normals.Length == positions.Length, hasUv = uvs.Length == positions.Length;
+                for (int v = 0; v < positions.Length; v++)
+                {
+                    positions[v] = toBoard.MultiplyPoint3x4(positions[v]);
+                    if (hasNormals) normals[v] = normalToBoard.MultiplyVector(normals[v]).normalized;
+                }
+                ShardVertex Vertex(int index) => new ShardVertex { Position = positions[index],
+                    Normal = hasNormals ? normals[index] : Vector3.up, Uv = hasUv ? uvs[index] : Vector2.zero };
+                var builders = new ShardBuilder[plans.Count];
+                for (int sub = 0; sub < source.subMeshCount; sub++)
+                {
+                    var triangles = source.GetTriangles(sub);
+                    for (int t = 0; t < triangles.Length; t += 3)
+                    {
+                        ShardVertex a = Vertex(triangles[t]), b = Vertex(triangles[t + 1]), c = Vertex(triangles[t + 2]);
+                        // The playing surface only: not the rim's sides, nor faces deep in the board that also look up.
+                        if (a.Normal.y < .5f || b.Normal.y < .5f || c.Normal.y < .5f) continue;
+                        if (Mathf.Min(a.Position.y, Mathf.Min(b.Position.y, c.Position.y)) < -PlateDepth) continue;
+                        float minX = Mathf.Min(a.Position.x, Mathf.Min(b.Position.x, c.Position.x)), maxX = Mathf.Max(a.Position.x, Mathf.Max(b.Position.x, c.Position.x));
+                        float minZ = Mathf.Min(a.Position.z, Mathf.Min(b.Position.z, c.Position.z)), maxZ = Mathf.Max(a.Position.z, Mathf.Max(b.Position.z, c.Position.z));
+                        for (int p = 0; p < plans.Count; p++)
+                        {
+                            var plan = plans[p];
+                            if (maxX < plan.Low.x || minX > plan.High.x || maxZ < plan.Low.y || minZ > plan.High.y) continue;
+                            polygon.Clear(); polygon.Add(a); polygon.Add(b); polygon.Add(c);
+                            var outline = plan.Outline;
+                            for (int e = 0; e < outline.Count && polygon.Count >= 3; e++)
+                            {
+                                Vector2 from = outline[e], along = outline[(e + 1) % outline.Count] - from;
+                                Clip(polygon, scratch, along.y, -along.x, along.y * from.x - along.x * from.y);
+                            }
+                            if (polygon.Count < 3) continue;
+                            foreach (var corner in polygon) { result[p].Low = Mathf.Min(result[p].Low, corner.Position.y); result[p].High = Mathf.Max(result[p].High, corner.Position.y); }
+                            (builders[p] ?? (builders[p] = new ShardBuilder(source.subMeshCount))).Add(polygon, sub, new Vector3(plan.Centre.x, 0, plan.Centre.y));
+                        }
+                    }
+                }
+                for (int p = 0; p < plans.Count; p++)
+                {
+                    if (builders[p] == null) continue;
+                    var mesh = builders[p].Build($"Chip {p} {source.name}", hasUv); resources.Add(mesh);
+                    result[p].Parts.Add((mesh, renderer.sharedMaterials));
+                }
+            }
+            return result;
         }
         private GameObject lightBlades;
         private Material bladeMaterial;
@@ -406,13 +607,18 @@ namespace StringAsASword.Presentation
                 cellPieces[i].localScale = cellScale[i] * scale;
                 cellPieces[i].gameObject.SetActive(shown);
             }
-            for (int i = 0; i < rubble.Count; i++)
+            // Chips break out of the cracks near the impact first, hop and slide aside. They all lie in the middle,
+            // which comes apart once the king falls: there they go with it.
+            float chipKeep = 1 - Mathf.Max(gap, burst > 0 ? 1 : 0);
+            foreach (var chip in chips)
             {
-                // Chips lying on pieces that move would be left in the air.
-                Vector3 at = rubble[i].localPosition;
-                float keep = Mathf.Max(Mathf.Abs(at.x), Mathf.Abs(at.z)) < FragmentHalf + .1f ? 1 - Mathf.Max(gap, burst > 0 ? 1 : 0) : 1;
-                rubble[i].localScale = rubbleScale[i] * (settle * keep);
-                rubble[i].gameObject.SetActive(settle * keep > 0);
+                float k = Mathf.SmoothStep(0, 1, Mathf.Clamp01((settle - chip.Delay) / .35f));
+                bool shown = k > 0 && chipKeep > 0;
+                chip.Root.gameObject.SetActive(shown); chip.Scar.gameObject.SetActive(shown);
+                if (!shown) continue;
+                chip.Root.localPosition = Vector3.Lerp(chip.From, chip.To, k) + Vector3.up * (.05f * Mathf.Sin(Mathf.PI * k));
+                chip.Root.localRotation = Quaternion.Slerp(Quaternion.identity, chip.Turn, k);
+                chip.Root.localScale = Vector3.one * chipKeep;
             }
         }
         /// <summary>Song end: 0..1, the centre of the board is thrown out and the hole of light opens.</summary>
