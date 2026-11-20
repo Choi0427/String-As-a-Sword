@@ -79,8 +79,16 @@ namespace StringAsASword.Tests
             board.SetBreak(1);
             Assert.That(cracks.gameObject.activeSelf, Is.True);
             Assert.That(boardWorld.Find("Board Model").gameObject.activeSelf, Is.True);
+            Assert.That(board.ChipsMoved, Is.Zero, "no chips break off at the first break");
             board.SetBreak(2);
             Assert.That(boardWorld.Find("Board Model").gameObject.activeSelf, Is.False);
+            // At the second, chips of the surface break out of the cracks and lie beside them.
+            Assert.That(board.ChipCount, Is.GreaterThan(0));
+            Assert.That(board.ChipsMoved, Is.EqualTo(board.ChipCount), "every chip has left the spot it broke from");
+            // The stand-in cube only covers the middle of the board; chips over it take their face from its top.
+            int faces = 0;
+            foreach (var filter in boardWorld.Find("Board Chips").GetComponentsInChildren<MeshFilter>()) if (filter.name == "Face") faces++;
+            Assert.That(faces, Is.GreaterThan(0), "a chip's face is cut from the board's own surface");
             // The outer 48 cells stay whole cells; the middle 4x4 is cut into angular fragments.
             var shards = boardWorld.Find("Board Shards");
             Assert.That(shards.Find("Shard_0_0"), Is.Not.Null);
