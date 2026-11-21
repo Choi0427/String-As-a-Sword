@@ -13,7 +13,7 @@ namespace StringAsASword.Tests
 {
     public sealed class GameFlowTests
     {
-        private bool hadCleared, hadPrologue, originalBackground;
+        private bool hadCleared, hadTutorial, originalBackground;
         private InputSettings.BackgroundBehavior originalInputBackground;
 #if UNITY_EDITOR
         private InputSettings.EditorInputBehaviorInPlayMode originalEditorInput;
@@ -25,7 +25,7 @@ namespace StringAsASword.Tests
         {
             // The player's saved clear must survive the tests.
             hadCleared = GameFlow.Cleared; GameFlow.ResetCleared();
-            hadPrologue = GameFlow.PrologueSeen;
+            hadTutorial = GameFlow.TutorialSeen;
             originalBackground = Application.runInBackground; Application.runInBackground = true;
             originalInputBackground = InputSystem.settings.backgroundBehavior;
             InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
@@ -46,7 +46,7 @@ namespace StringAsASword.Tests
             if (keyboard != null) InputSystem.RemoveDevice(keyboard);
             foreach (var existing in externalKeyboards) if (existing.added) InputSystem.EnableDevice(existing);
             if (hadCleared) GameFlow.MarkCleared(); else GameFlow.ResetCleared();
-            if (hadPrologue) GameFlow.MarkPrologueSeen(); else GameFlow.ResetPrologueSeen();
+            if (hadTutorial) GameFlow.MarkTutorialSeen(); else GameFlow.ResetTutorialSeen();
             InputSystem.settings.backgroundBehavior = originalInputBackground;
 #if UNITY_EDITOR
             InputSystem.settings.editorInputBehaviorInPlayMode = originalEditorInput;
@@ -96,7 +96,7 @@ namespace StringAsASword.Tests
         }
         [UnityTest] public IEnumerator StartOpensWithThePrologueTheFirstTimeAndEscSkipsToTheTutorialThenTheCountIn()
         {
-            GameFlow.ResetPrologueSeen();
+            GameFlow.ResetTutorialSeen();
             yield return LoadAndWait(GameFlow.MenuScene);
             var menu = Object.FindAnyObjectByType<MainMenuView>();
             Assert.That(menu.ItemCount, Is.EqualTo(3), "시작, 설정, 종료.");
@@ -112,21 +112,25 @@ namespace StringAsASword.Tests
             Assert.That(game.Tutorial.Playing);
             Assert.That(game.InTutorialBattle);
             Assert.That(game.View.ContentRect.GetComponent<CanvasGroup>().alpha, Is.EqualTo(1));
-            Assert.That(GameFlow.PrologueSeen);
+            Assert.That(GameFlow.TutorialSeen, Is.False);
             yield return Press(Key.Escape);
             Assert.That(game.State, Is.EqualTo(PrototypeState.CountIn), "Skipping the tutorial goes to the usual count-in.");
             Assert.That(game.Tutorial.Playing, Is.False);
             Assert.That(game.InTutorialBattle, Is.False);
+            Assert.That(GameFlow.TutorialSeen, "Skipped counts as done: next time the prologue leads to the song.");
             LogAssert.NoUnexpectedReceived();
         }
-        [UnityTest] public IEnumerator OnceSeenStartGoesStraightToTheBattleAndSettingsReplayTheTutorial()
+        [UnityTest] public IEnumerator AfterTheTutorialStartStillOpensWithThePrologueAndSettingsReplayTheTutorial()
         {
-            GameFlow.MarkPrologueSeen();
+            GameFlow.MarkTutorialSeen();
             yield return LoadAndWait(GameFlow.MenuScene);
             Object.FindAnyObjectByType<MainMenuView>().Activate(MainMenuView.StartItem);
             yield return UntilScene(GameFlow.BattleScene, 10);
             var game = Object.FindAnyObjectByType<PrototypeGame>();
-            Assert.That(game.State, Is.EqualTo(PrototypeState.CountIn), "No prologue and no tutorial the second time.");
+            Assert.That(game.State, Is.EqualTo(PrototypeState.Prologue), "시작 always opens with the prologue.");
+            Assert.That(game.TutorialFollowsPrologue, Is.False, "the tutorial only follows it the first time");
+            yield return Press(Key.Escape);
+            Assert.That(game.State, Is.EqualTo(PrototypeState.CountIn), "Without the tutorial, skipping goes to the count-in.");
             // From the pause screen's settings: the run is dropped for the tutorial.
             game.PauseSession(); yield return null;
             game.View.Screens.Settings.RequestTutorial(); yield return null;
@@ -143,7 +147,7 @@ namespace StringAsASword.Tests
         }
         [UnityTest] public IEnumerator JTearsTheStringOnTheBeatAndTheTutorialTakesOverOnTheDownbeat()
         {
-            GameFlow.ResetPrologueSeen();
+            GameFlow.ResetTutorialSeen();
             yield return LoadAndWait(GameFlow.MenuScene);
             GameFlow.StartBattle(prologue: true);
             yield return UntilScene(GameFlow.BattleScene, 10);
@@ -167,7 +171,6 @@ namespace StringAsASword.Tests
             Assert.That(game.SongClockOrigin, Is.EqualTo(handover + TutorialDirector.LeadBeats * game.Timeline.SecondsPerBeat).Within(1e-6));
             Assert.That(game.Tutorial.Letterbox.Visible, "The letterbox stays on into the tutorial.");
             Assert.That(game.View.ContentRect.GetComponent<CanvasGroup>().alpha, Is.EqualTo(1));
-            Assert.That(GameFlow.PrologueSeen);
             LogAssert.NoUnexpectedReceived();
         }
         [UnityTest] public IEnumerator EpilogueLetsTheKnightRoamToTheNoiseThenTheCutsceneReturnsToAWhiteMenu()

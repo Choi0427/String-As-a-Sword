@@ -12,7 +12,7 @@ namespace StringAsASword.Presentation
     /// <summary>
     /// Main menu from the Figma frame "Main Menu" (1920x1080): background art, 시작 / 설정 / 종료, footer credit.
     /// After a clear the left side of the art is inverted to white (the chessboard stays).
-    /// 시작 opens with the prologue and the tutorial the first time and goes straight to the battle after that.
+    /// 시작 always opens with the prologue; the first time the tutorial follows it, later the song does.
     /// Settings > 튜토리얼 plays the tutorial again, then the song.
     /// </summary>
     public sealed class MainMenuView : MonoBehaviour
@@ -116,8 +116,8 @@ namespace StringAsASword.Presentation
         public void Activate(int index)
         {
             if (leaving) return;
-            // The story cards are retired: the prologue tells the same story on the first run.
-            if (index == StartItem) Leave(!GameFlow.PrologueSeen);
+            // The story cards are retired: the prologue tells the same story every time 시작 is pressed.
+            if (index == StartItem) Leave(prologue: true);
             else if (index == SettingsItem) settings.Open();
             else
             {

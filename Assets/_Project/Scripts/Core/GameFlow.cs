@@ -15,7 +15,7 @@ namespace StringAsASword.Core
         public const string MenuScene = "MainMenu", BattleScene = "RhythmPrototype";
         private const string ClearedKey = "StringAsASword.Cleared", VolumeKey = "StringAsASword.MusicVolume",
             InputKey = "StringAsASword.InputOffsetMs", VisualKey = "StringAsASword.VisualOffsetMs", DevKey = "StringAsASword.DevMode",
-            HpStyleKey = "StringAsASword.PlayerHpStyle", PrologueKey = "StringAsASword.PrologueSeen";
+            HpStyleKey = "StringAsASword.PlayerHpStyle", TutorialKey = "StringAsASword.TutorialSeen";
 
         /// <summary>Set by the menu so the battle starts its count-in without the ready overlay.</summary>
         public static bool AutoStartBattle { get; private set; }
@@ -28,10 +28,13 @@ namespace StringAsASword.Core
         public static void MarkCleared() { PlayerPrefs.SetInt(ClearedKey, 1); PlayerPrefs.Save(); }
         public static void ResetCleared() { PlayerPrefs.DeleteKey(ClearedKey); PlayerPrefs.Save(); }
 
-        /// <summary>The prologue has been seen (played through or skipped) once: 시작 then goes straight to the battle.</summary>
-        public static bool PrologueSeen => PlayerPrefs.GetInt(PrologueKey, 0) == 1;
-        public static void MarkPrologueSeen() { PlayerPrefs.SetInt(PrologueKey, 1); PlayerPrefs.Save(); }
-        public static void ResetPrologueSeen() { PlayerPrefs.DeleteKey(PrologueKey); PlayerPrefs.Save(); }
+        /// <summary>
+        /// The tutorial has been done (or skipped) once. 시작 always opens with the prologue; only until then is it followed by
+        /// the tutorial, and after it the prologue hands over straight to the song. Settings > 튜토리얼 plays it again any time.
+        /// </summary>
+        public static bool TutorialSeen => PlayerPrefs.GetInt(TutorialKey, 0) == 1;
+        public static void MarkTutorialSeen() { PlayerPrefs.SetInt(TutorialKey, 1); PlayerPrefs.Save(); }
+        public static void ResetTutorialSeen() { PlayerPrefs.DeleteKey(TutorialKey); PlayerPrefs.Save(); }
 
         /// <summary>Multiplier on the song's own volume, 0..1.</summary>
         public static float MusicVolume

@@ -93,13 +93,14 @@ namespace StringAsASword.Presentation
             blackMarble = Marble(new Color(.075f, .075f, .085f), new Color(.30f, .30f, .32f), 11);
             BuildLayer(); BuildPieces(); BuildMarks(); BuildStrings(); BuildBossAndCrown(); BuildNoise(); BuildEffects();
             BuildAudio();
-            PredictNoise();
         }
 
         // ---------------------------------------------------------------- control
         public void Play()
         {
             Build();
+            // Whether the tutorial follows can change between prologues, and with it where the landed noise goes.
+            PredictNoise();
             playing = true; seek = -1; tearIntroBeat = -1; story = 0;
             origin = AudioSettings.dspTime + .35;
             nextEvent = 0; nextBar = 0; nextAfter = 0;
