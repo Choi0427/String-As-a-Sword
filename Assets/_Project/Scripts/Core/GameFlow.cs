@@ -15,7 +15,8 @@ namespace StringAsASword.Core
         public const string MenuScene = "MainMenu", BattleScene = "RhythmPrototype";
         private const string ClearedKey = "StringAsASword.Cleared", VolumeKey = "StringAsASword.MusicVolume",
             InputKey = "StringAsASword.InputOffsetMs", VisualKey = "StringAsASword.VisualOffsetMs", DevKey = "StringAsASword.DevMode",
-            HpStyleKey = "StringAsASword.PlayerHpStyle", PrologueKey = "StringAsASword.PrologueSeen";
+            HpStyleKey = "StringAsASword.PlayerHpStyle", PrologueKey = "StringAsASword.PrologueSeen",
+            TutorialKey = "StringAsASword.TutorialHints";
 
         /// <summary>Set by the menu so the battle starts its count-in without the ready overlay.</summary>
         public static bool AutoStartBattle { get; private set; }
@@ -30,6 +31,17 @@ namespace StringAsASword.Core
         public static bool PrologueSeen => PlayerPrefs.GetInt(PrologueKey, 0) == 1;
         public static void MarkPrologueSeen() { PlayerPrefs.SetInt(PrologueKey, 1); PlayerPrefs.Save(); }
         public static void ResetPrologueSeen() { PlayerPrefs.DeleteKey(PrologueKey); PlayerPrefs.Save(); }
+
+        /// <summary>
+        /// The battle tutorial's prompts (간주1, and the second guard and slash in 벌스1). Until the player sets it in Settings
+        /// it follows the first clear: on before it, off after (intro review D5-B).
+        /// </summary>
+        public static bool TutorialHints
+        {
+            get => PlayerPrefs.HasKey(TutorialKey) ? PlayerPrefs.GetInt(TutorialKey) == 1 : !Cleared;
+            set { PlayerPrefs.SetInt(TutorialKey, value ? 1 : 0); PlayerPrefs.Save(); }
+        }
+        public static void ResetTutorialHints() { PlayerPrefs.DeleteKey(TutorialKey); PlayerPrefs.Save(); }
 
         /// <summary>Multiplier on the song's own volume, 0..1.</summary>
         public static float MusicVolume

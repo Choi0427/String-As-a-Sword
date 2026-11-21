@@ -101,6 +101,13 @@ namespace StringAsASword.Editor
                 if (breaksSafe.Count > 0)
                     Report(true, a.Shape.HasAnchor ? $"{breaks} 출발 칸 {breaksSafe.Count}개: {Cells(breaksSafe)}" : breaks);
             }
+            foreach (var n in chart.NoiseSpawns)
+            {
+                void Report(bool error, string message) => result.Findings.Add(new Finding { Note = n.Note, Line = n.Line,
+                    Shape = "noise", Section = chart.SectionAt(n.Note), Message = message, Error = error });
+                if (n.Note >= settings.NoteCount) Report(true, $"noise 노트({n.Note})가 곡 노트 수({settings.NoteCount})를 넘어요.");
+                else if (settings.HasFinale && n.Note >= settings.FinishNote) Report(false, $"noise가 피날레 노트({settings.FinishNote}) 이후예요.");
+            }
             return result;
         }
 

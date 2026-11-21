@@ -63,7 +63,12 @@ namespace StringAsASword.Core
             Release();
             if (!Check(game.State == PrototypeState.CountIn, "Space did not start the session.")) yield break;
             yield return UntilTime(.05);
-            if (!Check(game.State == PrototypeState.Playing && game.CurrentBeat >= 0 && game.Noise.Pickups.Count == 1, "Count-in did not advance into gameplay.")) yield break;
+            if (!Check(game.State == PrototypeState.Playing && game.CurrentBeat >= 0, "Count-in did not advance into gameplay.")) yield break;
+            // The chart may place the first noise itself (the tutorial's `noise` line); otherwise it spawns on note 0.
+            var chart = game.Battle.Settings.Chart;
+            int firstNoise = chart != null && chart.NoiseSpawns.Count > 0 ? chart.NoiseSpawns[0].Note : 0;
+            yield return UntilTime(game.Timeline.TimeOf(firstNoise) + .05);
+            if (!Check(game.Noise.Pickups.Count == 1, "The first noise did not spawn.")) yield break;
             if (game.Song.Music != null)
             {
                 bool musicPlaying = false;
@@ -72,7 +77,7 @@ namespace StringAsASword.Core
                 if (!Check(musicPlaying, "Scheduled music is not playing.")) yield break;
             }
             var target = game.Noise.Pickups[0].Cell;
-            int beat = 1;
+            int beat = firstNoise + 1;
             while (!game.Session.Position.Equals(target))
             {
                 var cell = game.Session.Position;

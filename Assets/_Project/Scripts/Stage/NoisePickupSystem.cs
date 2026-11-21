@@ -46,12 +46,22 @@ namespace StringAsASword.Stage
         public bool GoalReached => Collected >= Required;
         public event Action<NoisePickup> Spawned;
         public event Action<NoisePickup> CollectedPickup;
+        private readonly List<BossChartNoise> scripted = new List<BossChartNoise>();
 
         public NoisePickupSystem(BoardState board, int interval = 8, int capacity = 2)
         {
             if (interval < 1 || capacity < 1) throw new ArgumentOutOfRangeException(nameof(interval));
             this.board = board; this.interval = interval; this.capacity = capacity;
             Pickups = pickups.AsReadOnly();
+        }
+        /// <summary>
+        /// Spawns written into the boss chart (`noise N dx,dy`, ordered by note). Until the first one no random noise
+        /// spawns; each lands at the knight's cell + (dx, dy) without using the random generator. Kept across resets.
+        /// </summary>
+        public void SetScripted(IReadOnlyList<BossChartNoise> spawns)
+        {
+            scripted.Clear();
+            if (spawns != null) scripted.AddRange(spawns);
         }
         public void Reset(int sessionId, int seed, int required)
         {
@@ -71,11 +81,57 @@ namespace StringAsASword.Stage
             while (lastBeat < beat)
             {
                 int current = ++lastBeat;
-                bool due = current == initialSpawnBeat || current % interval == 0 || deferredBeat >= 0 && current > deferredBeat;
+                var script = ScriptedAt(current);
+                // A scripted first noise (the tutorial's) replaces the random ones before it.
+                bool waitingForScript = scripted.Count > 0 && current < scripted[0].Note;
+                bool due = !waitingForScript && (current == initialSpawnBeat || current % interval == 0 || deferredBeat >= 0 && current > deferredBeat);
                 if (GoalReached) continue;
-                if (SpawnBlocked != null && SpawnBlocked()) { held |= due; continue; }
-                if (due || held) { held = false; Spawn(current, player); }
+                if (SpawnBlocked != null && SpawnBlocked())
+                {
+                    held |= due;
+                    if (script != null) SpawnStatus?.Invoke("scripted-blocked", current);
+                    continue;
+                }
+                if (script != null) { held = false; SpawnScripted(current, player, script); }
+                else if (due || held) { held = false; Spawn(current, player); }
             }
+        }
+        private BossChartNoise ScriptedAt(int beat)
+        {
+            foreach (var s in scripted) if (s.Note == beat) return s;
+            return null;
+        }
+        private void SpawnScripted(int beat, GridPosition player, BossChartNoise script)
+        {
+            if (pickups.Count >= capacity) { SpawnStatus?.Invoke("capacity", beat); return; }
+            var cell = ScriptedCell(player, script.Dx, script.Dy);
+            var item = new NoisePickup(++nextId, SessionId, PhaseId, beat, cell);
+            pickups.Add(item); Spawned?.Invoke(item);
+        }
+        /// <summary>
+        /// Where a scripted noise lands: the knight's cell + (dx, dy); if that is off the board or taken, + (dx, -dy);
+        /// failing both, the free cell nearest the intended one (scan order breaks ties).
+        /// </summary>
+        public GridPosition ScriptedCell(GridPosition player, int dx, int dy)
+        {
+            var wanted = new GridPosition(player.X + dx, player.Y + dy);
+            if (Free(wanted, player)) return wanted;
+            var mirrored = new GridPosition(player.X + dx, player.Y - dy);
+            if (Free(mirrored, player)) return mirrored;
+            GridPosition best = player; int bestDistance = int.MaxValue;
+            for (int y = 0; y < board.Height; y++) for (int x = 0; x < board.Width; x++)
+            {
+                var cell = new GridPosition(x, y);
+                int distance = Math.Abs(x - wanted.X) + Math.Abs(y - wanted.Y);
+                if (distance < bestDistance && Free(cell, player)) { best = cell; bestDistance = distance; }
+            }
+            return best;
+        }
+        private bool Free(GridPosition cell, GridPosition player)
+        {
+            if (cell.X < 0 || cell.Y < 0 || cell.X >= board.Width || cell.Y >= board.Height || cell.Equals(player)) return false;
+            foreach (var pickup in pickups) if (pickup.Cell.Equals(cell)) return false;
+            return true;
         }
         private void Spawn(int beat, GridPosition player)
         {

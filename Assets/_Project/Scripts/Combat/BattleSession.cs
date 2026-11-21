@@ -119,6 +119,8 @@ namespace StringAsASword.Combat
         public void Reset(int sessionId, int seed)
         {
             Seed = seed; Records.Clear(); Events.Clear(); Inputs.Clear(); accepted = null;
+            // Read with the attacks below, so a chart swapped in between runs takes its noise lines along.
+            Noise.SetScripted(Settings.Chart?.NoiseSpawns);
             Session.Reset(); music.Reset(); Combat.Reset(); Resonance.Reset(); Phases.Reset(sessionId, seed);
             PlayerHp = Settings.PlayerMaxHp; Outcome = BattleOutcome.Running;
             KingStunned = false; StunnedNote = -1;

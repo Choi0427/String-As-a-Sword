@@ -49,6 +49,8 @@ namespace StringAsASword.Core
         public event System.Action FinaleStarted, EpilogueStarted;
         public event System.Action<PlayerActionKind> FinaleTap;
         public ScheduledSongAudio Audio => audioPlayer;
+        /// <summary>The battle tutorial's prompt (간주1).</summary>
+        public TutorialPresenter Tutorial { get; private set; }
         public PrototypeView View => view;
         private IntroDirector intro;
         /// <summary>The prologue cutscene; null when its data (Resources/Prologue) is missing.</summary>
@@ -87,6 +89,7 @@ namespace StringAsASword.Core
             FinaleEndTime = System.Math.Max(end, hold) + .8;
             FinaleStrikeTime = Timeline.TimeOf(System.Math.Min(settings.FinishNote + 2, last));
             view.gameObject.AddComponent<FinaleDirector>().Initialize(this, view);
+            Tutorial = view.gameObject.AddComponent<TutorialPresenter>(); Tutorial.Initialize(this, view);
             var prologue = Resources.Load<PrologueDefinition>(PrologueDefinition.ResourceName);
             if (prologue != null) { intro = view.gameObject.AddComponent<IntroDirector>(); intro.Initialize(this, view, prologue); }
         }

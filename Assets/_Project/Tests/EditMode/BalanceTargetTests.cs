@@ -7,6 +7,7 @@ namespace StringAsASword.Tests
 {
     // Guards the battle-10 tuning (Docs/Battle10Balance.md) against drift. Loose bands on a small sample: the measured
     // values at 1,000 seeds were intermediate clear 80%, stun median 208; the bands only catch a real change.
+    // battle-11 (Docs/Battle11Balance.md) only rewrote 간주1 as the tutorial: intermediate clear 75%, stun median 220.
     public class BalanceTargetTests
     {
         private static BattleSettings Stage() => StringAsASword.Editor.BattleAnalysis.LoadSettings();
@@ -14,7 +15,7 @@ namespace StringAsASword.Tests
         [Test] public void StageCarriesTheBattle10Values()
         {
             var s = Stage();
-            Assert.That(s.Version, Is.EqualTo("battle-10"));
+            Assert.That(s.Version, Is.EqualTo("battle-11"));
             Assert.That(s.Health, Is.EqualTo(new[] { 65, 15, 26, 100 }));
             Assert.That(new[] { s.ResonanceNotes, s.ResonancePerfect, s.ResonanceGood, s.ResonanceCadence, s.GhostDamage },
                 Is.EqualTo(new[] { 8, 3, 1, 2, 0 }));

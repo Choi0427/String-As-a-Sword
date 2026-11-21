@@ -24,7 +24,7 @@ MonoBehaviour:
   cameraElevation: 45
   playerMaxHp: 5
   maxCollectionCost: 12
-  combatVersion: battle-10
+  combatVersion: battle-11
   patterns:
   - Name: Line
     Kind: 0

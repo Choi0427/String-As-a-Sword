@@ -2,36 +2,36 @@
 곡: NORMAL1-Note_3, 노트 321개, 피날레 노트 304
 칸 표기: (줄,칸) = 그림과 같은 기준. 위에서 몇 번째 줄, 왼쪽에서 몇 번째 칸.
 
-결과: 통과. 공격 80개 중 실패 0, 경고 0.
+결과: 통과. 공격 76개 중 실패 0, 경고 0.
 
 봇 시뮬레이션 (200 시드/그룹)
-Battle action mix: battle-8+chart, 321 notes, 200 seeds per group, 1800 runs, 212.3s.
+Battle action mix: battle-11+chart, 321 notes, 200 seeds per group, 1800 runs, 59.8s.
 Shares are attack/move/guard among those three actions. Counts are mean (P10/P50/P90) per run. Fired counts each attack's first hit.
-development CollectFirst: share 43.7/46.9/9.4; attack 111.0 (111/111/111) move 119.2 (96/119/138) guard 23.9 (21/24/27) other 49.9 (30/48/75); guard ok 23.1; clear 99.5 won/dead/timeout 199/0/1; hits 0.00; leftover 48.9 (27/48/72); fired P10/mean Either 42/43.1 Guard 8/8.7 Dodge 21/27.5; invariants 0
-development AttackHold: share 43.3/43.4/13.3; attack 111.0 (111/111/111) move 111.2 (86/112/131) guard 34.0 (31/34/37) other 47.9 (27/46/75); guard ok 33.0; clear 99.0 won/dead/timeout 198/0/2; hits 0.00; leftover 45.7 (24/45/72); fired P10/mean Either 42/43.3 Guard 8/8.8 Dodge 21/28.3; invariants 0
-development MovementUse: share 42.8/47.7/9.5; attack 110.9 (111/111/111) move 123.5 (99/126/141) guard 24.7 (22/25/27) other 44.8 (24/42/71); guard ok 23.8; clear 98.0 won/dead/timeout 196/0/4; hits 0.00; leftover 40.8 (18/34/69); fired P10/mean Either 43/43.5 Guard 8/9.0 Dodge 22/29.6; invariants 0
-development ALL: share 43.3/46.0/10.7; attack 110.9 (111/111/111) move 118.0 (93/119/139) guard 27.6 (22/26/35) other 47.5 (27/47/73); guard ok 26.6; clear 98.8 won/dead/timeout 593/0/7; hits 0.00; leftover 45.1 (22/46/72); fired P10/mean Either 42/43.3 Guard 8/8.8 Dodge 21/28.5; invariants 0
-  patterns fired per run: X 3.9, 가로창살 0.4, 가운데폭발 0.4, 각잡은악수-오른 1.0, 고리-바깥 1.0, 고리-안강 1.0, 고리-중간 1.0, 구석 0.1, 깨진판-가 1.0, 깨진판-나 0.1, 나선 0.7, 나이트라이더 4.0, 나이트라이더격자 1.0, 나이트훈수+중심 1.0, 낙타얼룩말 3.8, 뒤치기 1.0, 룩-e열강 1.0, 룩가로 2.0, 룩세로강 1.0, 반쪽-오른 0.6, 반쪽-왼 0.7, 베롤리나-32 1.0, 베롤리나-54 1.0, 베롤리나-76 1.0, 블록체커-가 0.3, 블록체커-나 0.2, 비숍-검은칸 1.0, 비숍-흰칸 1.0, 비숍X추적 1.0, 세로창살-짝 0.8, 세로창살-홀 0.8, 아마존 1.9, 아치비숍 4.0, 알필다바바 4.0, 여러핀강 1.0, 오프닝1-e5 2.0, 오프닝2-Nf6 2.0, 오프닝3-Bc5 2.0, 오프닝4-캐슬링 2.0, 외길 0.4, 이중고리 0.8, 전체 8.8, 챈슬러 4.0, 킹고리강 1.0, 킹손바닥 1.0, 킹손바닥강 2.0, 폰대각-aceg 1.0, 폰대각-bdfh 1.0, 폰줄-4 1.0, 폰줄-5 1.0, 폰줄-6 1.0, 폰줄-7 1.0, 핀+대각 1.0, 핀+십자 1.0, 핀강 1.0
-holdout CollectFirst: share 43.9/46.6/9.5; attack 111.0 (111/111/111) move 117.7 (98/119/138) guard 23.9 (21/24/26) other 51.4 (31/49/72); guard ok 23.1; clear 100.0 won/dead/timeout 200/0/0; hits 0.00; leftover 50.5 (29/48/72); fired P10/mean Either 42/43.1 Guard 8/8.6 Dodge 21/27.1; invariants 0
-holdout AttackHold: share 44.3/42.4/13.4; attack 111.0 (111/111/111) move 106.2 (83/105/128) guard 33.6 (30/34/37) other 53.2 (30/52/76); guard ok 32.5; clear 100.0 won/dead/timeout 200/0/0; hits 0.00; leftover 50.6 (26/50/74); fired P10/mean Either 42/43.0 Guard 8/8.6 Dodge 21/27.1; invariants 0
-holdout MovementUse: share 43.6/46.8/9.6; attack 111.0 (111/111/111) move 118.9 (95/118/139) guard 24.4 (22/25/27) other 49.7 (26/49/75); guard ok 23.4; clear 99.5 won/dead/timeout 199/0/1; hits 0.00; leftover 45.8 (20/46/72); fired P10/mean Either 42/43.2 Guard 8/8.9 Dodge 21/28.3; invariants 0
-holdout ALL: share 43.9/45.2/10.8; attack 111.0 (111/111/111) move 114.3 (91/116/137) guard 27.3 (22/26/35) other 51.4 (29/50/75); guard ok 26.3; clear 99.8 won/dead/timeout 599/0/1; hits 0.00; leftover 49.0 (26/48/72); fired P10/mean Either 42/43.1 Guard 8/8.7 Dodge 21/27.5; invariants 0
-  patterns fired per run: X 3.8, 가로창살 0.3, 가운데폭발 0.3, 각잡은악수-오른 1.0, 고리-바깥 1.0, 고리-안강 1.0, 고리-중간 1.0, 구석 0.1, 깨진판-가 0.8, 깨진판-나 0.1, 나선 0.7, 나이트라이더 3.9, 나이트라이더격자 1.0, 나이트훈수+중심 1.0, 낙타얼룩말 3.7, 뒤치기 1.0, 룩-e열강 1.0, 룩가로 2.0, 룩세로강 1.0, 반쪽-오른 0.5, 반쪽-왼 0.6, 베롤리나-32 1.0, 베롤리나-54 1.0, 베롤리나-76 1.0, 블록체커-가 0.2, 블록체커-나 0.1, 비숍-검은칸 1.0, 비숍-흰칸 1.0, 비숍X추적 1.0, 세로창살-짝 0.7, 세로창살-홀 0.8, 아마존 1.9, 아치비숍 4.0, 알필다바바 4.0, 여러핀강 1.0, 오프닝1-e5 2.0, 오프닝2-Nf6 2.0, 오프닝3-Bc5 2.0, 오프닝4-캐슬링 2.0, 외길 0.3, 이중고리 0.8, 전체 8.7, 챈슬러 4.0, 킹고리강 1.0, 킹손바닥 1.0, 킹손바닥강 2.0, 폰대각-aceg 1.0, 폰대각-bdfh 1.0, 폰줄-4 1.0, 폰줄-5 1.0, 폰줄-6 1.0, 폰줄-7 1.0, 핀+대각 1.0, 핀+십자 1.0, 핀강 1.0
-miss5 CollectFirst: share 43.4/47.1/9.5; attack 111.0 (111/111/111) move 120.6 (102/124/137) guard 24.3 (21/24/27) other 48.1 (30/45/68); guard ok 23.2; clear 99.5 won/dead/timeout 199/0/1; hits 2.68; leftover 33.5 (15/31/51); fired P10/mean Either 43/43.9 Guard 9/9.3 Dodge 26/31.5; invariants 0
-miss5 AttackHold: share 43.6/43.1/13.3; attack 110.9 (111/111/111) move 109.5 (88/112/126) guard 33.9 (30/34/37) other 49.7 (30/47/72); guard ok 32.6; clear 97.0 won/dead/timeout 194/0/6; hits 2.71; leftover 33.9 (15/31/61); fired P10/mean Either 43/43.8 Guard 8/9.3 Dodge 25/31.4; invariants 0
-miss5 MovementUse: share 42.9/47.4/9.7; attack 110.6 (111/111/111) move 122.3 (103/123/142) guard 25.0 (21/25/29) other 46.1 (24/45/67); guard ok 23.9; clear 91.0 won/dead/timeout 182/0/18; hits 2.63; leftover 28.4 (1/27/53); fired P10/mean Either 43/44.1 Guard 9/9.5 Dodge 26/32.9; invariants 0
-miss5 ALL: share 43.3/45.9/10.8; attack 110.8 (111/111/111) move 117.5 (95/119/137) guard 27.7 (22/26/35) other 48.0 (27/46/70); guard ok 26.6; clear 95.8 won/dead/timeout 575/0/25; hits 2.67; leftover 32.0 (11/30/58); fired P10/mean Either 43/43.9 Guard 8/9.4 Dodge 26/31.9; invariants 0
-  patterns fired per run: X 4.0, 가로창살 0.7, 가운데폭발 0.7, 각잡은악수-오른 1.0, 고리-바깥 1.0, 고리-안강 1.0, 고리-중간 1.0, 구석 0.3, 깨진판-가 1.5, 깨진판-나 0.4, 나선 1.0, 나이트라이더 4.0, 나이트라이더격자 1.0, 나이트훈수+중심 1.0, 낙타얼룩말 3.9, 뒤치기 1.0, 룩-e열강 1.0, 룩가로 2.0, 룩세로강 1.0, 반쪽-오른 0.8, 반쪽-왼 0.9, 베롤리나-32 1.0, 베롤리나-54 1.0, 베롤리나-76 1.0, 블록체커-가 0.5, 블록체커-나 0.5, 비숍-검은칸 1.0, 비숍-흰칸 1.0, 비숍X추적 1.0, 세로창살-짝 1.1, 세로창살-홀 1.1, 아마존 2.0, 아치비숍 4.0, 알필다바바 4.0, 여러핀강 1.0, 오프닝1-e5 2.0, 오프닝2-Nf6 2.0, 오프닝3-Bc5 2.0, 오프닝4-캐슬링 2.0, 외길 0.7, 이중고리 1.0, 전체 9.4, 챈슬러 4.0, 킹고리강 1.0, 킹손바닥 1.0, 킹손바닥강 2.0, 폰대각-aceg 1.0, 폰대각-bdfh 1.0, 폰줄-4 1.0, 폰줄-5 1.0, 폰줄-6 1.0, 폰줄-7 1.0, 핀+대각 1.0, 핀+십자 1.0, 핀강 1.0
+development CollectFirst: share 34.0/57.2/8.8; attack 64.3 (64/64/65) move 108.3 (98/107/119) guard 16.6 (14/17/19) other 114.9 (102/114/127); guard ok 15.4; clear 100.0 won/dead/timeout 200/0/0; hits 0.00; leftover 112.0 (99/111/124); fired P10/mean Either 30/31.8 Guard 6/6.6 Dodge 14/14.9; invariants 0
+development AttackHold: share 33.5/52.7/13.8; attack 64.1 (63/64/65) move 100.9 (93/101/109) guard 26.5 (23/27/29) other 112.5 (104/111/123); guard ok 24.7; clear 100.0 won/dead/timeout 200/0/0; hits 0.00; leftover 109.4 (102/108/120); fired P10/mean Either 31/32.5 Guard 6/6.9 Dodge 14/15.1; invariants 0
+development MovementUse: share 33.9/57.2/8.8; attack 64.3 (64/64/65) move 108.4 (98/107/120) guard 16.7 (14/17/20) other 114.6 (102/114/127); guard ok 15.5; clear 100.0 won/dead/timeout 200/0/0; hits 0.00; leftover 111.8 (99/111/124); fired P10/mean Either 30/31.8 Guard 6/6.7 Dodge 14/14.9; invariants 0
+development ALL: share 33.8/55.7/10.5; attack 64.2 (64/64/65) move 105.8 (96/103/119) guard 19.9 (14/18/28) other 114.0 (103/112/126); guard ok 18.5; clear 100.0 won/dead/timeout 600/0/0; hits 0.00; leftover 111.1 (99/109/124); fired P10/mean Either 30/32.0 Guard 6/6.7 Dodge 14/15.0; invariants 0
+  patterns fired per run: X 2.0, 각잡은악수-오른 1.0, 고리-바깥 0.6, 고리-안강 0.5, 고리-중간 0.6, 나이트라이더 2.0, 나이트라이더격자 1.0, 나이트훈수+중심 1.0, 낙타얼룩말 2.0, 뒤치기 1.0, 룩가로 4.0, 룩세로강 2.0, 베롤리나-32 1.0, 베롤리나-54 1.0, 베롤리나-76 1.0, 비숍-검은칸 1.0, 비숍-흰칸 1.0, 비숍X추적 1.0, 아치비숍 2.0, 알필다바바 2.0, 여러핀강 0.4, 오프닝1-e5 1.9, 오프닝2-Nf6 2.0, 오프닝3-Bc5 2.0, 오프닝4-캐슬링 2.0, 전체 6.7, 챈슬러 4.0, 킹고리강 1.0, 킹손바닥 1.0, 킹손바닥강 2.0, 핀+대각 1.0, 핀+십자 1.0, 핀강 1.0
+holdout CollectFirst: share 33.8/57.5/8.8; attack 64.2 (63/64/65) move 109.3 (99/109/119) guard 16.7 (14/17/19) other 113.8 (102/113/126); guard ok 15.6; clear 100.0 won/dead/timeout 200/0/0; hits 0.00; leftover 110.9 (99/109/123); fired P10/mean Either 31/32.0 Guard 6/6.8 Dodge 14/15.0; invariants 0
+holdout AttackHold: share 33.4/52.9/13.7; attack 64.1 (63/64/65) move 101.5 (92/102/110) guard 26.3 (23/26/29) other 112.2 (103/110/123); guard ok 24.4; clear 100.0 won/dead/timeout 200/0/0; hits 0.00; leftover 109.0 (100/107/121); fired P10/mean Either 31/32.4 Guard 6/6.9 Dodge 14/15.2; invariants 0
+holdout MovementUse: share 33.8/57.5/8.8; attack 64.2 (63/64/65) move 109.3 (99/109/120) guard 16.7 (14/17/19) other 113.7 (102/113/126); guard ok 15.6; clear 100.0 won/dead/timeout 200/0/0; hits 0.00; leftover 110.9 (98/111/123); fired P10/mean Either 31/32.0 Guard 6/6.7 Dodge 14/15.0; invariants 0
+holdout ALL: share 33.6/55.9/10.4; attack 64.2 (63/64/65) move 106.7 (97/105/118) guard 19.9 (15/18/28) other 113.2 (103/111/125); guard ok 18.5; clear 100.0 won/dead/timeout 600/0/0; hits 0.00; leftover 110.3 (99/109/122); fired P10/mean Either 31/32.1 Guard 6/6.8 Dodge 14/15.0; invariants 0
+  patterns fired per run: X 2.0, 각잡은악수-오른 1.0, 고리-바깥 0.6, 고리-안강 0.6, 고리-중간 0.6, 나이트라이더 2.0, 나이트라이더격자 1.0, 나이트훈수+중심 1.0, 낙타얼룩말 2.0, 뒤치기 1.0, 룩가로 4.0, 룩세로강 2.0, 베롤리나-32 1.0, 베롤리나-54 1.0, 베롤리나-76 1.0, 비숍-검은칸 1.0, 비숍-흰칸 1.0, 비숍X추적 1.0, 아치비숍 2.0, 알필다바바 2.0, 여러핀강 0.5, 오프닝1-e5 1.9, 오프닝2-Nf6 2.0, 오프닝3-Bc5 2.0, 오프닝4-캐슬링 2.0, 전체 6.8, 챈슬러 4.0, 킹고리강 1.0, 킹손바닥 1.0, 킹손바닥강 2.0, 핀+대각 1.0, 핀+십자 1.0, 핀강 1.0
+miss5 CollectFirst: share 33.0/58.2/8.7; attack 63.9 (63/64/65) move 112.6 (102/111/125) guard 16.9 (14/17/20) other 108.4 (95/112/120); guard ok 15.8; clear 98.5 won/dead/timeout 197/3/0; hits 1.76; leftover 95.4 (78/99/109); fired P10/mean Either 33/33.5 Guard 7/7.2 Dodge 15/16.5; invariants 0
+miss5 AttackHold: share 33.2/53.7/13.1; attack 63.9 (63/64/65) move 103.2 (94/103/115) guard 25.2 (22/25/28) other 109.2 (96/112/120); guard ok 23.6; clear 98.0 won/dead/timeout 196/4/0; hits 1.70; leftover 96.0 (82/99/109); fired P10/mean Either 33/33.3 Guard 7/7.1 Dodge 15/16.3; invariants 0
+miss5 MovementUse: share 32.9/58.3/8.8; attack 63.8 (63/64/65) move 113.0 (102/112/124) guard 17.0 (14/17/20) other 108.0 (95/112/119); guard ok 15.8; clear 98.5 won/dead/timeout 197/3/0; hits 1.69; leftover 95.0 (78/99/109); fired P10/mean Either 33/33.5 Guard 7/7.2 Dodge 15/16.6; invariants 0
+miss5 ALL: share 33.1/56.7/10.2; attack 63.9 (63/64/65) move 109.6 (98/109/122) guard 19.7 (15/18/27) other 108.5 (95/112/120); guard ok 18.4; clear 98.3 won/dead/timeout 590/10/0; hits 1.72; leftover 95.4 (79/99/109); fired P10/mean Either 33/33.5 Guard 7/7.1 Dodge 15/16.4; invariants 0
+  patterns fired per run: X 2.1, 각잡은악수-오른 1.0, 고리-바깥 0.9, 고리-안강 0.9, 고리-중간 0.9, 나이트라이더 2.2, 나이트라이더격자 1.0, 나이트훈수+중심 1.0, 낙타얼룩말 2.0, 뒤치기 1.0, 룩가로 4.0, 룩세로강 2.0, 베롤리나-32 1.0, 베롤리나-54 1.0, 베롤리나-76 1.0, 비숍-검은칸 1.0, 비숍-흰칸 1.0, 비숍X추적 1.0, 세로창살-짝 0.0, 세로창살-홀 0.0, 아마존 0.1, 아치비숍 2.5, 알필다바바 2.4, 여러핀강 0.9, 오프닝1-e5 2.0, 오프닝2-Nf6 2.0, 오프닝3-Bc5 2.0, 오프닝4-캐슬링 2.0, 이중고리 0.0, 전체 7.1, 챈슬러 4.0, 킹고리강 1.0, 킹손바닥 1.0, 킹손바닥강 2.0, 핀+대각 1.0, 핀+십자 1.0, 핀강 1.0
 Plan criteria:
-  PASS share three-bot mean: 43.9/45.2/10.8 (target 43/43/14 +-4pp)
-  PASS share CollectFirst: 43.9/46.6/9.5 (target 43/43/14 +-8pp)
-  PASS share AttackHold: 44.3/42.4/13.4 (target 43/43/14 +-8pp)
-  PASS share MovementUse: 43.6/46.8/9.6 (target 43/43/14 +-8pp)
-  PASS clear no-miss: 99.8 (target >=90%)
-  PASS clear miss5: 95.8 (target >=80%)
-  PASS leftover median: 48 (target 10..50)
-  PASS DodgeOnly fired P10: 21 (target >=8)
-  PASS GuardOnly fired P10: 8 (target >=8)
+  FAIL share three-bot mean: 33.6/55.9/10.4 (target 43/43/14 +-4pp)
+  FAIL share CollectFirst: 33.8/57.5/8.8 (target 43/43/14 +-8pp)
+  FAIL share AttackHold: 33.4/52.9/13.7 (target 43/43/14 +-8pp)
+  FAIL share MovementUse: 33.8/57.5/8.8 (target 43/43/14 +-8pp)
+  PASS clear no-miss: 100.0 (target >=90%)
+  PASS clear miss5: 98.3 (target >=80%)
+  FAIL leftover median: 109 (target 10..50)
+  PASS DodgeOnly fired P10: 14 (target >=8)
+  FAIL GuardOnly fired P10: 6 (target >=8)
   PASS invariant failures: 0 (target 0)
   PASS replay failures: 0/18 (target 0)
-Overall: PASS
+Overall: FAIL

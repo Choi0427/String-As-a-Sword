@@ -52,19 +52,32 @@ namespace StringAsASword.Combat
         { Note = note; Shape = shape; Warning = warning; Hits = hits; Every = every; MinPhase = minPhase; Line = line; }
     }
 
+    /// <summary>`noise N dx,dy`: a noise placed on note N at the knight's cell + (dx, dy), instead of a random one.</summary>
+    public sealed class BossChartNoise
+    {
+        public int Note { get; }
+        public int Dx { get; }
+        public int Dy { get; }
+        public int Line { get; }
+        public BossChartNoise(int note, int dx, int dy, int line) { Note = note; Dx = dx; Dy = dy; Line = line; }
+    }
+
     /// <summary>
     /// The boss's attacks written by hand against the song's note numbers. See Docs/BossChart.md for the format.
-    /// Drawings are written top row first: the first line is board row y = 7, the player's start row.
+    /// Drawings are written top row first: the first line is board row y = 7, the top row the knight strikes from.
     /// </summary>
     public sealed class BossChart
     {
         private readonly List<BossChartSection> sections = new List<BossChartSection>();
         private readonly Dictionary<string, BossChartShape> shapes = new Dictionary<string, BossChartShape>();
         private readonly List<BossChartAttack> attacks = new List<BossChartAttack>();
+        private readonly List<BossChartNoise> noise = new List<BossChartNoise>();
         public IReadOnlyList<BossChartSection> Sections => sections;
         public IReadOnlyDictionary<string, BossChartShape> Shapes => shapes;
         /// <summary>Ordered by publish note, then by line.</summary>
         public IReadOnlyList<BossChartAttack> Attacks => attacks;
+        /// <summary>Scripted noise spawns, ordered by note. Before the first one no random noise spawns.</summary>
+        public IReadOnlyList<BossChartNoise> NoiseSpawns => noise;
         /// <summary>`random N`: the random scheduler takes over from note N once every chart hit has fired. -1 = chart only.</summary>
         public int RandomFrom { get; private set; } = -1;
 
@@ -120,13 +133,27 @@ namespace StringAsASword.Combat
                     chart.RandomFrom = Int(tokens[1], i + 1, "random 노트");
                     if (chart.RandomFrom < 1) throw new BossChartException(i + 1, "random 노트는 1 이상이어야 해요.");
                 }
+                else if (tokens[0] == "noise") chart.noise.Add(chart.ParseNoise(tokens, i + 1));
                 else if (char.IsDigit(tokens[0][0]) || tokens[0][0] == '-') pending.Add((i + 1, tokens));
-                else throw new BossChartException(i + 1, $"알 수 없는 줄 '{line}'. section, shape, random, 또는 노트 번호로 시작해야 해요.");
+                else throw new BossChartException(i + 1, $"알 수 없는 줄 '{line}'. section, shape, random, noise, 또는 노트 번호로 시작해야 해요.");
             }
             // Attacks may name a shape drawn further down the file.
             foreach (var (line, tokens) in pending) chart.attacks.Add(chart.ParseAttack(tokens, line));
             chart.attacks.Sort((a, b) => a.Publish != b.Publish ? a.Publish.CompareTo(b.Publish) : a.Line.CompareTo(b.Line));
+            chart.noise.Sort((a, b) => a.Note.CompareTo(b.Note));
             return chart;
+        }
+        private BossChartNoise ParseNoise(string[] tokens, int line)
+        {
+            if (tokens.Length != 3) throw new BossChartException(line, "형식은 'noise 노트 dx,dy'예요 (기사 칸에서 오른쪽 dx, 위쪽 dy).");
+            int note = Int(tokens[1], line, "noise 노트");
+            if (note < 0) throw new BossChartException(line, "noise 노트는 0 이상이어야 해요.");
+            foreach (var other in noise) if (other.Note == note) throw new BossChartException(line, $"노트 {note}의 noise가 이미 있어요.");
+            var parts = tokens[2].Split(',');
+            if (parts.Length != 2) throw new BossChartException(line, $"noise 위치는 'dx,dy' 형식이에요: '{tokens[2]}'");
+            int dx = Int(parts[0], line, "noise dx"), dy = Int(parts[1], line, "noise dy");
+            if (dx < -7 || dx > 7 || dy < -7 || dy > 7 || dx == 0 && dy == 0) throw new BossChartException(line, "noise 위치는 -7~7이고, 기사 칸(0,0)은 안 돼요.");
+            return new BossChartNoise(note, dx, dy, line);
         }
         private static string Strip(string line)
         {
