@@ -165,7 +165,7 @@ namespace StringAsASword.Presentation
             material.SetVector(SeamNoiseId, noise);
             material.SetVector(BodyId, new Vector4(body, 1 - body, 0, 0));
             // The glow breathes with the boss picture (BossPortrait sways at the same rate).
-            material.SetFloat(GlowBoostId, 1 + .08f * Mathf.Sin(time * 1.3f));
+            material.SetFloat(GlowBoostId, .3f + .08f * Mathf.Sin(time * 1.3f));
         }
         // A hit took a slice off blade i: flash it, shake the crown and drop a few chips from the cut.
         private void Cut(int index, bool spent)
