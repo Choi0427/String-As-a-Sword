@@ -49,6 +49,11 @@ namespace StringAsASword.Presentation
         public Material boardEdge;
         [Tooltip("Adds a directional light for URP Lit materials. Leave off for Unlit art.")]
         public bool useLighting;
+        [Tooltip("Flat ambient light for the lit board. Keep it grey: the scene's default sky ambient tints the stone blue. Alpha 0 = a neutral default.")]
+        public Color ambientColor;
+        [Tooltip("Colour and intensity of the board's directional light.")]
+        public Color lightColor = Color.white;
+        public float lightIntensity = 1;
 
         [Header("Board camera (0 = prototype framing)")]
         [Tooltip("Orthographic size. The prototype uses 4.6; raise it to fit a king behind row 8.")]

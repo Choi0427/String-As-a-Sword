@@ -22,7 +22,7 @@ namespace StringAsASword.Presentation
         [SerializeField] private ArtSet art;
         [Tooltip("Shows the prototype's full text HUD (tempo, controls, stats, telegraph list) for balancing work.")]
         [SerializeField] private bool detailedHud;
-        /// <summary>Board view size on the 1600x900 canvas; keeps the board render texture's 960:880 aspect.</summary>
+        /// <summary>Board view size on the 1600x900 canvas; the board render texture follows its size on screen.</summary>
         public static readonly Vector2 BoardSize = new Vector2(800, 733);
         private static readonly Vector2 BoardCenter = new Vector2(0, -60);
         private const float StringGap = 34, ScreenEdge = 820;
