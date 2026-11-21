@@ -78,6 +78,32 @@ namespace StringAsASword.Tests
             Assert.That(GameFlow.TutorialSeen, "done once: later prologues lead to the song");
             LogAssert.NoUnexpectedReceived();
         }
+        /// <summary>
+        /// A player who does not wait for the last card: right after the noise they climb to the top row and strike while the
+        /// praise and the next line are still up. That strike spends the charge and no other noise comes, so it must count.
+        /// </summary>
+        [UnityTest] public IEnumerator StrikingBeforeTheLastCardStillPassesTheLesson()
+        {
+            game.StartTutorial();
+            var tutorial = game.Tutorial;
+            yield return null;
+            bool early = false;
+            game.Battle.Resonance.Ignited += n => early |= !tutorial.LessonActive;
+            int note = 0;
+            float deadline = Time.realtimeSinceStartup + 90;
+            while (!tutorial.Steps.Finished && Time.realtimeSinceStartup < deadline)
+            {
+                double at = game.Timeline.TimeOf(note);
+                while (game.SongTime < at - .03 && Time.realtimeSinceStartup < deadline) yield return null;
+                if (tutorial.LessonActive || tutorial.Step == TutorialStep.Strike) Act(tutorial, note, at);
+                note++;
+            }
+            Assert.That(early, "The resonance was set off before the strike lesson's card came up.");
+            Assert.That(tutorial.Steps.Finished, "The early strike counts, and the tutorial ends.");
+            while (game.State != PrototypeState.Playing && Time.realtimeSinceStartup < deadline) yield return null;
+            Assert.That(game.State, Is.EqualTo(PrototypeState.Playing), "The song starts after it.");
+            LogAssert.NoUnexpectedReceived();
+        }
         // What a player reading the card does on this note.
         private void Act(TutorialDirector tutorial, int note, double at)
         {

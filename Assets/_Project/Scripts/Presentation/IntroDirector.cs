@@ -43,6 +43,10 @@ namespace StringAsASword.Presentation
         private RectTransform layer;
         private UnityEngine.UI.RawImage introView;
         private UnityEngine.UI.Image voidCover, flash, barTop, barBottom;
+        // The prologue's whole-board background layers (null entries where the set has none); null without the set.
+        private UnityEngine.UI.Image[] wholeBoard;
+        /// <summary>The whole-board layers' opacity now, back to front (tests and captures).</summary>
+        public float[] WholeBoardAlpha => wholeBoard == null ? new float[0] : System.Array.ConvertAll(wholeBoard, i => i == null ? 0 : i.color.a);
         private TMP_Text skipHint;
         private KeyPromptCard prompt;
         private CanvasGroup contentGroup, bossGroup;
@@ -103,10 +107,11 @@ namespace StringAsASword.Presentation
             PredictNoise();
             playing = true; seek = -1; tearIntroBeat = -1; story = 0;
             origin = AudioSettings.dspTime + .35;
-            nextEvent = 0; nextBar = 0; nextAfter = 0;
+            nextEvent = 0; nextBar = 0; nextAfter = 0; handoverTick = false;
             root.gameObject.SetActive(true); layer.gameObject.SetActive(true);
             cam.enabled = true; rimLight.enabled = true;
             board.FreeRoam = true;
+            PlayStem(stemA, data.cueA, origin, 0);
             Render(0);
         }
         /// <summary>Takes everything down; the battle's own picture is shown again.</summary>
@@ -115,7 +120,11 @@ namespace StringAsASword.Presentation
         {
             if (!built) return;
             playing = false; seek = -1;
-            foreach (var source in sources) source.Stop();
+            // Handing over on the last downbeat, nothing of the prologue is still to come: what still sounds (a ring, a
+            // whoosh's tail, the composed cue's end) rings out into the song or the tutorial instead of being cut off on
+            // a frame, which clicks. Esc and the like stop it all.
+            if (!keepNoise) foreach (var source in sources) source.Stop();
+            foreach (var stem in Stems()) if (stem != null && (!keepNoise || stem != stemB)) stem.Stop();
             layer.gameObject.SetActive(false);
             cam.enabled = false; rimLight.enabled = false;
             for (int i = 0; i < root.childCount; i++) root.GetChild(i).gameObject.SetActive(keepNoise && root.GetChild(i) == landingNoise.parent);
@@ -136,18 +145,27 @@ namespace StringAsASword.Presentation
             double beat = IntroTimeline.TearBeat((dsp - origin) / spb);
             if (beat < 0) return;
             tearIntroBeat = beat;
-            // Bars of the waiting loop already queued past the tear are cut off there.
-            double tearDsp = origin + beat * spb;
-            foreach (var source in loopSources) if (source != null) source.SetScheduledEndTime(tearDsp + .03);
+            // The waiting bar (and bars queued past the tear) stops 30 ms into the tear's sound, under it. Pressed a little
+            // after the beat, the tear sounds at once (Play's +10 ms) rather than on the beat already gone, so the cut follows
+            // it: cut on the beat, the bound strings would fall silent before anything tore them.
+            double tearDsp = origin + beat * spb, cut = System.Math.Max(tearDsp, AudioSettings.dspTime + .01) + .03;
+            foreach (var source in loopSources) if (source != null) source.SetScheduledEndTime(cut);
             loopSources.Clear();
+            if (stemA != null && stemA.isPlaying) stemA.SetScheduledEndTime(cut);
+            PlayStem(stemB, data.cueB, tearDsp, 0);
             if (!game.TutorialFollowsPrologue) game.ScheduleSongFromPrologue(HandoverDsp, IntroTimeline.HandoverSongTime(game.Timeline));
         }
         /// <summary>Captures and tests: show this story beat (no sound) instead of the running one; a negative value resumes.</summary>
-        public void Seek(float storyBeat) { seek = storyBeat; }
+        public void Seek(float storyBeat)
+        {
+            seek = storyBeat;
+            if (storyBeat >= 0) foreach (var stem in Stems()) if (stem != null) stem.Stop();
+        }
         /// <summary>Tests only: move the running intro clock so it reads this intro beat now (cues before it are dropped).</summary>
         internal void JumpForTests(double introBeat)
         {
             origin = AudioSettings.dspTime - introBeat * spb;
+            if (!Torn) PlayStem(stemA, data.cueA, origin, 0);
             while (nextEvent < before.Count && before[nextEvent].Beat < introBeat) nextEvent++;
             nextBar = (int)System.Math.Max(0, System.Math.Floor((introBeat - IntroTimeline.LoopStart) / IntroTimeline.LoopBeats) + 1);
         }
@@ -679,6 +697,12 @@ namespace StringAsASword.Presentation
         {
             layer = PrototypeView.MakeRect(view.CanvasRect, "Prologue Layer", Vector2.zero, Vector2.zero); Stretch(layer);
             voidCover = FullScreen("Void", Color.black);
+            // The whole-board world (A5-B), above the void; without it the void alone stands for it.
+            if (view.Art.HasPrologueBackground)
+            {
+                var whole = PrototypeView.MakeRect(layer, "Whole Board", Vector2.zero, Vector2.zero); Stretch(whole);
+                wholeBoard = PrototypeView.BuildBackgroundLayers(whole, view.Art.prologueBackgroundLayers, "Whole Board Layer");
+            }
             introView = PrototypeView.MakeRect(layer, "Prologue View", Vector2.zero, Vector2.zero).gameObject.AddComponent<UnityEngine.UI.RawImage>();
             Stretch(introView.rectTransform); introView.raycastTarget = false;
             flash = FullScreen("Crack Flash", Color.white);
@@ -705,6 +729,14 @@ namespace StringAsASword.Presentation
             // The board is whole and the world around it empty until the string tears; then it cracks into the battle's
             // world of floating debris (A5-B; placeholder until the "whole board" background set exists).
             SetAlpha(voidCover, 1 - Smooth(s, TearStory, TearStory + 1.6f));
+            // Under the flash the whole board gives way layer by layer, front layers first and the opaque back last, to the
+            // battle's broken twins underneath.
+            for (int i = 0; wholeBoard != null && i < wholeBoard.Length; i++)
+            {
+                if (wholeBoard[i] == null) continue;
+                float start = TearStory + .12f * (wholeBoard.Length - 1 - i);
+                SetAlpha(wholeBoard[i], 1 - Smooth(s, start, start + 1.2f));
+            }
             SetAlpha(flash, s >= TearStory ? .75f * Mathf.Exp(-(s - TearStory) * 3.5f) : 0);
             // The letterbox is the king's board, with no control. It lifts on the handover.
             // With the tutorial next the bars stay: its letterbox takes over at the same height and narrows from there.
@@ -746,10 +778,51 @@ namespace StringAsASword.Presentation
         }
 
         // ---------------------------------------------------------------- sound (placeholder clips, scheduled on the beat)
-        private struct Cue { public float Beat; public string Clip; public float Volume; public Cue(float b, string c, float v = 1) { Beat = b; Clip = c; Volume = v; } }
+        /// <summary>A placeholder sound on a beat: a clip of <see cref="PrologueDefinition"/> by name, at a level.</summary>
+        public struct Cue { public float Beat; public string Clip; public float Volume; public Cue(float b, string c, float v = 1) { Beat = b; Clip = c; Volume = v; } }
+        /// <summary>Section A's placeholder sounds, on story beats 0-32 (the guide tracks render these too).</summary>
+        public static List<Cue> SectionACues()
+        {
+            var cues = new List<Cue>();
+            // The king's beat is a chess clock (S2); the king's orders are sung notes.
+            for (int b = 0; b < IntroTimeline.LoopStart; b++) cues.Add(new Cue(b, "clock", b % 4 == 0 ? .45f : .3f));
+            for (int k = 0; k < Plies; k++) { cues.Add(new Cue(k + .5f, Melody[k])); cues.Add(new Cue(k + 1.02f, "place")); }
+            cues.Add(new Cue(Order1, "king_order")); cues.Add(new Cue(Order2, "king_order2"));
+            cues.Add(new Cue(Threat, "choir_threat"));
+            cues.Add(new Cue(Leap, "gliss")); cues.Add(new Cue(Land, "place"));
+            cues.Add(new Cue(Bind, "tune")); cues.Add(new Cue(Pinned, "thud"));
+            // Bound: the six strings out of tune, clean (S3-B), until the tear.
+            cues.Add(new Cue(24, "strain_bar")); cues.Add(new Cue(28, "strain_bar"));
+            foreach (float jerk in Jerks) cues.Add(new Cue(jerk, "jerk"));
+            cues.Sort((a, b) => a.Beat.CompareTo(b.Beat));
+            return cues;
+        }
+        /// <summary>One waiting bar's placeholder sounds, in beats from its bar line.</summary>
+        public static List<Cue> WaitBarCues()
+        {
+            var cues = new List<Cue> { new Cue(0, "strain_bar") };
+            for (int b = 0; b < IntroTimeline.LoopBeats; b++) cues.Add(new Cue(b, "clock", b == 0 ? .45f : .3f));
+            return cues;
+        }
+        /// <summary>Section B's placeholder sounds, in beats after the tear (20 beats to the song's start).</summary>
+        public static List<Cue> SectionBCues()
+        {
+            // From here the knight's sound is distorted (S3-B).
+            var cues = new List<Cue> { new Cue(0, "tear"), new Cue(Lanes - TearStory, "whoosh_down") };
+            string[] lane = { "lane_A2", "lane_D3", "lane_G3", "lane_B3", "lane_E4" };
+            for (int j = 0; j < 5; j++) cues.Add(new Cue(Lanes - TearStory + j * .55f, lane[j]));
+            cues.Add(new Cue(Swing - TearStory, "stroke_E5")); cues.Add(new Cue(Swing - TearStory, "guitar_hold")); cues.Add(new Cue(Swing - TearStory + .05f, "whoosh_ghost"));
+            cues.Add(new Cue(Wave - TearStory, "choir_wash"));
+            for (int i = 0; i < 3; i++) cues.Add(new Cue(Wave - TearStory + .8f * i, "whoosh_wave"));
+            cues.Add(new Cue(Fall - TearStory, "shatter"));
+            cues.Add(new Cue(Fall + .5f - TearStory, "ring5"));
+            cues.Sort((a, b) => a.Beat.CompareTo(b.Beat));
+            return cues;
+        }
         private readonly List<Cue> before = new List<Cue>(), after = new List<Cue>();
         private readonly List<AudioSource> sources = new List<AudioSource>(), loopSources = new List<AudioSource>();
         private int nextEvent, nextBar, nextAfter, nextSource;
+        private bool handoverTick;
         private void BuildAudio()
         {
             for (int i = 0; i < 24; i++)
@@ -758,29 +831,60 @@ namespace StringAsASword.Presentation
                 source.playOnAwake = false; source.spatialBlend = 0; source.ignoreListenerPause = true;
                 sources.Add(source);
             }
-            // Section A, on intro beats. The king's beat is a chess clock (S2); the king's orders are sung notes.
-            for (int b = 0; b < IntroTimeline.LoopStart; b++) before.Add(new Cue(b, "clock", b % 4 == 0 ? .45f : .3f));
-            for (int k = 0; k < Plies; k++) { before.Add(new Cue(k + .5f, Melody[k])); before.Add(new Cue(k + 1.02f, "place")); }
-            before.Add(new Cue(Order1, "king_order")); before.Add(new Cue(Order2, "king_order2"));
-            before.Add(new Cue(Threat, "choir_threat"));
-            before.Add(new Cue(Leap, "gliss")); before.Add(new Cue(Land, "place"));
-            before.Add(new Cue(Bind, "tune")); before.Add(new Cue(Pinned, "thud"));
-            // Bound: the six strings out of tune, clean (S3-B), until the tear.
-            before.Add(new Cue(24, "strain_bar")); before.Add(new Cue(28, "strain_bar"));
-            foreach (float jerk in Jerks) before.Add(new Cue(jerk, "jerk"));
-            before.Sort((a, b) => a.Beat.CompareTo(b.Beat));
-            // Section B, in beats after the tear. From here the knight's sound is distorted (S3-B).
-            after.Add(new Cue(0, "tear"));
-            after.Add(new Cue(Lanes - TearStory, "whoosh_down"));
-            string[] lane = { "lane_A2", "lane_D3", "lane_G3", "lane_B3", "lane_E4" };
-            for (int j = 0; j < 5; j++) after.Add(new Cue(Lanes - TearStory + j * .55f, lane[j]));
-            after.Add(new Cue(Swing - TearStory, "stroke_E5")); after.Add(new Cue(Swing - TearStory, "guitar_hold")); after.Add(new Cue(Swing - TearStory + .05f, "whoosh_ghost"));
-            after.Add(new Cue(Wave - TearStory, "choir_wash"));
-            for (int i = 0; i < 3; i++) after.Add(new Cue(Wave - TearStory + .8f * i, "whoosh_wave"));
-            after.Add(new Cue(Fall - TearStory, "shatter"));
-            after.Add(new Cue(Fall + .5f - TearStory, "ring5"));
-            after.Sort((a, b) => a.Beat.CompareTo(b.Beat));
+            // The composed cue (S1-B): a source of its own for each piece; two take turns for the waiting bar so a bar's tail
+            // is not cut by the next. Its music replaces the placeholder music of its section; the sound effects stay.
+            stemA = StemSource(data.cueA); stemB = StemSource(data.cueB);
+            if (data.cueWait != null) waitSources = new[] { StemSource(data.cueWait), StemSource(data.cueWait) };
+            foreach (var clip in new[] { data.Tick(false), data.Tick(true) }) if (clip != null) clip.LoadAudioData();
+            // Section A on intro beats and section B in beats after the tear; a composed piece's music replaces the placeholder
+            // music of its section, the sound effects stay.
+            before.AddRange(SectionACues());
+            if (data.cueA != null) before.RemoveAll(c => PrologueDefinition.IsMusic(c.Clip));
+            after.AddRange(SectionBCues());
+            if (data.cueB != null) after.RemoveAll(c => PrologueDefinition.IsMusic(c.Clip));
         }
+        private AudioSource stemA, stemB;
+        private AudioSource[] waitSources;
+        private int nextWait;
+        private System.Collections.Generic.IEnumerable<AudioSource> Stems()
+        {
+            yield return stemA; yield return stemB;
+            if (waitSources != null) foreach (var w in waitSources) yield return w;
+        }
+        private AudioSource StemSource(AudioClip clip)
+        {
+            if (clip == null) return null;
+            clip.LoadAudioData();
+            var source = gameObject.AddComponent<AudioSource>();
+            source.playOnAwake = false; source.spatialBlend = 0; source.ignoreListenerPause = true;
+            return source;
+        }
+        /// <summary>
+        /// A composed piece whose first sample belongs on <paramref name="at"/> (DSP time). Late, it starts now from the
+        /// matching sample, so it still ends where it should (on the song's start, for section B).
+        /// </summary>
+        private void PlayStem(AudioSource source, AudioClip clip, double at, double now)
+        {
+            if (source == null || clip == null) return;
+            if (now <= 0) now = AudioSettings.dspTime;
+            source.Stop(); source.clip = clip;
+            source.volume = data.cueVolume * GameFlow.MusicVolume;
+            double start = System.Math.Max(at, now + .02);
+            int skip = (int)((start - at) * clip.frequency);
+            if (skip >= clip.samples) return;
+            source.timeSamples = skip;
+            source.PlayScheduled(start);
+        }
+        /// <summary>Tests: the composed pieces' sources (null where none is assigned).</summary>
+        internal AudioSource StemASource => stemA;
+        internal AudioSource StemBSource => stemB;
+        internal AudioSource[] WaitSources => waitSources;
+        /// <summary>Tests: the placeholder sounds' sources.</summary>
+        internal IReadOnlyList<AudioSource> PoolSources => sources;
+        /// <summary>Tests: the DSP time of intro beat 0.</summary>
+        internal double OriginDsp => origin;
+        /// <summary>Tests: the intro beat the string tore on (-1 before).</summary>
+        internal double TearIntroBeat => tearIntroBeat;
         private void ScheduleAudio(double now)
         {
             const double ahead = .25;
@@ -792,8 +896,14 @@ namespace StringAsASword.Presentation
                 double bar = origin + (IntroTimeline.LoopStart + nextBar * IntroTimeline.LoopBeats) * spb;
                 if (bar <= now + ahead)
                 {
-                    Play(new Cue(0, "strain_bar"), bar, now, loopSources);
-                    for (int b = 0; b < 4; b++) Play(new Cue(0, "clock", b == 0 ? .45f : .3f), bar + b * spb, now, loopSources);
+                    if (waitSources != null)
+                    {
+                        var wait = waitSources[nextWait++ % waitSources.Length];
+                        PlayStem(wait, data.cueWait, bar, now);
+                        loopSources.Add(wait);
+                    }
+                    foreach (var cue in WaitBarCues())
+                        if (waitSources == null || !PrologueDefinition.IsMusic(cue.Clip)) Play(cue, bar + cue.Beat * spb, now, loopSources);
                     nextBar++;
                 }
             }
@@ -802,15 +912,21 @@ namespace StringAsASword.Presentation
                 double tear = origin + tearIntroBeat * spb;
                 while (nextAfter < after.Count && tear + after[nextAfter].Beat * spb <= now + ahead)
                 { Play(after[nextAfter], tear + after[nextAfter].Beat * spb, now, null); nextAfter++; }
+                // With the tutorial next, its chess clock begins with an accent on the handover downbeat. The tutorial only
+                // starts on the frame after that beat, too late to schedule it, so the prologue puts it there (it rings on).
+                if (!handoverTick && game.TutorialFollowsPrologue && HandoverDsp <= now + ahead)
+                { Play(new Cue(0, "clock", .45f), HandoverDsp, now, null); handoverTick = true; }
             }
         }
         private void Play(Cue cue, double at, double now, List<AudioSource> track)
         {
-            var clip = data.Clip(cue.Clip);
+            // The clock is the recorded take when delivered (S2-A): an accent on the bar line (the louder placeholder cue).
+            bool clock = PrologueDefinition.IsClock(cue.Clip), accent = clock && cue.Volume >= .45f;
+            var clip = clock ? data.Tick(accent) : data.Clip(cue.Clip);
             if (clip == null) return;
             var source = sources[nextSource]; nextSource = (nextSource + 1) % sources.Count;
             source.Stop(); source.clip = clip;
-            source.volume = data.volume * GameFlow.MusicVolume * cue.Volume;
+            source.volume = data.volume * GameFlow.MusicVolume * (clock ? data.TickVolume(accent) : cue.Volume);
             source.PlayScheduled(System.Math.Max(at, now + .01));
             track?.Add(source);
         }

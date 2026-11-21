@@ -31,7 +31,6 @@ namespace StringAsASword.Presentation
         private PrototypeGame game;
         private PrototypeView view;
         private PrologueDefinition data;
-        private AudioClip tick;
         private Letterbox letterbox;
         private KeyPromptCard card;
         private CanvasGroup content;
@@ -69,7 +68,6 @@ namespace StringAsASword.Presentation
         public void Initialize(PrototypeGame owner, PrototypeView prototypeView, PrologueDefinition definition)
         {
             game = owner; view = prototypeView; data = definition;
-            tick = definition.Clip("clock");
             spb = game.Timeline.SecondsPerBeat;
             var chart = BossChart.Parse(LessonShapes);
             rowShape = chart.Shapes["룩가로"]; columnShape = chart.Shapes["룩세로강"];
@@ -180,8 +178,15 @@ namespace StringAsASword.Presentation
         }
         private void OnNote(NoteRecord record)
         {
-            if (!LessonActive) return;
             int note = record.noteIndex;
+            // The strike lesson counts a resonance set off before its card came up (right after the noise, while the praise
+            // and the line are still up): that strike spends the charge, and no other noise comes to charge the string again.
+            if (playing && steps.Step == TutorialStep.Strike)
+            {
+                if (steps.Ignited && note >= battle.Resonance.EndNote) steps.ResonanceEnded();
+                return;
+            }
+            if (!LessonActive) return;
             if (steps.Step == TutorialStep.Attack || steps.Step == TutorialStep.Slash)
             {
                 if (note == attackNote)
@@ -197,11 +202,9 @@ namespace StringAsASword.Presentation
                     if (shown.Count > 0) { attackPending = false; attackNote = shown[0].ImpactNote; }
                 }
             }
-            else if (steps.Step == TutorialStep.Strike && steps.Ignited && note >= battle.Resonance.EndNote)
-                steps.ResonanceEnded();
         }
         private void OnCollected(NoisePickup pickup) { if (LessonActive) steps.NoiseCollected(); }
-        private void OnIgnited(int note) { if (LessonActive) steps.ResonanceStarted(); }
+        private void OnIgnited(int note) { if (playing && steps.Step == TutorialStep.Strike) steps.ResonanceStarted(); }
 
         // ---------------------------------------------------------------- each frame
         private void LateUpdate()
@@ -289,17 +292,18 @@ namespace StringAsASword.Presentation
         // The chess clock on every beat, louder on the bar line, until the song takes over.
         private void ScheduleTicks(double now)
         {
-            if (tick == null) return;
             while (true)
             {
                 if (handoverBeat >= 0 && nextTick >= handoverBeat) return;
                 double at = origin + nextTick * spb;
                 if (at > now + .25) return;
-                if (at > now + .005)
+                bool accent = (nextTick % BarBeats + BarBeats) % BarBeats == 0;
+                var tick = data.Tick(accent);
+                if (at > now + .005 && tick != null)
                 {
                     var source = sources[nextSource++ % sources.Count];
                     source.Stop(); source.clip = tick;
-                    source.volume = data.volume * GameFlow.MusicVolume * ((nextTick % BarBeats + BarBeats) % BarBeats == 0 ? .45f : .3f);
+                    source.volume = data.volume * GameFlow.MusicVolume * data.TickVolume(accent);
                     source.PlayScheduled(at);
                 }
                 nextTick++;
