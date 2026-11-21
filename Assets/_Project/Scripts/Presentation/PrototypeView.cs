@@ -40,6 +40,10 @@ namespace StringAsASword.Presentation
         public BattleScreens Screens { get; private set; }
         /// <summary>The canvas itself, for full-screen overlays drawn above the HUD.</summary>
         public RectTransform CanvasRect => (RectTransform)transform;
+        /// <summary>The battle layer (board view, lanes, notes, HUD, screens); the prologue hides it until it hands over.</summary>
+        public RectTransform ContentRect => root;
+        /// <summary>The board view's rect on the canvas (the board render texture is shown here).</summary>
+        public RectTransform BoardViewRect => boardRect;
         public TMP_FontAsset LatinFont => art.font != null ? art.font : font;
         private PrototypeGame game;
         private RectTransform root;

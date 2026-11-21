@@ -10,40 +10,36 @@ using static StringAsASword.Presentation.UiKit;
 namespace StringAsASword.Presentation
 {
     /// <summary>
-    /// Main menu from the Figma frame "Main Menu" (1920x1080): background art, 시작 / 설정 / 종료, footer credit.
-    /// After a clear the left side of the art is inverted to white (the chessboard stays). 시작 plays the story cards.
+    /// Main menu from the Figma frame "Main Menu" (1920x1080): background art, 시작 / 프롤로그 / 설정 / 종료, footer credit.
+    /// After a clear the left side of the art is inverted to white (the chessboard stays).
+    /// 시작 opens with the prologue the first time and goes straight to the battle after that; 프롤로그 replays it.
     /// </summary>
     public sealed class MainMenuView : MonoBehaviour
     {
         // Figma values, in 1920x1080 reference pixels from the top-left corner.
         private static readonly Color Menu = Hex(0xD9D9D9), HoverBox = Hex(0x929292), HoverText = Hex(0x0C0C0C), Footer = Hex(0x929292), Back = Hex(0x020202);
-        private const float MenuLeft = 184.5f, MenuWidth = 125, MenuHeight = 107, MenuSize = 80;
-        private static readonly float[] MenuTops = { 631.21f, 733.01f, 834.80f };
-        private static readonly string[] MenuLabels = { "시작", "설정", "종료" };
-        private const float StoryFade = .45f;
+        private const float MenuLeft = 184.5f, MenuHeight = 107, MenuSize = 80;
+        // The Figma pitch (101.8) continues below 종료's old place for the fourth item.
+        private static readonly float[] MenuTops = { 631.21f, 733.01f, 834.80f, 936.60f };
+        private static readonly string[] MenuLabels = { "시작", "프롤로그", "설정", "종료" };
+        public const int StartItem = 0, PrologueItem = 1, SettingsItem = 2, QuitItem = 3;
+        // Figma sizes are for a two-letter label: the text box is 125 wide and its hover box 119.94; longer labels grow by letter.
+        private const float TwoLetterWidth = 125, TwoLetterBox = 119.94f;
 
         [SerializeField] private ArtSet art;
-        [SerializeField] private StoryDefinition story;
         [SerializeField] private Material invertMaterial;
 
         private TMP_FontAsset font;
         private UnityEngine.UI.Image background;
         private Material backgroundMaterial;
-        private readonly TMP_Text[] labels = new TMP_Text[3];
-        private readonly UnityEngine.UI.Image[] boxes = new UnityEngine.UI.Image[3];
+        private readonly TMP_Text[] labels = new TMP_Text[MenuLabels.Length];
+        private readonly UnityEngine.UI.Image[] boxes = new UnityEngine.UI.Image[MenuLabels.Length];
         private TMP_Text footer;
         private int selected = -1;
-        private GameObject storyPanel;
         private SettingsPanel settings;
-        private TMP_Text storyText, storyHint;
-        private UnityEngine.UI.Image storyImage;
-        private CanvasGroup storyGroup;
-        private int storyIndex = -1;
-        private float storyAge;
         private bool leaving;
         public bool White { get; private set; }
-        public bool StoryPlaying => storyIndex >= 0;
-        public int StoryIndex => storyIndex;
+        public int ItemCount => MenuLabels.Length;
         public bool SettingsOpen => settings != null && settings.IsOpen;
         public int Selected => selected;
         /// <summary>Developer mode: picks an option of a settings row as if it were clicked (0 = first).</summary>
@@ -53,7 +49,6 @@ namespace StringAsASword.Presentation
         private void Awake()
         {
             if (art == null) { art = ScriptableObject.CreateInstance<ArtSet>(); art.hideFlags = HideFlags.DontSave; }
-            if (story == null) story = ScriptableObject.CreateInstance<StoryDefinition>();
             font = UiFonts.Korean(art.menuFont);
             var canvas = gameObject.AddComponent<Canvas>(); canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             var scaler = gameObject.AddComponent<UnityEngine.UI.CanvasScaler>();
@@ -74,12 +69,13 @@ namespace StringAsASword.Presentation
             background.sprite = art.mainMenuDark; background.enabled = art.mainMenuDark != null;
             if (invertMaterial != null) background.material = backgroundMaterial = new Material(invertMaterial);
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < MenuLabels.Length; i++)
             {
                 int index = i;
-                var item = TopLeft(Rect(root, "Menu_" + MenuLabels[i]), MenuLeft, MenuTops[i], MenuWidth, MenuHeight);
+                float letters = MenuLabels[i].Length / 2f;
+                var item = TopLeft(Rect(root, "Menu_" + MenuLabels[i]), MenuLeft, MenuTops[i], TwoLetterWidth * letters, MenuHeight);
                 // Figma "Mouse Hover": a box behind the label, offset (4.25, 14.67) inside the 125x107 text box.
-                boxes[i] = Image(TopLeft(Rect(item, "Hover"), 4.25f, 14.67f, 119.94f, 66.24f), HoverBox);
+                boxes[i] = Image(TopLeft(Rect(item, "Hover"), 4.25f, 14.67f, TwoLetterBox * letters, 66.24f), HoverBox);
                 labels[i] = Label(Stretch(Rect(item, "Label")), MenuLabels[i], MenuSize, Menu, TextAlignmentOptions.TopLeft); // child: drawn above the box
                 labels[i].characterSpacing = -4; // -3.2 px at 80 px
                 var hit = Image(Stretch(Rect(item, "Hit")), new Color(0, 0, 0, 0)); hit.raycastTarget = true;
@@ -88,18 +84,17 @@ namespace StringAsASword.Presentation
             }
             footer = Label(TopLeft(Rect(root, "Credit"), 15, 1052, 400, 21), "Inspired by 이승윤 <검을 현>", 16, Footer, TextAlignmentOptions.TopLeft);
             settings = SettingsPanel.Create(root, font);
-            BuildStory(root);
             ApplyTheme();
             Select(-1);
         }
         private void Update()
         {
             var keyboard = Keyboard.current;
-            if (storyIndex >= 0) { UpdateStory(keyboard); return; }
-            if (keyboard == null) return;
+            if (keyboard == null || leaving) return;
             if (SettingsOpen) { if (keyboard.escapeKey.wasPressedThisFrame) settings.Close(); return; }
-            if (keyboard.wKey.wasPressedThisFrame || keyboard.upArrowKey.wasPressedThisFrame) Select(selected <= 0 ? 2 : selected - 1);
-            if (keyboard.sKey.wasPressedThisFrame || keyboard.downArrowKey.wasPressedThisFrame) Select(selected < 0 || selected == 2 ? 0 : selected + 1);
+            int last = MenuLabels.Length - 1;
+            if (keyboard.wKey.wasPressedThisFrame || keyboard.upArrowKey.wasPressedThisFrame) Select(selected <= 0 ? last : selected - 1);
+            if (keyboard.sKey.wasPressedThisFrame || keyboard.downArrowKey.wasPressedThisFrame) Select(selected < 0 || selected == last ? 0 : selected + 1);
             if ((keyboard.enterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame) && selected >= 0) Activate(selected);
             // Hidden: Shift+R brings back the dark menu (for demos).
             if (keyboard.rKey.wasPressedThisFrame && keyboard.shiftKey.isPressed) { GameFlow.ResetCleared(); ApplyTheme(); }
@@ -109,7 +104,7 @@ namespace StringAsASword.Presentation
         {
             selected = index;
             Color text = White ? Invert(Menu) : Menu, hoverText = White ? Invert(HoverText) : HoverText;
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < MenuLabels.Length; i++)
             {
                 boxes[i].enabled = i == index;
                 labels[i].color = i == index ? hoverText : text;
@@ -118,8 +113,10 @@ namespace StringAsASword.Presentation
         public void Activate(int index)
         {
             if (leaving) return;
-            if (index == 0) BeginStory();
-            else if (index == 1) settings.Open();
+            // The story cards are retired: the prologue tells the same story, once by itself and then from the menu.
+            if (index == StartItem) Leave(!GameFlow.PrologueSeen);
+            else if (index == PrologueItem) Leave(true);
+            else if (index == SettingsItem) settings.Open();
             else
             {
 #if UNITY_EDITOR
@@ -141,55 +138,14 @@ namespace StringAsASword.Presentation
             Select(selected);
         }
 
-        // --- Story cards ---------------------------------------------------------------------------------
-        public void BeginStory()
-        {
-            if (story.cards == null || story.cards.Length == 0) { Leave(); return; }
-            storyPanel.SetActive(true); storyIndex = 0; storyAge = 0; ShowCard();
-        }
-        public void NextCard()
-        {
-            if (storyIndex < 0) return;
-            if (++storyIndex >= story.cards.Length) { Leave(); return; }
-            storyAge = 0; ShowCard();
-        }
-        public void SkipStory() { if (storyIndex >= 0) Leave(); }
-        private void ShowCard()
-        {
-            var card = story.cards[storyIndex];
-            storyText.text = card.text;
-            storyImage.sprite = card.image; storyImage.enabled = card.image != null;
-            storyText.rectTransform.anchoredPosition = new Vector2(0, card.image != null ? -300 : 0);
-        }
-        private void UpdateStory(Keyboard keyboard)
-        {
-            storyAge += Time.unscaledDeltaTime;
-            storyGroup.alpha = Mathf.Clamp01(storyAge / StoryFade);
-            if (keyboard == null || leaving) return;
-            if (keyboard.escapeKey.wasPressedThisFrame) SkipStory();
-            else if (keyboard.spaceKey.wasPressedThisFrame || keyboard.enterKey.wasPressedThisFrame) NextCard();
-        }
-        private void Leave()
+        private void Leave(bool prologue)
         {
             if (leaving) return;
-            leaving = true; storyIndex = -1;
-            GameFlow.StartBattle();
+            leaving = true;
+            GameFlow.StartBattle(prologue);
         }
 
         // --- Building blocks -------------------------------------------------------------------------------
-        private void BuildStory(RectTransform root)
-        {
-            var panel = Stretch(Rect(root, "Story"));
-            Image(panel, Back).raycastTarget = true;
-            panel.gameObject.AddComponent<MenuButton>().Clicked = NextCard;
-            storyGroup = panel.gameObject.AddComponent<CanvasGroup>();
-            storyImage = Image(Rect(panel, "Illustration", new Vector2(0, 90), new Vector2(960, 540)), Color.white);
-            storyImage.preserveAspect = true;
-            storyText = Label(Rect(panel, "Caption", Vector2.zero, new Vector2(1600, 200)), "", 44, Menu, TextAlignmentOptions.Center);
-            storyText.lineSpacing = 18;
-            storyHint = Label(Rect(panel, "Hint", new Vector2(0, -470), new Vector2(800, 40)), "SPACE  다음        ESC  건너뛰기", 20, Footer, TextAlignmentOptions.Center);
-            storyPanel = panel.gameObject; storyPanel.SetActive(false);
-        }
         private TMP_Text Label(RectTransform rect, string text, float size, Color color, TextAlignmentOptions align) => UiKit.Label(rect, text, size, color, align, font);
     }
 }

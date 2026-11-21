@@ -9,7 +9,8 @@ using UnityEngine;
 namespace StringAsASword.Core
 {
     // Finale: the battle is won, the song plays on with no judgement. Epilogue: free movement and the ending.
-    public enum PrototypeState { Ready, CountIn, Playing, Paused, Finished, Finale, Epilogue }
+    // Prologue: the opening cutscene; its last downbeat is the song's start, and it hands over straight to Playing.
+    public enum PrototypeState { Ready, CountIn, Playing, Paused, Finished, Finale, Epilogue, Prologue }
 
     [RequireComponent(typeof(PlayerInputAdapter), typeof(ScheduledSongAudio))]
     public sealed class PrototypeGame : MonoBehaviour
@@ -49,6 +50,11 @@ namespace StringAsASword.Core
         public event System.Action<PlayerActionKind> FinaleTap;
         public ScheduledSongAudio Audio => audioPlayer;
         public PrototypeView View => view;
+        private IntroDirector intro;
+        /// <summary>The prologue cutscene; null when its data (Resources/Prologue) is missing.</summary>
+        public IntroDirector Intro => intro;
+        /// <summary>DSP time to song time on the battle clock (valid once the clock runs).</summary>
+        public double SongClockOrigin => clock.Origin;
         /// <summary>After a resume the song rewinds a count-in; actions count again from here (song time). -inf otherwise.</summary>
         public double ResumeAt { get; private set; } = double.NegativeInfinity;
 
@@ -81,15 +87,62 @@ namespace StringAsASword.Core
             FinaleEndTime = System.Math.Max(end, hold) + .8;
             FinaleStrikeTime = Timeline.TimeOf(System.Math.Min(settings.FinishNote + 2, last));
             view.gameObject.AddComponent<FinaleDirector>().Initialize(this, view);
+            var prologue = Resources.Load<PrologueDefinition>(PrologueDefinition.ResourceName);
+            if (prologue != null) { intro = view.gameObject.AddComponent<IntroDirector>(); intro.Initialize(this, view, prologue); }
         }
         private void Start()
         {
             if (!enabled || !GameFlow.AutoStartBattle) return;
-            GameFlow.ConsumeAutoStart(); StartSession();
+            bool prologue = GameFlow.PlayPrologue;
+            GameFlow.ConsumeAutoStart();
+            // A developer start in a later phase has no prologue.
+            if (prologue && intro != null && GameFlow.StartPhase == 1) StartPrologue(); else StartSession();
+        }
+        /// <summary>
+        /// The opening cutscene. The battle is reset but its clock waits: the director fixes the song's start once the player
+        /// tears the string (J), and hands over on that downbeat. Esc or Space skips to the usual count-in.
+        /// </summary>
+        public void StartPrologue()
+        {
+            if (intro == null) { StartSession(); return; }
+            SaveRun("Restarted");
+            input.Clear(); audioPlayer.Stop(); clock.Stop();
+            CurrentBeat = -1; SessionId++;
+            runSaved = false; ResumeAt = double.NegativeInfinity;
+            Battle.Reset(SessionId, stage.NoiseSeed);
+            Battle.Invincible = GameFlow.Invincible; Battle.IgnoreBossHp = GameFlow.BossHpOff;
+            State = PrototypeState.Prologue; view.ResetFeedback();
+            ScheduledSongAudio.Preload(song);
+            intro.Play();
+        }
+        /// <summary>The director has fixed the handover: song time <paramref name="songTime"/> falls on DSP time <paramref name="dsp"/>.</summary>
+        public void ScheduleSongFromPrologue(double dsp, double songTime)
+        {
+            if (State != PrototypeState.Prologue) return;
+            clock.StartAt(dsp - songTime);
+            previousTime = SongTime;
+            audioPlayer.Begin(song, clock, Timeline, countInClicks: false);
+        }
+        /// <summary>The prologue's last downbeat: the battle is live (the first note is still the song's intro away).</summary>
+        public void FinishPrologue()
+        {
+            if (State != PrototypeState.Prologue) return;
+            GameFlow.MarkPrologueSeen();
+            input.Clear();
+            previousTime = SongTime;
+            State = PrototypeState.Playing;
+        }
+        public void SkipPrologue()
+        {
+            if (State != PrototypeState.Prologue) return;
+            intro.Stop();
+            GameFlow.MarkPrologueSeen();
+            StartSession();
         }
         public void StartSession()
         {
             SaveRun("Restarted");
+            if (intro != null && intro.Playing) intro.Stop();
             input.Clear(); audioPlayer.Stop();
             CurrentBeat = -1; SessionId++;
             runSaved = false; ResumeAt = double.NegativeInfinity;
@@ -196,6 +249,13 @@ namespace StringAsASword.Core
         private void OnCommand(string command)
         {
             if (State == PrototypeState.Finale || State == PrototypeState.Epilogue) return; // The ending plays through.
+            // The prologue has no pause menu: Esc, Space or Enter skip it to the count-in. Nothing else applies yet.
+            if (State == PrototypeState.Prologue)
+            {
+                if (command == "pause" || command == "start") SkipPrologue();
+                else if (command == "mute") audioPlayer.ToggleMute();
+                return;
+            }
             if (command.StartsWith("dev-phase")) { DevGoToPhase(command[command.Length - 1] - '0'); return; }
             if (command == "dev-invincible") { DevSetInvincible(!GameFlow.Invincible); return; }
             if (command == "dev-bosshp") { DevSetBossHp(GameFlow.BossHpOff); return; }
@@ -211,6 +271,8 @@ namespace StringAsASword.Core
         }
         private void OnAction(PlayerInputAdapter.TimedAction request)
         {
+            // In the prologue J tears the string; the battle does not take actions yet.
+            if (State == PrototypeState.Prologue) { if (request.Kind == PlayerActionKind.Attack) intro.Tear(request.DspTime); return; }
             if (!clock.Running) return;
             double time = clock.ToSongTime(request.DspTime);
             if (State == PrototypeState.Finale || State == PrototypeState.Epilogue)
@@ -229,7 +291,7 @@ namespace StringAsASword.Core
         }
         private void OnRelease(PlayerInputAdapter.TimedAction request)
         {
-            if (!clock.Running || State == PrototypeState.Finale || State == PrototypeState.Epilogue) return;
+            if (!clock.Running || State == PrototypeState.Finale || State == PrototypeState.Epilogue || State == PrototypeState.Prologue) return;
             Battle.Release(request.Kind, request.Direction, clock.ToSongTime(request.DspTime));
         }
         private void OnActionEvaluated(ActionResult result)

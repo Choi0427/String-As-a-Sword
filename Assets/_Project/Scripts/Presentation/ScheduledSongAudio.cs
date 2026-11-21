@@ -36,10 +36,16 @@ namespace StringAsASword.Presentation
             source.playOnAwake = false; source.spatialBlend = 0; source.ignoreListenerPause = true;
             return source;
         }
-        public void Begin(SongDefinition definition, SongClock songClock, IBeatTimeline beatTimeline)
+        /// <summary>Loads the song's samples now, so scheduling it later does not stall (the prologue schedules it mid-scene).</summary>
+        public static void Preload(SongDefinition definition)
+        {
+            if (definition != null && definition.Music != null) definition.Music.LoadAudioData();
+        }
+        /// <param name="countInClicks">False after the prologue: its last downbeat is the song's start, with no clicks before it.</param>
+        public void Begin(SongDefinition definition, SongClock songClock, IBeatTimeline beatTimeline, bool countInClicks = true)
         {
             Stop(); song = definition; clock = songClock; timeline = beatTimeline;
-            nextClick = -song.CountInBeats;
+            nextClick = countInClicks ? -song.CountInBeats : 0;
             musicSource.clip = song.Music;
             musicSource.volume = song.Volume * Core.GameFlow.MusicVolume;
             if (song.Music != null)

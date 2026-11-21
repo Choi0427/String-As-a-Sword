@@ -35,7 +35,7 @@ namespace StringAsASword.Tests
                 GameFlow.MarkCleared(); menu.ApplyTheme(); menu.Select(-1);
                 yield return Capture(camera, texture, Path.Combine(dir, "menu-white.png"));
                 menu.Select(0); yield return Capture(camera, texture, Path.Combine(dir, "menu-white-hover-start.png"));
-                menu.Select(-1); menu.Activate(1); yield return Capture(camera, texture, Path.Combine(dir, "menu-white-settings.png"));
+                menu.Select(-1); menu.Activate(MainMenuView.SettingsItem); yield return Capture(camera, texture, Path.Combine(dir, "menu-white-settings.png"));
             }
             finally { if (hadCleared) GameFlow.MarkCleared(); else GameFlow.ResetCleared(); }
             Debug.Log("[MenuCapture] " + dir);

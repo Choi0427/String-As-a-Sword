@@ -33,6 +33,25 @@ namespace StringAsASword.Presentation
             label.textWrappingMode = TextWrappingModes.NoWrap; label.raycastTarget = false; label.overflowMode = TextOverflowModes.Overflow;
             return label;
         }
+        /// <summary>
+        /// The card fill of the battle screens: Figma's black at 90%. Figma blends in sRGB; the project blends in linear
+        /// space, where the same look needs 1 - 0.1^2.2.
+        /// </summary>
+        public static readonly Color CardFill = new Color(0, 0, 0, 1 - Mathf.Pow(.1f, 2.2f));
+        /// <summary>An inside stroke as four edges, so whatever is behind still shows through the card's fill.</summary>
+        public static void Stroke(RectTransform card, Color color, float width)
+        {
+            for (int side = 0; side < 4; side++)
+            {
+                var edge = Image(Rect(card, "Stroke"), color).rectTransform;
+                bool vertical = side >= 2;
+                edge.anchorMin = new Vector2(side == 3 ? 1 : 0, side == 1 ? 1 : 0);
+                edge.anchorMax = new Vector2(side == 2 ? 0 : 1, side == 0 ? 0 : 1);
+                edge.pivot = new Vector2(side == 3 ? 1 : 0, side == 1 ? 1 : 0);
+                edge.anchoredPosition = Vector2.zero;
+                edge.sizeDelta = vertical ? new Vector2(width, 0) : new Vector2(0, width);
+            }
+        }
         public static Color Hex(int rgb) => new Color((rgb >> 16 & 255) / 255f, (rgb >> 8 & 255) / 255f, (rgb & 255) / 255f);
         public static Color Invert(Color c) => new Color(1 - c.r, 1 - c.g, 1 - c.b, c.a);
     }

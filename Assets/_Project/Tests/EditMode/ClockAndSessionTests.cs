@@ -16,6 +16,13 @@ namespace StringAsASword.Tests
             clock.Stop(); dsp=50; Assert.That(clock.SongTime,Is.EqualTo(2));
             clock.Start(3); Assert.That(clock.Origin,Is.EqualTo(53));
         }
+        [Test] public void ClockCanStartFromAnAbsoluteOrigin()
+        {
+            double dsp=100;
+            var clock=new SongClock(()=>dsp); clock.StartAt(112);
+            Assert.That(clock.Running); Assert.That(clock.SongTime,Is.EqualTo(-12));
+            dsp=113; Assert.That(clock.SongTime,Is.EqualTo(1));
+        }
         [Test] public void EarlyNextBeatDoesNotTurnPreviousHitIntoMiss()
         {
             var timeline=new ConstantBeatTimeline(87);
