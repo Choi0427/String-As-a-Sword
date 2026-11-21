@@ -131,6 +131,21 @@ namespace StringAsASword.Combat
                 foreach (var hit in hits) Changed?.Invoke("publish", hit);
             }
         }
+        /// <summary>
+        /// Shows one chart shape now, anchored on the player, to fall on <paramref name="impactNote"/>: the tutorial's lessons,
+        /// which wait for the player instead of following the chart. Returns what was shown (empty when nothing lands).
+        /// </summary>
+        public IReadOnlyList<BossTelegraph> Inject(BossChartShape shape, int impactNote, int warning, GridPosition player, int lastClosed, int noteCount)
+        {
+            if (halted || impactNote <= lastClosed || impactNote >= noteCount) return new BossTelegraph[0];
+            var hits = AuthoredHits(new BossChartAttack(impactNote, shape, warning, 1, 1, 1, 0), player);
+            int ids = hits.Count;
+            hits.RemoveAll(h => h.Cells == 0);
+            nextId += ids;
+            active.AddRange(hits);
+            foreach (var hit in hits) Changed?.Invoke("publish", hit);
+            return hits;
+        }
         // Per hit: 1-cells as an Either telegraph and 2-cells as a DodgeOnly one at the same note (a full board of 1 is GuardOnly).
         // Danger, Unblockable and LastFiredUnblockable already merge telegraphs that share a note.
         public List<BossTelegraph> AuthoredHits(BossChartAttack a, GridPosition player, string reason = "")

@@ -9,8 +9,9 @@ using UnityEngine;
 namespace StringAsASword.Core
 {
     // Finale: the battle is won, the song plays on with no judgement. Epilogue: free movement and the ending.
-    // Prologue: the opening cutscene; its last downbeat is the song's start, and it hands over straight to Playing.
-    public enum PrototypeState { Ready, CountIn, Playing, Paused, Finished, Finale, Epilogue, Prologue }
+    // Prologue: the opening cutscene; its last downbeat hands over to the tutorial (or straight to Playing without one).
+    // Tutorial: a practice battle of its own, on an even beat with no song; its end hands over to the song's start.
+    public enum PrototypeState { Ready, CountIn, Playing, Paused, Finished, Finale, Epilogue, Prologue, Tutorial }
 
     [RequireComponent(typeof(PlayerInputAdapter), typeof(ScheduledSongAudio))]
     public sealed class PrototypeGame : MonoBehaviour
@@ -53,6 +54,18 @@ namespace StringAsASword.Core
         private IntroDirector intro;
         /// <summary>The prologue cutscene; null when its data (Resources/Prologue) is missing.</summary>
         public IntroDirector Intro => intro;
+        private TutorialDirector tutorial;
+        /// <summary>The tutorial; null when the prologue's data (its clock tick) is missing.</summary>
+        public TutorialDirector Tutorial => tutorial;
+        // The song's battle, and the tutorial's: a battle of its own on an even beat, bound in its place while it runs.
+        private BattleSession mainBattle, tutorialBattle;
+        private IBeatTimeline mainTimeline, tutorialTimeline;
+        // DSP time the tutorial hands over to the song (-1 = none pending).
+        private double tutorialHandover = -1;
+        /// <summary>Notes on the tutorial's even beat: far more than it ever takes.</summary>
+        public const int TutorialNotes = 4000;
+        /// <summary>The tutorial's battle is the one bound now.</summary>
+        public bool InTutorialBattle => Battle != null && Battle == tutorialBattle;
         /// <summary>DSP time to song time on the battle clock (valid once the clock runs).</summary>
         public double SongClockOrigin => clock.Origin;
         /// <summary>After a resume the song rewinds a count-in; actions count again from here (song time). -inf otherwise.</summary>
@@ -66,22 +79,15 @@ namespace StringAsASword.Core
             var settings = BattleSettings.From(song, stage);
             inputOffsetMs = GameFlow.InputOffsetMs;
             settings.InputOffset += inputOffsetMs / 1000.0;
-            Timeline = settings.CreateTimeline();
-            Battle = new BattleSession(settings, stage.NoiseSeed);
-            Noise = Battle.Noise; Attacks = Battle.Attacks; Health = Battle.Health; Combat = Battle.Combat;
-            Phases = Battle.Phases; Session = Battle.Session;
-            Battle.MusicBeat += beat => { CurrentBeat = beat; view.Pulse(); };
+            mainTimeline = settings.CreateTimeline();
+            mainBattle = new BattleSession(settings, stage.NoiseSeed);
+            SetBattle(mainBattle, mainTimeline);
             input = GetComponent<PlayerInputAdapter>(); audioPlayer = GetComponent<ScheduledSongAudio>();
             view = GetComponentInChildren<PrototypeView>(true);
             if (view == null) { Debug.LogError("Prototype view is missing.", this); enabled = false; return; }
             view.Initialize(this);
             input.ActionPressed += OnAction; input.ActionReleased += OnRelease; input.CommandPressed += OnCommand;
-            Session.HoldResolved += view.ShowHold;
-            Session.ActionEvaluated += OnActionEvaluated; Session.NoteMissed += view.ShowMiss;
-            Combat.DamageResolved += view.ShowDamage;
-            Phases.PhaseUnlocked += view.ShowPhase;
-            Noise.CollectedPickup += view.ShowNoiseCollected;
-            Battle.Resonance.Ignited += view.ShowIgnition; Battle.Resonance.GhostStrike += view.ShowGhostStrike;
+            Attach();
             int last = song.NoteCount - 1;
             double end = Timeline.TimeOf(last), hold = Session.HoldEnd(last);
             FinaleEndTime = System.Math.Max(end, hold) + .8;
@@ -89,14 +95,53 @@ namespace StringAsASword.Core
             view.gameObject.AddComponent<FinaleDirector>().Initialize(this, view);
             var prologue = Resources.Load<PrologueDefinition>(PrologueDefinition.ResourceName);
             if (prologue != null) { intro = view.gameObject.AddComponent<IntroDirector>(); intro.Initialize(this, view, prologue); }
+            if (prologue != null) { tutorial = view.gameObject.AddComponent<TutorialDirector>(); tutorial.Initialize(this, view, prologue); }
         }
+        // Every presenter reads the bound battle each frame; these are the event hooks that have to move with it.
+        private void SetBattle(BattleSession battle, IBeatTimeline timeline)
+        {
+            Battle = battle; Timeline = timeline;
+            Noise = battle.Noise; Attacks = battle.Attacks; Health = battle.Health; Combat = battle.Combat;
+            Phases = battle.Phases; Session = battle.Session;
+        }
+        private void Attach()
+        {
+            Battle.MusicBeat += OnMusicBeat;
+            Session.HoldResolved += view.ShowHold;
+            Session.ActionEvaluated += OnActionEvaluated; Session.NoteMissed += view.ShowMiss;
+            Combat.DamageResolved += view.ShowDamage;
+            Phases.PhaseUnlocked += view.ShowPhase;
+            Noise.CollectedPickup += view.ShowNoiseCollected;
+            Battle.Resonance.Ignited += view.ShowIgnition; Battle.Resonance.GhostStrike += view.ShowGhostStrike;
+        }
+        private void Detach()
+        {
+            Battle.MusicBeat -= OnMusicBeat;
+            Session.HoldResolved -= view.ShowHold;
+            Session.ActionEvaluated -= OnActionEvaluated; Session.NoteMissed -= view.ShowMiss;
+            Combat.DamageResolved -= view.ShowDamage;
+            Phases.PhaseUnlocked -= view.ShowPhase;
+            Noise.CollectedPickup -= view.ShowNoiseCollected;
+            Battle.Resonance.Ignited -= view.ShowIgnition; Battle.Resonance.GhostStrike -= view.ShowGhostStrike;
+        }
+        /// <summary>Puts <paramref name="battle"/> on the board: the presenters follow it from the next frame.</summary>
+        private void Bind(BattleSession battle, IBeatTimeline timeline)
+        {
+            if (Battle == battle) return;
+            Detach(); SetBattle(battle, timeline); Attach();
+            SessionId++; view.ResetFeedback();
+        }
+        private void OnMusicBeat(int beat) { CurrentBeat = beat; view.Pulse(); }
         private void Start()
         {
             if (!enabled || !GameFlow.AutoStartBattle) return;
-            bool prologue = GameFlow.PlayPrologue;
+            bool prologue = GameFlow.PlayPrologue, practice = GameFlow.PlayTutorial;
             GameFlow.ConsumeAutoStart();
-            // A developer start in a later phase has no prologue.
-            if (prologue && intro != null && GameFlow.StartPhase == 1) StartPrologue(); else StartSession();
+            // A developer start in a later phase has no prologue and no tutorial.
+            if (GameFlow.StartPhase != 1) StartSession();
+            else if (prologue && intro != null) StartPrologue();
+            else if (practice && tutorial != null) StartTutorial();
+            else StartSession();
         }
         /// <summary>
         /// The opening cutscene. The battle is reset but its clock waits: the director fixes the song's start once the player
@@ -106,6 +151,9 @@ namespace StringAsASword.Core
         {
             if (intro == null) { StartSession(); return; }
             SaveRun("Restarted");
+            StopTutorial(); Bind(mainBattle, mainTimeline);
+            // Fixed for this prologue: the first time, the tutorial comes after it; later it hands over to the song.
+            tutorialAfterPrologue = tutorial != null && !GameFlow.TutorialSeen;
             input.Clear(); audioPlayer.Stop(); clock.Stop();
             CurrentBeat = -1; SessionId++;
             runSaved = false; ResumeAt = double.NegativeInfinity;
@@ -127,21 +175,93 @@ namespace StringAsASword.Core
         public void FinishPrologue()
         {
             if (State != PrototypeState.Prologue) return;
-            GameFlow.MarkPrologueSeen();
             input.Clear();
             previousTime = SongTime;
             State = PrototypeState.Playing;
         }
+        private bool tutorialAfterPrologue;
+        /// <summary>This prologue is followed by the tutorial (until it has been done once): its last downbeat goes there, not to the song.</summary>
+        public bool TutorialFollowsPrologue => tutorialAfterPrologue;
+        /// <summary>The prologue's last downbeat, with the tutorial after it: the letterbox stays and the practice battle starts.</summary>
+        public void PrologueIntoTutorial(double handoverDsp)
+        {
+            if (State != PrototypeState.Prologue) return;
+            StartTutorial(handoverDsp, afterPrologue: true);
+        }
+        /// <summary>Esc in the prologue: on to the tutorial when it follows this prologue, else the count-in.</summary>
         public void SkipPrologue()
         {
             if (State != PrototypeState.Prologue) return;
             intro.Stop();
-            GameFlow.MarkPrologueSeen();
+            if (tutorialAfterPrologue) StartTutorial(); else StartSession();
+        }
+        /// <summary>Settings > 튜토리얼, or the first run after the prologue: the tutorial now, then the song.</summary>
+        public void StartTutorial() => StartTutorial(AudioSettings.dspTime + .35);
+        /// <summary>
+        /// The tutorial's practice battle is bound in place of the song's and its even beat starts at <paramref name="startDsp"/>
+        /// (the director gives it a bar before the first note). It is never logged.
+        /// </summary>
+        public void StartTutorial(double startDsp, bool afterPrologue = false)
+        {
+            if (tutorial == null) { StartSession(); return; }
+            SaveRun("Restarted");
+            if (intro != null && intro.Playing) intro.Stop();
+            input.Clear(); audioPlayer.Stop();
+            if (tutorialBattle == null) (tutorialBattle, tutorialTimeline) = CreateTutorialBattle();
+            Bind(tutorialBattle, tutorialTimeline);
+            CurrentBeat = -1; SessionId++; runSaved = true; ResumeAt = double.NegativeInfinity; tutorialHandover = -1;
+            Battle.Reset(SessionId, stage.NoiseSeed);
+            Battle.Invincible = true;
+            clock.StartAt(startDsp + TutorialDirector.LeadBeats * Timeline.SecondsPerBeat);
+            previousTime = SongTime;
+            State = PrototypeState.Tutorial; view.ResetFeedback();
+            ScheduledSongAudio.Preload(song);
+            tutorial.Play(startDsp, afterPrologue);
+        }
+        private (BattleSession, IBeatTimeline) CreateTutorialBattle()
+        {
+            var settings = mainBattle.Settings.Copy();
+            settings.ChartId = "Tutorial"; settings.NoteTimes = null; settings.HoldEndTimes = null;
+            settings.NoteCount = TutorialNotes; settings.FinishNote = -1;
+            // Nothing attacks or spawns by itself: the director shows each lesson's attack and noise when the player is ready.
+            settings.BossChartText = null; settings.Patterns = new PatternDefinition[0]; settings.Schedule.Enabled = false;
+            var battle = new BattleSession(settings, stage.NoiseSeed);
+            battle.Noise.AutoSpawn = false;
+            return (battle, settings.CreateTimeline());
+        }
+        /// <summary>
+        /// The tutorial is done: the song's battle is bound again, fresh, and the song is scheduled so that its intro starts on
+        /// <paramref name="downbeatDsp"/> (a tutorial downbeat), four beats before the first note, as after the prologue.
+        /// </summary>
+        public void FinishTutorial(double downbeatDsp)
+        {
+            if (State != PrototypeState.Tutorial || !InTutorialBattle) return;
+            GameFlow.MarkTutorialSeen();
+            Bind(mainBattle, mainTimeline);
+            CurrentBeat = -1; runSaved = false; ResumeAt = double.NegativeInfinity;
+            Battle.Reset(SessionId, stage.NoiseSeed);
+            Battle.Invincible = GameFlow.Invincible; Battle.IgnoreBossHp = GameFlow.BossHpOff;
+            clock.StartAt(downbeatDsp - IntroTimeline.HandoverSongTime(Timeline));
+            previousTime = SongTime; input.Clear();
+            audioPlayer.Begin(song, clock, Timeline, countInClicks: false);
+            tutorialHandover = downbeatDsp;
+        }
+        /// <summary>Esc in the tutorial: straight to the song's count-in.</summary>
+        public void SkipTutorial()
+        {
+            if (State != PrototypeState.Tutorial) return;
+            GameFlow.MarkTutorialSeen();
             StartSession();
+        }
+        private void StopTutorial()
+        {
+            if (tutorial != null && tutorial.Playing) tutorial.Stop();
+            tutorialHandover = -1;
         }
         public void StartSession()
         {
             SaveRun("Restarted");
+            StopTutorial(); Bind(mainBattle, mainTimeline);
             if (intro != null && intro.Playing) intro.Stop();
             input.Clear(); audioPlayer.Stop();
             CurrentBeat = -1; SessionId++;
@@ -249,10 +369,10 @@ namespace StringAsASword.Core
         private void OnCommand(string command)
         {
             if (State == PrototypeState.Finale || State == PrototypeState.Epilogue) return; // The ending plays through.
-            // The prologue has no pause menu: Esc, Space or Enter skip it to the count-in. Nothing else applies yet.
-            if (State == PrototypeState.Prologue)
+            // The prologue and the tutorial have no pause menu: Esc, Space or Enter skip on. Nothing else applies yet.
+            if (State == PrototypeState.Prologue || State == PrototypeState.Tutorial)
             {
-                if (command == "pause" || command == "start") SkipPrologue();
+                if (command == "pause" || command == "start") { if (State == PrototypeState.Prologue) SkipPrologue(); else SkipTutorial(); }
                 else if (command == "mute") audioPlayer.ToggleMute();
                 return;
             }
@@ -312,6 +432,11 @@ namespace StringAsASword.Core
             {
                 double time = SongTime;
                 if (time >= 0 && State == PrototypeState.CountIn) State = PrototypeState.Playing;
+                // The tutorial's last downbeat is the song's start: the battle goes live, as after the prologue.
+                if (State == PrototypeState.Tutorial && tutorialHandover >= 0 && AudioSettings.dspTime >= tutorialHandover)
+                {
+                    StopTutorial(); input.Clear(); previousTime = SongTime; State = PrototypeState.Playing;
+                }
                 audioPlayer.Schedule();
                 AdvanceWorld(time);
                 if (State == PrototypeState.Finale && time >= FinaleEndTime)
@@ -334,7 +459,7 @@ namespace StringAsASword.Core
         private void OnApplicationPause(bool paused) { if (paused && clock != null) PauseSession(); }
         private void SaveRun(string termination)
         {
-            if (Battle == null || SessionId == 0 || runSaved) return;
+            if (Battle == null || SessionId == 0 || runSaved || InTutorialBattle) return;
             try
             {
                 BattleLog.Write(System.IO.Path.Combine(Application.persistentDataPath, "BattleLogs",
@@ -348,15 +473,7 @@ namespace StringAsASword.Core
         {
             SaveRun("Interrupted");
             if (input != null) { input.ActionPressed -= OnAction; input.ActionReleased -= OnRelease; input.CommandPressed -= OnCommand; }
-            if (Session != null && view != null)
-            {
-                Session.HoldResolved -= view.ShowHold;
-                Session.ActionEvaluated -= OnActionEvaluated; Session.NoteMissed -= view.ShowMiss;
-                Combat.DamageResolved -= view.ShowDamage;
-                Phases.PhaseUnlocked -= view.ShowPhase;
-                Noise.CollectedPickup -= view.ShowNoiseCollected;
-                Battle.Resonance.Ignited -= view.ShowIgnition; Battle.Resonance.GhostStrike -= view.ShowGhostStrike;
-            }
+            if (Session != null && view != null) Detach();
             clock?.Stop(); if (audioPlayer != null) audioPlayer.Stop();
         }
     }

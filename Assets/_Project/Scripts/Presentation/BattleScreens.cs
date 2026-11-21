@@ -24,11 +24,15 @@ namespace StringAsASword.Presentation
         private Panel pause, gameOver;
         private TMP_Text gameOverTitle;
         private SettingsPanel settings;
+        /// <summary>The settings panel (with its 튜토리얼 button).</summary>
+        public SettingsPanel Settings => settings;
         private Panel shown;
         public ScreenKind Showing { get; private set; }
         public int Selected => shown?.Selected ?? -1;
         public bool SettingsOpen => settings.IsOpen;
         public bool KeyGuideVisible => keyGuide != null && keyGuide.activeSelf;
+        /// <summary>The bottom key guide's opacity: the tutorial dims it while its own prompt is up, so only one is emphasised.</summary>
+        public float KeyGuideAlpha { get; set; } = 1;
         public string GameOverTitle => gameOverTitle.text;
 
         /// <summary>Builds the screens over <paramref name="parent"/> (the 1600x900 battle content), scaled from 1920x1080.</summary>
@@ -63,13 +67,20 @@ namespace StringAsASword.Presentation
             gameOverTitle = gameOver.Title;
             settings = SettingsPanel.Create(frame, UiFonts.Korean(art.menuFont));
             settings.Closed += game.ApplySettings;
+            // From the pause screen: this run is dropped for the tutorial, which then leads into the song.
+            settings.TutorialRequested += game.StartTutorial;
             Show(ScreenKind.None);
         }
 
         private void Update()
         {
             var state = game.State;
-            if (keyGuide != null) keyGuide.SetActive(state != PrototypeState.Epilogue);
+            if (keyGuide != null)
+            {
+                keyGuide.SetActive(state != PrototypeState.Epilogue);
+                var guide = keyGuide.GetComponent<UnityEngine.UI.Image>();
+                if (!Mathf.Approximately(guide.color.a, KeyGuideAlpha)) guide.color = new Color(1, 1, 1, KeyGuideAlpha);
+            }
             var wanted = state == PrototypeState.Paused ? ScreenKind.Pause : state == PrototypeState.Finished ? ScreenKind.GameOver : ScreenKind.None;
             if (wanted != Showing) Show(wanted);
             if (shown == null || settings.IsOpen) return;

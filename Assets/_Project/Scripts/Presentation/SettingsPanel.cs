@@ -19,6 +19,8 @@ namespace StringAsASword.Presentation
         private readonly Dictionary<string, Action<int>> choices = new Dictionary<string, Action<int>>();
         /// <summary>Called after the panel closes, so a running battle can pick up what changed.</summary>
         public event Action Closed;
+        /// <summary>The 튜토리얼 button was pressed (after the panel closed).</summary>
+        public event Action TutorialRequested;
         public bool IsOpen => gameObject.activeSelf;
 
         public static SettingsPanel Create(RectTransform parent, TMP_FontAsset font)
@@ -56,11 +58,23 @@ namespace StringAsASword.Presentation
             var bossHp = ChoiceRow(card, -263, "보스 HP", new[] { "꺼짐", "켜짐" }, () => GameFlow.BossHpOff ? 0 : 1, i => GameFlow.BossHpOff = i == 0);
             var phase = ChoiceRow(card, -328, "시작 페이즈", new[] { "1", "2", "3", "4" }, () => GameFlow.StartPhase - 1, i => GameFlow.StartPhase = i + 1);
             refresh += () => { invincible.SetActive(GameFlow.DevMode); phase.SetActive(GameFlow.DevMode); bossHp.SetActive(GameFlow.DevMode); };
-            var close = Rect(card, "Close", new Vector2(0, -403), new Vector2(200, 56));
+            // 튜토리얼 plays the tutorial again (then the song); 닫기 goes back.
+            var tutorial = Rect(card, "Tutorial", new Vector2(-115, -403), new Vector2(200, 56));
+            Image(tutorial, Hex(0x1E1E1E)).raycastTarget = true;
+            Stroke(tutorial, Box, 2);
+            Write(Stretch(Rect(tutorial, "Label")), "튜토리얼", 26, Text, TextAlignmentOptions.Center);
+            tutorial.gameObject.AddComponent<MenuButton>().Clicked = RequestTutorial;
+            var close = Rect(card, "Close", new Vector2(115, -403), new Vector2(200, 56));
             Image(close, Box).raycastTarget = true;
             Write(Stretch(Rect(close, "Label")), "닫기  ESC", 26, BoxText, TextAlignmentOptions.Center);
             close.gameObject.AddComponent<MenuButton>().Clicked = Close;
             refresh();
+        }
+        /// <summary>The 튜토리얼 button: closes the panel and asks its owner (menu or battle) to start the tutorial.</summary>
+        public void RequestTutorial()
+        {
+            Close();
+            TutorialRequested?.Invoke();
         }
         // A label and a few boxes to click; the chosen one is filled.
         private GameObject ChoiceRow(RectTransform card, float y, string name, string[] options, Func<int> current, Action<int> set)

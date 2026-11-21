@@ -44,7 +44,7 @@ namespace StringAsASword.Presentation
         private UnityEngine.UI.RawImage introView;
         private UnityEngine.UI.Image voidCover, flash, barTop, barBottom;
         private TMP_Text skipHint;
-        private RectTransform prompt, promptKey;
+        private KeyPromptCard prompt;
         private CanvasGroup contentGroup, bossGroup;
         private Material flatTemplate;
         private Texture2D whiteMarble, blackMarble;
@@ -93,13 +93,14 @@ namespace StringAsASword.Presentation
             blackMarble = Marble(new Color(.075f, .075f, .085f), new Color(.30f, .30f, .32f), 11);
             BuildLayer(); BuildPieces(); BuildMarks(); BuildStrings(); BuildBossAndCrown(); BuildNoise(); BuildEffects();
             BuildAudio();
-            PredictNoise();
         }
 
         // ---------------------------------------------------------------- control
         public void Play()
         {
             Build();
+            // Whether the tutorial follows can change between prologues, and with it where the landed noise goes.
+            PredictNoise();
             playing = true; seek = -1; tearIntroBeat = -1; story = 0;
             origin = AudioSettings.dspTime + .35;
             nextEvent = 0; nextBar = 0; nextAfter = 0;
@@ -119,13 +120,16 @@ namespace StringAsASword.Presentation
             cam.enabled = false; rimLight.enabled = false;
             for (int i = 0; i < root.childCount; i++) root.GetChild(i).gameObject.SetActive(keepNoise && root.GetChild(i) == landingNoise.parent);
             root.gameObject.SetActive(keepNoise);
-            noiseKept = keepNoise;
+            noiseKept = keepNoise; keptAt = AudioSettings.dspTime;
             SetGroups(1);
             board.CellOutline.gameObject.SetActive(true);
             board.PlayerTransform.localRotation = Quaternion.identity;
             board.FreeRoam = false;
         }
-        /// <summary>J pressed (at a DSP time): the string tears on the beat and the song is scheduled from that beat.</summary>
+        /// <summary>
+        /// J pressed (at a DSP time): the string tears on the beat. Without a tutorial after the prologue the song is scheduled
+        /// from that beat; with one, the handover beat starts the tutorial instead and the song waits for its end.
+        /// </summary>
         public void Tear(double dsp)
         {
             if (!playing || Torn) return;
@@ -136,7 +140,7 @@ namespace StringAsASword.Presentation
             double tearDsp = origin + beat * spb;
             foreach (var source in loopSources) if (source != null) source.SetScheduledEndTime(tearDsp + .03);
             loopSources.Clear();
-            game.ScheduleSongFromPrologue(HandoverDsp, IntroTimeline.HandoverSongTime(game.Timeline));
+            if (!game.TutorialFollowsPrologue) game.ScheduleSongFromPrologue(HandoverDsp, IntroTimeline.HandoverSongTime(game.Timeline));
         }
         /// <summary>Captures and tests: show this story beat (no sound) instead of the running one; a negative value resumes.</summary>
         public void Seek(float storyBeat) { seek = storyBeat; }
@@ -152,9 +156,13 @@ namespace StringAsASword.Presentation
         {
             if (noiseKept && !playing)
             {
-                // After the handover the landed noise waits for the battle's own first noise, on the same cell.
-                bool spawned = game.Noise.Pickups.Count > 0 || game.State != PrototypeState.Playing;
-                if (spawned) { landingNoise.parent.gameObject.SetActive(false); root.gameObject.SetActive(false); noiseKept = false; }
+                // After the handover the landed noise waits for the battle's own first noise, on the same cell. With the
+                // tutorial next it sinks into the board over one beat instead, so nothing sits there that cannot be picked
+                // up; the tutorial's noise lesson puts one on the same cell (two above the knight's start) later.
+                bool spawned = game.Noise.Pickups.Count > 0 || !noiseWaits && game.State != PrototypeState.Playing;
+                float sunk = noiseWaits ? (float)((AudioSettings.dspTime - keptAt) / spb) : 0;
+                if (spawned || sunk >= 1) { landingNoise.parent.gameObject.SetActive(false); root.gameObject.SetActive(false); noiseKept = false; }
+                else if (noiseWaits) Billboard(landingNoise, noiseCell + Vector3.up * (.5f - .5f * sunk), 1.4f, 1 - Smooth01(sunk));
                 else RenderLandingNoise(End);
                 return;
             }
@@ -165,7 +173,12 @@ namespace StringAsASword.Presentation
             board.FreeRoam = true;
             if (seek < 0) ScheduleAudio(now);
             Render(story);
-            if (seek < 0 && Torn && now >= HandoverDsp) { game.FinishPrologue(); StopInternal(keepNoise: true); }
+            if (seek < 0 && Torn && now >= HandoverDsp)
+            {
+                double handover = HandoverDsp;
+                StopInternal(keepNoise: true);
+                if (game.TutorialFollowsPrologue) game.PrologueIntoTutorial(handover); else game.FinishPrologue();
+            }
         }
 
         // ---------------------------------------------------------------- the picture
@@ -558,6 +571,9 @@ namespace StringAsASword.Presentation
 
         // ---------------------------------------------------------------- noise
         private Transform spark, landingNoise;
+        // The tutorial comes before the battle's first noise: the landed one sinks away after the handover.
+        private bool noiseWaits;
+        private double keptAt;
         private readonly Transform[] bigNoise = new Transform[5];
         private bool noiseKept;
         private void BuildNoise()
@@ -607,10 +623,14 @@ namespace StringAsASword.Presentation
         }
         private void PredictNoise()
         {
-            // The battle's noise is seeded: a dry run of the same battle tells where its first noise appears.
+            // With the tutorial next, the noise lands two cells above the knight's start, where the noise lesson puts its own.
+            noiseWaits = game.TutorialFollowsPrologue;
+            var settings = game.Battle.Settings;
+            if (noiseWaits) { noiseCell = BoardWorldPresenter.CellPosition(new Board.GridPosition(settings.StartX, settings.StartY + 2)); return; }
+            // Otherwise the battle's noise is seeded: a dry run of the same battle tells where its first noise appears.
             try
             {
-                var dry = new BattleSession(game.Battle.Settings, game.Stage.NoiseSeed);
+                var dry = new BattleSession(settings, game.Stage.NoiseSeed);
                 dry.Reset(1, game.Stage.NoiseSeed);
                 dry.Advance(game.Timeline.TimeOf(0) + .01);
                 if (dry.Noise.Pickups.Count > 0) noiseCell = BoardWorldPresenter.CellPosition(dry.Noise.Pickups[0].Cell);
@@ -675,27 +695,11 @@ namespace StringAsASword.Presentation
             if (view.BossPortrait != null) bossGroup = Group((RectTransform)view.BossPortrait.transform);
             layer.gameObject.SetActive(false);
         }
-        private static readonly Color Ink = UiKit.Hex(0xD9D9D9), KeyInk = UiKit.Hex(0x0C0C0C);
-        private static readonly Vector2 PromptSize = new Vector2(300, 84);
         /// <summary>
-        /// The J prompt as a card like the pause screen's (black at 90%, inside stroke #D9D9D9, Orbit), with J on a keycap,
-        /// so it reads over any part of the board. 5 px in the 1920 frame is about 4 on this 1600 canvas.
+        /// The J prompt on a card like the pause screen's, so it reads over any part of the board. 5 px in the 1920 frame is
+        /// about 4 on this 1600 canvas.
         /// </summary>
-        private void BuildPrompt()
-        {
-            var art = view.Art;
-            var itemFont = UiFonts.Korean(art.screenFont != null ? art.screenFont : art.menuFont, view.LatinFont);
-            var keyFont = art.screenTitleFont != null ? art.screenTitleFont : itemFont;
-            prompt = PrototypeView.MakeRect(layer, "Prompt", Vector2.zero, PromptSize);
-            UiKit.Image(UiKit.Stretch(UiKit.Rect(prompt, "Fill")), UiKit.CardFill);
-            UiKit.Stroke(prompt, Ink, 4);
-            promptKey = PrototypeView.MakeRect(prompt, "Key", new Vector2(-PromptSize.x / 2 + 22 + 27, 0), new Vector2(54, 54));
-            UiKit.Image(promptKey, Ink);
-            UiKit.Label(UiKit.Stretch(UiKit.Rect(promptKey, "J")), "J", 40, KeyInk, TextAlignmentOptions.Center, keyFont);
-            var label = UiKit.Label(PrototypeView.MakeRect(prompt, "Label", new Vector2(-PromptSize.x / 2 + 96 + 95, 0), new Vector2(190, 60)),
-                "줄을 끊는다", 36, Ink, TextAlignmentOptions.Left, itemFont);
-            label.characterSpacing = -5;
-        }
+        private void BuildPrompt() => prompt = new KeyPromptCard(layer, "Prompt", view.Art, view.LatinFont, 84, 40, 36);
         private void RenderLayer(float s)
         {
             // The board is whole and the world around it empty until the string tears; then it cracks into the battle's
@@ -703,7 +707,8 @@ namespace StringAsASword.Presentation
             SetAlpha(voidCover, 1 - Smooth(s, TearStory, TearStory + 1.6f));
             SetAlpha(flash, s >= TearStory ? .75f * Mathf.Exp(-(s - TearStory) * 3.5f) : 0);
             // The letterbox is the king's board, with no control. It lifts on the handover.
-            float bars = s < Handover ? Smooth(s, 0, 2) : 1 - Smooth(s, Handover, Handover + 1.5f);
+            // With the tutorial next the bars stay: its letterbox takes over at the same height and narrows from there.
+            float bars = s < Handover || game.TutorialFollowsPrologue ? Smooth(s, 0, 2) : 1 - Smooth(s, Handover, Handover + 1.5f);
             var size = layer.rect.size;
             float bar = Mathf.Max((size.y - size.x / CutscenePlayer.Aspect) / 2, size.y * .06f);
             barTop.rectTransform.sizeDelta = barBottom.rectTransform.sizeDelta = new Vector2(0, bar);
@@ -717,18 +722,20 @@ namespace StringAsASword.Presentation
             board.CellOutline.gameObject.SetActive(handover > .5f);
             // The one prompt: J, while the loop waits for it.
             bool waiting = s >= IntroTimeline.LoopStart && s < TearStory && !Torn;
-            prompt.gameObject.SetActive(waiting);
-            if (waiting)
+            if (!waiting) prompt.Hide();
+            else
             {
+                prompt.Show("J", "줄을 끊는다");
                 // The keycap kicks on every beat of the waiting bar.
-                promptKey.localScale = Vector3.one * (1 + .14f * Mathf.Exp(-(s % 1) * 5));
+                prompt.Pulse(s % 1);
                 // Beside the knight's hand on the lowest string; the intro camera renders at screen size, so its screen point is a screen point.
                 var screen = cam.WorldToScreenPoint(world.TransformPoint(board.PlayerTransform.localPosition + new Vector3(0, .6f, 0)));
                 if (RectTransformUtility.ScreenPointToLocalPointInRectangle(layer, screen, null, out var local))
                 {
                     // Kept inside the letterbox's picture, clear of its edges.
-                    float limitX = size.x * .5f - PromptSize.x * .5f - 40, limitY = size.y * .5f - bar - PromptSize.y * .5f - 24;
-                    prompt.anchoredPosition = new Vector2(Mathf.Clamp(local.x + 60 + PromptSize.x * .5f, -limitX, limitX), Mathf.Clamp(local.y, -limitY, limitY));
+                    var card = prompt.Size;
+                    float limitX = size.x * .5f - card.x * .5f - 40, limitY = size.y * .5f - bar - card.y * .5f - 24;
+                    prompt.Rect.anchoredPosition = new Vector2(Mathf.Clamp(local.x + 60 + card.x * .5f, -limitX, limitX), Mathf.Clamp(local.y, -limitY, limitY));
                 }
             }
         }

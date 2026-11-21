@@ -44,6 +44,8 @@ namespace StringAsASword.Presentation
         public RectTransform ContentRect => root;
         /// <summary>The board view's rect on the canvas (the board render texture is shown here).</summary>
         public RectTransform BoardViewRect => boardRect;
+        /// <summary>The two judge lines where the lanes meet the board's sides (left, right).</summary>
+        public System.Collections.Generic.IReadOnlyList<UnityEngine.UI.Image> JudgeLines => judgeLines;
         public TMP_FontAsset LatinFont => art.font != null ? art.font : font;
         private PrototypeGame game;
         private RectTransform root;

@@ -10,19 +10,19 @@ using static StringAsASword.Presentation.UiKit;
 namespace StringAsASword.Presentation
 {
     /// <summary>
-    /// Main menu from the Figma frame "Main Menu" (1920x1080): background art, 시작 / 프롤로그 / 설정 / 종료, footer credit.
+    /// Main menu from the Figma frame "Main Menu" (1920x1080): background art, 시작 / 설정 / 종료, footer credit.
     /// After a clear the left side of the art is inverted to white (the chessboard stays).
-    /// 시작 opens with the prologue the first time and goes straight to the battle after that; 프롤로그 replays it.
+    /// 시작 always opens with the prologue; the first time the tutorial follows it, later the song does.
+    /// Settings > 튜토리얼 plays the tutorial again, then the song.
     /// </summary>
     public sealed class MainMenuView : MonoBehaviour
     {
         // Figma values, in 1920x1080 reference pixels from the top-left corner.
         private static readonly Color Menu = Hex(0xD9D9D9), HoverBox = Hex(0x929292), HoverText = Hex(0x0C0C0C), Footer = Hex(0x929292), Back = Hex(0x020202);
         private const float MenuLeft = 184.5f, MenuHeight = 107, MenuSize = 80;
-        // The Figma pitch (101.8) continues below 종료's old place for the fourth item.
-        private static readonly float[] MenuTops = { 631.21f, 733.01f, 834.80f, 936.60f };
-        private static readonly string[] MenuLabels = { "시작", "프롤로그", "설정", "종료" };
-        public const int StartItem = 0, PrologueItem = 1, SettingsItem = 2, QuitItem = 3;
+        private static readonly float[] MenuTops = { 631.21f, 733.01f, 834.80f };
+        private static readonly string[] MenuLabels = { "시작", "설정", "종료" };
+        public const int StartItem = 0, SettingsItem = 1, QuitItem = 2;
         // Figma sizes are for a two-letter label: the text box is 125 wide and its hover box 119.94; longer labels grow by letter.
         private const float TwoLetterWidth = 125, TwoLetterBox = 119.94f;
 
@@ -37,6 +37,8 @@ namespace StringAsASword.Presentation
         private TMP_Text footer;
         private int selected = -1;
         private SettingsPanel settings;
+        /// <summary>The settings panel (with its 튜토리얼 button).</summary>
+        public SettingsPanel Settings => settings;
         private bool leaving;
         public bool White { get; private set; }
         public int ItemCount => MenuLabels.Length;
@@ -84,6 +86,7 @@ namespace StringAsASword.Presentation
             }
             footer = Label(TopLeft(Rect(root, "Credit"), 15, 1052, 400, 21), "Inspired by 이승윤 <검을 현>", 16, Footer, TextAlignmentOptions.TopLeft);
             settings = SettingsPanel.Create(root, font);
+            settings.TutorialRequested += () => Leave(prologue: false, tutorial: true);
             ApplyTheme();
             Select(-1);
         }
@@ -113,9 +116,8 @@ namespace StringAsASword.Presentation
         public void Activate(int index)
         {
             if (leaving) return;
-            // The story cards are retired: the prologue tells the same story, once by itself and then from the menu.
-            if (index == StartItem) Leave(!GameFlow.PrologueSeen);
-            else if (index == PrologueItem) Leave(true);
+            // The story cards are retired: the prologue tells the same story every time 시작 is pressed.
+            if (index == StartItem) Leave(prologue: true);
             else if (index == SettingsItem) settings.Open();
             else
             {
@@ -138,11 +140,11 @@ namespace StringAsASword.Presentation
             Select(selected);
         }
 
-        private void Leave(bool prologue)
+        private void Leave(bool prologue, bool tutorial = false)
         {
             if (leaving) return;
             leaving = true;
-            GameFlow.StartBattle(prologue);
+            GameFlow.StartBattle(prologue, tutorial);
         }
 
         // --- Building blocks -------------------------------------------------------------------------------

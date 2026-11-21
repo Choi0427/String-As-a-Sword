@@ -33,6 +33,7 @@ namespace StringAsASword.Presentation
         // Stems lean toward the board by this angle (radians), parallel to the tilted judge lines.
         private readonly float tilt;
         private int[] beamLinks;
+        private IBeatTimeline beamTimeline;
         private readonly float targetX;
         private readonly float spawnX;
         private readonly float noteY, stringY, barHeight;
@@ -95,7 +96,10 @@ namespace StringAsASword.Presentation
         }
         public void Render(PrototypeGame game)
         {
-            bool active = game.State == PrototypeState.Playing || game.State == PrototypeState.CountIn || game.State == PrototypeState.Finale;
+            bool active = game.State == PrototypeState.Playing || game.State == PrototypeState.CountIn || game.State == PrototypeState.Finale ||
+                game.State == PrototypeState.Tutorial;
+            // The bound battle's notes: the song's, or the tutorial's even beat.
+            int count = game.Battle.Settings.NoteCount;
             var session = game.Session;
             double time = game.SongTime + game.VisualOffset;
             double approach = game.Song.NoteApproachBeats * game.Timeline.SecondsPerBeat;
@@ -105,15 +109,15 @@ namespace StringAsASword.Presentation
             { resolvedBeat = last.Value.BeatId; resolvedAt = time; resolvedHit = last.Value.IsHit; }
             if (!last.HasValue) resolvedBeat = -1;
             double sinceResolve = time - resolvedAt;
-            if (art && (beamLinks == null || beamLinks.Length != game.Song.NoteCount))
-                beamLinks = BeamLinks(game.Timeline, game.Song.NoteCount, session.IsHold);
+            if (art && (beamLinks == null || beamLinks.Length != count || beamTimeline != game.Timeline))
+            { beamLinks = BeamLinks(game.Timeline, count, session.IsHold); beamTimeline = game.Timeline; }
 
             // One slot before the nearest note keeps a just-passed note (or a held string) on screen.
             int first = Math.Max(0, game.Timeline.NearestBeat(time) - 1);
             for (int i = 0; i < Slots; i++)
             {
                 int beat = first + i;
-                bool inChart = active && beat < game.Song.NoteCount;
+                bool inChart = active && beat < count;
                 double remaining = game.Timeline.TimeOf(beat) - time;
                 bool isHold = inChart && session.IsHold(beat);
                 bool holding = isHold && held.HasValue && held.Value.Beat == beat;
@@ -134,7 +138,7 @@ namespace StringAsASword.Presentation
                 {
                     // The next note is only ever a tap here: hold notes are never beamed.
                     double nextRemaining = game.Timeline.TimeOf(beat + 1) - time;
-                    bool nextVisible = active && beat + 1 < game.Song.NoteCount && nextRemaining <= approach &&
+                    bool nextVisible = active && beat + 1 < count && nextRemaining <= approach &&
                         beat + 1 != session.Gate.LastConsumedBeat && nextRemaining >= -.14;
                     RenderBeams(i, inChart ? beamLinks[beat] : 0, headVisible, nextVisible, headX, X(nextRemaining, approach), headColor);
                 }

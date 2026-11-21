@@ -71,6 +71,7 @@ namespace StringAsASword.Stage
             while (lastBeat < beat)
             {
                 int current = ++lastBeat;
+                if (!AutoSpawn) continue;
                 bool due = current == initialSpawnBeat || current % interval == 0 || deferredBeat >= 0 && current > deferredBeat;
                 if (GoalReached) continue;
                 if (SpawnBlocked != null && SpawnBlocked()) { held |= due; continue; }
@@ -100,6 +101,40 @@ namespace StringAsASword.Stage
             var item = new NoisePickup(++nextId, SessionId, PhaseId, beat, candidates[random.Next(candidates.Count)]);
             deferredBeat = -1; attempts = 0;
             pickups.Add(item); Spawned?.Invoke(item);
+        }
+        /// <summary>Off: nothing spawns by itself (the tutorial places its noise with <see cref="SpawnAt"/>). Kept across resets.</summary>
+        public bool AutoSpawn { get; set; } = true;
+        /// <summary>Places a noise on <paramref name="cell"/> now. False when the cell is off the board, taken, or the board is full.</summary>
+        public bool SpawnAt(GridPosition cell, GridPosition player)
+        {
+            if (random == null || pickups.Count >= capacity || !Free(cell, player)) return false;
+            var item = new NoisePickup(++nextId, SessionId, PhaseId, lastBeat, cell);
+            pickups.Add(item); Spawned?.Invoke(item);
+            return true;
+        }
+        /// <summary>
+        /// The cell to place a noise near <paramref name="wanted"/>: that cell if it is free, else the same distance the other
+        /// way vertically, else the free cell nearest to it (scan order breaks ties).
+        /// </summary>
+        public GridPosition NearestFree(GridPosition wanted, GridPosition player)
+        {
+            if (Free(wanted, player)) return wanted;
+            var mirrored = new GridPosition(wanted.X, 2 * player.Y - wanted.Y);
+            if (Free(mirrored, player)) return mirrored;
+            GridPosition best = player; int bestDistance = int.MaxValue;
+            for (int y = 0; y < board.Height; y++) for (int x = 0; x < board.Width; x++)
+            {
+                var cell = new GridPosition(x, y);
+                int distance = Math.Abs(x - wanted.X) + Math.Abs(y - wanted.Y);
+                if (distance < bestDistance && Free(cell, player)) { best = cell; bestDistance = distance; }
+            }
+            return best;
+        }
+        private bool Free(GridPosition cell, GridPosition player)
+        {
+            if (cell.X < 0 || cell.Y < 0 || cell.X >= board.Width || cell.Y >= board.Height || cell.Equals(player)) return false;
+            foreach (var pickup in pickups) if (pickup.Cell.Equals(cell)) return false;
+            return true;
         }
         public bool TryCollect(GridPosition landing, int sessionId, int phaseId)
         {
