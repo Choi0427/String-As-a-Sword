@@ -178,8 +178,15 @@ namespace StringAsASword.Presentation
         }
         private void OnNote(NoteRecord record)
         {
-            if (!LessonActive) return;
             int note = record.noteIndex;
+            // The strike lesson counts a resonance set off before its card came up (right after the noise, while the praise
+            // and the line are still up): that strike spends the charge, and no other noise comes to charge the string again.
+            if (playing && steps.Step == TutorialStep.Strike)
+            {
+                if (steps.Ignited && note >= battle.Resonance.EndNote) steps.ResonanceEnded();
+                return;
+            }
+            if (!LessonActive) return;
             if (steps.Step == TutorialStep.Attack || steps.Step == TutorialStep.Slash)
             {
                 if (note == attackNote)
@@ -195,11 +202,9 @@ namespace StringAsASword.Presentation
                     if (shown.Count > 0) { attackPending = false; attackNote = shown[0].ImpactNote; }
                 }
             }
-            else if (steps.Step == TutorialStep.Strike && steps.Ignited && note >= battle.Resonance.EndNote)
-                steps.ResonanceEnded();
         }
         private void OnCollected(NoisePickup pickup) { if (LessonActive) steps.NoiseCollected(); }
-        private void OnIgnited(int note) { if (LessonActive) steps.ResonanceStarted(); }
+        private void OnIgnited(int note) { if (playing && steps.Step == TutorialStep.Strike) steps.ResonanceStarted(); }
 
         // ---------------------------------------------------------------- each frame
         private void LateUpdate()
