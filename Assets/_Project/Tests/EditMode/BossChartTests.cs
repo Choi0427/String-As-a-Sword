@@ -52,49 +52,6 @@ namespace StringAsASword.Tests
             Fails("shape A\n" + string.Concat(Enumerable.Repeat("22222222\n", 8)), 1, "막을 수도 피할 수도");
             Fails("hello", 1, "알 수 없는 줄");
         }
-        [Test] public void NoiseLinesAreReadInNoteOrderAndCheckTheirForm()
-        {
-            var chart = BossChart.Parse(X + "noise 12 1,-2\nnoise 10 0,2\n");
-            Assert.That(chart.NoiseSpawns.Select(n => n.Note), Is.EqualTo(new[] { 10, 12 }));
-            Assert.That((chart.NoiseSpawns[0].Dx, chart.NoiseSpawns[0].Dy), Is.EqualTo((0, 2)));
-            Assert.That((chart.NoiseSpawns[1].Dx, chart.NoiseSpawns[1].Dy), Is.EqualTo((1, -2)));
-            Assert.That(BossChart.Parse(X).NoiseSpawns, Is.Empty);
-            void Fails(string text, int line, string fragment)
-            {
-                var e = Assert.Throws<BossChartException>(() => BossChart.Parse(text));
-                Assert.That(e.Line, Is.EqualTo(line), e.Message);
-                StringAssert.Contains(fragment, e.Message);
-            }
-            Fails("noise 10", 1, "형식");
-            Fails("noise 10 0,0", 1, "기사 칸");
-            Fails("noise 10 a,2", 1, "정수");
-            Fails("noise 10 9,0", 1, "-7~7");
-            Fails("noise 10 0,2\nnoise 10 1,1", 2, "이미");
-        }
-        [Test] public void TheStageChartTeachesTheAttacksThenPlacesTheFirstNoise()
-        {
-            // 간주1 is the tutorial: two normal attacks on the knight's row, a slash down its column, then the first noise two
-            // cells above it, nothing while the resonance is practised, and a full-board attack to guard.
-            var settings = BattleAnalysis.LoadSettings();
-            var lesson = settings.Chart.Attacks.Where(a => a.Note <= 31).Select(a => (a.Note, a.Shape.Name, a.Warning)).ToArray();
-            Assert.That(lesson, Is.EqualTo(new[] { (2, "룩가로", 2), (5, "룩가로", 2), (8, "룩세로강", 2), (30, "전체", 3) }));
-            Assert.That(settings.Chart.NoiseSpawns.Single().Note, Is.EqualTo(10));
-            var battle = new BattleSession(settings, 87);
-            var timeline = settings.CreateTimeline();
-            var shown = new List<(int note, AttackResponse response, bool onKnight)>();
-            for (int note = 0; note <= 9; note++)
-            {
-                battle.Advance(timeline.TimeOf(note) + .2);
-                foreach (var t in battle.Patterns.Active)
-                    if (!shown.Exists(s => s.note == t.ImpactNote && s.response == t.Response))
-                        shown.Add((t.ImpactNote, t.Response, (t.Cells & Bit(6, 0)) != 0));
-                Assert.That(battle.Noise.Pickups, Is.Empty, $"no noise before its lesson (note {note})");
-            }
-            Assert.That(shown, Is.EqualTo(new[] { (2, AttackResponse.Either, true), (5, AttackResponse.Either, true), (8, AttackResponse.DodgeOnly, true) }),
-                "every lesson attack reaches a knight who stays on g1");
-            battle.Advance(timeline.TimeOf(10) + .2);
-            Assert.That(battle.Noise.Pickups.Single().Cell, Is.EqualTo(new GridPosition(6, 2)), "g3, two cells above g1");
-        }
         [Test] public void PieceOptionNamesTheSummonedPiecesAndReachesTheTelegraph()
         {
             const string rows = "\n00010000\n00010000\n00010000\n11111111\n00010000\n00010000\n00010000\n00010000\n";

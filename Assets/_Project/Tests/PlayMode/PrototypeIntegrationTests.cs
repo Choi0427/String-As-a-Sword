@@ -328,8 +328,6 @@ namespace StringAsASword.Tests
             if (hold == game.Song.NoteCount) Assert.Ignore("The song asset has no hold notes.");
             double head = game.Timeline.TimeOf(hold), end = game.Session.HoldEnd(hold);
             game.StartSession();
-            // The knight stays home until the hold; the tutorial's attacks on its row and column would end the run first.
-            game.Battle.Invincible = true;
             yield return UntilSongTime(head - .3, head + 15);
             Queue(Key.K, head, true);
             yield return UntilSongTime((head + end) * .5);
@@ -395,40 +393,12 @@ namespace StringAsASword.Tests
             Assert.That(screens.Showing, Is.EqualTo(BattleScreens.ScreenKind.None));
             LogAssert.NoUnexpectedReceived();
         }
-        [UnityTest] public IEnumerator TutorialPromptsTheFirstLessonAndDimsTheKeyGuide()
-        {
-            const string key = "StringAsASword.TutorialHints";
-            int saved = PlayerPrefs.GetInt(key, -1);
-            try
-            {
-                GameFlow.TutorialHints = true;
-                game.StartSession(); yield return null; yield return null;
-                var tutorial = game.Tutorial;
-                Assert.That(tutorial.Current?.Key, Is.EqualTo("WASD"), "how to move, before anything happens");
-                Assert.That(tutorial.Card.Visible, Is.True);
-                Assert.That(game.View.Screens.KeyGuideAlpha, Is.LessThan(1f), "one thing leads: the key guide steps back");
-                yield return UntilSongTime(FirstNote + .25, 12);
-                Assert.That(tutorial.Current?.Key, Is.EqualTo("K"), "the first normal attack on the knight's row");
-                GameFlow.TutorialHints = false; yield return null;
-                Assert.That(tutorial.Card.Visible, Is.False);
-                Assert.That(game.View.Screens.KeyGuideAlpha, Is.EqualTo(1f));
-            }
-            finally
-            {
-                if (saved < 0) PlayerPrefs.DeleteKey(key); else PlayerPrefs.SetInt(key, saved);
-                PlayerPrefs.Save();
-            }
-            LogAssert.NoUnexpectedReceived();
-        }
         [UnityTest] public IEnumerator LandingCollectsNoiseAndRestartClearsIt()
         {
-            // The stage chart places the first noise itself (the tutorial's `noise` line, two cells above the knight).
-            var chart=game.Battle.Settings.Chart;
-            int firstNoise=chart!=null&&chart.NoiseSpawns.Count>0?chart.NoiseSpawns[0].Note:0;
-            game.StartSession(); yield return UntilSongTime(game.Timeline.TimeOf(firstNoise)+.05, 20);
+            game.StartSession(); yield return UntilSongTime(FirstNote+.05);
             Assert.That(game.Noise.Pickups.Count,Is.EqualTo(1));
             var target = game.Noise.Pickups[0].Cell;
-            int beat=firstNoise+1;
+            int beat=1;
             while(!game.Session.Position.Equals(target))
             {
                 Assert.That(beat, Is.LessThan(30), "Input-driven collection must finish in a bounded number of notes.");

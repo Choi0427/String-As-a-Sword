@@ -75,7 +75,8 @@ namespace StringAsASword.Presentation
             float dt = Time.unscaledDeltaTime, time = Time.unscaledTime;
             igniteAge += dt; ghostAge += dt;
             var resonance = game.Battle.Resonance;
-            bool playing = game.State == PrototypeState.Playing || game.State == PrototypeState.CountIn || game.State == PrototypeState.Paused;
+            bool playing = game.State == PrototypeState.Playing || game.State == PrototypeState.CountIn || game.State == PrototypeState.Paused ||
+                game.State == PrototypeState.Tutorial;
             int remaining = playing ? resonance.Remaining(game.Battle.LastClosedNote + 1) : 0;
             bool charged = playing && resonance.Charged;
             ShownRemaining = remaining; ShownCharged = charged;

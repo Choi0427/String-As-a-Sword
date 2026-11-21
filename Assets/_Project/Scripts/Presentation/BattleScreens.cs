@@ -24,6 +24,8 @@ namespace StringAsASword.Presentation
         private Panel pause, gameOver;
         private TMP_Text gameOverTitle;
         private SettingsPanel settings;
+        /// <summary>The settings panel (with its 튜토리얼 button).</summary>
+        public SettingsPanel Settings => settings;
         private Panel shown;
         public ScreenKind Showing { get; private set; }
         public int Selected => shown?.Selected ?? -1;
@@ -65,6 +67,8 @@ namespace StringAsASword.Presentation
             gameOverTitle = gameOver.Title;
             settings = SettingsPanel.Create(frame, UiFonts.Korean(art.menuFont));
             settings.Closed += game.ApplySettings;
+            // From the pause screen: this run is dropped for the tutorial, which then leads into the song.
+            settings.TutorialRequested += game.StartTutorial;
             Show(ScreenKind.None);
         }
 

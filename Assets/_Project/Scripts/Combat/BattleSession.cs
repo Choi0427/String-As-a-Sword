@@ -119,8 +119,6 @@ namespace StringAsASword.Combat
         public void Reset(int sessionId, int seed)
         {
             Seed = seed; Records.Clear(); Events.Clear(); Inputs.Clear(); accepted = null;
-            // Read with the attacks below, so a chart swapped in between runs takes its noise lines along.
-            Noise.SetScripted(Settings.Chart?.NoiseSpawns);
             Session.Reset(); music.Reset(); Combat.Reset(); Resonance.Reset(); Phases.Reset(sessionId, seed);
             PlayerHp = Settings.PlayerMaxHp; Outcome = BattleOutcome.Running;
             KingStunned = false; StunnedNote = -1;
@@ -134,6 +132,12 @@ namespace StringAsASword.Combat
             Patterns.CanPublish = CanPublish;
             Patterns.BeginPhase(1, 0); Patterns.Publish(-1, Session.Position, Settings.NoteCount, false);
         }
+        /// <summary>
+        /// The tutorial: shows a chart shape on the player now, falling <paramref name="warning"/> notes after the last closed
+        /// note, as a chart line with that warning would.
+        /// </summary>
+        public IReadOnlyList<BossTelegraph> InjectAttack(BossChartShape shape, int warning)
+            => Patterns.Inject(shape, LastClosedNote + warning, warning, Session.Position, LastClosedNote, Settings.NoteCount);
         /// <summary>Developer mode: hits still land and show, but cost no HP.</summary>
         public bool Invincible { get; set; }
         /// <summary>Developer mode: the finishing run wins the battle whatever boss HP is left.</summary>

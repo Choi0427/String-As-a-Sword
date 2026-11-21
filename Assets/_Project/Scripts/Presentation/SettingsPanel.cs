@@ -8,7 +8,7 @@ using static StringAsASword.Presentation.UiKit;
 namespace StringAsASword.Presentation
 {
     /// <summary>
-    /// Saved settings (music volume, input/visual sync, HP style, tutorial, developer mode) on a card 820x960 in 1920x1080 pixels.
+    /// Saved settings (music volume, input/visual sync, HP style, developer mode) on a card 820x895 in 1920x1080 pixels.
     /// Opened from the main menu and from the battle's pause screen. Built as "Settings/Card/&lt;row&gt;" under its parent.
     /// </summary>
     public sealed class SettingsPanel : MonoBehaviour
@@ -19,6 +19,8 @@ namespace StringAsASword.Presentation
         private readonly Dictionary<string, Action<int>> choices = new Dictionary<string, Action<int>>();
         /// <summary>Called after the panel closes, so a running battle can pick up what changed.</summary>
         public event Action Closed;
+        /// <summary>The 튜토리얼 button was pressed (after the panel closed).</summary>
+        public event Action TutorialRequested;
         public bool IsOpen => gameObject.activeSelf;
 
         public static SettingsPanel Create(RectTransform parent, TMP_FontAsset font)
@@ -41,27 +43,38 @@ namespace StringAsASword.Presentation
         private void Build(RectTransform shade)
         {
             Image(shade, new Color(0, 0, 0, .72f)).raycastTarget = true;
-            var card = Rect(shade, "Card", Vector2.zero, new Vector2(820, 960));
+            var card = Rect(shade, "Card", Vector2.zero, new Vector2(820, 895));
             Image(card, Hex(0x0C0C0C)).raycastTarget = true;
-            Write(Rect(card, "Title", new Vector2(0, 424), new Vector2(700, 80)), "설정", 56, Text, TextAlignmentOptions.Center);
-            SliderRow(card, 314, "음악 볼륨", 0, 100, () => Mathf.RoundToInt(GameFlow.MusicVolume * 100), v => GameFlow.MusicVolume = v / 100f, v => v + "%");
-            SliderRow(card, 219, "입력 싱크", -200, 200, () => GameFlow.InputOffsetMs, v => GameFlow.InputOffsetMs = v, v => (v > 0 ? "+" : "") + v + " ms");
-            SliderRow(card, 124, "화면 싱크", -200, 200, () => GameFlow.VisualOffsetMs, v => GameFlow.VisualOffsetMs = v, v => (v > 0 ? "+" : "") + v + " ms");
-            ChoiceRow(card, 42, "체력 표시", new[] { "막대", "기사" }, () => (int)GameFlow.HpStyle, i => GameFlow.HpStyle = (PlayerHpStyle)i);
-            ChoiceRow(card, -23, "튜토리얼 안내", new[] { "켜짐", "꺼짐" }, () => GameFlow.TutorialHints ? 0 : 1, i => GameFlow.TutorialHints = i == 0);
-            Write(Rect(card, "Help", new Vector2(0, -83), new Vector2(760, 40)), "입력 싱크: 판정이 늦으면 +   /   화면 싱크: 노트가 소리보다 늦게 보이면 -", 18, Hint, TextAlignmentOptions.Center);
+            Write(Rect(card, "Title", new Vector2(0, 392), new Vector2(700, 80)), "설정", 56, Text, TextAlignmentOptions.Center);
+            SliderRow(card, 282, "음악 볼륨", 0, 100, () => Mathf.RoundToInt(GameFlow.MusicVolume * 100), v => GameFlow.MusicVolume = v / 100f, v => v + "%");
+            SliderRow(card, 187, "입력 싱크", -200, 200, () => GameFlow.InputOffsetMs, v => GameFlow.InputOffsetMs = v, v => (v > 0 ? "+" : "") + v + " ms");
+            SliderRow(card, 92, "화면 싱크", -200, 200, () => GameFlow.VisualOffsetMs, v => GameFlow.VisualOffsetMs = v, v => (v > 0 ? "+" : "") + v + " ms");
+            ChoiceRow(card, 10, "체력 표시", new[] { "막대", "기사" }, () => (int)GameFlow.HpStyle, i => GameFlow.HpStyle = (PlayerHpStyle)i);
+            Write(Rect(card, "Help", new Vector2(0, -50), new Vector2(760, 40)), "입력 싱크: 판정이 늦으면 +   /   화면 싱크: 노트가 소리보다 늦게 보이면 -", 18, Hint, TextAlignmentOptions.Center);
             // Developer mode: the rows under it only show while it is on.
-            Image(Rect(card, "Rule", new Vector2(0, -123), new Vector2(720, 2)), Hex(0x333333));
-            ChoiceRow(card, -166, "개발자 모드", new[] { "꺼짐", "켜짐" }, () => GameFlow.DevMode ? 1 : 0, i => GameFlow.DevMode = i == 1);
-            var invincible = ChoiceRow(card, -231, "무적", new[] { "꺼짐", "켜짐" }, () => GameFlow.Invincible ? 1 : 0, i => GameFlow.Invincible = i == 1);
-            var bossHp = ChoiceRow(card, -296, "보스 HP", new[] { "꺼짐", "켜짐" }, () => GameFlow.BossHpOff ? 0 : 1, i => GameFlow.BossHpOff = i == 0);
-            var phase = ChoiceRow(card, -361, "시작 페이즈", new[] { "1", "2", "3", "4" }, () => GameFlow.StartPhase - 1, i => GameFlow.StartPhase = i + 1);
+            Image(Rect(card, "Rule", new Vector2(0, -90), new Vector2(720, 2)), Hex(0x333333));
+            ChoiceRow(card, -133, "개발자 모드", new[] { "꺼짐", "켜짐" }, () => GameFlow.DevMode ? 1 : 0, i => GameFlow.DevMode = i == 1);
+            var invincible = ChoiceRow(card, -198, "무적", new[] { "꺼짐", "켜짐" }, () => GameFlow.Invincible ? 1 : 0, i => GameFlow.Invincible = i == 1);
+            var bossHp = ChoiceRow(card, -263, "보스 HP", new[] { "꺼짐", "켜짐" }, () => GameFlow.BossHpOff ? 0 : 1, i => GameFlow.BossHpOff = i == 0);
+            var phase = ChoiceRow(card, -328, "시작 페이즈", new[] { "1", "2", "3", "4" }, () => GameFlow.StartPhase - 1, i => GameFlow.StartPhase = i + 1);
             refresh += () => { invincible.SetActive(GameFlow.DevMode); phase.SetActive(GameFlow.DevMode); bossHp.SetActive(GameFlow.DevMode); };
-            var close = Rect(card, "Close", new Vector2(0, -436), new Vector2(200, 56));
+            // 튜토리얼 plays the tutorial again (then the song); 닫기 goes back.
+            var tutorial = Rect(card, "Tutorial", new Vector2(-115, -403), new Vector2(200, 56));
+            Image(tutorial, Hex(0x1E1E1E)).raycastTarget = true;
+            Stroke(tutorial, Box, 2);
+            Write(Stretch(Rect(tutorial, "Label")), "튜토리얼", 26, Text, TextAlignmentOptions.Center);
+            tutorial.gameObject.AddComponent<MenuButton>().Clicked = RequestTutorial;
+            var close = Rect(card, "Close", new Vector2(115, -403), new Vector2(200, 56));
             Image(close, Box).raycastTarget = true;
             Write(Stretch(Rect(close, "Label")), "닫기  ESC", 26, BoxText, TextAlignmentOptions.Center);
             close.gameObject.AddComponent<MenuButton>().Clicked = Close;
             refresh();
+        }
+        /// <summary>The 튜토리얼 button: closes the panel and asks its owner (menu or battle) to start the tutorial.</summary>
+        public void RequestTutorial()
+        {
+            Close();
+            TutorialRequested?.Invoke();
         }
         // A label and a few boxes to click; the chosen one is filled.
         private GameObject ChoiceRow(RectTransform card, float y, string name, string[] options, Func<int> current, Action<int> set)

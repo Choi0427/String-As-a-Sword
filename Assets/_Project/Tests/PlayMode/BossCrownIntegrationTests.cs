@@ -79,8 +79,7 @@ namespace StringAsASword.Tests
                 Assert.That(label.name, Is.Not.EqualTo("Column").And.Not.EqualTo("Row"), "The board's A-H and 1-8 labels are gone.");
             game.StartSession();
             float waited = 0;
-            // The tutorial's first noise comes on note 10 (about 13 s after Start, count-in included).
-            while (game.Noise.Pickups.Count == 0 && waited < 20) { waited += Time.unscaledDeltaTime; yield return null; }
+            while (game.Noise.Pickups.Count == 0 && waited < 10) { waited += Time.unscaledDeltaTime; yield return null; }
             Assert.That(game.Noise.Pickups.Count, Is.GreaterThan(0), "A noise pickup spawns early in the battle.");
             yield return null;
             var pickup = world.Find("Noise_0");

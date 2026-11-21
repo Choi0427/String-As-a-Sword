@@ -1,5 +1,5 @@
 {
-    "version": "battle-11+chart",
+    "version": "battle-8+chart",
     "chartHash": "7dfb2e74bcfabbf576ffc81c3882b3c2bb30ea72f8b7a139848accd00b6a1ad6",
     "noteCount": 321,
     "seedsPerGroup": 200,
@@ -7,63 +7,63 @@
     "invariantFailures": 0,
     "replayed": 18,
     "replayFailures": 0,
-    "elapsedSeconds": 59.805169299999999,
-    "passed": false,
+    "elapsedSeconds": 212.2848831,
+    "passed": true,
     "replayErrors": [],
     "criteria": [
         {
             "name": "share three-bot mean",
-            "actual": "33.6/55.9/10.4",
+            "actual": "43.9/45.2/10.8",
             "target": "43/43/14 +-4pp",
-            "passed": false
+            "passed": true
         },
         {
             "name": "share CollectFirst",
-            "actual": "33.8/57.5/8.8",
+            "actual": "43.9/46.6/9.5",
             "target": "43/43/14 +-8pp",
-            "passed": false
+            "passed": true
         },
         {
             "name": "share AttackHold",
-            "actual": "33.4/52.9/13.7",
+            "actual": "44.3/42.4/13.4",
             "target": "43/43/14 +-8pp",
-            "passed": false
+            "passed": true
         },
         {
             "name": "share MovementUse",
-            "actual": "33.8/57.5/8.8",
+            "actual": "43.6/46.8/9.6",
             "target": "43/43/14 +-8pp",
-            "passed": false
+            "passed": true
         },
         {
             "name": "clear no-miss",
-            "actual": "100.0",
+            "actual": "99.8",
             "target": ">=90%",
             "passed": true
         },
         {
             "name": "clear miss5",
-            "actual": "98.3",
+            "actual": "95.8",
             "target": ">=80%",
             "passed": true
         },
         {
             "name": "leftover median",
-            "actual": "109",
+            "actual": "48",
             "target": "10..50",
-            "passed": false
+            "passed": true
         },
         {
             "name": "DodgeOnly fired P10",
-            "actual": "14",
+            "actual": "21",
             "target": ">=8",
             "passed": true
         },
         {
             "name": "GuardOnly fired P10",
-            "actual": "6",
+            "actual": "8",
             "target": ">=8",
-            "passed": false
+            "passed": true
         },
         {
             "name": "invariant failures",
@@ -83,70 +83,70 @@
             "group": "development",
             "strategy": "CollectFirst",
             "runs": 200,
-            "clears": 200,
+            "clears": 199,
             "deaths": 0,
-            "timeouts": 0,
+            "timeouts": 1,
             "invariantFailures": 0,
-            "clearRate": 1.0,
+            "clearRate": 0.995,
             "deathRate": 0.0,
-            "attackShare": 0.3399069472348525,
-            "moveShare": 0.5723273765464735,
-            "guardShare": 0.087765676218674,
+            "attackShare": 0.43674497304529177,
+            "moveShare": 0.46903159800102309,
+            "guardShare": 0.09422342895368513,
             "distributions": [
                 {
                     "metric": "attack",
                     "phase": 0,
                     "count": 200,
-                    "min": 63.0,
-                    "p10": 64.0,
-                    "p50": 64.0,
-                    "p90": 65.0,
-                    "max": 66.0,
-                    "mean": 64.29
+                    "min": 109.0,
+                    "p10": 111.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.99
                 },
                 {
                     "metric": "move",
                     "phase": 0,
                     "count": 200,
-                    "min": 87.0,
-                    "p10": 98.0,
-                    "p50": 107.0,
-                    "p90": 119.0,
-                    "max": 129.0,
-                    "mean": 108.25
+                    "min": 81.0,
+                    "p10": 96.0,
+                    "p50": 119.0,
+                    "p90": 138.0,
+                    "max": 164.0,
+                    "mean": 119.195
                 },
                 {
                     "metric": "guard",
                     "phase": 0,
                     "count": 200,
-                    "min": 12.0,
-                    "p10": 14.0,
-                    "p50": 17.0,
-                    "p90": 19.0,
-                    "max": 22.0,
-                    "mean": 16.6
+                    "min": 19.0,
+                    "p10": 21.0,
+                    "p50": 24.0,
+                    "p90": 27.0,
+                    "max": 30.0,
+                    "mean": 23.945
                 },
                 {
                     "metric": "other",
                     "phase": 0,
                     "count": 200,
-                    "min": 89.0,
-                    "p10": 102.0,
-                    "p50": 114.0,
-                    "p90": 127.0,
-                    "max": 138.0,
-                    "mean": 114.86
+                    "min": 1.0,
+                    "p10": 30.0,
+                    "p50": 48.0,
+                    "p90": 75.0,
+                    "max": 89.0,
+                    "mean": 49.87
                 },
                 {
                     "metric": "guard_success",
                     "phase": 0,
                     "count": 200,
-                    "min": 12.0,
-                    "p10": 13.0,
-                    "p50": 15.0,
-                    "p90": 17.0,
-                    "max": 19.0,
-                    "mean": 15.415
+                    "min": 19.0,
+                    "p10": 21.0,
+                    "p50": 23.0,
+                    "p90": 25.0,
+                    "max": 28.0,
+                    "mean": 23.13
                 },
                 {
                     "metric": "guard_broken",
@@ -174,84 +174,92 @@
                     "metric": "leftover_notes",
                     "phase": 0,
                     "count": 200,
-                    "min": 87.0,
-                    "p10": 99.0,
-                    "p50": 111.0,
-                    "p90": 124.0,
-                    "max": 136.0,
-                    "mean": 112.035
+                    "min": 0.0,
+                    "p10": 27.0,
+                    "p50": 48.0,
+                    "p90": 72.0,
+                    "max": 85.0,
+                    "mean": 48.93
                 },
                 {
                     "metric": "published_Either",
                     "phase": 0,
                     "count": 200,
-                    "min": 27.0,
-                    "p10": 30.0,
-                    "p50": 33.0,
-                    "p90": 33.0,
-                    "max": 35.0,
-                    "mean": 31.855
+                    "min": 39.0,
+                    "p10": 42.0,
+                    "p50": 43.0,
+                    "p90": 44.0,
+                    "max": 45.0,
+                    "mean": 43.125
                 },
                 {
                     "metric": "fired_Either",
                     "phase": 0,
                     "count": 200,
-                    "min": 27.0,
-                    "p10": 30.0,
-                    "p50": 33.0,
-                    "p90": 33.0,
-                    "max": 35.0,
-                    "mean": 31.835
+                    "min": 39.0,
+                    "p10": 42.0,
+                    "p50": 43.0,
+                    "p90": 44.0,
+                    "max": 45.0,
+                    "mean": 43.1
                 },
                 {
                     "metric": "published_GuardOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 6.0,
-                    "p10": 6.0,
-                    "p50": 7.0,
-                    "p90": 7.0,
-                    "max": 8.0,
-                    "mean": 6.69
+                    "min": 8.0,
+                    "p10": 8.0,
+                    "p50": 9.0,
+                    "p90": 9.0,
+                    "max": 11.0,
+                    "mean": 8.77
                 },
                 {
                     "metric": "fired_GuardOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 6.0,
-                    "p10": 6.0,
-                    "p50": 7.0,
-                    "p90": 7.0,
-                    "max": 7.0,
-                    "mean": 6.64
+                    "min": 8.0,
+                    "p10": 8.0,
+                    "p50": 9.0,
+                    "p90": 9.0,
+                    "max": 11.0,
+                    "mean": 8.675
                 },
                 {
                     "metric": "published_DodgeOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 13.0,
-                    "p10": 14.0,
-                    "p50": 14.0,
-                    "p90": 16.0,
-                    "max": 18.0,
-                    "mean": 14.925
+                    "min": 18.0,
+                    "p10": 21.0,
+                    "p50": 28.0,
+                    "p90": 34.0,
+                    "max": 40.0,
+                    "mean": 27.885
                 },
                 {
                     "metric": "fired_DodgeOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 13.0,
-                    "p10": 14.0,
-                    "p50": 14.0,
-                    "p90": 16.0,
-                    "max": 18.0,
-                    "mean": 14.925
+                    "min": 18.0,
+                    "p10": 21.0,
+                    "p50": 27.0,
+                    "p90": 33.0,
+                    "max": 40.0,
+                    "mean": 27.54
                 }
             ],
             "patterns": [
                 {
                     "name": "X",
-                    "mean": 2.0
+                    "mean": 3.82
+                },
+                {
+                    "name": "가로창살",
+                    "mean": 0.315
+                },
+                {
+                    "name": "가운데폭발",
+                    "mean": 0.295
                 },
                 {
                     "name": "각잡은악수-오른",
@@ -259,19 +267,35 @@
                 },
                 {
                     "name": "고리-바깥",
-                    "mean": 0.515
+                    "mean": 1.0
                 },
                 {
                     "name": "고리-안강",
-                    "mean": 0.49
+                    "mean": 1.0
                 },
                 {
                     "name": "고리-중간",
-                    "mean": 0.515
+                    "mean": 1.0
+                },
+                {
+                    "name": "구석",
+                    "mean": 0.02
+                },
+                {
+                    "name": "깨진판-가",
+                    "mean": 0.79
+                },
+                {
+                    "name": "깨진판-나",
+                    "mean": 0.01
+                },
+                {
+                    "name": "나선",
+                    "mean": 0.7
                 },
                 {
                     "name": "나이트라이더",
-                    "mean": 2.0
+                    "mean": 3.93
                 },
                 {
                     "name": "나이트라이더격자",
@@ -283,19 +307,31 @@
                 },
                 {
                     "name": "낙타얼룩말",
-                    "mean": 2.0
+                    "mean": 3.76
                 },
                 {
                     "name": "뒤치기",
-                    "mean": 0.995
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
                 },
                 {
                     "name": "룩가로",
-                    "mean": 4.0
+                    "mean": 2.0
                 },
                 {
                     "name": "룩세로강",
-                    "mean": 2.0
+                    "mean": 1.0
+                },
+                {
+                    "name": "반쪽-오른",
+                    "mean": 0.465
+                },
+                {
+                    "name": "반쪽-왼",
+                    "mean": 0.62
                 },
                 {
                     "name": "베롤리나-32",
@@ -310,6 +346,14 @@
                     "mean": 1.0
                 },
                 {
+                    "name": "블록체커-가",
+                    "mean": 0.17
+                },
+                {
+                    "name": "블록체커-나",
+                    "mean": 0.1
+                },
+                {
                     "name": "비숍-검은칸",
                     "mean": 1.0
                 },
@@ -322,36 +366,56 @@
                     "mean": 1.0
                 },
                 {
+                    "name": "세로창살-짝",
+                    "mean": 0.79
+                },
+                {
+                    "name": "세로창살-홀",
+                    "mean": 0.815
+                },
+                {
+                    "name": "아마존",
+                    "mean": 1.89
+                },
+                {
                     "name": "아치비숍",
-                    "mean": 2.03
+                    "mean": 4.0
                 },
                 {
                     "name": "알필다바바",
-                    "mean": 2.02
+                    "mean": 4.0
                 },
                 {
                     "name": "여러핀강",
-                    "mean": 0.415
+                    "mean": 1.0
                 },
                 {
                     "name": "오프닝1-e5",
-                    "mean": 1.855
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝2-Nf6",
-                    "mean": 1.98
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝3-Bc5",
-                    "mean": 1.955
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝4-캐슬링",
-                    "mean": 1.99
+                    "mean": 2.0
+                },
+                {
+                    "name": "외길",
+                    "mean": 0.315
+                },
+                {
+                    "name": "이중고리",
+                    "mean": 0.835
                 },
                 {
                     "name": "전체",
-                    "mean": 6.64
+                    "mean": 8.675
                 },
                 {
                     "name": "챈슬러",
@@ -368,6 +432,30 @@
                 {
                     "name": "킹손바닥강",
                     "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
                 },
                 {
                     "name": "핀+대각",
@@ -387,70 +475,70 @@
             "group": "development",
             "strategy": "AttackHold",
             "runs": 200,
-            "clears": 200,
+            "clears": 198,
             "deaths": 0,
-            "timeouts": 0,
+            "timeouts": 2,
             "invariantFailures": 0,
-            "clearRate": 1.0,
+            "clearRate": 0.99,
             "deathRate": 0.0,
-            "attackShare": 0.3347170008354219,
-            "moveShare": 0.5267857142857143,
-            "guardShare": 0.1384972848788638,
+            "attackShare": 0.43333268250776116,
+            "moveShare": 0.43405509889294577,
+            "guardShare": 0.13261221859929324,
             "distributions": [
                 {
                     "metric": "attack",
                     "phase": 0,
                     "count": 200,
-                    "min": 63.0,
-                    "p10": 63.0,
-                    "p50": 64.0,
-                    "p90": 65.0,
-                    "max": 66.0,
-                    "mean": 64.105
+                    "min": 106.0,
+                    "p10": 111.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.97
                 },
                 {
                     "metric": "move",
                     "phase": 0,
                     "count": 200,
-                    "min": 90.0,
-                    "p10": 93.0,
-                    "p50": 101.0,
-                    "p90": 109.0,
-                    "max": 120.0,
-                    "mean": 100.89
+                    "min": 77.0,
+                    "p10": 86.0,
+                    "p50": 112.0,
+                    "p90": 131.0,
+                    "max": 158.0,
+                    "mean": 111.155
                 },
                 {
                     "metric": "guard",
                     "phase": 0,
                     "count": 200,
-                    "min": 19.0,
-                    "p10": 23.0,
-                    "p50": 27.0,
-                    "p90": 29.0,
-                    "max": 33.0,
-                    "mean": 26.525
+                    "min": 25.0,
+                    "p10": 31.0,
+                    "p50": 34.0,
+                    "p90": 37.0,
+                    "max": 42.0,
+                    "mean": 33.96
                 },
                 {
                     "metric": "other",
                     "phase": 0,
                     "count": 200,
-                    "min": 90.0,
-                    "p10": 104.0,
-                    "p50": 111.0,
-                    "p90": 123.0,
-                    "max": 129.0,
-                    "mean": 112.48
+                    "min": 1.0,
+                    "p10": 27.0,
+                    "p50": 46.0,
+                    "p90": 75.0,
+                    "max": 91.0,
+                    "mean": 47.915
                 },
                 {
                     "metric": "guard_success",
                     "phase": 0,
                     "count": 200,
-                    "min": 18.0,
-                    "p10": 22.0,
-                    "p50": 25.0,
-                    "p90": 28.0,
-                    "max": 31.0,
-                    "mean": 24.72
+                    "min": 25.0,
+                    "p10": 30.0,
+                    "p50": 33.0,
+                    "p90": 36.0,
+                    "max": 41.0,
+                    "mean": 32.975
                 },
                 {
                     "metric": "guard_broken",
@@ -478,84 +566,92 @@
                     "metric": "leftover_notes",
                     "phase": 0,
                     "count": 200,
-                    "min": 87.0,
-                    "p10": 102.0,
-                    "p50": 108.0,
-                    "p90": 120.0,
-                    "max": 127.0,
-                    "mean": 109.44
+                    "min": 0.0,
+                    "p10": 24.0,
+                    "p50": 45.0,
+                    "p90": 72.0,
+                    "max": 91.0,
+                    "mean": 45.725
                 },
                 {
                     "metric": "published_Either",
                     "phase": 0,
                     "count": 200,
-                    "min": 29.0,
-                    "p10": 31.0,
-                    "p50": 33.0,
-                    "p90": 33.0,
-                    "max": 35.0,
-                    "mean": 32.495
+                    "min": 38.0,
+                    "p10": 42.0,
+                    "p50": 43.0,
+                    "p90": 44.0,
+                    "max": 45.0,
+                    "mean": 43.34
                 },
                 {
                     "metric": "fired_Either",
                     "phase": 0,
                     "count": 200,
-                    "min": 29.0,
-                    "p10": 31.0,
-                    "p50": 33.0,
-                    "p90": 33.0,
-                    "max": 35.0,
-                    "mean": 32.45
+                    "min": 38.0,
+                    "p10": 42.0,
+                    "p50": 43.0,
+                    "p90": 44.0,
+                    "max": 45.0,
+                    "mean": 43.3
                 },
                 {
                     "metric": "published_GuardOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 6.0,
-                    "p10": 6.0,
-                    "p50": 7.0,
-                    "p90": 7.0,
-                    "max": 8.0,
-                    "mean": 6.905
+                    "min": 7.0,
+                    "p10": 8.0,
+                    "p50": 9.0,
+                    "p90": 10.0,
+                    "max": 11.0,
+                    "mean": 8.865
                 },
                 {
                     "metric": "fired_GuardOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 6.0,
-                    "p10": 6.0,
-                    "p50": 7.0,
-                    "p90": 7.0,
-                    "max": 7.0,
-                    "mean": 6.85
+                    "min": 7.0,
+                    "p10": 8.0,
+                    "p50": 9.0,
+                    "p90": 10.0,
+                    "max": 11.0,
+                    "mean": 8.785
                 },
                 {
                     "metric": "published_DodgeOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 14.0,
-                    "p10": 14.0,
-                    "p50": 15.0,
-                    "p90": 16.0,
-                    "max": 18.0,
-                    "mean": 15.06
+                    "min": 17.0,
+                    "p10": 21.0,
+                    "p50": 28.0,
+                    "p90": 34.0,
+                    "max": 40.0,
+                    "mean": 28.69
                 },
                 {
                     "metric": "fired_DodgeOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 14.0,
-                    "p10": 14.0,
-                    "p50": 15.0,
-                    "p90": 16.0,
-                    "max": 18.0,
-                    "mean": 15.06
+                    "min": 17.0,
+                    "p10": 21.0,
+                    "p50": 28.0,
+                    "p90": 34.0,
+                    "max": 40.0,
+                    "mean": 28.32
                 }
             ],
             "patterns": [
                 {
                     "name": "X",
-                    "mean": 2.0
+                    "mean": 3.88
+                },
+                {
+                    "name": "가로창살",
+                    "mean": 0.435
+                },
+                {
+                    "name": "가운데폭발",
+                    "mean": 0.375
                 },
                 {
                     "name": "각잡은악수-오른",
@@ -563,19 +659,35 @@
                 },
                 {
                     "name": "고리-바깥",
-                    "mean": 0.77
+                    "mean": 1.0
                 },
                 {
                     "name": "고리-안강",
-                    "mean": 0.63
+                    "mean": 1.0
                 },
                 {
                     "name": "고리-중간",
+                    "mean": 1.0
+                },
+                {
+                    "name": "구석",
+                    "mean": 0.07
+                },
+                {
+                    "name": "깨진판-가",
+                    "mean": 1.0
+                },
+                {
+                    "name": "깨진판-나",
+                    "mean": 0.09
+                },
+                {
+                    "name": "나선",
                     "mean": 0.725
                 },
                 {
                     "name": "나이트라이더",
-                    "mean": 2.0
+                    "mean": 3.99
                 },
                 {
                     "name": "나이트라이더격자",
@@ -587,19 +699,31 @@
                 },
                 {
                     "name": "낙타얼룩말",
-                    "mean": 2.0
+                    "mean": 3.72
                 },
                 {
                     "name": "뒤치기",
                     "mean": 1.0
                 },
                 {
+                    "name": "룩-e열강",
+                    "mean": 1.0
+                },
+                {
                     "name": "룩가로",
-                    "mean": 4.0
+                    "mean": 2.0
                 },
                 {
                     "name": "룩세로강",
-                    "mean": 2.0
+                    "mean": 1.0
+                },
+                {
+                    "name": "반쪽-오른",
+                    "mean": 0.545
+                },
+                {
+                    "name": "반쪽-왼",
+                    "mean": 0.645
                 },
                 {
                     "name": "베롤리나-32",
@@ -614,6 +738,14 @@
                     "mean": 1.0
                 },
                 {
+                    "name": "블록체커-가",
+                    "mean": 0.245
+                },
+                {
+                    "name": "블록체커-나",
+                    "mean": 0.175
+                },
+                {
                     "name": "비숍-검은칸",
                     "mean": 1.0
                 },
@@ -626,20 +758,32 @@
                     "mean": 1.0
                 },
                 {
+                    "name": "세로창살-짝",
+                    "mean": 0.775
+                },
+                {
+                    "name": "세로창살-홀",
+                    "mean": 0.795
+                },
+                {
+                    "name": "아마존",
+                    "mean": 1.93
+                },
+                {
                     "name": "아치비숍",
-                    "mean": 2.01
+                    "mean": 4.0
                 },
                 {
                     "name": "알필다바바",
-                    "mean": 2.01
+                    "mean": 3.99
                 },
                 {
                     "name": "여러핀강",
-                    "mean": 0.42
+                    "mean": 1.0
                 },
                 {
                     "name": "오프닝1-e5",
-                    "mean": 1.955
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝2-Nf6",
@@ -647,15 +791,23 @@
                 },
                 {
                     "name": "오프닝3-Bc5",
-                    "mean": 1.99
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝4-캐슬링",
                     "mean": 2.0
                 },
                 {
+                    "name": "외길",
+                    "mean": 0.435
+                },
+                {
+                    "name": "이중고리",
+                    "mean": 0.8
+                },
+                {
                     "name": "전체",
-                    "mean": 6.85
+                    "mean": 8.785
                 },
                 {
                     "name": "챈슬러",
@@ -672,6 +824,30 @@
                 {
                     "name": "킹손바닥강",
                     "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
                 },
                 {
                     "name": "핀+대각",
@@ -691,982 +867,70 @@
             "group": "development",
             "strategy": "MovementUse",
             "runs": 200,
-            "clears": 200,
+            "clears": 196,
             "deaths": 0,
-            "timeouts": 0,
+            "timeouts": 4,
             "invariantFailures": 0,
-            "clearRate": 1.0,
+            "clearRate": 0.98,
             "deathRate": 0.0,
-            "attackShare": 0.33945923109421208,
-            "moveShare": 0.5724281791297,
-            "guardShare": 0.08811258977608787,
+            "attackShare": 0.4278465871821584,
+            "moveShare": 0.4766755411505961,
+            "guardShare": 0.09547787166724543,
             "distributions": [
                 {
                     "metric": "attack",
                     "phase": 0,
                     "count": 200,
-                    "min": 63.0,
-                    "p10": 64.0,
-                    "p50": 64.0,
-                    "p90": 65.0,
-                    "max": 66.0,
-                    "mean": 64.28
-                },
-                {
-                    "metric": "move",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 87.0,
-                    "p10": 98.0,
-                    "p50": 107.0,
-                    "p90": 120.0,
-                    "max": 129.0,
-                    "mean": 108.395
-                },
-                {
-                    "metric": "guard",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 12.0,
-                    "p10": 14.0,
-                    "p50": 17.0,
-                    "p90": 20.0,
-                    "max": 23.0,
-                    "mean": 16.685
-                },
-                {
-                    "metric": "other",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 88.0,
-                    "p10": 102.0,
-                    "p50": 114.0,
-                    "p90": 127.0,
-                    "max": 138.0,
-                    "mean": 114.64
-                },
-                {
-                    "metric": "guard_success",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 12.0,
-                    "p10": 13.0,
-                    "p50": 15.0,
-                    "p90": 18.0,
-                    "max": 19.0,
-                    "mean": 15.495
-                },
-                {
-                    "metric": "guard_broken",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 0.0,
-                    "p10": 0.0,
-                    "p50": 0.0,
-                    "p90": 0.0,
-                    "max": 0.0,
-                    "mean": 0.0
-                },
-                {
-                    "metric": "hits",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 0.0,
-                    "p10": 0.0,
-                    "p50": 0.0,
-                    "p90": 0.0,
-                    "max": 0.0,
-                    "mean": 0.0
-                },
-                {
-                    "metric": "leftover_notes",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 85.0,
-                    "p10": 99.0,
+                    "min": 102.0,
+                    "p10": 111.0,
                     "p50": 111.0,
-                    "p90": 124.0,
-                    "max": 136.0,
-                    "mean": 111.81
-                },
-                {
-                    "metric": "published_Either",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 27.0,
-                    "p10": 30.0,
-                    "p50": 33.0,
-                    "p90": 33.0,
-                    "max": 35.0,
-                    "mean": 31.855
-                },
-                {
-                    "metric": "fired_Either",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 27.0,
-                    "p10": 30.0,
-                    "p50": 33.0,
-                    "p90": 33.0,
-                    "max": 35.0,
-                    "mean": 31.835
-                },
-                {
-                    "metric": "published_GuardOnly",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 6.0,
-                    "p10": 6.0,
-                    "p50": 7.0,
-                    "p90": 7.0,
-                    "max": 8.0,
-                    "mean": 6.705
-                },
-                {
-                    "metric": "fired_GuardOnly",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 6.0,
-                    "p10": 6.0,
-                    "p50": 7.0,
-                    "p90": 7.0,
-                    "max": 8.0,
-                    "mean": 6.66
-                },
-                {
-                    "metric": "published_DodgeOnly",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 13.0,
-                    "p10": 14.0,
-                    "p50": 14.0,
-                    "p90": 16.0,
-                    "max": 18.0,
-                    "mean": 14.93
-                },
-                {
-                    "metric": "fired_DodgeOnly",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 13.0,
-                    "p10": 14.0,
-                    "p50": 14.0,
-                    "p90": 16.0,
-                    "max": 18.0,
-                    "mean": 14.93
-                }
-            ],
-            "patterns": [
-                {
-                    "name": "X",
-                    "mean": 2.0
-                },
-                {
-                    "name": "각잡은악수-오른",
-                    "mean": 1.0
-                },
-                {
-                    "name": "고리-바깥",
-                    "mean": 0.52
-                },
-                {
-                    "name": "고리-안강",
-                    "mean": 0.49
-                },
-                {
-                    "name": "고리-중간",
-                    "mean": 0.52
-                },
-                {
-                    "name": "나이트라이더",
-                    "mean": 2.0
-                },
-                {
-                    "name": "나이트라이더격자",
-                    "mean": 1.0
-                },
-                {
-                    "name": "나이트훈수+중심",
-                    "mean": 1.0
-                },
-                {
-                    "name": "낙타얼룩말",
-                    "mean": 2.0
-                },
-                {
-                    "name": "뒤치기",
-                    "mean": 0.995
-                },
-                {
-                    "name": "룩가로",
-                    "mean": 4.0
-                },
-                {
-                    "name": "룩세로강",
-                    "mean": 2.0
-                },
-                {
-                    "name": "베롤리나-32",
-                    "mean": 1.0
-                },
-                {
-                    "name": "베롤리나-54",
-                    "mean": 1.0
-                },
-                {
-                    "name": "베롤리나-76",
-                    "mean": 1.0
-                },
-                {
-                    "name": "비숍-검은칸",
-                    "mean": 1.0
-                },
-                {
-                    "name": "비숍-흰칸",
-                    "mean": 1.0
-                },
-                {
-                    "name": "비숍X추적",
-                    "mean": 1.0
-                },
-                {
-                    "name": "아치비숍",
-                    "mean": 2.03
-                },
-                {
-                    "name": "알필다바바",
-                    "mean": 2.02
-                },
-                {
-                    "name": "여러핀강",
-                    "mean": 0.42
-                },
-                {
-                    "name": "오프닝1-e5",
-                    "mean": 1.86
-                },
-                {
-                    "name": "오프닝2-Nf6",
-                    "mean": 1.98
-                },
-                {
-                    "name": "오프닝3-Bc5",
-                    "mean": 1.94
-                },
-                {
-                    "name": "오프닝4-캐슬링",
-                    "mean": 1.99
-                },
-                {
-                    "name": "전체",
-                    "mean": 6.66
-                },
-                {
-                    "name": "챈슬러",
-                    "mean": 4.0
-                },
-                {
-                    "name": "킹고리강",
-                    "mean": 1.0
-                },
-                {
-                    "name": "킹손바닥",
-                    "mean": 1.0
-                },
-                {
-                    "name": "킹손바닥강",
-                    "mean": 2.0
-                },
-                {
-                    "name": "핀+대각",
-                    "mean": 1.0
-                },
-                {
-                    "name": "핀+십자",
-                    "mean": 1.0
-                },
-                {
-                    "name": "핀강",
-                    "mean": 1.0
-                }
-            ]
-        },
-        {
-            "group": "development",
-            "strategy": "ALL",
-            "runs": 600,
-            "clears": 600,
-            "deaths": 0,
-            "timeouts": 0,
-            "invariantFailures": 0,
-            "clearRate": 1.0,
-            "deathRate": 0.0,
-            "attackShare": 0.33801445563313567,
-            "moveShare": 0.5570594014245114,
-            "guardShare": 0.1049261429423529,
-            "distributions": [
-                {
-                    "metric": "attack",
-                    "phase": 0,
-                    "count": 600,
-                    "min": 63.0,
-                    "p10": 64.0,
-                    "p50": 64.0,
-                    "p90": 65.0,
-                    "max": 66.0,
-                    "mean": 64.225
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.885
                 },
                 {
                     "metric": "move",
                     "phase": 0,
-                    "count": 600,
+                    "count": 200,
                     "min": 87.0,
-                    "p10": 96.0,
-                    "p50": 103.0,
-                    "p90": 119.0,
-                    "max": 129.0,
-                    "mean": 105.845
+                    "p10": 99.0,
+                    "p50": 126.0,
+                    "p90": 141.0,
+                    "max": 170.0,
+                    "mean": 123.54
                 },
                 {
                     "metric": "guard",
                     "phase": 0,
-                    "count": 600,
-                    "min": 12.0,
-                    "p10": 14.0,
-                    "p50": 18.0,
-                    "p90": 28.0,
-                    "max": 33.0,
-                    "mean": 19.936666666666669
-                },
-                {
-                    "metric": "other",
-                    "phase": 0,
-                    "count": 600,
-                    "min": 88.0,
-                    "p10": 103.0,
-                    "p50": 112.0,
-                    "p90": 126.0,
-                    "max": 138.0,
-                    "mean": 113.99333333333334
-                },
-                {
-                    "metric": "guard_success",
-                    "phase": 0,
-                    "count": 600,
-                    "min": 12.0,
-                    "p10": 14.0,
-                    "p50": 17.0,
-                    "p90": 26.0,
+                    "count": 200,
+                    "min": 19.0,
+                    "p10": 22.0,
+                    "p50": 25.0,
+                    "p90": 27.0,
                     "max": 31.0,
-                    "mean": 18.543333333333334
-                },
-                {
-                    "metric": "guard_broken",
-                    "phase": 0,
-                    "count": 600,
-                    "min": 0.0,
-                    "p10": 0.0,
-                    "p50": 0.0,
-                    "p90": 0.0,
-                    "max": 0.0,
-                    "mean": 0.0
-                },
-                {
-                    "metric": "hits",
-                    "phase": 0,
-                    "count": 600,
-                    "min": 0.0,
-                    "p10": 0.0,
-                    "p50": 0.0,
-                    "p90": 0.0,
-                    "max": 0.0,
-                    "mean": 0.0
-                },
-                {
-                    "metric": "leftover_notes",
-                    "phase": 0,
-                    "count": 600,
-                    "min": 85.0,
-                    "p10": 99.0,
-                    "p50": 109.0,
-                    "p90": 124.0,
-                    "max": 136.0,
-                    "mean": 111.095
-                },
-                {
-                    "metric": "published_Either",
-                    "phase": 0,
-                    "count": 600,
-                    "min": 27.0,
-                    "p10": 30.0,
-                    "p50": 33.0,
-                    "p90": 33.0,
-                    "max": 35.0,
-                    "mean": 32.068333333333338
-                },
-                {
-                    "metric": "fired_Either",
-                    "phase": 0,
-                    "count": 600,
-                    "min": 27.0,
-                    "p10": 30.0,
-                    "p50": 33.0,
-                    "p90": 33.0,
-                    "max": 35.0,
-                    "mean": 32.04
-                },
-                {
-                    "metric": "published_GuardOnly",
-                    "phase": 0,
-                    "count": 600,
-                    "min": 6.0,
-                    "p10": 6.0,
-                    "p50": 7.0,
-                    "p90": 7.0,
-                    "max": 8.0,
-                    "mean": 6.766666666666667
-                },
-                {
-                    "metric": "fired_GuardOnly",
-                    "phase": 0,
-                    "count": 600,
-                    "min": 6.0,
-                    "p10": 6.0,
-                    "p50": 7.0,
-                    "p90": 7.0,
-                    "max": 8.0,
-                    "mean": 6.716666666666667
-                },
-                {
-                    "metric": "published_DodgeOnly",
-                    "phase": 0,
-                    "count": 600,
-                    "min": 13.0,
-                    "p10": 14.0,
-                    "p50": 15.0,
-                    "p90": 16.0,
-                    "max": 18.0,
-                    "mean": 14.971666666666666
-                },
-                {
-                    "metric": "fired_DodgeOnly",
-                    "phase": 0,
-                    "count": 600,
-                    "min": 13.0,
-                    "p10": 14.0,
-                    "p50": 15.0,
-                    "p90": 16.0,
-                    "max": 18.0,
-                    "mean": 14.971666666666666
-                }
-            ],
-            "patterns": [
-                {
-                    "name": "X",
-                    "mean": 2.0
-                },
-                {
-                    "name": "각잡은악수-오른",
-                    "mean": 1.0
-                },
-                {
-                    "name": "고리-바깥",
-                    "mean": 0.6016666666666667
-                },
-                {
-                    "name": "고리-안강",
-                    "mean": 0.5366666666666666
-                },
-                {
-                    "name": "고리-중간",
-                    "mean": 0.5866666666666667
-                },
-                {
-                    "name": "나이트라이더",
-                    "mean": 2.0
-                },
-                {
-                    "name": "나이트라이더격자",
-                    "mean": 1.0
-                },
-                {
-                    "name": "나이트훈수+중심",
-                    "mean": 1.0
-                },
-                {
-                    "name": "낙타얼룩말",
-                    "mean": 2.0
-                },
-                {
-                    "name": "뒤치기",
-                    "mean": 0.9966666666666667
-                },
-                {
-                    "name": "룩가로",
-                    "mean": 4.0
-                },
-                {
-                    "name": "룩세로강",
-                    "mean": 2.0
-                },
-                {
-                    "name": "베롤리나-32",
-                    "mean": 1.0
-                },
-                {
-                    "name": "베롤리나-54",
-                    "mean": 1.0
-                },
-                {
-                    "name": "베롤리나-76",
-                    "mean": 1.0
-                },
-                {
-                    "name": "비숍-검은칸",
-                    "mean": 1.0
-                },
-                {
-                    "name": "비숍-흰칸",
-                    "mean": 1.0
-                },
-                {
-                    "name": "비숍X추적",
-                    "mean": 1.0
-                },
-                {
-                    "name": "아치비숍",
-                    "mean": 2.0233333333333336
-                },
-                {
-                    "name": "알필다바바",
-                    "mean": 2.0166666666666668
-                },
-                {
-                    "name": "여러핀강",
-                    "mean": 0.41833333333333336
-                },
-                {
-                    "name": "오프닝1-e5",
-                    "mean": 1.89
-                },
-                {
-                    "name": "오프닝2-Nf6",
-                    "mean": 1.9866666666666666
-                },
-                {
-                    "name": "오프닝3-Bc5",
-                    "mean": 1.9616666666666667
-                },
-                {
-                    "name": "오프닝4-캐슬링",
-                    "mean": 1.9933333333333335
-                },
-                {
-                    "name": "전체",
-                    "mean": 6.716666666666667
-                },
-                {
-                    "name": "챈슬러",
-                    "mean": 4.0
-                },
-                {
-                    "name": "킹고리강",
-                    "mean": 1.0
-                },
-                {
-                    "name": "킹손바닥",
-                    "mean": 1.0
-                },
-                {
-                    "name": "킹손바닥강",
-                    "mean": 2.0
-                },
-                {
-                    "name": "핀+대각",
-                    "mean": 1.0
-                },
-                {
-                    "name": "핀+십자",
-                    "mean": 1.0
-                },
-                {
-                    "name": "핀강",
-                    "mean": 1.0
-                }
-            ]
-        },
-        {
-            "group": "holdout",
-            "strategy": "CollectFirst",
-            "runs": 200,
-            "clears": 200,
-            "deaths": 0,
-            "timeouts": 0,
-            "invariantFailures": 0,
-            "clearRate": 1.0,
-            "deathRate": 0.0,
-            "attackShare": 0.3375213562886056,
-            "moveShare": 0.5746090156393745,
-            "guardShare": 0.08786962807201998,
-            "distributions": [
-                {
-                    "metric": "attack",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 62.0,
-                    "p10": 63.0,
-                    "p50": 64.0,
-                    "p90": 65.0,
-                    "max": 66.0,
-                    "mean": 64.205
-                },
-                {
-                    "metric": "move",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 93.0,
-                    "p10": 99.0,
-                    "p50": 109.0,
-                    "p90": 119.0,
-                    "max": 129.0,
-                    "mean": 109.305
-                },
-                {
-                    "metric": "guard",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 12.0,
-                    "p10": 14.0,
-                    "p50": 17.0,
-                    "p90": 19.0,
-                    "max": 22.0,
-                    "mean": 16.715
+                    "mean": 24.745
                 },
                 {
                     "metric": "other",
                     "phase": 0,
                     "count": 200,
-                    "min": 90.0,
-                    "p10": 102.0,
-                    "p50": 113.0,
-                    "p90": 126.0,
-                    "max": 132.0,
-                    "mean": 113.775
-                },
-                {
-                    "metric": "guard_success",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 11.0,
-                    "p10": 14.0,
-                    "p50": 16.0,
-                    "p90": 17.0,
-                    "max": 19.0,
-                    "mean": 15.565
-                },
-                {
-                    "metric": "guard_broken",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 0.0,
-                    "p10": 0.0,
-                    "p50": 0.0,
-                    "p90": 0.0,
-                    "max": 0.0,
-                    "mean": 0.0
-                },
-                {
-                    "metric": "hits",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 0.0,
-                    "p10": 0.0,
-                    "p50": 0.0,
-                    "p90": 0.0,
-                    "max": 0.0,
-                    "mean": 0.0
-                },
-                {
-                    "metric": "leftover_notes",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 87.0,
-                    "p10": 99.0,
-                    "p50": 109.0,
-                    "p90": 123.0,
-                    "max": 130.0,
-                    "mean": 110.905
-                },
-                {
-                    "metric": "published_Either",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 27.0,
-                    "p10": 31.0,
-                    "p50": 33.0,
-                    "p90": 33.0,
-                    "max": 35.0,
-                    "mean": 32.005
-                },
-                {
-                    "metric": "fired_Either",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 27.0,
-                    "p10": 31.0,
-                    "p50": 33.0,
-                    "p90": 33.0,
-                    "max": 35.0,
-                    "mean": 31.955
-                },
-                {
-                    "metric": "published_GuardOnly",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 6.0,
-                    "p10": 6.0,
-                    "p50": 7.0,
-                    "p90": 7.0,
-                    "max": 8.0,
-                    "mean": 6.805
-                },
-                {
-                    "metric": "fired_GuardOnly",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 6.0,
-                    "p10": 6.0,
-                    "p50": 7.0,
-                    "p90": 7.0,
-                    "max": 7.0,
-                    "mean": 6.75
-                },
-                {
-                    "metric": "published_DodgeOnly",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 14.0,
-                    "p10": 14.0,
-                    "p50": 15.0,
-                    "p90": 16.0,
-                    "max": 18.0,
-                    "mean": 14.97
-                },
-                {
-                    "metric": "fired_DodgeOnly",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 14.0,
-                    "p10": 14.0,
-                    "p50": 15.0,
-                    "p90": 16.0,
-                    "max": 18.0,
-                    "mean": 14.97
-                }
-            ],
-            "patterns": [
-                {
-                    "name": "X",
-                    "mean": 2.0
-                },
-                {
-                    "name": "각잡은악수-오른",
-                    "mean": 1.0
-                },
-                {
-                    "name": "고리-바깥",
-                    "mean": 0.54
-                },
-                {
-                    "name": "고리-안강",
-                    "mean": 0.505
-                },
-                {
-                    "name": "고리-중간",
-                    "mean": 0.535
-                },
-                {
-                    "name": "나이트라이더",
-                    "mean": 2.0
-                },
-                {
-                    "name": "나이트라이더격자",
-                    "mean": 1.0
-                },
-                {
-                    "name": "나이트훈수+중심",
-                    "mean": 1.0
-                },
-                {
-                    "name": "낙타얼룩말",
-                    "mean": 2.0
-                },
-                {
-                    "name": "뒤치기",
-                    "mean": 1.0
-                },
-                {
-                    "name": "룩가로",
-                    "mean": 4.0
-                },
-                {
-                    "name": "룩세로강",
-                    "mean": 2.0
-                },
-                {
-                    "name": "베롤리나-32",
-                    "mean": 1.0
-                },
-                {
-                    "name": "베롤리나-54",
-                    "mean": 1.0
-                },
-                {
-                    "name": "베롤리나-76",
-                    "mean": 1.0
-                },
-                {
-                    "name": "비숍-검은칸",
-                    "mean": 1.0
-                },
-                {
-                    "name": "비숍-흰칸",
-                    "mean": 1.0
-                },
-                {
-                    "name": "비숍X추적",
-                    "mean": 1.0
-                },
-                {
-                    "name": "아치비숍",
-                    "mean": 2.04
-                },
-                {
-                    "name": "알필다바바",
-                    "mean": 2.01
-                },
-                {
-                    "name": "여러핀강",
-                    "mean": 0.44
-                },
-                {
-                    "name": "오프닝1-e5",
-                    "mean": 1.925
-                },
-                {
-                    "name": "오프닝2-Nf6",
-                    "mean": 1.985
-                },
-                {
-                    "name": "오프닝3-Bc5",
-                    "mean": 1.955
-                },
-                {
-                    "name": "오프닝4-캐슬링",
-                    "mean": 1.99
-                },
-                {
-                    "name": "전체",
-                    "mean": 6.75
-                },
-                {
-                    "name": "챈슬러",
-                    "mean": 4.0
-                },
-                {
-                    "name": "킹고리강",
-                    "mean": 1.0
-                },
-                {
-                    "name": "킹손바닥",
-                    "mean": 1.0
-                },
-                {
-                    "name": "킹손바닥강",
-                    "mean": 2.0
-                },
-                {
-                    "name": "핀+대각",
-                    "mean": 1.0
-                },
-                {
-                    "name": "핀+십자",
-                    "mean": 1.0
-                },
-                {
-                    "name": "핀강",
-                    "mean": 1.0
-                }
-            ]
-        },
-        {
-            "group": "holdout",
-            "strategy": "AttackHold",
-            "runs": 200,
-            "clears": 200,
-            "deaths": 0,
-            "timeouts": 0,
-            "invariantFailures": 0,
-            "clearRate": 1.0,
-            "deathRate": 0.0,
-            "attackShare": 0.33403700807922856,
-            "moveShare": 0.5289809747198332,
-            "guardShare": 0.13698201720093826,
-            "distributions": [
-                {
-                    "metric": "attack",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 63.0,
-                    "p10": 63.0,
-                    "p50": 64.0,
-                    "p90": 65.0,
-                    "max": 66.0,
-                    "mean": 64.085
-                },
-                {
-                    "metric": "move",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 78.0,
-                    "p10": 92.0,
-                    "p50": 102.0,
-                    "p90": 110.0,
-                    "max": 116.0,
-                    "mean": 101.485
-                },
-                {
-                    "metric": "guard",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 20.0,
-                    "p10": 23.0,
-                    "p50": 26.0,
-                    "p90": 29.0,
-                    "max": 33.0,
-                    "mean": 26.28
-                },
-                {
-                    "metric": "other",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 97.0,
-                    "p10": 103.0,
-                    "p50": 110.0,
-                    "p90": 123.0,
-                    "max": 140.0,
-                    "mean": 112.15
+                    "min": 4.0,
+                    "p10": 24.0,
+                    "p50": 42.0,
+                    "p90": 71.0,
+                    "max": 86.0,
+                    "mean": 44.83
                 },
                 {
                     "metric": "guard_success",
                     "phase": 0,
                     "count": 200,
                     "min": 19.0,
-                    "p10": 22.0,
+                    "p10": 21.0,
                     "p50": 24.0,
-                    "p90": 27.0,
-                    "max": 31.0,
-                    "mean": 24.405
+                    "p90": 26.0,
+                    "max": 30.0,
+                    "mean": 23.76
                 },
                 {
                     "metric": "guard_broken",
@@ -1694,84 +958,92 @@
                     "metric": "leftover_notes",
                     "phase": 0,
                     "count": 200,
-                    "min": 93.0,
-                    "p10": 100.0,
-                    "p50": 107.0,
-                    "p90": 121.0,
-                    "max": 136.0,
-                    "mean": 109.045
+                    "min": 0.0,
+                    "p10": 18.0,
+                    "p50": 34.0,
+                    "p90": 69.0,
+                    "max": 85.0,
+                    "mean": 40.785
                 },
                 {
                     "metric": "published_Either",
                     "phase": 0,
                     "count": 200,
-                    "min": 27.0,
-                    "p10": 31.0,
-                    "p50": 33.0,
-                    "p90": 33.0,
-                    "max": 33.0,
-                    "mean": 32.41
+                    "min": 39.0,
+                    "p10": 43.0,
+                    "p50": 44.0,
+                    "p90": 44.0,
+                    "max": 45.0,
+                    "mean": 43.515
                 },
                 {
                     "metric": "fired_Either",
                     "phase": 0,
                     "count": 200,
-                    "min": 27.0,
-                    "p10": 31.0,
-                    "p50": 33.0,
-                    "p90": 33.0,
-                    "max": 33.0,
-                    "mean": 32.385
+                    "min": 39.0,
+                    "p10": 43.0,
+                    "p50": 44.0,
+                    "p90": 44.0,
+                    "max": 45.0,
+                    "mean": 43.505
                 },
                 {
                     "metric": "published_GuardOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 6.0,
-                    "p10": 6.0,
-                    "p50": 7.0,
-                    "p90": 7.0,
-                    "max": 7.0,
-                    "mean": 6.895
+                    "min": 8.0,
+                    "p10": 8.0,
+                    "p50": 9.0,
+                    "p90": 10.0,
+                    "max": 11.0,
+                    "mean": 9.06
                 },
                 {
                     "metric": "fired_GuardOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 6.0,
-                    "p10": 6.0,
-                    "p50": 7.0,
-                    "p90": 7.0,
-                    "max": 7.0,
-                    "mean": 6.865
+                    "min": 8.0,
+                    "p10": 8.0,
+                    "p50": 9.0,
+                    "p90": 10.0,
+                    "max": 11.0,
+                    "mean": 9.01
                 },
                 {
                     "metric": "published_DodgeOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 13.0,
-                    "p10": 14.0,
-                    "p50": 15.0,
-                    "p90": 16.0,
-                    "max": 16.0,
-                    "mean": 15.17
+                    "min": 18.0,
+                    "p10": 22.0,
+                    "p50": 29.0,
+                    "p90": 35.0,
+                    "max": 40.0,
+                    "mean": 29.86
                 },
                 {
                     "metric": "fired_DodgeOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 13.0,
-                    "p10": 14.0,
-                    "p50": 15.0,
-                    "p90": 16.0,
-                    "max": 16.0,
-                    "mean": 15.17
+                    "min": 18.0,
+                    "p10": 22.0,
+                    "p50": 29.0,
+                    "p90": 35.0,
+                    "max": 40.0,
+                    "mean": 29.62
                 }
             ],
             "patterns": [
                 {
                     "name": "X",
-                    "mean": 2.0
+                    "mean": 3.94
+                },
+                {
+                    "name": "가로창살",
+                    "mean": 0.5
+                },
+                {
+                    "name": "가운데폭발",
+                    "mean": 0.475
                 },
                 {
                     "name": "각잡은악수-오른",
@@ -1779,19 +1051,35 @@
                 },
                 {
                     "name": "고리-바깥",
-                    "mean": 0.765
+                    "mean": 1.0
                 },
                 {
                     "name": "고리-안강",
-                    "mean": 0.675
+                    "mean": 1.0
                 },
                 {
                     "name": "고리-중간",
-                    "mean": 0.745
+                    "mean": 1.0
+                },
+                {
+                    "name": "구석",
+                    "mean": 0.115
+                },
+                {
+                    "name": "깨진판-가",
+                    "mean": 1.13
+                },
+                {
+                    "name": "깨진판-나",
+                    "mean": 0.16
+                },
+                {
+                    "name": "나선",
+                    "mean": 0.815
                 },
                 {
                     "name": "나이트라이더",
-                    "mean": 2.0
+                    "mean": 3.97
                 },
                 {
                     "name": "나이트라이더격자",
@@ -1803,19 +1091,31 @@
                 },
                 {
                     "name": "낙타얼룩말",
-                    "mean": 2.0
+                    "mean": 3.85
                 },
                 {
                     "name": "뒤치기",
-                    "mean": 0.995
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
                 },
                 {
                     "name": "룩가로",
-                    "mean": 4.0
+                    "mean": 2.0
                 },
                 {
                     "name": "룩세로강",
-                    "mean": 2.0
+                    "mean": 1.0
+                },
+                {
+                    "name": "반쪽-오른",
+                    "mean": 0.69
+                },
+                {
+                    "name": "반쪽-왼",
+                    "mean": 0.755
                 },
                 {
                     "name": "베롤리나-32",
@@ -1830,6 +1130,14 @@
                     "mean": 1.0
                 },
                 {
+                    "name": "블록체커-가",
+                    "mean": 0.345
+                },
+                {
+                    "name": "블록체커-나",
+                    "mean": 0.305
+                },
+                {
                     "name": "비숍-검은칸",
                     "mean": 1.0
                 },
@@ -1842,36 +1150,56 @@
                     "mean": 1.0
                 },
                 {
+                    "name": "세로창살-짝",
+                    "mean": 0.875
+                },
+                {
+                    "name": "세로창살-홀",
+                    "mean": 0.875
+                },
+                {
+                    "name": "아마존",
+                    "mean": 1.96
+                },
+                {
                     "name": "아치비숍",
-                    "mean": 2.0
+                    "mean": 4.0
                 },
                 {
                     "name": "알필다바바",
-                    "mean": 2.0
+                    "mean": 4.0
                 },
                 {
                     "name": "여러핀강",
-                    "mean": 0.5
+                    "mean": 1.0
                 },
                 {
                     "name": "오프닝1-e5",
-                    "mean": 1.945
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝2-Nf6",
-                    "mean": 1.98
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝3-Bc5",
-                    "mean": 1.965
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝4-캐슬링",
-                    "mean": 1.985
+                    "mean": 2.0
+                },
+                {
+                    "name": "외길",
+                    "mean": 0.5
+                },
+                {
+                    "name": "이중고리",
+                    "mean": 0.865
                 },
                 {
                     "name": "전체",
-                    "mean": 6.865
+                    "mean": 9.01
                 },
                 {
                     "name": "챈슬러",
@@ -1888,6 +1216,1206 @@
                 {
                     "name": "킹손바닥강",
                     "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+대각",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+십자",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀강",
+                    "mean": 1.0
+                }
+            ]
+        },
+        {
+            "group": "development",
+            "strategy": "ALL",
+            "runs": 600,
+            "clears": 593,
+            "deaths": 0,
+            "timeouts": 7,
+            "invariantFailures": 0,
+            "clearRate": 0.9883333333333333,
+            "deathRate": 0.0,
+            "attackShare": 0.4326117613418509,
+            "moveShare": 0.45996477706219898,
+            "guardShare": 0.10742346159595,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 102.0,
+                    "p10": 111.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.94833333333334
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 77.0,
+                    "p10": 93.0,
+                    "p50": 119.0,
+                    "p90": 139.0,
+                    "max": 170.0,
+                    "mean": 117.96333333333334
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 19.0,
+                    "p10": 22.0,
+                    "p50": 26.0,
+                    "p90": 35.0,
+                    "max": 42.0,
+                    "mean": 27.55
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 1.0,
+                    "p10": 27.0,
+                    "p50": 47.0,
+                    "p90": 73.0,
+                    "max": 91.0,
+                    "mean": 47.538333333333337
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 19.0,
+                    "p10": 21.0,
+                    "p50": 25.0,
+                    "p90": 34.0,
+                    "max": 41.0,
+                    "mean": 26.621666666666667
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 0.0,
+                    "p10": 22.0,
+                    "p50": 46.0,
+                    "p90": 72.0,
+                    "max": 91.0,
+                    "mean": 45.14666666666667
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 38.0,
+                    "p10": 42.0,
+                    "p50": 43.0,
+                    "p90": 44.0,
+                    "max": 45.0,
+                    "mean": 43.32666666666667
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 38.0,
+                    "p10": 42.0,
+                    "p50": 43.0,
+                    "p90": 44.0,
+                    "max": 45.0,
+                    "mean": 43.30166666666667
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 7.0,
+                    "p10": 8.0,
+                    "p50": 9.0,
+                    "p90": 10.0,
+                    "max": 11.0,
+                    "mean": 8.898333333333334
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 7.0,
+                    "p10": 8.0,
+                    "p50": 9.0,
+                    "p90": 10.0,
+                    "max": 11.0,
+                    "mean": 8.823333333333335
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 17.0,
+                    "p10": 21.0,
+                    "p50": 28.0,
+                    "p90": 35.0,
+                    "max": 40.0,
+                    "mean": 28.811666666666669
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 600,
+                    "min": 17.0,
+                    "p10": 21.0,
+                    "p50": 28.0,
+                    "p90": 34.0,
+                    "max": 40.0,
+                    "mean": 28.493333333333334
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "X",
+                    "mean": 3.88
+                },
+                {
+                    "name": "가로창살",
+                    "mean": 0.4166666666666667
+                },
+                {
+                    "name": "가운데폭발",
+                    "mean": 0.38166666666666668
+                },
+                {
+                    "name": "각잡은악수-오른",
+                    "mean": 1.0
+                },
+                {
+                    "name": "고리-바깥",
+                    "mean": 1.0
+                },
+                {
+                    "name": "고리-안강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "고리-중간",
+                    "mean": 1.0
+                },
+                {
+                    "name": "구석",
+                    "mean": 0.06833333333333333
+                },
+                {
+                    "name": "깨진판-가",
+                    "mean": 0.9733333333333334
+                },
+                {
+                    "name": "깨진판-나",
+                    "mean": 0.08666666666666667
+                },
+                {
+                    "name": "나선",
+                    "mean": 0.7466666666666667
+                },
+                {
+                    "name": "나이트라이더",
+                    "mean": 3.9633333333333335
+                },
+                {
+                    "name": "나이트라이더격자",
+                    "mean": 1.0
+                },
+                {
+                    "name": "나이트훈수+중심",
+                    "mean": 1.0
+                },
+                {
+                    "name": "낙타얼룩말",
+                    "mean": 3.776666666666667
+                },
+                {
+                    "name": "뒤치기",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩가로",
+                    "mean": 2.0
+                },
+                {
+                    "name": "룩세로강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "반쪽-오른",
+                    "mean": 0.5666666666666667
+                },
+                {
+                    "name": "반쪽-왼",
+                    "mean": 0.6733333333333333
+                },
+                {
+                    "name": "베롤리나-32",
+                    "mean": 1.0
+                },
+                {
+                    "name": "베롤리나-54",
+                    "mean": 1.0
+                },
+                {
+                    "name": "베롤리나-76",
+                    "mean": 1.0
+                },
+                {
+                    "name": "블록체커-가",
+                    "mean": 0.25333333333333338
+                },
+                {
+                    "name": "블록체커-나",
+                    "mean": 0.19333333333333334
+                },
+                {
+                    "name": "비숍-검은칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-흰칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍X추적",
+                    "mean": 1.0
+                },
+                {
+                    "name": "세로창살-짝",
+                    "mean": 0.8133333333333334
+                },
+                {
+                    "name": "세로창살-홀",
+                    "mean": 0.8283333333333334
+                },
+                {
+                    "name": "아마존",
+                    "mean": 1.9266666666666668
+                },
+                {
+                    "name": "아치비숍",
+                    "mean": 4.0
+                },
+                {
+                    "name": "알필다바바",
+                    "mean": 3.9966666666666668
+                },
+                {
+                    "name": "여러핀강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝1-e5",
+                    "mean": 2.0
+                },
+                {
+                    "name": "오프닝2-Nf6",
+                    "mean": 2.0
+                },
+                {
+                    "name": "오프닝3-Bc5",
+                    "mean": 2.0
+                },
+                {
+                    "name": "오프닝4-캐슬링",
+                    "mean": 2.0
+                },
+                {
+                    "name": "외길",
+                    "mean": 0.4166666666666667
+                },
+                {
+                    "name": "이중고리",
+                    "mean": 0.8333333333333334
+                },
+                {
+                    "name": "전체",
+                    "mean": 8.823333333333335
+                },
+                {
+                    "name": "챈슬러",
+                    "mean": 4.0
+                },
+                {
+                    "name": "킹고리강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥강",
+                    "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+대각",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+십자",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀강",
+                    "mean": 1.0
+                }
+            ]
+        },
+        {
+            "group": "holdout",
+            "strategy": "CollectFirst",
+            "runs": 200,
+            "clears": 200,
+            "deaths": 0,
+            "timeouts": 0,
+            "invariantFailures": 0,
+            "clearRate": 1.0,
+            "deathRate": 0.0,
+            "attackShare": 0.43946472404782646,
+            "moveShare": 0.4659711774487291,
+            "guardShare": 0.09456409850344447,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 111.0,
+                    "p10": 111.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 111.0
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 85.0,
+                    "p10": 98.0,
+                    "p50": 119.0,
+                    "p90": 138.0,
+                    "max": 151.0,
+                    "mean": 117.695
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 18.0,
+                    "p10": 21.0,
+                    "p50": 24.0,
+                    "p90": 26.0,
+                    "max": 29.0,
+                    "mean": 23.885
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 17.0,
+                    "p10": 31.0,
+                    "p50": 49.0,
+                    "p90": 72.0,
+                    "max": 87.0,
+                    "mean": 51.42
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 18.0,
+                    "p10": 20.0,
+                    "p50": 23.0,
+                    "p90": 25.0,
+                    "max": 28.0,
+                    "mean": 23.08
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 16.0,
+                    "p10": 29.0,
+                    "p50": 48.0,
+                    "p90": 72.0,
+                    "max": 85.0,
+                    "mean": 50.545
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 39.0,
+                    "p10": 42.0,
+                    "p50": 43.0,
+                    "p90": 44.0,
+                    "max": 45.0,
+                    "mean": 43.175
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 39.0,
+                    "p10": 42.0,
+                    "p50": 43.0,
+                    "p90": 44.0,
+                    "max": 45.0,
+                    "mean": 43.125
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 8.0,
+                    "p10": 8.0,
+                    "p50": 9.0,
+                    "p90": 9.0,
+                    "max": 10.0,
+                    "mean": 8.7
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 8.0,
+                    "p10": 8.0,
+                    "p50": 9.0,
+                    "p90": 9.0,
+                    "max": 10.0,
+                    "mean": 8.625
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 18.0,
+                    "p10": 21.0,
+                    "p50": 28.0,
+                    "p90": 34.0,
+                    "max": 36.0,
+                    "mean": 27.49
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 18.0,
+                    "p10": 21.0,
+                    "p50": 27.0,
+                    "p90": 33.0,
+                    "max": 36.0,
+                    "mean": 27.12
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "X",
+                    "mean": 3.85
+                },
+                {
+                    "name": "가로창살",
+                    "mean": 0.27
+                },
+                {
+                    "name": "가운데폭발",
+                    "mean": 0.205
+                },
+                {
+                    "name": "각잡은악수-오른",
+                    "mean": 1.0
+                },
+                {
+                    "name": "고리-바깥",
+                    "mean": 1.0
+                },
+                {
+                    "name": "고리-안강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "고리-중간",
+                    "mean": 1.0
+                },
+                {
+                    "name": "구석",
+                    "mean": 0.005
+                },
+                {
+                    "name": "깨진판-가",
+                    "mean": 0.77
+                },
+                {
+                    "name": "깨진판-나",
+                    "mean": 0.01
+                },
+                {
+                    "name": "나선",
+                    "mean": 0.66
+                },
+                {
+                    "name": "나이트라이더",
+                    "mean": 3.96
+                },
+                {
+                    "name": "나이트라이더격자",
+                    "mean": 1.0
+                },
+                {
+                    "name": "나이트훈수+중심",
+                    "mean": 1.0
+                },
+                {
+                    "name": "낙타얼룩말",
+                    "mean": 3.77
+                },
+                {
+                    "name": "뒤치기",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩가로",
+                    "mean": 2.0
+                },
+                {
+                    "name": "룩세로강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "반쪽-오른",
+                    "mean": 0.445
+                },
+                {
+                    "name": "반쪽-왼",
+                    "mean": 0.595
+                },
+                {
+                    "name": "베롤리나-32",
+                    "mean": 1.0
+                },
+                {
+                    "name": "베롤리나-54",
+                    "mean": 1.0
+                },
+                {
+                    "name": "베롤리나-76",
+                    "mean": 1.0
+                },
+                {
+                    "name": "블록체커-가",
+                    "mean": 0.12
+                },
+                {
+                    "name": "블록체커-나",
+                    "mean": 0.065
+                },
+                {
+                    "name": "비숍-검은칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-흰칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍X추적",
+                    "mean": 1.0
+                },
+                {
+                    "name": "세로창살-짝",
+                    "mean": 0.75
+                },
+                {
+                    "name": "세로창살-홀",
+                    "mean": 0.785
+                },
+                {
+                    "name": "아마존",
+                    "mean": 1.89
+                },
+                {
+                    "name": "아치비숍",
+                    "mean": 4.0
+                },
+                {
+                    "name": "알필다바바",
+                    "mean": 4.0
+                },
+                {
+                    "name": "여러핀강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝1-e5",
+                    "mean": 2.0
+                },
+                {
+                    "name": "오프닝2-Nf6",
+                    "mean": 2.0
+                },
+                {
+                    "name": "오프닝3-Bc5",
+                    "mean": 2.0
+                },
+                {
+                    "name": "오프닝4-캐슬링",
+                    "mean": 2.0
+                },
+                {
+                    "name": "외길",
+                    "mean": 0.27
+                },
+                {
+                    "name": "이중고리",
+                    "mean": 0.825
+                },
+                {
+                    "name": "전체",
+                    "mean": 8.625
+                },
+                {
+                    "name": "챈슬러",
+                    "mean": 4.0
+                },
+                {
+                    "name": "킹고리강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥강",
+                    "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+대각",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+십자",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀강",
+                    "mean": 1.0
+                }
+            ]
+        },
+        {
+            "group": "holdout",
+            "strategy": "AttackHold",
+            "runs": 200,
+            "clears": 200,
+            "deaths": 0,
+            "timeouts": 0,
+            "invariantFailures": 0,
+            "clearRate": 1.0,
+            "deathRate": 0.0,
+            "attackShare": 0.44258373205741627,
+            "moveShare": 0.4235047846889952,
+            "guardShare": 0.1339114832535885,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 111.0,
+                    "p10": 111.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 111.0
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 64.0,
+                    "p10": 83.0,
+                    "p50": 105.0,
+                    "p90": 128.0,
+                    "max": 148.0,
+                    "mean": 106.215
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 25.0,
+                    "p10": 30.0,
+                    "p50": 34.0,
+                    "p90": 37.0,
+                    "max": 41.0,
+                    "mean": 33.585
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 10.0,
+                    "p10": 30.0,
+                    "p50": 52.0,
+                    "p90": 76.0,
+                    "max": 104.0,
+                    "mean": 53.2
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 23.0,
+                    "p10": 29.0,
+                    "p50": 33.0,
+                    "p90": 36.0,
+                    "max": 39.0,
+                    "mean": 32.505
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 0.0,
+                    "max": 0.0,
+                    "mean": 0.0
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 8.0,
+                    "p10": 26.0,
+                    "p50": 50.0,
+                    "p90": 74.0,
+                    "max": 96.0,
+                    "mean": 50.635
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 37.0,
+                    "p10": 42.0,
+                    "p50": 43.0,
+                    "p90": 44.0,
+                    "max": 45.0,
+                    "mean": 43.055
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 37.0,
+                    "p10": 42.0,
+                    "p50": 43.0,
+                    "p90": 44.0,
+                    "max": 45.0,
+                    "mean": 43.015
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 7.0,
+                    "p10": 8.0,
+                    "p50": 9.0,
+                    "p90": 9.0,
+                    "max": 11.0,
+                    "mean": 8.735
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 7.0,
+                    "p10": 8.0,
+                    "p50": 9.0,
+                    "p90": 9.0,
+                    "max": 10.0,
+                    "mean": 8.63
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 16.0,
+                    "p10": 21.0,
+                    "p50": 28.0,
+                    "p90": 34.0,
+                    "max": 39.0,
+                    "mean": 27.445
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 16.0,
+                    "p10": 21.0,
+                    "p50": 27.0,
+                    "p90": 34.0,
+                    "max": 39.0,
+                    "mean": 27.06
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "X",
+                    "mean": 3.81
+                },
+                {
+                    "name": "가로창살",
+                    "mean": 0.295
+                },
+                {
+                    "name": "가운데폭발",
+                    "mean": 0.25
+                },
+                {
+                    "name": "각잡은악수-오른",
+                    "mean": 1.0
+                },
+                {
+                    "name": "고리-바깥",
+                    "mean": 1.0
+                },
+                {
+                    "name": "고리-안강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "고리-중간",
+                    "mean": 1.0
+                },
+                {
+                    "name": "구석",
+                    "mean": 0.055
+                },
+                {
+                    "name": "깨진판-가",
+                    "mean": 0.71
+                },
+                {
+                    "name": "깨진판-나",
+                    "mean": 0.07
+                },
+                {
+                    "name": "나선",
+                    "mean": 0.655
+                },
+                {
+                    "name": "나이트라이더",
+                    "mean": 3.92
+                },
+                {
+                    "name": "나이트라이더격자",
+                    "mean": 1.0
+                },
+                {
+                    "name": "나이트훈수+중심",
+                    "mean": 1.0
+                },
+                {
+                    "name": "낙타얼룩말",
+                    "mean": 3.74
+                },
+                {
+                    "name": "뒤치기",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩가로",
+                    "mean": 2.0
+                },
+                {
+                    "name": "룩세로강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "반쪽-오른",
+                    "mean": 0.4
+                },
+                {
+                    "name": "반쪽-왼",
+                    "mean": 0.545
+                },
+                {
+                    "name": "베롤리나-32",
+                    "mean": 1.0
+                },
+                {
+                    "name": "베롤리나-54",
+                    "mean": 1.0
+                },
+                {
+                    "name": "베롤리나-76",
+                    "mean": 1.0
+                },
+                {
+                    "name": "블록체커-가",
+                    "mean": 0.17
+                },
+                {
+                    "name": "블록체커-나",
+                    "mean": 0.105
+                },
+                {
+                    "name": "비숍-검은칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-흰칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍X추적",
+                    "mean": 1.0
+                },
+                {
+                    "name": "세로창살-짝",
+                    "mean": 0.725
+                },
+                {
+                    "name": "세로창살-홀",
+                    "mean": 0.76
+                },
+                {
+                    "name": "아마존",
+                    "mean": 1.86
+                },
+                {
+                    "name": "아치비숍",
+                    "mean": 3.96
+                },
+                {
+                    "name": "알필다바바",
+                    "mean": 3.96
+                },
+                {
+                    "name": "여러핀강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝1-e5",
+                    "mean": 2.0
+                },
+                {
+                    "name": "오프닝2-Nf6",
+                    "mean": 2.0
+                },
+                {
+                    "name": "오프닝3-Bc5",
+                    "mean": 2.0
+                },
+                {
+                    "name": "오프닝4-캐슬링",
+                    "mean": 2.0
+                },
+                {
+                    "name": "외길",
+                    "mean": 0.295
+                },
+                {
+                    "name": "이중고리",
+                    "mean": 0.79
+                },
+                {
+                    "name": "전체",
+                    "mean": 8.63
+                },
+                {
+                    "name": "챈슬러",
+                    "mean": 4.0
+                },
+                {
+                    "name": "킹고리강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥강",
+                    "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
                 },
                 {
                     "name": "핀+대각",
@@ -1907,70 +2435,70 @@
             "group": "holdout",
             "strategy": "MovementUse",
             "runs": 200,
-            "clears": 200,
+            "clears": 199,
             "deaths": 0,
-            "timeouts": 0,
+            "timeouts": 1,
             "invariantFailures": 0,
-            "clearRate": 1.0,
+            "clearRate": 0.995,
             "deathRate": 0.0,
-            "attackShare": 0.3375466442423924,
-            "moveShare": 0.5745519524885689,
-            "guardShare": 0.08790140326903875,
+            "attackShare": 0.4364211850745095,
+            "moveShare": 0.4676404671096607,
+            "guardShare": 0.09593834781582982,
             "distributions": [
                 {
                     "metric": "attack",
                     "phase": 0,
                     "count": 200,
-                    "min": 62.0,
-                    "p10": 63.0,
-                    "p50": 64.0,
-                    "p90": 65.0,
-                    "max": 66.0,
-                    "mean": 64.225
+                    "min": 110.0,
+                    "p10": 111.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.995
                 },
                 {
                     "metric": "move",
                     "phase": 0,
                     "count": 200,
-                    "min": 93.0,
-                    "p10": 99.0,
-                    "p50": 109.0,
-                    "p90": 120.0,
-                    "max": 129.0,
-                    "mean": 109.32
+                    "min": 79.0,
+                    "p10": 95.0,
+                    "p50": 118.0,
+                    "p90": 139.0,
+                    "max": 158.0,
+                    "mean": 118.935
                 },
                 {
                     "metric": "guard",
                     "phase": 0,
                     "count": 200,
-                    "min": 12.0,
-                    "p10": 14.0,
-                    "p50": 17.0,
-                    "p90": 19.0,
-                    "max": 22.0,
-                    "mean": 16.725
+                    "min": 16.0,
+                    "p10": 22.0,
+                    "p50": 25.0,
+                    "p90": 27.0,
+                    "max": 31.0,
+                    "mean": 24.4
                 },
                 {
                     "metric": "other",
                     "phase": 0,
                     "count": 200,
-                    "min": 90.0,
-                    "p10": 102.0,
-                    "p50": 113.0,
-                    "p90": 126.0,
-                    "max": 132.0,
-                    "mean": 113.73
+                    "min": 5.0,
+                    "p10": 26.0,
+                    "p50": 49.0,
+                    "p90": 75.0,
+                    "max": 95.0,
+                    "mean": 49.67
                 },
                 {
                     "metric": "guard_success",
                     "phase": 0,
                     "count": 200,
-                    "min": 11.0,
-                    "p10": 14.0,
-                    "p50": 16.0,
-                    "p90": 17.0,
-                    "max": 19.0,
-                    "mean": 15.6
+                    "min": 16.0,
+                    "p10": 21.0,
+                    "p50": 24.0,
+                    "p90": 26.0,
+                    "max": 30.0,
+                    "mean": 23.415
                 },
                 {
                     "metric": "guard_broken",
@@ -1998,84 +2526,92 @@
                     "metric": "leftover_notes",
                     "phase": 0,
                     "count": 200,
-                    "min": 87.0,
-                    "p10": 98.0,
-                    "p50": 111.0,
-                    "p90": 123.0,
-                    "max": 130.0,
-                    "mean": 110.895
+                    "min": 0.0,
+                    "p10": 20.0,
+                    "p50": 46.0,
+                    "p90": 72.0,
+                    "max": 95.0,
+                    "mean": 45.77
                 },
                 {
                     "metric": "published_Either",
                     "phase": 0,
                     "count": 200,
-                    "min": 27.0,
-                    "p10": 31.0,
-                    "p50": 33.0,
-                    "p90": 33.0,
-                    "max": 35.0,
-                    "mean": 31.985
+                    "min": 37.0,
+                    "p10": 42.0,
+                    "p50": 43.0,
+                    "p90": 44.0,
+                    "max": 45.0,
+                    "mean": 43.21
                 },
                 {
                     "metric": "fired_Either",
                     "phase": 0,
                     "count": 200,
-                    "min": 27.0,
-                    "p10": 31.0,
-                    "p50": 33.0,
-                    "p90": 33.0,
-                    "max": 35.0,
-                    "mean": 31.95
+                    "min": 37.0,
+                    "p10": 42.0,
+                    "p50": 43.0,
+                    "p90": 44.0,
+                    "max": 45.0,
+                    "mean": 43.19
                 },
                 {
                     "metric": "published_GuardOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 6.0,
-                    "p10": 6.0,
-                    "p50": 7.0,
-                    "p90": 7.0,
-                    "max": 8.0,
-                    "mean": 6.8
+                    "min": 7.0,
+                    "p10": 8.0,
+                    "p50": 9.0,
+                    "p90": 10.0,
+                    "max": 11.0,
+                    "mean": 8.89
                 },
                 {
                     "metric": "fired_GuardOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 6.0,
-                    "p10": 6.0,
-                    "p50": 7.0,
-                    "p90": 7.0,
-                    "max": 7.0,
-                    "mean": 6.73
+                    "min": 7.0,
+                    "p10": 8.0,
+                    "p50": 9.0,
+                    "p90": 10.0,
+                    "max": 11.0,
+                    "mean": 8.855
                 },
                 {
                     "metric": "published_DodgeOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 14.0,
-                    "p10": 14.0,
-                    "p50": 14.0,
-                    "p90": 16.0,
-                    "max": 18.0,
-                    "mean": 14.955
+                    "min": 16.0,
+                    "p10": 21.0,
+                    "p50": 28.0,
+                    "p90": 35.0,
+                    "max": 40.0,
+                    "mean": 28.505
                 },
                 {
                     "metric": "fired_DodgeOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 14.0,
-                    "p10": 14.0,
-                    "p50": 14.0,
-                    "p90": 16.0,
-                    "max": 18.0,
-                    "mean": 14.955
+                    "min": 16.0,
+                    "p10": 21.0,
+                    "p50": 28.0,
+                    "p90": 34.0,
+                    "max": 40.0,
+                    "mean": 28.29
                 }
             ],
             "patterns": [
                 {
                     "name": "X",
-                    "mean": 2.0
+                    "mean": 3.86
+                },
+                {
+                    "name": "가로창살",
+                    "mean": 0.41
+                },
+                {
+                    "name": "가운데폭발",
+                    "mean": 0.385
                 },
                 {
                     "name": "각잡은악수-오른",
@@ -2083,19 +2619,35 @@
                 },
                 {
                     "name": "고리-바깥",
-                    "mean": 0.535
+                    "mean": 1.0
                 },
                 {
                     "name": "고리-안강",
-                    "mean": 0.49
+                    "mean": 1.0
                 },
                 {
                     "name": "고리-중간",
-                    "mean": 0.525
+                    "mean": 1.0
+                },
+                {
+                    "name": "구석",
+                    "mean": 0.1
+                },
+                {
+                    "name": "깨진판-가",
+                    "mean": 0.94
+                },
+                {
+                    "name": "깨진판-나",
+                    "mean": 0.07
+                },
+                {
+                    "name": "나선",
+                    "mean": 0.71
                 },
                 {
                     "name": "나이트라이더",
-                    "mean": 2.0
+                    "mean": 3.94
                 },
                 {
                     "name": "나이트라이더격자",
@@ -2107,19 +2659,31 @@
                 },
                 {
                     "name": "낙타얼룩말",
-                    "mean": 2.0
+                    "mean": 3.69
                 },
                 {
                     "name": "뒤치기",
                     "mean": 1.0
                 },
                 {
+                    "name": "룩-e열강",
+                    "mean": 1.0
+                },
+                {
                     "name": "룩가로",
-                    "mean": 4.0
+                    "mean": 2.0
                 },
                 {
                     "name": "룩세로강",
-                    "mean": 2.0
+                    "mean": 1.0
+                },
+                {
+                    "name": "반쪽-오른",
+                    "mean": 0.585
+                },
+                {
+                    "name": "반쪽-왼",
+                    "mean": 0.67
                 },
                 {
                     "name": "베롤리나-32",
@@ -2134,6 +2698,14 @@
                     "mean": 1.0
                 },
                 {
+                    "name": "블록체커-가",
+                    "mean": 0.295
+                },
+                {
+                    "name": "블록체커-나",
+                    "mean": 0.245
+                },
+                {
                     "name": "비숍-검은칸",
                     "mean": 1.0
                 },
@@ -2146,36 +2718,56 @@
                     "mean": 1.0
                 },
                 {
+                    "name": "세로창살-짝",
+                    "mean": 0.755
+                },
+                {
+                    "name": "세로창살-홀",
+                    "mean": 0.76
+                },
+                {
+                    "name": "아마존",
+                    "mean": 1.91
+                },
+                {
                     "name": "아치비숍",
-                    "mean": 2.05
+                    "mean": 3.99
                 },
                 {
                     "name": "알필다바바",
-                    "mean": 2.01
+                    "mean": 3.98
                 },
                 {
                     "name": "여러핀강",
-                    "mean": 0.435
+                    "mean": 1.0
                 },
                 {
                     "name": "오프닝1-e5",
-                    "mean": 1.92
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝2-Nf6",
-                    "mean": 1.99
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝3-Bc5",
-                    "mean": 1.96
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝4-캐슬링",
-                    "mean": 1.99
+                    "mean": 2.0
+                },
+                {
+                    "name": "외길",
+                    "mean": 0.41
+                },
+                {
+                    "name": "이중고리",
+                    "mean": 0.775
                 },
                 {
                     "name": "전체",
-                    "mean": 6.73
+                    "mean": 8.855
                 },
                 {
                     "name": "챈슬러",
@@ -2192,6 +2784,30 @@
                 {
                     "name": "킹손바닥강",
                     "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
                 },
                 {
                     "name": "핀+대각",
@@ -2211,70 +2827,70 @@
             "group": "holdout",
             "strategy": "ALL",
             "runs": 600,
-            "clears": 600,
+            "clears": 599,
             "deaths": 0,
-            "timeouts": 0,
+            "timeouts": 1,
             "invariantFailures": 0,
-            "clearRate": 1.0,
+            "clearRate": 0.9983333333333333,
             "deathRate": 0.0,
-            "attackShare": 0.33636180974761728,
-            "moveShare": 0.5592955297940927,
-            "guardShare": 0.10434266045829002,
+            "attackShare": 0.43947552493698119,
+            "moveShare": 0.45247522139076959,
+            "guardShare": 0.10804925367224928,
             "distributions": [
                 {
                     "metric": "attack",
                     "phase": 0,
                     "count": 600,
-                    "min": 62.0,
-                    "p10": 63.0,
-                    "p50": 64.0,
-                    "p90": 65.0,
-                    "max": 66.0,
-                    "mean": 64.17166666666667
+                    "min": 110.0,
+                    "p10": 111.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.99833333333334
                 },
                 {
                     "metric": "move",
                     "phase": 0,
                     "count": 600,
-                    "min": 78.0,
-                    "p10": 97.0,
-                    "p50": 105.0,
-                    "p90": 118.0,
-                    "max": 129.0,
-                    "mean": 106.70333333333334
+                    "min": 64.0,
+                    "p10": 91.0,
+                    "p50": 116.0,
+                    "p90": 137.0,
+                    "max": 158.0,
+                    "mean": 114.28166666666667
                 },
                 {
                     "metric": "guard",
                     "phase": 0,
                     "count": 600,
-                    "min": 12.0,
-                    "p10": 15.0,
-                    "p50": 18.0,
-                    "p90": 28.0,
-                    "max": 33.0,
-                    "mean": 19.906666666666668
+                    "min": 16.0,
+                    "p10": 22.0,
+                    "p50": 26.0,
+                    "p90": 35.0,
+                    "max": 41.0,
+                    "mean": 27.29
                 },
                 {
                     "metric": "other",
                     "phase": 0,
                     "count": 600,
-                    "min": 90.0,
-                    "p10": 103.0,
-                    "p50": 111.0,
-                    "p90": 125.0,
-                    "max": 140.0,
-                    "mean": 113.21833333333334
+                    "min": 5.0,
+                    "p10": 29.0,
+                    "p50": 50.0,
+                    "p90": 75.0,
+                    "max": 104.0,
+                    "mean": 51.43
                 },
                 {
                     "metric": "guard_success",
                     "phase": 0,
                     "count": 600,
-                    "min": 11.0,
-                    "p10": 14.0,
-                    "p50": 16.0,
-                    "p90": 26.0,
-                    "max": 31.0,
-                    "mean": 18.523333333333335
+                    "min": 16.0,
+                    "p10": 21.0,
+                    "p50": 25.0,
+                    "p90": 34.0,
+                    "max": 39.0,
+                    "mean": 26.333333333333333
                 },
                 {
                     "metric": "guard_broken",
@@ -2302,84 +2918,92 @@
                     "metric": "leftover_notes",
                     "phase": 0,
                     "count": 600,
-                    "min": 87.0,
-                    "p10": 99.0,
-                    "p50": 109.0,
-                    "p90": 122.0,
-                    "max": 136.0,
-                    "mean": 110.28166666666667
+                    "min": 0.0,
+                    "p10": 26.0,
+                    "p50": 48.0,
+                    "p90": 72.0,
+                    "max": 96.0,
+                    "mean": 48.983333333333337
                 },
                 {
                     "metric": "published_Either",
                     "phase": 0,
                     "count": 600,
-                    "min": 27.0,
-                    "p10": 31.0,
-                    "p50": 33.0,
-                    "p90": 33.0,
-                    "max": 35.0,
-                    "mean": 32.13333333333333
+                    "min": 37.0,
+                    "p10": 42.0,
+                    "p50": 43.0,
+                    "p90": 44.0,
+                    "max": 45.0,
+                    "mean": 43.14666666666667
                 },
                 {
                     "metric": "fired_Either",
                     "phase": 0,
                     "count": 600,
-                    "min": 27.0,
-                    "p10": 31.0,
-                    "p50": 33.0,
-                    "p90": 33.0,
-                    "max": 35.0,
-                    "mean": 32.096666666666667
+                    "min": 37.0,
+                    "p10": 42.0,
+                    "p50": 43.0,
+                    "p90": 44.0,
+                    "max": 45.0,
+                    "mean": 43.11
                 },
                 {
                     "metric": "published_GuardOnly",
                     "phase": 0,
                     "count": 600,
-                    "min": 6.0,
-                    "p10": 6.0,
-                    "p50": 7.0,
-                    "p90": 7.0,
-                    "max": 8.0,
-                    "mean": 6.833333333333333
+                    "min": 7.0,
+                    "p10": 8.0,
+                    "p50": 9.0,
+                    "p90": 10.0,
+                    "max": 11.0,
+                    "mean": 8.775
                 },
                 {
                     "metric": "fired_GuardOnly",
                     "phase": 0,
                     "count": 600,
-                    "min": 6.0,
-                    "p10": 6.0,
-                    "p50": 7.0,
-                    "p90": 7.0,
-                    "max": 7.0,
-                    "mean": 6.781666666666666
+                    "min": 7.0,
+                    "p10": 8.0,
+                    "p50": 9.0,
+                    "p90": 9.0,
+                    "max": 11.0,
+                    "mean": 8.703333333333334
                 },
                 {
                     "metric": "published_DodgeOnly",
                     "phase": 0,
                     "count": 600,
-                    "min": 13.0,
-                    "p10": 14.0,
-                    "p50": 15.0,
-                    "p90": 16.0,
-                    "max": 18.0,
-                    "mean": 15.031666666666667
+                    "min": 16.0,
+                    "p10": 21.0,
+                    "p50": 28.0,
+                    "p90": 34.0,
+                    "max": 40.0,
+                    "mean": 27.813333333333334
                 },
                 {
                     "metric": "fired_DodgeOnly",
                     "phase": 0,
                     "count": 600,
-                    "min": 13.0,
-                    "p10": 14.0,
-                    "p50": 15.0,
-                    "p90": 16.0,
-                    "max": 18.0,
-                    "mean": 15.031666666666667
+                    "min": 16.0,
+                    "p10": 21.0,
+                    "p50": 27.0,
+                    "p90": 34.0,
+                    "max": 40.0,
+                    "mean": 27.49
                 }
             ],
             "patterns": [
                 {
                     "name": "X",
-                    "mean": 2.0
+                    "mean": 3.84
+                },
+                {
+                    "name": "가로창살",
+                    "mean": 0.325
+                },
+                {
+                    "name": "가운데폭발",
+                    "mean": 0.28
                 },
                 {
                     "name": "각잡은악수-오른",
@@ -2387,19 +3011,35 @@
                 },
                 {
                     "name": "고리-바깥",
-                    "mean": 0.6133333333333333
+                    "mean": 1.0
                 },
                 {
                     "name": "고리-안강",
-                    "mean": 0.5566666666666666
+                    "mean": 1.0
                 },
                 {
                     "name": "고리-중간",
-                    "mean": 0.6016666666666667
+                    "mean": 1.0
+                },
+                {
+                    "name": "구석",
+                    "mean": 0.05333333333333334
+                },
+                {
+                    "name": "깨진판-가",
+                    "mean": 0.8066666666666666
+                },
+                {
+                    "name": "깨진판-나",
+                    "mean": 0.05
+                },
+                {
+                    "name": "나선",
+                    "mean": 0.675
                 },
                 {
                     "name": "나이트라이더",
-                    "mean": 2.0
+                    "mean": 3.94
                 },
                 {
                     "name": "나이트라이더격자",
@@ -2411,19 +3051,31 @@
                 },
                 {
                     "name": "낙타얼룩말",
-                    "mean": 2.0
+                    "mean": 3.7333333333333336
                 },
                 {
                     "name": "뒤치기",
-                    "mean": 0.9983333333333333
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
                 },
                 {
                     "name": "룩가로",
-                    "mean": 4.0
+                    "mean": 2.0
                 },
                 {
                     "name": "룩세로강",
-                    "mean": 2.0
+                    "mean": 1.0
+                },
+                {
+                    "name": "반쪽-오른",
+                    "mean": 0.4766666666666667
+                },
+                {
+                    "name": "반쪽-왼",
+                    "mean": 0.6033333333333334
                 },
                 {
                     "name": "베롤리나-32",
@@ -2438,6 +3090,14 @@
                     "mean": 1.0
                 },
                 {
+                    "name": "블록체커-가",
+                    "mean": 0.195
+                },
+                {
+                    "name": "블록체커-나",
+                    "mean": 0.13833333333333334
+                },
+                {
                     "name": "비숍-검은칸",
                     "mean": 1.0
                 },
@@ -2450,36 +3110,56 @@
                     "mean": 1.0
                 },
                 {
+                    "name": "세로창살-짝",
+                    "mean": 0.7433333333333333
+                },
+                {
+                    "name": "세로창살-홀",
+                    "mean": 0.7683333333333333
+                },
+                {
+                    "name": "아마존",
+                    "mean": 1.8866666666666668
+                },
+                {
                     "name": "아치비숍",
-                    "mean": 2.03
+                    "mean": 3.9833333333333336
                 },
                 {
                     "name": "알필다바바",
-                    "mean": 2.006666666666667
+                    "mean": 3.98
                 },
                 {
                     "name": "여러핀강",
-                    "mean": 0.4583333333333333
+                    "mean": 1.0
                 },
                 {
                     "name": "오프닝1-e5",
-                    "mean": 1.93
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝2-Nf6",
-                    "mean": 1.985
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝3-Bc5",
-                    "mean": 1.96
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝4-캐슬링",
-                    "mean": 1.9883333333333333
+                    "mean": 2.0
+                },
+                {
+                    "name": "외길",
+                    "mean": 0.325
+                },
+                {
+                    "name": "이중고리",
+                    "mean": 0.7966666666666666
                 },
                 {
                     "name": "전체",
-                    "mean": 6.781666666666666
+                    "mean": 8.703333333333334
                 },
                 {
                     "name": "챈슬러",
@@ -2496,6 +3176,30 @@
                 {
                     "name": "킹손바닥강",
                     "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
                 },
                 {
                     "name": "핀+대각",
@@ -2515,382 +3219,70 @@
             "group": "miss5",
             "strategy": "CollectFirst",
             "runs": 200,
-            "clears": 197,
-            "deaths": 3,
-            "timeouts": 0,
+            "clears": 199,
+            "deaths": 0,
+            "timeouts": 1,
             "invariantFailures": 0,
-            "clearRate": 0.985,
-            "deathRate": 0.015,
-            "attackShare": 0.33048020480463399,
-            "moveShare": 0.5820899381965814,
-            "guardShare": 0.08742985699878463,
+            "clearRate": 0.995,
+            "deathRate": 0.0,
+            "attackShare": 0.43370975304782746,
+            "moveShare": 0.47133869959362298,
+            "guardShare": 0.09495154735854955,
             "distributions": [
                 {
                     "metric": "attack",
                     "phase": 0,
                     "count": 200,
-                    "min": 41.0,
-                    "p10": 63.0,
-                    "p50": 64.0,
-                    "p90": 65.0,
-                    "max": 66.0,
-                    "mean": 63.9
-                },
-                {
-                    "metric": "move",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 84.0,
-                    "p10": 102.0,
+                    "min": 110.0,
+                    "p10": 111.0,
                     "p50": 111.0,
-                    "p90": 125.0,
-                    "max": 142.0,
-                    "mean": 112.55
-                },
-                {
-                    "metric": "guard",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 8.0,
-                    "p10": 14.0,
-                    "p50": 17.0,
-                    "p90": 20.0,
-                    "max": 24.0,
-                    "mean": 16.905
-                },
-                {
-                    "metric": "other",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 11.0,
-                    "p10": 95.0,
-                    "p50": 112.0,
-                    "p90": 120.0,
-                    "max": 134.0,
-                    "mean": 108.42
-                },
-                {
-                    "metric": "guard_success",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 8.0,
-                    "p10": 14.0,
-                    "p50": 16.0,
-                    "p90": 18.0,
-                    "max": 21.0,
-                    "mean": 15.77
-                },
-                {
-                    "metric": "guard_broken",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 0.0,
-                    "p10": 0.0,
-                    "p50": 0.0,
-                    "p90": 0.0,
-                    "max": 1.0,
-                    "mean": 0.005
-                },
-                {
-                    "metric": "hits",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 0.0,
-                    "p10": 0.0,
-                    "p50": 2.0,
-                    "p90": 3.0,
-                    "max": 5.0,
-                    "mean": 1.755
-                },
-                {
-                    "metric": "leftover_notes",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 0.0,
-                    "p10": 78.0,
-                    "p50": 99.0,
-                    "p90": 109.0,
-                    "max": 125.0,
-                    "mean": 95.37
-                },
-                {
-                    "metric": "published_Either",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 24.0,
-                    "p10": 33.0,
-                    "p50": 33.0,
-                    "p90": 37.0,
-                    "max": 39.0,
-                    "mean": 33.57
-                },
-                {
-                    "metric": "fired_Either",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 24.0,
-                    "p10": 33.0,
-                    "p50": 33.0,
-                    "p90": 36.0,
-                    "max": 39.0,
-                    "mean": 33.5
-                },
-                {
-                    "metric": "published_GuardOnly",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 6.0,
-                    "p10": 7.0,
-                    "p50": 7.0,
-                    "p90": 8.0,
-                    "max": 8.0,
-                    "mean": 7.18
-                },
-                {
-                    "metric": "fired_GuardOnly",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 6.0,
-                    "p10": 7.0,
-                    "p50": 7.0,
-                    "p90": 8.0,
-                    "max": 8.0,
-                    "mean": 7.165
-                },
-                {
-                    "metric": "published_DodgeOnly",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 9.0,
-                    "p10": 15.0,
-                    "p50": 16.0,
-                    "p90": 20.0,
-                    "max": 23.0,
-                    "mean": 16.53
-                },
-                {
-                    "metric": "fired_DodgeOnly",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 9.0,
-                    "p10": 15.0,
-                    "p50": 16.0,
-                    "p90": 19.0,
-                    "max": 23.0,
-                    "mean": 16.465
-                }
-            ],
-            "patterns": [
-                {
-                    "name": "X",
-                    "mean": 2.07
-                },
-                {
-                    "name": "각잡은악수-오른",
-                    "mean": 1.0
-                },
-                {
-                    "name": "고리-바깥",
-                    "mean": 0.925
-                },
-                {
-                    "name": "고리-안강",
-                    "mean": 0.91
-                },
-                {
-                    "name": "고리-중간",
-                    "mean": 0.92
-                },
-                {
-                    "name": "나이트라이더",
-                    "mean": 2.22
-                },
-                {
-                    "name": "나이트라이더격자",
-                    "mean": 0.99
-                },
-                {
-                    "name": "나이트훈수+중심",
-                    "mean": 1.0
-                },
-                {
-                    "name": "낙타얼룩말",
-                    "mean": 2.02
-                },
-                {
-                    "name": "뒤치기",
-                    "mean": 0.985
-                },
-                {
-                    "name": "룩가로",
-                    "mean": 4.0
-                },
-                {
-                    "name": "룩세로강",
-                    "mean": 2.0
-                },
-                {
-                    "name": "베롤리나-32",
-                    "mean": 1.0
-                },
-                {
-                    "name": "베롤리나-54",
-                    "mean": 1.0
-                },
-                {
-                    "name": "베롤리나-76",
-                    "mean": 1.0
-                },
-                {
-                    "name": "비숍-검은칸",
-                    "mean": 1.0
-                },
-                {
-                    "name": "비숍-흰칸",
-                    "mean": 1.0
-                },
-                {
-                    "name": "비숍X추적",
-                    "mean": 1.0
-                },
-                {
-                    "name": "아마존",
-                    "mean": 0.12
-                },
-                {
-                    "name": "아치비숍",
-                    "mean": 2.59
-                },
-                {
-                    "name": "알필다바바",
-                    "mean": 2.45
-                },
-                {
-                    "name": "여러핀강",
-                    "mean": 0.855
-                },
-                {
-                    "name": "오프닝1-e5",
-                    "mean": 1.98
-                },
-                {
-                    "name": "오프닝2-Nf6",
-                    "mean": 1.985
-                },
-                {
-                    "name": "오프닝3-Bc5",
-                    "mean": 1.985
-                },
-                {
-                    "name": "오프닝4-캐슬링",
-                    "mean": 1.985
-                },
-                {
-                    "name": "이중고리",
-                    "mean": 0.005
-                },
-                {
-                    "name": "전체",
-                    "mean": 7.165
-                },
-                {
-                    "name": "챈슬러",
-                    "mean": 3.97
-                },
-                {
-                    "name": "킹고리강",
-                    "mean": 1.0
-                },
-                {
-                    "name": "킹손바닥",
-                    "mean": 1.0
-                },
-                {
-                    "name": "킹손바닥강",
-                    "mean": 2.0
-                },
-                {
-                    "name": "핀+대각",
-                    "mean": 1.0
-                },
-                {
-                    "name": "핀+십자",
-                    "mean": 1.0
-                },
-                {
-                    "name": "핀강",
-                    "mean": 1.0
-                }
-            ]
-        },
-        {
-            "group": "miss5",
-            "strategy": "AttackHold",
-            "runs": 200,
-            "clears": 196,
-            "deaths": 4,
-            "timeouts": 0,
-            "invariantFailures": 0,
-            "clearRate": 0.98,
-            "deathRate": 0.02,
-            "attackShare": 0.3322416302765647,
-            "moveShare": 0.5365200665419005,
-            "guardShare": 0.13123830318153463,
-            "distributions": [
-                {
-                    "metric": "attack",
-                    "phase": 0,
-                    "count": 200,
-                    "min": 46.0,
-                    "p10": 63.0,
-                    "p50": 64.0,
-                    "p90": 65.0,
-                    "max": 66.0,
-                    "mean": 63.91
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.995
                 },
                 {
                     "metric": "move",
                     "phase": 0,
                     "count": 200,
-                    "min": 72.0,
-                    "p10": 94.0,
-                    "p50": 103.0,
-                    "p90": 115.0,
-                    "max": 123.0,
-                    "mean": 103.205
+                    "min": 76.0,
+                    "p10": 102.0,
+                    "p50": 124.0,
+                    "p90": 137.0,
+                    "max": 148.0,
+                    "mean": 120.625
                 },
                 {
                     "metric": "guard",
                     "phase": 0,
                     "count": 200,
                     "min": 18.0,
-                    "p10": 22.0,
-                    "p50": 25.0,
-                    "p90": 28.0,
-                    "max": 34.0,
-                    "mean": 25.245
+                    "p10": 21.0,
+                    "p50": 24.0,
+                    "p90": 27.0,
+                    "max": 33.0,
+                    "mean": 24.3
                 },
                 {
                     "metric": "other",
                     "phase": 0,
                     "count": 200,
-                    "min": 15.0,
-                    "p10": 96.0,
-                    "p50": 112.0,
-                    "p90": 120.0,
-                    "max": 134.0,
-                    "mean": 109.2
+                    "min": 14.0,
+                    "p10": 30.0,
+                    "p50": 45.0,
+                    "p90": 68.0,
+                    "max": 96.0,
+                    "mean": 48.08
                 },
                 {
                     "metric": "guard_success",
                     "phase": 0,
                     "count": 200,
                     "min": 17.0,
-                    "p10": 20.0,
-                    "p50": 24.0,
-                    "p90": 27.0,
+                    "p10": 21.0,
+                    "p50": 23.0,
+                    "p90": 26.0,
                     "max": 32.0,
-                    "mean": 23.58
+                    "mean": 23.245
                 },
                 {
                     "metric": "guard_broken",
@@ -2899,103 +3291,111 @@
                     "min": 0.0,
                     "p10": 0.0,
                     "p50": 0.0,
-                    "p90": 0.0,
-                    "max": 1.0,
-                    "mean": 0.005
+                    "p90": 1.0,
+                    "max": 2.0,
+                    "mean": 0.26
                 },
                 {
                     "metric": "hits",
                     "phase": 0,
                     "count": 200,
                     "min": 0.0,
-                    "p10": 0.0,
-                    "p50": 2.0,
-                    "p90": 4.0,
-                    "max": 5.0,
-                    "mean": 1.7
+                    "p10": 1.0,
+                    "p50": 3.0,
+                    "p90": 5.0,
+                    "max": 7.0,
+                    "mean": 2.68
                 },
                 {
                     "metric": "leftover_notes",
                     "phase": 0,
                     "count": 200,
                     "min": 0.0,
-                    "p10": 82.0,
-                    "p50": 99.0,
-                    "p90": 109.0,
-                    "max": 124.0,
-                    "mean": 95.995
+                    "p10": 15.0,
+                    "p50": 31.0,
+                    "p90": 51.0,
+                    "max": 82.0,
+                    "mean": 33.535
                 },
                 {
                     "metric": "published_Either",
                     "phase": 0,
                     "count": 200,
-                    "min": 24.0,
-                    "p10": 33.0,
-                    "p50": 33.0,
-                    "p90": 35.0,
-                    "max": 39.0,
-                    "mean": 33.385
+                    "min": 39.0,
+                    "p10": 43.0,
+                    "p50": 44.0,
+                    "p90": 45.0,
+                    "max": 45.0,
+                    "mean": 43.865
                 },
                 {
                     "metric": "fired_Either",
                     "phase": 0,
                     "count": 200,
-                    "min": 24.0,
-                    "p10": 33.0,
-                    "p50": 33.0,
-                    "p90": 35.0,
-                    "max": 39.0,
-                    "mean": 33.33
+                    "min": 39.0,
+                    "p10": 43.0,
+                    "p50": 44.0,
+                    "p90": 45.0,
+                    "max": 45.0,
+                    "mean": 43.85
                 },
                 {
                     "metric": "published_GuardOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 6.0,
-                    "p10": 7.0,
-                    "p50": 7.0,
-                    "p90": 8.0,
-                    "max": 8.0,
-                    "mean": 7.145
+                    "min": 8.0,
+                    "p10": 9.0,
+                    "p50": 9.0,
+                    "p90": 10.0,
+                    "max": 11.0,
+                    "mean": 9.295
                 },
                 {
                     "metric": "fired_GuardOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 6.0,
-                    "p10": 7.0,
-                    "p50": 7.0,
-                    "p90": 8.0,
-                    "max": 8.0,
-                    "mean": 7.105
+                    "min": 8.0,
+                    "p10": 9.0,
+                    "p50": 9.0,
+                    "p90": 10.0,
+                    "max": 11.0,
+                    "mean": 9.255
                 },
                 {
                     "metric": "published_DodgeOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 9.0,
-                    "p10": 15.0,
-                    "p50": 16.0,
-                    "p90": 18.0,
-                    "max": 25.0,
-                    "mean": 16.34
+                    "min": 18.0,
+                    "p10": 27.0,
+                    "p50": 33.0,
+                    "p90": 36.0,
+                    "max": 40.0,
+                    "mean": 31.83
                 },
                 {
                     "metric": "fired_DodgeOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 9.0,
-                    "p10": 15.0,
-                    "p50": 16.0,
-                    "p90": 18.0,
-                    "max": 25.0,
-                    "mean": 16.295
+                    "min": 18.0,
+                    "p10": 26.0,
+                    "p50": 32.0,
+                    "p90": 36.0,
+                    "max": 40.0,
+                    "mean": 31.545
                 }
             ],
             "patterns": [
                 {
                     "name": "X",
-                    "mean": 2.04
+                    "mean": 3.96
+                },
+                {
+                    "name": "가로창살",
+                    "mean": 0.65
+                },
+                {
+                    "name": "가운데폭발",
+                    "mean": 0.605
                 },
                 {
                     "name": "각잡은악수-오른",
@@ -3003,23 +3403,39 @@
                 },
                 {
                     "name": "고리-바깥",
-                    "mean": 0.925
+                    "mean": 1.0
                 },
                 {
                     "name": "고리-안강",
-                    "mean": 0.92
+                    "mean": 1.0
                 },
                 {
                     "name": "고리-중간",
-                    "mean": 0.92
+                    "mean": 1.0
+                },
+                {
+                    "name": "구석",
+                    "mean": 0.23
+                },
+                {
+                    "name": "깨진판-가",
+                    "mean": 1.55
+                },
+                {
+                    "name": "깨진판-나",
+                    "mean": 0.3
+                },
+                {
+                    "name": "나선",
+                    "mean": 0.965
                 },
                 {
                     "name": "나이트라이더",
-                    "mean": 2.15
+                    "mean": 3.99
                 },
                 {
                     "name": "나이트라이더격자",
-                    "mean": 0.995
+                    "mean": 1.0
                 },
                 {
                     "name": "나이트훈수+중심",
@@ -3027,19 +3443,31 @@
                 },
                 {
                     "name": "낙타얼룩말",
-                    "mean": 2.02
+                    "mean": 3.93
                 },
                 {
                     "name": "뒤치기",
-                    "mean": 0.99
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
                 },
                 {
                     "name": "룩가로",
-                    "mean": 4.0
+                    "mean": 2.0
                 },
                 {
                     "name": "룩세로강",
-                    "mean": 2.0
+                    "mean": 1.0
+                },
+                {
+                    "name": "반쪽-오른",
+                    "mean": 0.83
+                },
+                {
+                    "name": "반쪽-왼",
+                    "mean": 0.9
                 },
                 {
                     "name": "베롤리나-32",
@@ -3052,6 +3480,14 @@
                 {
                     "name": "베롤리나-76",
                     "mean": 1.0
+                },
+                {
+                    "name": "블록체커-가",
+                    "mean": 0.49
+                },
+                {
+                    "name": "블록체커-나",
+                    "mean": 0.39
                 },
                 {
                     "name": "비숍-검은칸",
@@ -3067,55 +3503,59 @@
                 },
                 {
                     "name": "세로창살-짝",
-                    "mean": 0.005
+                    "mean": 1.01
                 },
                 {
                     "name": "세로창살-홀",
-                    "mean": 0.005
+                    "mean": 1.02
                 },
                 {
                     "name": "아마존",
-                    "mean": 0.06
+                    "mean": 1.97
                 },
                 {
                     "name": "아치비숍",
-                    "mean": 2.44
+                    "mean": 4.0
                 },
                 {
                     "name": "알필다바바",
-                    "mean": 2.36
+                    "mean": 4.0
                 },
                 {
                     "name": "여러핀강",
-                    "mean": 0.845
+                    "mean": 1.0
                 },
                 {
                     "name": "오프닝1-e5",
-                    "mean": 1.985
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝2-Nf6",
-                    "mean": 1.99
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝3-Bc5",
-                    "mean": 1.99
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝4-캐슬링",
-                    "mean": 1.99
+                    "mean": 2.0
+                },
+                {
+                    "name": "외길",
+                    "mean": 0.655
                 },
                 {
                     "name": "이중고리",
-                    "mean": 0.005
+                    "mean": 0.95
                 },
                 {
                     "name": "전체",
-                    "mean": 7.105
+                    "mean": 9.255
                 },
                 {
                     "name": "챈슬러",
-                    "mean": 3.99
+                    "mean": 4.0
                 },
                 {
                     "name": "킹고리강",
@@ -3128,6 +3568,422 @@
                 {
                     "name": "킹손바닥강",
                     "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+대각",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀+십자",
+                    "mean": 1.0
+                },
+                {
+                    "name": "핀강",
+                    "mean": 1.0
+                }
+            ]
+        },
+        {
+            "group": "miss5",
+            "strategy": "AttackHold",
+            "runs": 200,
+            "clears": 194,
+            "deaths": 0,
+            "timeouts": 6,
+            "invariantFailures": 0,
+            "clearRate": 0.97,
+            "deathRate": 0.0,
+            "attackShare": 0.4361298440848587,
+            "moveShare": 0.43060498220640566,
+            "guardShare": 0.13326517370873559,
+            "distributions": [
+                {
+                    "metric": "attack",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 104.0,
+                    "p10": 111.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.91
+                },
+                {
+                    "metric": "move",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 71.0,
+                    "p10": 88.0,
+                    "p50": 112.0,
+                    "p90": 126.0,
+                    "max": 144.0,
+                    "mean": 109.505
+                },
+                {
+                    "metric": "guard",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 27.0,
+                    "p10": 30.0,
+                    "p50": 34.0,
+                    "p90": 37.0,
+                    "max": 45.0,
+                    "mean": 33.89
+                },
+                {
+                    "metric": "other",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 14.0,
+                    "p10": 30.0,
+                    "p50": 47.0,
+                    "p90": 72.0,
+                    "max": 93.0,
+                    "mean": 49.695
+                },
+                {
+                    "metric": "guard_success",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 25.0,
+                    "p10": 29.0,
+                    "p50": 32.0,
+                    "p90": 36.0,
+                    "max": 43.0,
+                    "mean": 32.57
+                },
+                {
+                    "metric": "guard_broken",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 0.0,
+                    "p50": 0.0,
+                    "p90": 1.0,
+                    "max": 2.0,
+                    "mean": 0.245
+                },
+                {
+                    "metric": "hits",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 1.0,
+                    "p50": 3.0,
+                    "p90": 5.0,
+                    "max": 10.0,
+                    "mean": 2.705
+                },
+                {
+                    "metric": "leftover_notes",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 0.0,
+                    "p10": 15.0,
+                    "p50": 31.0,
+                    "p90": 61.0,
+                    "max": 75.0,
+                    "mean": 33.93
+                },
+                {
+                    "metric": "published_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 42.0,
+                    "p10": 43.0,
+                    "p50": 44.0,
+                    "p90": 45.0,
+                    "max": 45.0,
+                    "mean": 43.82
+                },
+                {
+                    "metric": "fired_Either",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 41.0,
+                    "p10": 43.0,
+                    "p50": 44.0,
+                    "p90": 45.0,
+                    "max": 45.0,
+                    "mean": 43.815
+                },
+                {
+                    "metric": "published_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 8.0,
+                    "p10": 8.0,
+                    "p50": 9.0,
+                    "p90": 10.0,
+                    "max": 11.0,
+                    "mean": 9.355
+                },
+                {
+                    "metric": "fired_GuardOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 8.0,
+                    "p10": 8.0,
+                    "p50": 9.0,
+                    "p90": 10.0,
+                    "max": 11.0,
+                    "mean": 9.29
+                },
+                {
+                    "metric": "published_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 21.0,
+                    "p10": 25.0,
+                    "p50": 33.0,
+                    "p90": 36.0,
+                    "max": 40.0,
+                    "mean": 31.75
+                },
+                {
+                    "metric": "fired_DodgeOnly",
+                    "phase": 0,
+                    "count": 200,
+                    "min": 20.0,
+                    "p10": 25.0,
+                    "p50": 32.0,
+                    "p90": 36.0,
+                    "max": 40.0,
+                    "mean": 31.385
+                }
+            ],
+            "patterns": [
+                {
+                    "name": "X",
+                    "mean": 3.99
+                },
+                {
+                    "name": "가로창살",
+                    "mean": 0.635
+                },
+                {
+                    "name": "가운데폭발",
+                    "mean": 0.64
+                },
+                {
+                    "name": "각잡은악수-오른",
+                    "mean": 1.0
+                },
+                {
+                    "name": "고리-바깥",
+                    "mean": 1.0
+                },
+                {
+                    "name": "고리-안강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "고리-중간",
+                    "mean": 1.0
+                },
+                {
+                    "name": "구석",
+                    "mean": 0.21
+                },
+                {
+                    "name": "깨진판-가",
+                    "mean": 1.44
+                },
+                {
+                    "name": "깨진판-나",
+                    "mean": 0.26
+                },
+                {
+                    "name": "나선",
+                    "mean": 0.945
+                },
+                {
+                    "name": "나이트라이더",
+                    "mean": 4.0
+                },
+                {
+                    "name": "나이트라이더격자",
+                    "mean": 1.0
+                },
+                {
+                    "name": "나이트훈수+중심",
+                    "mean": 1.0
+                },
+                {
+                    "name": "낙타얼룩말",
+                    "mean": 3.94
+                },
+                {
+                    "name": "뒤치기",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩가로",
+                    "mean": 2.0
+                },
+                {
+                    "name": "룩세로강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "반쪽-오른",
+                    "mean": 0.75
+                },
+                {
+                    "name": "반쪽-왼",
+                    "mean": 0.825
+                },
+                {
+                    "name": "베롤리나-32",
+                    "mean": 1.0
+                },
+                {
+                    "name": "베롤리나-54",
+                    "mean": 1.0
+                },
+                {
+                    "name": "베롤리나-76",
+                    "mean": 1.0
+                },
+                {
+                    "name": "블록체커-가",
+                    "mean": 0.485
+                },
+                {
+                    "name": "블록체커-나",
+                    "mean": 0.435
+                },
+                {
+                    "name": "비숍-검은칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍-흰칸",
+                    "mean": 1.0
+                },
+                {
+                    "name": "비숍X추적",
+                    "mean": 1.0
+                },
+                {
+                    "name": "세로창살-짝",
+                    "mean": 1.025
+                },
+                {
+                    "name": "세로창살-홀",
+                    "mean": 1.025
+                },
+                {
+                    "name": "아마존",
+                    "mean": 2.0
+                },
+                {
+                    "name": "아치비숍",
+                    "mean": 4.0
+                },
+                {
+                    "name": "알필다바바",
+                    "mean": 4.0
+                },
+                {
+                    "name": "여러핀강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "오프닝1-e5",
+                    "mean": 2.0
+                },
+                {
+                    "name": "오프닝2-Nf6",
+                    "mean": 2.0
+                },
+                {
+                    "name": "오프닝3-Bc5",
+                    "mean": 2.0
+                },
+                {
+                    "name": "오프닝4-캐슬링",
+                    "mean": 2.0
+                },
+                {
+                    "name": "외길",
+                    "mean": 0.64
+                },
+                {
+                    "name": "이중고리",
+                    "mean": 0.955
+                },
+                {
+                    "name": "전체",
+                    "mean": 9.29
+                },
+                {
+                    "name": "챈슬러",
+                    "mean": 4.0
+                },
+                {
+                    "name": "킹고리강",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥",
+                    "mean": 1.0
+                },
+                {
+                    "name": "킹손바닥강",
+                    "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
                 },
                 {
                     "name": "핀+대각",
@@ -3147,70 +4003,70 @@
             "group": "miss5",
             "strategy": "MovementUse",
             "runs": 200,
-            "clears": 197,
-            "deaths": 3,
-            "timeouts": 0,
+            "clears": 182,
+            "deaths": 0,
+            "timeouts": 18,
             "invariantFailures": 0,
-            "clearRate": 0.985,
-            "deathRate": 0.015,
-            "attackShare": 0.32948006708811769,
-            "moveShare": 0.5829183331183073,
-            "guardShare": 0.08760159979357503,
+            "clearRate": 0.91,
+            "deathRate": 0.0,
+            "attackShare": 0.4288705768298594,
+            "moveShare": 0.4743189529810955,
+            "guardShare": 0.09681047018904508,
             "distributions": [
                 {
                     "metric": "attack",
                     "phase": 0,
                     "count": 200,
-                    "min": 40.0,
-                    "p10": 63.0,
-                    "p50": 64.0,
-                    "p90": 65.0,
-                    "max": 66.0,
-                    "mean": 63.845
+                    "min": 93.0,
+                    "p10": 111.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.595
                 },
                 {
                     "metric": "move",
                     "phase": 0,
                     "count": 200,
-                    "min": 84.0,
-                    "p10": 102.0,
-                    "p50": 112.0,
-                    "p90": 124.0,
-                    "max": 142.0,
-                    "mean": 112.955
+                    "min": 79.0,
+                    "p10": 103.0,
+                    "p50": 123.0,
+                    "p90": 142.0,
+                    "max": 158.0,
+                    "mean": 122.315
                 },
                 {
                     "metric": "guard",
                     "phase": 0,
                     "count": 200,
-                    "min": 8.0,
-                    "p10": 14.0,
-                    "p50": 17.0,
-                    "p90": 20.0,
-                    "max": 24.0,
-                    "mean": 16.975
+                    "min": 18.0,
+                    "p10": 21.0,
+                    "p50": 25.0,
+                    "p90": 29.0,
+                    "max": 33.0,
+                    "mean": 24.965
                 },
                 {
                     "metric": "other",
                     "phase": 0,
                     "count": 200,
                     "min": 12.0,
-                    "p10": 95.0,
-                    "p50": 112.0,
-                    "p90": 119.0,
-                    "max": 134.0,
-                    "mean": 108.0
+                    "p10": 24.0,
+                    "p50": 45.0,
+                    "p90": 67.0,
+                    "max": 93.0,
+                    "mean": 46.125
                 },
                 {
                     "metric": "guard_success",
                     "phase": 0,
                     "count": 200,
-                    "min": 8.0,
-                    "p10": 14.0,
-                    "p50": 16.0,
-                    "p90": 18.0,
-                    "max": 21.0,
-                    "mean": 15.82
+                    "min": 18.0,
+                    "p10": 21.0,
+                    "p50": 24.0,
+                    "p90": 27.0,
+                    "max": 32.0,
+                    "mean": 23.855
                 },
                 {
                     "metric": "guard_broken",
@@ -3219,103 +4075,111 @@
                     "min": 0.0,
                     "p10": 0.0,
                     "p50": 0.0,
-                    "p90": 0.0,
-                    "max": 1.0,
-                    "mean": 0.005
+                    "p90": 1.0,
+                    "max": 2.0,
+                    "mean": 0.245
                 },
                 {
                     "metric": "hits",
                     "phase": 0,
                     "count": 200,
                     "min": 0.0,
-                    "p10": 0.0,
+                    "p10": 1.0,
                     "p50": 2.0,
-                    "p90": 3.0,
-                    "max": 5.0,
-                    "mean": 1.69
+                    "p90": 5.0,
+                    "max": 7.0,
+                    "mean": 2.625
                 },
                 {
                     "metric": "leftover_notes",
                     "phase": 0,
                     "count": 200,
                     "min": 0.0,
-                    "p10": 78.0,
-                    "p50": 99.0,
-                    "p90": 109.0,
-                    "max": 123.0,
-                    "mean": 94.965
+                    "p10": 1.0,
+                    "p50": 27.0,
+                    "p90": 53.0,
+                    "max": 80.0,
+                    "mean": 28.385
                 },
                 {
                     "metric": "published_Either",
                     "phase": 0,
                     "count": 200,
-                    "min": 24.0,
-                    "p10": 33.0,
-                    "p50": 33.0,
-                    "p90": 37.0,
-                    "max": 39.0,
-                    "mean": 33.605
+                    "min": 41.0,
+                    "p10": 43.0,
+                    "p50": 44.0,
+                    "p90": 45.0,
+                    "max": 45.0,
+                    "mean": 44.055
                 },
                 {
                     "metric": "fired_Either",
                     "phase": 0,
                     "count": 200,
-                    "min": 24.0,
-                    "p10": 33.0,
-                    "p50": 33.0,
-                    "p90": 36.0,
-                    "max": 39.0,
-                    "mean": 33.545
+                    "min": 40.0,
+                    "p10": 43.0,
+                    "p50": 44.0,
+                    "p90": 45.0,
+                    "max": 45.0,
+                    "mean": 44.05
                 },
                 {
                     "metric": "published_GuardOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 6.0,
-                    "p10": 7.0,
-                    "p50": 7.0,
-                    "p90": 8.0,
-                    "max": 8.0,
-                    "mean": 7.175
+                    "min": 8.0,
+                    "p10": 9.0,
+                    "p50": 9.0,
+                    "p90": 11.0,
+                    "max": 11.0,
+                    "mean": 9.58
                 },
                 {
                     "metric": "fired_GuardOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 6.0,
-                    "p10": 7.0,
-                    "p50": 7.0,
-                    "p90": 8.0,
-                    "max": 8.0,
-                    "mean": 7.155
+                    "min": 8.0,
+                    "p10": 9.0,
+                    "p50": 9.0,
+                    "p90": 11.0,
+                    "max": 11.0,
+                    "mean": 9.52
                 },
                 {
                     "metric": "published_DodgeOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 9.0,
-                    "p10": 15.0,
-                    "p50": 16.0,
-                    "p90": 20.0,
-                    "max": 25.0,
-                    "mean": 16.595
+                    "min": 20.0,
+                    "p10": 27.0,
+                    "p50": 34.0,
+                    "p90": 40.0,
+                    "max": 40.0,
+                    "mean": 33.105
                 },
                 {
                     "metric": "fired_DodgeOnly",
                     "phase": 0,
                     "count": 200,
-                    "min": 9.0,
-                    "p10": 15.0,
-                    "p50": 16.0,
-                    "p90": 19.0,
-                    "max": 25.0,
-                    "mean": 16.55
+                    "min": 19.0,
+                    "p10": 26.0,
+                    "p50": 34.0,
+                    "p90": 39.0,
+                    "max": 40.0,
+                    "mean": 32.875
                 }
             ],
             "patterns": [
                 {
                     "name": "X",
-                    "mean": 2.1
+                    "mean": 3.99
+                },
+                {
+                    "name": "가로창살",
+                    "mean": 0.745
+                },
+                {
+                    "name": "가운데폭발",
+                    "mean": 0.815
                 },
                 {
                     "name": "각잡은악수-오른",
@@ -3323,23 +4187,39 @@
                 },
                 {
                     "name": "고리-바깥",
-                    "mean": 0.925
+                    "mean": 1.0
                 },
                 {
                     "name": "고리-안강",
-                    "mean": 0.915
+                    "mean": 1.0
                 },
                 {
                     "name": "고리-중간",
-                    "mean": 0.925
+                    "mean": 1.0
+                },
+                {
+                    "name": "구석",
+                    "mean": 0.345
+                },
+                {
+                    "name": "깨진판-가",
+                    "mean": 1.6
+                },
+                {
+                    "name": "깨진판-나",
+                    "mean": 0.55
+                },
+                {
+                    "name": "나선",
+                    "mean": 1.085
                 },
                 {
                     "name": "나이트라이더",
-                    "mean": 2.23
+                    "mean": 4.0
                 },
                 {
                     "name": "나이트라이더격자",
-                    "mean": 0.99
+                    "mean": 1.0
                 },
                 {
                     "name": "나이트훈수+중심",
@@ -3347,19 +4227,31 @@
                 },
                 {
                     "name": "낙타얼룩말",
-                    "mean": 2.05
+                    "mean": 3.97
                 },
                 {
                     "name": "뒤치기",
-                    "mean": 0.985
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
                 },
                 {
                     "name": "룩가로",
-                    "mean": 4.0
+                    "mean": 2.0
                 },
                 {
                     "name": "룩세로강",
-                    "mean": 2.0
+                    "mean": 1.0
+                },
+                {
+                    "name": "반쪽-오른",
+                    "mean": 0.855
+                },
+                {
+                    "name": "반쪽-왼",
+                    "mean": 0.895
                 },
                 {
                     "name": "베롤리나-32",
@@ -3372,6 +4264,14 @@
                 {
                     "name": "베롤리나-76",
                     "mean": 1.0
+                },
+                {
+                    "name": "블록체커-가",
+                    "mean": 0.59
+                },
+                {
+                    "name": "블록체커-나",
+                    "mean": 0.55
                 },
                 {
                     "name": "비숍-검은칸",
@@ -3387,55 +4287,59 @@
                 },
                 {
                     "name": "세로창살-짝",
-                    "mean": 0.005
+                    "mean": 1.125
                 },
                 {
                     "name": "세로창살-홀",
-                    "mean": 0.01
+                    "mean": 1.125
                 },
                 {
                     "name": "아마존",
-                    "mean": 0.16
+                    "mean": 1.99
                 },
                 {
                     "name": "아치비숍",
-                    "mean": 2.57
+                    "mean": 4.0
                 },
                 {
                     "name": "알필다바바",
-                    "mean": 2.43
+                    "mean": 4.0
                 },
                 {
                     "name": "여러핀강",
-                    "mean": 0.865
+                    "mean": 1.0
                 },
                 {
                     "name": "오프닝1-e5",
-                    "mean": 1.985
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝2-Nf6",
-                    "mean": 1.985
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝3-Bc5",
-                    "mean": 1.985
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝4-캐슬링",
-                    "mean": 1.985
+                    "mean": 2.0
+                },
+                {
+                    "name": "외길",
+                    "mean": 0.745
                 },
                 {
                     "name": "이중고리",
-                    "mean": 0.025
+                    "mean": 0.95
                 },
                 {
                     "name": "전체",
-                    "mean": 7.155
+                    "mean": 9.52
                 },
                 {
                     "name": "챈슬러",
-                    "mean": 3.97
+                    "mean": 4.0
                 },
                 {
                     "name": "킹고리강",
@@ -3448,6 +4352,30 @@
                 {
                     "name": "킹손바닥강",
                     "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
                 },
                 {
                     "name": "핀+대각",
@@ -3467,70 +4395,70 @@
             "group": "miss5",
             "strategy": "ALL",
             "runs": 600,
-            "clears": 590,
-            "deaths": 10,
-            "timeouts": 0,
+            "clears": 575,
+            "deaths": 0,
+            "timeouts": 25,
             "invariantFailures": 0,
-            "clearRate": 0.9833333333333333,
-            "deathRate": 0.016666666666666668,
-            "attackShare": 0.33073046989594298,
-            "moveShare": 0.5672401594505513,
-            "guardShare": 0.10202937065350566,
+            "clearRate": 0.9583333333333334,
+            "deathRate": 0.0,
+            "attackShare": 0.43288634292409847,
+            "moveShare": 0.4588530139304779,
+            "guardShare": 0.10826064314542379,
             "distributions": [
                 {
                     "metric": "attack",
                     "phase": 0,
                     "count": 600,
-                    "min": 40.0,
-                    "p10": 63.0,
-                    "p50": 64.0,
-                    "p90": 65.0,
-                    "max": 66.0,
-                    "mean": 63.885
+                    "min": 93.0,
+                    "p10": 111.0,
+                    "p50": 111.0,
+                    "p90": 111.0,
+                    "max": 111.0,
+                    "mean": 110.83333333333333
                 },
                 {
                     "metric": "move",
                     "phase": 0,
                     "count": 600,
-                    "min": 72.0,
-                    "p10": 98.0,
-                    "p50": 109.0,
-                    "p90": 122.0,
-                    "max": 142.0,
-                    "mean": 109.57
+                    "min": 71.0,
+                    "p10": 95.0,
+                    "p50": 119.0,
+                    "p90": 137.0,
+                    "max": 158.0,
+                    "mean": 117.48166666666667
                 },
                 {
                     "metric": "guard",
                     "phase": 0,
                     "count": 600,
-                    "min": 8.0,
-                    "p10": 15.0,
-                    "p50": 18.0,
-                    "p90": 27.0,
-                    "max": 34.0,
-                    "mean": 19.708333333333333
+                    "min": 18.0,
+                    "p10": 22.0,
+                    "p50": 26.0,
+                    "p90": 35.0,
+                    "max": 45.0,
+                    "mean": 27.718333333333335
                 },
                 {
                     "metric": "other",
                     "phase": 0,
                     "count": 600,
-                    "min": 11.0,
-                    "p10": 95.0,
-                    "p50": 112.0,
-                    "p90": 120.0,
-                    "max": 134.0,
-                    "mean": 108.54
+                    "min": 12.0,
+                    "p10": 27.0,
+                    "p50": 46.0,
+                    "p90": 70.0,
+                    "max": 96.0,
+                    "mean": 47.96666666666667
                 },
                 {
                     "metric": "guard_success",
                     "phase": 0,
                     "count": 600,
-                    "min": 8.0,
-                    "p10": 14.0,
-                    "p50": 17.0,
-                    "p90": 25.0,
-                    "max": 32.0,
-                    "mean": 18.39
+                    "min": 17.0,
+                    "p10": 21.0,
+                    "p50": 25.0,
+                    "p90": 34.0,
+                    "max": 43.0,
+                    "mean": 26.55666666666667
                 },
                 {
                     "metric": "guard_broken",
@@ -3539,103 +4467,111 @@
                     "min": 0.0,
                     "p10": 0.0,
                     "p50": 0.0,
-                    "p90": 0.0,
-                    "max": 1.0,
-                    "mean": 0.005
+                    "p90": 1.0,
+                    "max": 2.0,
+                    "mean": 0.25
                 },
                 {
                     "metric": "hits",
                     "phase": 0,
                     "count": 600,
                     "min": 0.0,
-                    "p10": 0.0,
+                    "p10": 1.0,
                     "p50": 2.0,
-                    "p90": 3.0,
-                    "max": 5.0,
-                    "mean": 1.715
+                    "p90": 5.0,
+                    "max": 10.0,
+                    "mean": 2.67
                 },
                 {
                     "metric": "leftover_notes",
                     "phase": 0,
                     "count": 600,
                     "min": 0.0,
-                    "p10": 79.0,
-                    "p50": 99.0,
-                    "p90": 109.0,
-                    "max": 125.0,
-                    "mean": 95.44333333333333
+                    "p10": 11.0,
+                    "p50": 30.0,
+                    "p90": 58.0,
+                    "max": 82.0,
+                    "mean": 31.95
                 },
                 {
                     "metric": "published_Either",
                     "phase": 0,
                     "count": 600,
-                    "min": 24.0,
-                    "p10": 33.0,
-                    "p50": 33.0,
-                    "p90": 35.0,
-                    "max": 39.0,
-                    "mean": 33.52
+                    "min": 39.0,
+                    "p10": 43.0,
+                    "p50": 44.0,
+                    "p90": 45.0,
+                    "max": 45.0,
+                    "mean": 43.913333333333337
                 },
                 {
                     "metric": "fired_Either",
                     "phase": 0,
                     "count": 600,
-                    "min": 24.0,
-                    "p10": 33.0,
-                    "p50": 33.0,
-                    "p90": 35.0,
-                    "max": 39.0,
-                    "mean": 33.458333333333339
+                    "min": 39.0,
+                    "p10": 43.0,
+                    "p50": 44.0,
+                    "p90": 45.0,
+                    "max": 45.0,
+                    "mean": 43.905
                 },
                 {
                     "metric": "published_GuardOnly",
                     "phase": 0,
                     "count": 600,
-                    "min": 6.0,
-                    "p10": 7.0,
-                    "p50": 7.0,
-                    "p90": 8.0,
-                    "max": 8.0,
-                    "mean": 7.166666666666667
+                    "min": 8.0,
+                    "p10": 9.0,
+                    "p50": 9.0,
+                    "p90": 10.0,
+                    "max": 11.0,
+                    "mean": 9.41
                 },
                 {
                     "metric": "fired_GuardOnly",
                     "phase": 0,
                     "count": 600,
-                    "min": 6.0,
-                    "p10": 7.0,
-                    "p50": 7.0,
-                    "p90": 8.0,
-                    "max": 8.0,
-                    "mean": 7.141666666666667
+                    "min": 8.0,
+                    "p10": 8.0,
+                    "p50": 9.0,
+                    "p90": 10.0,
+                    "max": 11.0,
+                    "mean": 9.355
                 },
                 {
                     "metric": "published_DodgeOnly",
                     "phase": 0,
                     "count": 600,
-                    "min": 9.0,
-                    "p10": 15.0,
-                    "p50": 16.0,
-                    "p90": 18.0,
-                    "max": 25.0,
-                    "mean": 16.488333333333335
+                    "min": 18.0,
+                    "p10": 26.0,
+                    "p50": 33.0,
+                    "p90": 39.0,
+                    "max": 40.0,
+                    "mean": 32.22833333333333
                 },
                 {
                     "metric": "fired_DodgeOnly",
                     "phase": 0,
                     "count": 600,
-                    "min": 9.0,
-                    "p10": 15.0,
-                    "p50": 16.0,
-                    "p90": 18.0,
-                    "max": 25.0,
-                    "mean": 16.436666666666669
+                    "min": 18.0,
+                    "p10": 26.0,
+                    "p50": 33.0,
+                    "p90": 38.0,
+                    "max": 40.0,
+                    "mean": 31.935
                 }
             ],
             "patterns": [
                 {
                     "name": "X",
-                    "mean": 2.07
+                    "mean": 3.98
+                },
+                {
+                    "name": "가로창살",
+                    "mean": 0.6766666666666666
+                },
+                {
+                    "name": "가운데폭발",
+                    "mean": 0.6866666666666667
                 },
                 {
                     "name": "각잡은악수-오른",
@@ -3643,23 +4579,39 @@
                 },
                 {
                     "name": "고리-바깥",
-                    "mean": 0.925
+                    "mean": 1.0
                 },
                 {
                     "name": "고리-안강",
-                    "mean": 0.915
+                    "mean": 1.0
                 },
                 {
                     "name": "고리-중간",
-                    "mean": 0.9216666666666666
+                    "mean": 1.0
+                },
+                {
+                    "name": "구석",
+                    "mean": 0.26166666666666668
+                },
+                {
+                    "name": "깨진판-가",
+                    "mean": 1.53
+                },
+                {
+                    "name": "깨진판-나",
+                    "mean": 0.37
+                },
+                {
+                    "name": "나선",
+                    "mean": 0.9983333333333333
                 },
                 {
                     "name": "나이트라이더",
-                    "mean": 2.2
+                    "mean": 3.9966666666666668
                 },
                 {
                     "name": "나이트라이더격자",
-                    "mean": 0.9916666666666667
+                    "mean": 1.0
                 },
                 {
                     "name": "나이트훈수+중심",
@@ -3667,19 +4619,31 @@
                 },
                 {
                     "name": "낙타얼룩말",
-                    "mean": 2.03
+                    "mean": 3.9466666666666669
                 },
                 {
                     "name": "뒤치기",
-                    "mean": 0.9866666666666667
+                    "mean": 1.0
+                },
+                {
+                    "name": "룩-e열강",
+                    "mean": 1.0
                 },
                 {
                     "name": "룩가로",
-                    "mean": 4.0
+                    "mean": 2.0
                 },
                 {
                     "name": "룩세로강",
-                    "mean": 2.0
+                    "mean": 1.0
+                },
+                {
+                    "name": "반쪽-오른",
+                    "mean": 0.8116666666666667
+                },
+                {
+                    "name": "반쪽-왼",
+                    "mean": 0.8733333333333333
                 },
                 {
                     "name": "베롤리나-32",
@@ -3692,6 +4656,14 @@
                 {
                     "name": "베롤리나-76",
                     "mean": 1.0
+                },
+                {
+                    "name": "블록체커-가",
+                    "mean": 0.5216666666666666
+                },
+                {
+                    "name": "블록체커-나",
+                    "mean": 0.4583333333333333
                 },
                 {
                     "name": "비숍-검은칸",
@@ -3707,55 +4679,59 @@
                 },
                 {
                     "name": "세로창살-짝",
-                    "mean": 0.0033333333333333337
+                    "mean": 1.0533333333333333
                 },
                 {
                     "name": "세로창살-홀",
-                    "mean": 0.005
+                    "mean": 1.0566666666666667
                 },
                 {
                     "name": "아마존",
-                    "mean": 0.11333333333333333
+                    "mean": 1.9866666666666666
                 },
                 {
                     "name": "아치비숍",
-                    "mean": 2.533333333333333
+                    "mean": 4.0
                 },
                 {
                     "name": "알필다바바",
-                    "mean": 2.4133333333333337
+                    "mean": 4.0
                 },
                 {
                     "name": "여러핀강",
-                    "mean": 0.855
+                    "mean": 1.0
                 },
                 {
                     "name": "오프닝1-e5",
-                    "mean": 1.9833333333333335
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝2-Nf6",
-                    "mean": 1.9866666666666666
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝3-Bc5",
-                    "mean": 1.9866666666666666
+                    "mean": 2.0
                 },
                 {
                     "name": "오프닝4-캐슬링",
-                    "mean": 1.9866666666666666
+                    "mean": 2.0
+                },
+                {
+                    "name": "외길",
+                    "mean": 0.68
                 },
                 {
                     "name": "이중고리",
-                    "mean": 0.011666666666666668
+                    "mean": 0.9516666666666667
                 },
                 {
                     "name": "전체",
-                    "mean": 7.141666666666667
+                    "mean": 9.355
                 },
                 {
                     "name": "챈슬러",
-                    "mean": 3.9766666666666667
+                    "mean": 4.0
                 },
                 {
                     "name": "킹고리강",
@@ -3768,6 +4744,30 @@
                 {
                     "name": "킹손바닥강",
                     "mean": 2.0
+                },
+                {
+                    "name": "폰대각-aceg",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰대각-bdfh",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-4",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-5",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-6",
+                    "mean": 1.0
+                },
+                {
+                    "name": "폰줄-7",
+                    "mean": 1.0
                 },
                 {
                     "name": "핀+대각",

@@ -15,13 +15,14 @@ namespace StringAsASword.Core
         public const string MenuScene = "MainMenu", BattleScene = "RhythmPrototype";
         private const string ClearedKey = "StringAsASword.Cleared", VolumeKey = "StringAsASword.MusicVolume",
             InputKey = "StringAsASword.InputOffsetMs", VisualKey = "StringAsASword.VisualOffsetMs", DevKey = "StringAsASword.DevMode",
-            HpStyleKey = "StringAsASword.PlayerHpStyle", PrologueKey = "StringAsASword.PrologueSeen",
-            TutorialKey = "StringAsASword.TutorialHints";
+            HpStyleKey = "StringAsASword.PlayerHpStyle", PrologueKey = "StringAsASword.PrologueSeen";
 
         /// <summary>Set by the menu so the battle starts its count-in without the ready overlay.</summary>
         public static bool AutoStartBattle { get; private set; }
         /// <summary>Set with <see cref="AutoStartBattle"/> when the battle should open with the prologue instead of the count-in.</summary>
         public static bool PlayPrologue { get; private set; }
+        /// <summary>Set with <see cref="AutoStartBattle"/> when the battle should open with the tutorial (Settings > 튜토리얼).</summary>
+        public static bool PlayTutorial { get; private set; }
 
         public static bool Cleared => PlayerPrefs.GetInt(ClearedKey, 0) == 1;
         public static void MarkCleared() { PlayerPrefs.SetInt(ClearedKey, 1); PlayerPrefs.Save(); }
@@ -31,17 +32,6 @@ namespace StringAsASword.Core
         public static bool PrologueSeen => PlayerPrefs.GetInt(PrologueKey, 0) == 1;
         public static void MarkPrologueSeen() { PlayerPrefs.SetInt(PrologueKey, 1); PlayerPrefs.Save(); }
         public static void ResetPrologueSeen() { PlayerPrefs.DeleteKey(PrologueKey); PlayerPrefs.Save(); }
-
-        /// <summary>
-        /// The battle tutorial's prompts (간주1, and the second guard and slash in 벌스1). Until the player sets it in Settings
-        /// it follows the first clear: on before it, off after (intro review D5-B).
-        /// </summary>
-        public static bool TutorialHints
-        {
-            get => PlayerPrefs.HasKey(TutorialKey) ? PlayerPrefs.GetInt(TutorialKey) == 1 : !Cleared;
-            set { PlayerPrefs.SetInt(TutorialKey, value ? 1 : 0); PlayerPrefs.Save(); }
-        }
-        public static void ResetTutorialHints() { PlayerPrefs.DeleteKey(TutorialKey); PlayerPrefs.Save(); }
 
         /// <summary>Multiplier on the song's own volume, 0..1.</summary>
         public static float MusicVolume
@@ -83,10 +73,11 @@ namespace StringAsASword.Core
             set { PlayerPrefs.SetInt(HpStyleKey, (int)value); PlayerPrefs.Save(); }
         }
 
-        public static void StartBattle(bool prologue = false) { AutoStartBattle = true; PlayPrologue = prologue; SceneManager.LoadScene(BattleScene); }
+        public static void StartBattle(bool prologue = false, bool tutorial = false)
+        { AutoStartBattle = true; PlayPrologue = prologue; PlayTutorial = tutorial; SceneManager.LoadScene(BattleScene); }
         /// <summary>Called by the battle once it has consumed the request.</summary>
-        public static void ConsumeAutoStart() { AutoStartBattle = false; PlayPrologue = false; }
-        public static void ReturnToMenu() { AutoStartBattle = false; PlayPrologue = false; SceneManager.LoadScene(MenuScene); }
+        public static void ConsumeAutoStart() { AutoStartBattle = false; PlayPrologue = false; PlayTutorial = false; }
+        public static void ReturnToMenu() { AutoStartBattle = false; PlayPrologue = false; PlayTutorial = false; SceneManager.LoadScene(MenuScene); }
         /// <summary>The menu scene is in the build (it is absent when only the battle scene is played).</summary>
         public static bool HasMenu => Application.CanStreamedLevelBeLoaded(MenuScene);
     }

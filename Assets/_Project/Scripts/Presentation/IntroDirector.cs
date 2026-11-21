@@ -125,7 +125,10 @@ namespace StringAsASword.Presentation
             board.PlayerTransform.localRotation = Quaternion.identity;
             board.FreeRoam = false;
         }
-        /// <summary>J pressed (at a DSP time): the string tears on the beat and the song is scheduled from that beat.</summary>
+        /// <summary>
+        /// J pressed (at a DSP time): the string tears on the beat. Without a tutorial after the prologue the song is scheduled
+        /// from that beat; with one, the handover beat starts the tutorial instead and the song waits for its end.
+        /// </summary>
         public void Tear(double dsp)
         {
             if (!playing || Torn) return;
@@ -136,7 +139,7 @@ namespace StringAsASword.Presentation
             double tearDsp = origin + beat * spb;
             foreach (var source in loopSources) if (source != null) source.SetScheduledEndTime(tearDsp + .03);
             loopSources.Clear();
-            game.ScheduleSongFromPrologue(HandoverDsp, IntroTimeline.HandoverSongTime(game.Timeline));
+            if (!game.TutorialFollowsPrologue) game.ScheduleSongFromPrologue(HandoverDsp, IntroTimeline.HandoverSongTime(game.Timeline));
         }
         /// <summary>Captures and tests: show this story beat (no sound) instead of the running one; a negative value resumes.</summary>
         public void Seek(float storyBeat) { seek = storyBeat; }
@@ -152,10 +155,10 @@ namespace StringAsASword.Presentation
         {
             if (noiseKept && !playing)
             {
-                // After the handover the landed noise waits for the battle's own first noise, on the same cell. When that
-                // noise is scripted for later (the tutorial teaches the attacks first), it sinks into the board over one beat
-                // so nothing sits there that cannot be picked up; the battle's noise blooms on the same cell on its note.
-                bool spawned = game.Noise.Pickups.Count > 0 || game.State != PrototypeState.Playing;
+                // After the handover the landed noise waits for the battle's own first noise, on the same cell. With the
+                // tutorial next it sinks into the board over one beat instead, so nothing sits there that cannot be picked
+                // up; the tutorial's noise lesson puts one on the same cell (two above the knight's start) later.
+                bool spawned = game.Noise.Pickups.Count > 0 || !noiseWaits && game.State != PrototypeState.Playing;
                 float sunk = noiseWaits ? (float)((AudioSettings.dspTime - keptAt) / spb) : 0;
                 if (spawned || sunk >= 1) { landingNoise.parent.gameObject.SetActive(false); root.gameObject.SetActive(false); noiseKept = false; }
                 else if (noiseWaits) Billboard(landingNoise, noiseCell + Vector3.up * (.5f - .5f * sunk), 1.4f, 1 - Smooth01(sunk));
@@ -169,7 +172,12 @@ namespace StringAsASword.Presentation
             board.FreeRoam = true;
             if (seek < 0) ScheduleAudio(now);
             Render(story);
-            if (seek < 0 && Torn && now >= HandoverDsp) { game.FinishPrologue(); StopInternal(keepNoise: true); }
+            if (seek < 0 && Torn && now >= HandoverDsp)
+            {
+                double handover = HandoverDsp;
+                StopInternal(keepNoise: true);
+                if (game.TutorialFollowsPrologue) game.PrologueIntoTutorial(handover); else game.FinishPrologue();
+            }
         }
 
         // ---------------------------------------------------------------- the picture
@@ -562,7 +570,7 @@ namespace StringAsASword.Presentation
 
         // ---------------------------------------------------------------- noise
         private Transform spark, landingNoise;
-        // The battle's first noise comes later than the handover (scripted by the chart): the landed one sinks away meanwhile.
+        // The tutorial comes before the battle's first noise: the landed one sinks away after the handover.
         private bool noiseWaits;
         private double keptAt;
         private readonly Transform[] bigNoise = new Transform[5];
@@ -614,17 +622,16 @@ namespace StringAsASword.Presentation
         }
         private void PredictNoise()
         {
-            // The battle's noise is seeded: a dry run of the same battle tells where its first noise appears. A chart that
-            // places the first noise itself (the tutorial's `noise` line) puts it relative to the knight, who stays home here.
+            // With the tutorial next, the noise lands two cells above the knight's start, where the noise lesson puts its own.
+            noiseWaits = game.TutorialFollowsPrologue;
+            var settings = game.Battle.Settings;
+            if (noiseWaits) { noiseCell = BoardWorldPresenter.CellPosition(new Board.GridPosition(settings.StartX, settings.StartY + 2)); return; }
+            // Otherwise the battle's noise is seeded: a dry run of the same battle tells where its first noise appears.
             try
             {
-                var settings = game.Battle.Settings;
-                var scripted = settings.Chart != null && settings.Chart.NoiseSpawns.Count > 0 ? settings.Chart.NoiseSpawns[0] : null;
-                int first = scripted != null ? scripted.Note : 0;
-                noiseWaits = first > 0;
                 var dry = new BattleSession(settings, game.Stage.NoiseSeed);
                 dry.Reset(1, game.Stage.NoiseSeed);
-                dry.Advance(game.Timeline.TimeOf(first) + .01);
+                dry.Advance(game.Timeline.TimeOf(0) + .01);
                 if (dry.Noise.Pickups.Count > 0) noiseCell = BoardWorldPresenter.CellPosition(dry.Noise.Pickups[0].Cell);
             }
             catch (System.Exception error) { Debug.LogWarning("Prologue could not predict the first noise: " + error.Message); }
@@ -699,7 +706,8 @@ namespace StringAsASword.Presentation
             SetAlpha(voidCover, 1 - Smooth(s, TearStory, TearStory + 1.6f));
             SetAlpha(flash, s >= TearStory ? .75f * Mathf.Exp(-(s - TearStory) * 3.5f) : 0);
             // The letterbox is the king's board, with no control. It lifts on the handover.
-            float bars = s < Handover ? Smooth(s, 0, 2) : 1 - Smooth(s, Handover, Handover + 1.5f);
+            // With the tutorial next the bars stay: its letterbox takes over at the same height and narrows from there.
+            float bars = s < Handover || game.TutorialFollowsPrologue ? Smooth(s, 0, 2) : 1 - Smooth(s, Handover, Handover + 1.5f);
             var size = layer.rect.size;
             float bar = Mathf.Max((size.y - size.x / CutscenePlayer.Aspect) / 2, size.y * .06f);
             barTop.rectTransform.sizeDelta = barBottom.rectTransform.sizeDelta = new Vector2(0, bar);

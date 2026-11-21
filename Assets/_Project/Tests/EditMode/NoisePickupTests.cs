@@ -1,7 +1,5 @@
-using System.Linq;
 using NUnit.Framework;
 using StringAsASword.Board;
-using StringAsASword.Combat;
 using StringAsASword.Stage;
 
 namespace StringAsASword.Tests
@@ -11,27 +9,6 @@ namespace StringAsASword.Tests
         private readonly GridPosition player = new GridPosition(3, 3);
         private NoisePickupSystem Make(int target = 3)
         { var noise = new NoisePickupSystem(new BoardState()); noise.Reset(1, 87, target); return noise; }
-        [Test] public void ScriptedNoiseWaitsForItsNoteAndLandsBesideTheKnight()
-        {
-            var noise = Make(NoisePickupSystem.Unlimited);
-            noise.SetScripted(BossChart.Parse("noise 10 0,2").NoiseSpawns);
-            noise.AdvanceToBeat(9, player);
-            Assert.That(noise.Pickups, Is.Empty, "notes 0 and 8 would spawn at random without the script");
-            noise.AdvanceToBeat(10, player);
-            Assert.That(noise.Pickups.Single().Cell, Is.EqualTo(new GridPosition(3, 5)));
-            Assert.That(noise.TryCollect(new GridPosition(3, 5), 1, 1), Is.True);
-            noise.AdvanceToBeat(15, player);
-            Assert.That(noise.Pickups, Is.Empty);
-            noise.AdvanceToBeat(16, player);
-            Assert.That(noise.Pickups.Count, Is.EqualTo(1), "after the script the 8-note grid carries on");
-        }
-        [Test] public void ScriptedNoiseMirrorsOrMovesWhenItsCellIsOffTheBoard()
-        {
-            var noise = Make(NoisePickupSystem.Unlimited);
-            Assert.That(noise.ScriptedCell(new GridPosition(6, 7), 0, 2), Is.EqualTo(new GridPosition(6, 5)), "two above the top row: two below");
-            Assert.That(noise.ScriptedCell(new GridPosition(7, 7), 2, 2), Is.EqualTo(new GridPosition(7, 6)), "nothing fits: the nearest free cell");
-            Assert.That(noise.ScriptedCell(new GridPosition(0, 0), 0, 2), Is.EqualTo(new GridPosition(0, 2)));
-        }
         [Test] public void SpawnExcludesPlayerAndExistingPickups()
         {
             var noise = Make(); noise.AdvanceToBeat(0, player);
