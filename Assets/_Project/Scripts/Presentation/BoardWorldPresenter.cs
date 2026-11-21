@@ -126,7 +126,8 @@ namespace StringAsASword.Presentation
             BoardCamera.nearClipPlane = .1f; BoardCamera.farClipPlane = distance + 16;
             BoardCamera.clearFlags = CameraClearFlags.SolidColor;
             // With background art the board view is see-through, so the board sits in the scene instead of on a panel.
-            clearColor = new Color(.035f, .043f, .052f, art.HasBackground ? 0 : 1);
+            // See-through uses black: anti-aliased edges blend toward the clear colour, and a tinted one leaves a fringe.
+            clearColor = art.HasBackground ? new Color(0, 0, 0, 0) : new Color(.035f, .043f, .052f, 1);
             BoardCamera.backgroundColor = clearColor;
             BoardCamera.targetTexture = Texture; BoardCamera.allowHDR = false;
             box = BuildBox(); resources.Add(box);
@@ -138,6 +139,14 @@ namespace StringAsASword.Presentation
             {
                 var light = new GameObject("Board Light", typeof(Light)).GetComponent<Light>(); light.transform.SetParent(world.transform, false);
                 light.type = LightType.Directional; light.transform.localRotation = Quaternion.Euler(50, -30, 0);
+                light.color = art.lightColor; light.intensity = art.lightIntensity;
+                // The scene has no baked lighting, so its ambient comes from the default sky and tints the grey stone blue.
+                // A flat grey keeps the stone neutral; the probe is set as well, since a runtime mode change does not rebuild it.
+                var ambient = art.ambientColor.a > 0 ? art.ambientColor : new Color(.32f, .32f, .32f);
+                RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat; RenderSettings.ambientLight = ambient;
+                var probe = new UnityEngine.Rendering.SphericalHarmonicsL2(); probe.AddAmbientLight(ambient);
+                RenderSettings.ambientProbe = probe;
+                RenderSettings.reflectionIntensity = 0;
             }
             var gold = Material(new Color(.84f, .66f, .32f));
             outlineAccent = outlineColor = new Color(.40f, .85f, .73f);
@@ -732,8 +741,22 @@ namespace StringAsASword.Presentation
             ArtCue.Trigger(player.gameObject, trigger);
             ArtCue.Spawn(vfx, world.transform, moveTarget);
         }
+        // The board view's render target follows the view's size on screen, one texel per pixel:
+        // a fixed size is shrunk without mipmaps (grain shimmers) or stretched (blurs) at any other resolution.
+        private void MatchTargetToScreen()
+        {
+            var canvas = GetComponentInParent<Canvas>();
+            if (canvas == null) return;
+            Vector2 size = ((RectTransform)transform).rect.size * canvas.rootCanvas.scaleFactor;
+            int width = Mathf.Clamp(Mathf.RoundToInt(size.x), 256, 2560), height = Mathf.Clamp(Mathf.RoundToInt(size.y), 256, 2560);
+            if (width == Texture.width && height == Texture.height) return;
+            // The same object is resized, so every view showing it (the epilogue, the verification) keeps working.
+            Texture.Release(); Texture.width = width; Texture.height = height; Texture.Create();
+            BoardCamera.ResetAspect();
+        }
         public void Render()
         {
+            MatchTargetToScreen();
             if (lastSession != game.SessionId) ResetVisuals();
             float dt = Time.unscaledDeltaTime;
             int level = BreakLevelNow();

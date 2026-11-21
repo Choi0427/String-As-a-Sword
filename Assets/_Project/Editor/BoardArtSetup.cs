@@ -50,7 +50,12 @@ namespace StringAsASword.Editor
             var importer = (TextureImporter)AssetImporter.GetAtPath(path);
             importer.textureType = normal ? TextureImporterType.NormalMap : TextureImporterType.Default;
             importer.sRGBTexture = !normal;
-            importer.maxTextureSize = 2048;
+            // Full source size and high-quality compression (BC7 colour / BC5 normals): the default BC1 adds blocks and a green-magenta
+            // cast to the grey stone. Kaiser mips keep the grain crisp on the far rows, which the tilted camera sees at a slant.
+            importer.maxTextureSize = 4096;
+            importer.textureCompression = TextureImporterCompression.CompressedHQ;
+            importer.mipmapFilter = TextureImporterMipFilter.KaiserFilter;
+            importer.anisoLevel = 8;
             importer.SaveAndReimport();
         }
         private static Material BuildMaterial()
@@ -61,7 +66,9 @@ namespace StringAsASword.Editor
             material.SetTexture("_BumpMap", AssetDatabase.LoadAssetAtPath<Texture2D>(Board + "ChessBoard_Normal.png"));
             material.EnableKeyword("_NORMALMAP");
             material.SetColor("_BaseColor", Color.white);
-            material.SetFloat("_Metallic", 0); material.SetFloat("_Smoothness", .2f);
+            // Matte stone. Environment reflections off: with no reflection probe they mirror the default blue sky.
+            material.SetFloat("_Metallic", 0); material.SetFloat("_Smoothness", .12f);
+            material.SetFloat("_EnvironmentReflections", 0); material.EnableKeyword("_ENVIRONMENTREFLECTIONS_OFF");
             EditorUtility.SetDirty(material);
             return material;
         }
