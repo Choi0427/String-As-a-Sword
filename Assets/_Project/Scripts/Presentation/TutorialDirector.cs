@@ -31,7 +31,6 @@ namespace StringAsASword.Presentation
         private PrototypeGame game;
         private PrototypeView view;
         private PrologueDefinition data;
-        private AudioClip tick;
         private Letterbox letterbox;
         private KeyPromptCard card;
         private CanvasGroup content;
@@ -69,7 +68,6 @@ namespace StringAsASword.Presentation
         public void Initialize(PrototypeGame owner, PrototypeView prototypeView, PrologueDefinition definition)
         {
             game = owner; view = prototypeView; data = definition;
-            tick = definition.Clip("clock");
             spb = game.Timeline.SecondsPerBeat;
             var chart = BossChart.Parse(LessonShapes);
             rowShape = chart.Shapes["룩가로"]; columnShape = chart.Shapes["룩세로강"];
@@ -289,17 +287,18 @@ namespace StringAsASword.Presentation
         // The chess clock on every beat, louder on the bar line, until the song takes over.
         private void ScheduleTicks(double now)
         {
-            if (tick == null) return;
             while (true)
             {
                 if (handoverBeat >= 0 && nextTick >= handoverBeat) return;
                 double at = origin + nextTick * spb;
                 if (at > now + .25) return;
-                if (at > now + .005)
+                bool accent = (nextTick % BarBeats + BarBeats) % BarBeats == 0;
+                var tick = data.Tick(accent);
+                if (at > now + .005 && tick != null)
                 {
                     var source = sources[nextSource++ % sources.Count];
                     source.Stop(); source.clip = tick;
-                    source.volume = data.volume * GameFlow.MusicVolume * ((nextTick % BarBeats + BarBeats) % BarBeats == 0 ? .45f : .3f);
+                    source.volume = data.volume * GameFlow.MusicVolume * data.TickVolume(accent);
                     source.PlayScheduled(at);
                 }
                 nextTick++;

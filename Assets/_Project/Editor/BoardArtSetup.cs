@@ -41,9 +41,16 @@ namespace StringAsASword.Editor
             {
                 sprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{Background}BG_{l.file}.png"), sway = l.sway, period = l.period,
             }).ToArray();
+            // The prologue's whole-board twins (A5-B), when delivered: same order and float as their battle layers.
+            art.prologueBackgroundLayers = Layers.Select(l => new BackgroundLayer
+            {
+                sprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{Background}BG_Whole_{l.file}.png"), sway = l.sway, period = l.period,
+            }).ToArray();
+            if (!art.HasPrologueBackground) art.prologueBackgroundLayers = new BackgroundLayer[0];
             EditorUtility.SetDirty(art);
             AssetDatabase.SaveAssets();
-            Debug.Log($"Board art set up: {PrefabPath}, {art.backgroundLayers.Count(l => l.sprite != null)} background layers.");
+            Debug.Log($"Board art set up: {PrefabPath}, {art.backgroundLayers.Count(l => l.sprite != null)} background layers, " +
+                $"{art.prologueBackgroundLayers.Count(l => l.sprite != null)} whole-board layers.");
         }
         private static void ConfigureTexture(string path, bool normal)
         {

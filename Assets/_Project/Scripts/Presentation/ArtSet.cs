@@ -72,6 +72,9 @@ namespace StringAsASword.Presentation
         public Sprite background;
         [Tooltip("Full-screen layers drawn over the background, back to front. A non-zero sway makes the layer float.")]
         public BackgroundLayer[] backgroundLayers;
+        [Tooltip("The prologue's \"whole board\" set (intro review A5-B), paired with backgroundLayers index by index: it shows "
+            + "until the knight tears the string, then each layer gives way to its broken battle twin. Empty = a black void.")]
+        public BackgroundLayer[] prologueBackgroundLayers;
         [Tooltip("Strings and frets drawn across the screen with a gap for the board. Replaces the procedural strings; " +
             "it is scaled so the gap fits the board, and the judge lines follow the board's side edges.")]
         public Sprite laneSprite;
@@ -135,6 +138,8 @@ namespace StringAsASword.Presentation
 
         public bool HasCrown => crown != null && crownRegions != null && crownSpent != null && crownMaterial != null;
         public bool HasBackground => background != null || (backgroundLayers != null && backgroundLayers.Length > 0);
+        /// <summary>The prologue's whole-board set is delivered (at least one layer has a picture).</summary>
+        public bool HasPrologueBackground => prologueBackgroundLayers != null && System.Array.Exists(prologueBackgroundLayers, l => l.sprite != null);
     }
 
     [System.Serializable]

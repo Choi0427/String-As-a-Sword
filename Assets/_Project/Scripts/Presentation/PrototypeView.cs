@@ -36,6 +36,28 @@ namespace StringAsASword.Presentation
         public Material BoardMaterial => boardMaterial;
         public ArtSet Art => art;
         public BoardWorldPresenter BoardWorld => boardWorld;
+        /// <summary>
+        /// Full-screen background layers under <paramref name="parent"/>, back to front, named "&lt;prefix&gt; i". Floating layers
+        /// sway. Returns one image per entry (null where the entry has no picture), so a second set can be paired with it.
+        /// </summary>
+        public static UnityEngine.UI.Image[] BuildBackgroundLayers(RectTransform parent, BackgroundLayer[] layers, string prefix)
+        {
+            var images = new UnityEngine.UI.Image[layers?.Length ?? 0];
+            for (int i = 0; i < images.Length; i++)
+            {
+                var layer = layers[i];
+                if (layer.sprite == null) continue;
+                var rect = MakeRect(parent, $"{prefix} {i}", Vector2.zero, Vector2.zero);
+                rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
+                // Oversized by the sway so a floating layer never shows its edge.
+                rect.sizeDelta = 2 * new Vector2(Mathf.Abs(layer.sway.x), Mathf.Abs(layer.sway.y));
+                var image = rect.gameObject.AddComponent<UnityEngine.UI.Image>();
+                image.color = Color.white; image.raycastTarget = false; image.sprite = layer.sprite;
+                if (layer.sway != Vector2.zero) rect.gameObject.AddComponent<BackgroundSway>().Set(layer.sway, layer.period, i);
+                images[i] = image;
+            }
+            return images;
+        }
         /// <summary>Key guide, pause and game-over screens (Figma "Game Play", "Pause", "Game Over").</summary>
         public BattleScreens Screens { get; private set; }
         /// <summary>The canvas itself, for full-screen overlays drawn above the HUD.</summary>
@@ -118,17 +140,7 @@ namespace StringAsASword.Presentation
             background.anchorMin = Vector2.zero; background.anchorMax = Vector2.one; background.sizeDelta = Vector2.zero;
             var backgroundImage = Image(background, new Color(.035f,.043f,.052f));
             if (art.background != null) { backgroundImage.sprite = art.background; backgroundImage.color = Color.white; }
-            for (int i = 0; art.backgroundLayers != null && i < art.backgroundLayers.Length; i++)
-            {
-                var layer = art.backgroundLayers[i];
-                if (layer.sprite == null) continue;
-                var rect = MakeRect((RectTransform)transform, $"Background Layer {i}", Vector2.zero, Vector2.zero);
-                rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
-                // Oversized by the sway so a floating layer never shows its edge.
-                rect.sizeDelta = 2 * new Vector2(Mathf.Abs(layer.sway.x), Mathf.Abs(layer.sway.y));
-                Image(rect, Color.white).sprite = layer.sprite;
-                if (layer.sway != Vector2.zero) rect.gameObject.AddComponent<BackgroundSway>().Set(layer.sway, layer.period, i);
-            }
+            BuildBackgroundLayers((RectTransform)transform, art.backgroundLayers, "Background Layer");
             root = MakeRect((RectTransform)transform, "Content", Vector2.zero, new Vector2(1600,900));
             // The full prototype readout lives on a detail layer, hidden unless detailedHud is on.
             var detail = MakeRect(root, "Detail HUD", Vector2.zero, new Vector2(1600,900));
