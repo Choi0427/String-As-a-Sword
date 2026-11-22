@@ -16,14 +16,12 @@ namespace StringAsASword.Tests
     public sealed class TutorialFlowTests
     {
         private PrototypeGame game;
-        private bool originalBackground, hadTutorial;
+        private bool originalBackground;
 
         [UnitySetUp] public IEnumerator SetUp()
         {
             originalBackground = Application.runInBackground;
             Application.runInBackground = true;
-            // Finishing or skipping the tutorial marks it done; the player's own record must survive the tests.
-            hadTutorial = GameFlow.TutorialSeen;
             yield return SceneManager.LoadSceneAsync(GameFlow.BattleScene);
             game = Object.FindAnyObjectByType<PrototypeGame>();
             typeof(PrototypeGame).GetField("pauseOnFocusLoss", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).SetValue(game, false);
@@ -32,7 +30,6 @@ namespace StringAsASword.Tests
         [UnityTearDown] public IEnumerator TearDown()
         {
             Application.runInBackground = originalBackground;
-            if (hadTutorial) GameFlow.MarkTutorialSeen(); else GameFlow.ResetTutorialSeen();
             yield return null;
         }
 
@@ -75,7 +72,6 @@ namespace StringAsASword.Tests
             Assert.That(game.SongTime, Is.EqualTo(IntroTimeline.HandoverSongTime(game.Timeline)).Within(.15));
             Assert.That(tutorial.Playing, Is.False);
             Assert.That(game.View.Screens.KeyGuideAlpha, Is.EqualTo(1f));
-            Assert.That(GameFlow.TutorialSeen, "done once: later prologues lead to the song");
             LogAssert.NoUnexpectedReceived();
         }
         /// <summary>

@@ -7,15 +7,15 @@ namespace StringAsASword.Core
     public enum PlayerHpStyle { Bar = 0, Knights = 1 }
 
     /// <summary>
-    /// Scene flow and saved player settings: main menu → (first run: prologue) → battle → ending → main menu.
-    /// The prologue plays by itself only the first time; after that it is in the menu.
+    /// Scene flow and saved player settings: main menu → 시작: prologue → tutorial → battle → ending → main menu.
+    /// Esc skips the prologue and the tutorial, each on its own.
     /// </summary>
     public static class GameFlow
     {
         public const string MenuScene = "MainMenu", BattleScene = "RhythmPrototype";
         private const string ClearedKey = "StringAsASword.Cleared", VolumeKey = "StringAsASword.MusicVolume",
             InputKey = "StringAsASword.InputOffsetMs", VisualKey = "StringAsASword.VisualOffsetMs", DevKey = "StringAsASword.DevMode",
-            HpStyleKey = "StringAsASword.PlayerHpStyle", TutorialKey = "StringAsASword.TutorialSeen";
+            HpStyleKey = "StringAsASword.PlayerHpStyle";
 
         /// <summary>Set by the menu so the battle starts its count-in without the ready overlay.</summary>
         public static bool AutoStartBattle { get; private set; }
@@ -28,13 +28,6 @@ namespace StringAsASword.Core
         public static void MarkCleared() { PlayerPrefs.SetInt(ClearedKey, 1); PlayerPrefs.Save(); }
         public static void ResetCleared() { PlayerPrefs.DeleteKey(ClearedKey); PlayerPrefs.Save(); }
 
-        /// <summary>
-        /// The tutorial has been done (or skipped) once. 시작 always opens with the prologue; only until then is it followed by
-        /// the tutorial, and after it the prologue hands over straight to the song. Settings > 튜토리얼 plays it again any time.
-        /// </summary>
-        public static bool TutorialSeen => PlayerPrefs.GetInt(TutorialKey, 0) == 1;
-        public static void MarkTutorialSeen() { PlayerPrefs.SetInt(TutorialKey, 1); PlayerPrefs.Save(); }
-        public static void ResetTutorialSeen() { PlayerPrefs.DeleteKey(TutorialKey); PlayerPrefs.Save(); }
 
         /// <summary>Multiplier on the song's own volume, 0..1.</summary>
         public static float MusicVolume

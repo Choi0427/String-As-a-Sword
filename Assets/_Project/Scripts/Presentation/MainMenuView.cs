@@ -12,8 +12,8 @@ namespace StringAsASword.Presentation
     /// <summary>
     /// Main menu from the Figma frame "Main Menu" (1920x1080): background art, 시작 / 설정 / 종료, footer credit.
     /// After a clear the left side of the art is inverted to white (the chessboard stays).
-    /// 시작 always opens with the prologue; the first time the tutorial follows it, later the song does.
-    /// Settings > 튜토리얼 plays the tutorial again, then the song.
+    /// 시작 always opens with the prologue, then the tutorial, then the song (Esc skips the prologue and the tutorial).
+    /// Settings > 튜토리얼 plays the tutorial alone, then the song.
     /// </summary>
     public sealed class MainMenuView : MonoBehaviour
     {

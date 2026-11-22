@@ -152,8 +152,6 @@ namespace StringAsASword.Core
             if (intro == null) { StartSession(); return; }
             SaveRun("Restarted");
             StopTutorial(); Bind(mainBattle, mainTimeline);
-            // Fixed for this prologue: the first time, the tutorial comes after it; later it hands over to the song.
-            tutorialAfterPrologue = tutorial != null && !GameFlow.TutorialSeen;
             input.Clear(); audioPlayer.Stop(); clock.Stop();
             CurrentBeat = -1; SessionId++;
             runSaved = false; ResumeAt = double.NegativeInfinity;
@@ -179,9 +177,11 @@ namespace StringAsASword.Core
             previousTime = SongTime;
             State = PrototypeState.Playing;
         }
-        private bool tutorialAfterPrologue;
-        /// <summary>This prologue is followed by the tutorial (until it has been done once): its last downbeat goes there, not to the song.</summary>
-        public bool TutorialFollowsPrologue => tutorialAfterPrologue;
+        /// <summary>
+        /// The prologue is always followed by the tutorial, like it is always played (Esc skips either): its last downbeat goes
+        /// there, not to the song. Only without a tutorial in the scene does it hand over to the song itself.
+        /// </summary>
+        public bool TutorialFollowsPrologue => tutorial != null;
         /// <summary>The prologue's last downbeat, with the tutorial after it: the letterbox stays and the practice battle starts.</summary>
         public void PrologueIntoTutorial(double handoverDsp)
         {
@@ -193,9 +193,9 @@ namespace StringAsASword.Core
         {
             if (State != PrototypeState.Prologue) return;
             intro.Stop();
-            if (tutorialAfterPrologue) StartTutorial(); else StartSession();
+            if (TutorialFollowsPrologue) StartTutorial(); else StartSession();
         }
-        /// <summary>Settings > 튜토리얼, or the first run after the prologue: the tutorial now, then the song.</summary>
+        /// <summary>Settings > 튜토리얼, or after the prologue: the tutorial now, then the song.</summary>
         public void StartTutorial() => StartTutorial(AudioSettings.dspTime + .35);
         /// <summary>
         /// The tutorial's practice battle is bound in place of the song's and its even beat starts at <paramref name="startDsp"/>
@@ -236,7 +236,6 @@ namespace StringAsASword.Core
         public void FinishTutorial(double downbeatDsp)
         {
             if (State != PrototypeState.Tutorial || !InTutorialBattle) return;
-            GameFlow.MarkTutorialSeen();
             Bind(mainBattle, mainTimeline);
             CurrentBeat = -1; runSaved = false; ResumeAt = double.NegativeInfinity;
             Battle.Reset(SessionId, stage.NoiseSeed);
@@ -250,7 +249,6 @@ namespace StringAsASword.Core
         public void SkipTutorial()
         {
             if (State != PrototypeState.Tutorial) return;
-            GameFlow.MarkTutorialSeen();
             StartSession();
         }
         private void StopTutorial()
