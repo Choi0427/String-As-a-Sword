@@ -131,7 +131,8 @@ namespace StringAsASword.Core
             Detach(); SetBattle(battle, timeline); Attach();
             SessionId++; view.ResetFeedback();
         }
-        private void OnMusicBeat(int beat) { CurrentBeat = beat; view.Pulse(); }
+        // The judge lines answer judgements, not the beat (PrototypeView.Judge).
+        private void OnMusicBeat(int beat) => CurrentBeat = beat;
         private void Start()
         {
             if (!enabled || !GameFlow.AutoStartBattle) return;

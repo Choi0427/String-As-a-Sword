@@ -87,8 +87,9 @@ namespace StringAsASword.Presentation
         public Vector2 laneBoardGap = new Vector2(668, 1387);
         [Tooltip("Sprite pixel rows from the top of the top (x), middle (y) and bottom (z) string.")]
         public Vector3 laneStrings = new Vector3(14, 128, 257);
-        [Tooltip("Sprite pixel row from the top of the string the notes ride. 190 is the fourth string, on the line between rows 4 and 3.")]
-        public float laneNoteString = 190;
+        [Tooltip("Sprite pixel rows from the top where the note head's tips sit: x = top tip, just over the fourth string's " +
+            "upper edge; y = bottom tip, on the bottom string's lower edge. The head straddles both lines (Figma Game Play / 오선지).")]
+        public Vector2 laneNoteSpace = new Vector2(184, 260);
         [Tooltip("Board rows the strings span: x = nearest row, y = farthest row. The top string sits on the far side of y, the bottom string on the near side of x.")]
         public Vector2 laneRows = new Vector2(3, 6);
         [Tooltip("Board-local x of the board's outer side edge, where the strings end. The stone board's rim is at 4.38.")]

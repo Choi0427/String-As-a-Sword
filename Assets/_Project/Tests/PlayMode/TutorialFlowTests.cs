@@ -57,6 +57,8 @@ namespace StringAsASword.Tests
                 double at = game.Timeline.TimeOf(note);
                 while (game.SongTime < at - .03 && Time.realtimeSinceStartup < deadline) yield return null;
                 if (!tutorial.Steps.Finished && !seen.Contains(tutorial.Step)) seen.Add(tutorial.Step);
+                if (game.View.Screens.KeyGuideAlpha == 0)
+                    Assert.That(game.View.Screens.JLightAlpha, Is.Zero, "the J light hides with the key guide");
                 if (tutorial.LessonActive) Act(tutorial, note, at);
                 note++;
             }
