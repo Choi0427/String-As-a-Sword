@@ -14,7 +14,8 @@ Shader "Hidden/String As a Sword/Knight Glow"
         // Set by KnightGlow for every camera, just before it draws.
         TEXTURE2D(_KnightGlowMask); SAMPLER(sampler_KnightGlowMask);
         TEXTURE2D(_KnightGlowBlur); SAMPLER(sampler_KnightGlowBlur);
-        float4 _KnightGlowParams;   // x: 1 in the board camera, 0 in any other; y: strength; z: exponent on the alpha
+        float4 _KnightGlowParams;   // x: 1 in the board camera, 0 in any other; y: strength; z: exponent on the alpha;
+                                    // w: white laid over the knight itself (0 = none), for the guard
         float4 _KnightGlowTint;     // linear RGB
         // Per draw (property blocks).
         float4x4 _KnightGlowMVP;
@@ -57,7 +58,10 @@ Shader "Hidden/String As a Sword/Knight Glow"
                 half inside = SAMPLE_TEXTURE2D(_KnightGlowMask, sampler_KnightGlowMask, uv).r;
                 // A blurred edge is 0.5 on the outline itself: doubled, the glow starts at full strength there.
                 half glow = saturate(saturate(blur * 2) * (1 - inside) * _KnightGlowParams.y);
-                half alpha = pow(glow, _KnightGlowParams.z) * _KnightGlowParams.x;
+                half alpha = pow(glow, _KnightGlowParams.z);
+                // Inside the silhouette: the guard's whitening, in the same tint. Raised to the same exponent as the glow,
+                // so 0.25 looks like a 25% white layer in Photoshop or Figma rather than the far brighter linear blend.
+                alpha = max(alpha, inside * pow(saturate(_KnightGlowParams.w), _KnightGlowParams.z)) * _KnightGlowParams.x;
                 return half4(_KnightGlowTint.rgb, alpha);
             }
             ENDHLSL

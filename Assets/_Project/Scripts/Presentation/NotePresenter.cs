@@ -212,7 +212,7 @@ namespace StringAsASword.Presentation
                 bool holding = isHold && held.HasValue && held.Value.Beat == beat;
                 bool consumed = beat == session.Gate.LastConsumedBeat;
                 bool headVisible = inChart && remaining <= approach &&
-                    (holding || !consumed && remaining >= -.14);
+                    (holding || !consumed && remaining >= 0); // gone the moment it reaches the judge line, hit or not
                 float headX = holding ? targetX : X(remaining, approach);
                 bool glowing = headVisible && beat >= nextNote && beat <= windowEnd;
                 if (glowing) GlowingNotes++;
@@ -241,7 +241,7 @@ namespace StringAsASword.Presentation
                     // The next note is only ever a tap here: hold notes are never beamed.
                     double nextRemaining = game.Timeline.TimeOf(beat + 1) - time;
                     bool nextVisible = active && beat + 1 < count && nextRemaining <= approach &&
-                        beat + 1 != session.Gate.LastConsumedBeat && nextRemaining >= -.14;
+                        beat + 1 != session.Gate.LastConsumedBeat && nextRemaining >= 0;
                     RenderBeams(i, inChart ? beamLinks[beat] : 0, headVisible, nextVisible, headX, X(nextRemaining, approach),
                         inChart && beat >= nextNote && beat <= windowEnd);
                 }
@@ -316,7 +316,7 @@ namespace StringAsASword.Presentation
             bool resolvedHere = beat == resolvedBeat;
             bool fading = resolvedHere && !resolvedHit && sinceResolve < FadeSeconds;
             // A cleanly released string disappears; a broken one fades out where it snapped.
-            bool visible = candidate && (holding || fading || !resolvedHere && endRemaining >= -.14);
+            bool visible = candidate && (holding || fading || !resolvedHere && endRemaining >= 0);
             Color color; float thickness = StringThickness, startX = headX;
             if (holding)
             {
@@ -333,6 +333,8 @@ namespace StringAsASword.Presentation
             else color = new Color(tone.r, tone.g, tone.b, .75f);
             // The rails leave from the head's outer tip, not from inside the hollow head.
             if (art && startX == headX) startX += headHalf;
+            // Nothing of a note crosses the judge line onto the board: a string whose head has passed it starts there.
+            startX = Mathf.Max(startX, targetX);
             float endX = Mathf.Min(X(endRemaining, approach), spawnX);
             if (endX <= startX) visible = false;
             for (int side = 0; side < 2; side++)

@@ -98,8 +98,9 @@ namespace StringAsASword.Presentation
         public Vector2 laneNoteSpace = new Vector2(184, 260);
         [Tooltip("Board rows the strings span: x = nearest row, y = farthest row. The top string sits on the far side of y, the bottom string on the near side of x.")]
         public Vector2 laneRows = new Vector2(3, 6);
-        [Tooltip("Board-local x of the board's outer side edge, where the strings end. The stone board's rim is at 4.38.")]
-        public float laneBoardEdge = 4.38f;
+        [Tooltip("Board-local x of the board's outer side edge, where the strings end; the judge strip fills from the squares (4) " +
+            "to here. The stone rim's visible top ends at about 4.19 (measured in game: 0.19 of a square), though the model's bounds reach 4.38.")]
+        public float laneBoardEdge = 4.19f;
         [Tooltip("Note with its stem up and the head at the bottom. Runs of two and three fast notes are joined by one and two beams; " +
             "a hold note gets a double rail to its tail.")]
         public Sprite noteSprite;
@@ -138,7 +139,9 @@ namespace StringAsASword.Presentation
         [Tooltip("Pause and game-over menu items (Figma: Orbit Regular). Empty = menuFont.")]
         public TMP_FontAsset screenFont;
         [Tooltip("PAUSED / FALLEN titles (Figma: Media Sans Extended Black). Empty = screenFont.")]
-        public TMP_FontAsset screenTitleFont;        [Tooltip("Settings card art (Figma 'Game Play' / Settings, exported at 2x): the row titles with their captions, the key hints " +
+        public TMP_FontAsset screenTitleFont;
+        [Tooltip("HIT / BLOCK beside the knight (Chakra Petch Regular). Empty = the battle's Latin font.")]
+        public TMP_FontAsset outcomeFont;        [Tooltip("Settings card art (Figma 'Game Play' / Settings, exported at 2x): the row titles with their captions, the key hints " +
             "at the bottom and the left-pointing arrow of the step buttons (flipped for the right one). Empty = plain text.")]
         public Sprite settingsVolume, settingsInputOffset, settingsMusicOffset, settingsDifficulty, settingsKeyHints, settingsArrow;
         [Tooltip("Captions under the selected difficulty button on the settings card.")]

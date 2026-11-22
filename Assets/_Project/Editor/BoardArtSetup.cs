@@ -35,8 +35,9 @@ namespace StringAsASword.Editor
             var art = PrototypeSceneSetup.EnsureArtSet();
             art.boardPrefab = prefab;
             art.useLighting = true;
-            // A shallow perspective look-down, as in the gameplay reference; the wider size keeps the stone rim in frame.
-            art.cameraElevation = 35; art.cameraFieldOfView = 30; art.cameraSize = 5.1f;
+            // Fitted to the gameplay design (1920x1080): the squares' far edge at y 352 (616 px wide), the near edge at
+            // y 857 (862 px wide), with PrototypeView.BoardCenter (0, -19).
+            art.cameraElevation = 43; art.cameraFieldOfView = 31; art.cameraSize = 4.9f;
             art.backgroundLayers = Layers.Select(l => new BackgroundLayer
             {
                 sprite = AssetDatabase.LoadAssetAtPath<Sprite>($"{Background}BG_{l.file}.png"), sway = l.sway, period = l.period,

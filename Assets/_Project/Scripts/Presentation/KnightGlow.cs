@@ -38,10 +38,12 @@ namespace StringAsASword.Presentation
         private readonly GameObject overlay;
         private readonly Mesh quad;
         private RenderTexture mask, blurAcross, blurDown;
+        /// <summary>How white the knight itself is drawn this frame (0 = as modelled, 1 = solid white), e.g. while guarding.</summary>
+        public float Whiten { get; set; }
 
         /// <param name="knight">The knight's root: the quad that draws the glow hangs under it, so it shows, hides and changes
         /// layer (death isolation) with the knight.</param>
-        /// <param name="renderers">The knight's own renderers, whose silhouette glows (not the sword swing or the shield).</param>
+        /// <param name="renderers">The knight's own renderers, whose silhouette glows (not the sword swing).</param>
         public KnightGlow(Camera camera, Transform knight, IEnumerable<Renderer> renderers, ArtSet art)
         {
             this.camera = camera; this.art = art;
@@ -141,7 +143,7 @@ namespace StringAsASword.Presentation
             commands.SetGlobalVector(TintId, new Vector4(tint.r, tint.g, tint.b, 1));
             // Photoshop and Figma blend in sRGB. In Linear colour space the alpha is raised to 2.2 so a faint glow stays as
             // faint as it looks there (the same correction LinearGlowCorrection applies to the boss picture).
-            commands.SetGlobalVector(ParamsId, new Vector4(1, color.a, linear ? 2.2f : 1, 0));
+            commands.SetGlobalVector(ParamsId, new Vector4(1, color.a, linear ? 2.2f : 1, Mathf.Clamp01(Whiten)));
         }
 
         private void EnsureTargets(int width, int height)

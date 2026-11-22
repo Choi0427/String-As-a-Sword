@@ -13,7 +13,10 @@ namespace StringAsASword.Presentation
     {
         private PrototypeGame game;
         private GameObject world;
-        private Transform player, knightBody, selection, sword, shield;
+        private Transform player, knightBody, selection, sword;
+        private Renderer[] knightRenderers; // the knight's own (not the sword swing or the glow quad)
+        // How white the knight turns at the start of a guard (1 = solid white); it fades back over the guard's .34 s.
+        private const float GuardWhite = .5f;
         private KnightGlow knightGlow;
         private SpriteRenderer slashRenderer;
         private Transform[] pickups;
@@ -184,8 +187,9 @@ namespace StringAsASword.Presentation
             outlineEdges = selection.GetComponentsInChildren<Renderer>(true);
             ShowOutline(false);
             BuildPlayer();
-            // Built before the sword swing and the shield are added, so only the knight itself glows.
-            knightGlow = new KnightGlow(BoardCamera, player, player.GetComponentsInChildren<Renderer>(true), art);
+            // Built before the sword swing is added, so only the knight itself glows.
+            knightRenderers = player.GetComponentsInChildren<Renderer>(true);
+            knightGlow = new KnightGlow(BoardCamera, player, knightRenderers, art);
             if (art.kingPrefab != null)
             {
                 king = Instantiate(art.kingPrefab, world.transform, false); king.name = "King";
@@ -194,7 +198,6 @@ namespace StringAsASword.Presentation
             BuildNoise();
             BuildTelegraphs();
             BuildSwordSwing(gold);
-            BuildShield();
             BuildBreak();
             ResetVisuals();
         }
@@ -763,7 +766,8 @@ namespace StringAsASword.Presentation
             player.localRotation = tilt;
             player.localPosition = basePosition + rim - tilt * rim;
             player.localScale = Vector3.one;
-            sword.gameObject.SetActive(false); shield.gameObject.SetActive(false);
+            sword.gameObject.SetActive(false);
+            if (knightGlow != null) knightGlow.Whiten = 0;
         }
         /// <summary>Jolts the board view for a quarter second, as a break of the board does.</summary>
         public void Jolt() => shakeAge = 0;
@@ -805,6 +809,21 @@ namespace StringAsASword.Presentation
         /// <summary>Back to the battle's clear colour (transparent when background art is assigned).</summary>
         public void ResetVoid() => BoardCamera.backgroundColor = clearColor;
         public static Vector3 CellPosition(GridPosition cell) => new Vector3(cell.X - 3.5f, 0, cell.Y - 3.5f);
+        /// <summary>The top of the knight's head (the highest point of its own renderers) in board-view coordinates.</summary>
+        public Vector2 ProjectKnightHead(Vector2 rectSize)
+        {
+            var bounds = new Bounds(); bool any = false;
+            if (knightRenderers != null)
+                foreach (var part in knightRenderers)
+                {
+                    if (part == null || !part.enabled || !part.gameObject.activeInHierarchy) continue;
+                    if (any) bounds.Encapsulate(part.bounds); else { bounds = part.bounds; any = true; }
+                }
+            // Without renderers: a knight-sized guess above its cell.
+            Vector3 head = any ? world.transform.InverseTransformPoint(new Vector3(bounds.center.x, bounds.max.y, bounds.center.z))
+                : player.localPosition + Vector3.up * 1.2f;
+            return ProjectToBoard(head, rectSize);
+        }
         public Vector2 ProjectToBoard(Vector3 local, Vector2 rectSize)
         {
             Vector3 point = BoardCamera.WorldToViewportPoint(world.transform.TransformPoint(local));
@@ -818,7 +837,8 @@ namespace StringAsASword.Presentation
             moveFrom = moveTarget = CellPosition(game.Session.Position);
             player.localPosition = moveTarget; selection.localPosition = moveTarget;
             player.localScale = Vector3.one; player.localRotation = Quaternion.identity;
-            sword.gameObject.SetActive(false); shield.gameObject.SetActive(false);
+            sword.gameObject.SetActive(false);
+            if (knightGlow != null) knightGlow.Whiten = 0;
             if (cameraFocused) { BoardCamera.transform.localPosition = cameraHome; cameraFocused = false; }
             ReleaseKnight();
             impactAge = 1; impactCells = 0; lastClosedNote = -1;
@@ -913,8 +933,8 @@ namespace StringAsASword.Presentation
             RenderSwordSwing();
             attackAge += dt;
             bool guarding = guardAge < .34f && game.Battle.LastClosedNote < guardNote;
-            shield.gameObject.SetActive(guarding);
-            shield.localScale = Vector3.one * (.85f + .15f * Mathf.Sin(Mathf.Clamp01(guardAge / .34f) * Mathf.PI));
+            // A guard shows as the knight turning white for a moment (fading back) and bracing; no shield icon pops out.
+            if (knightGlow != null) knightGlow.Whiten = guarding ? GuardWhite * (1 - Mathf.Clamp01(guardAge / .34f)) : 0;
             player.localScale = new Vector3(1, guarding && guardAge < .18f ? .9f : 1, 1);
             for (int i = 0; i < pickups.Length; i++)
             {
@@ -1565,20 +1585,6 @@ namespace StringAsASword.Presentation
             shadowSprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(.5f, .5f), size);
             shadowSprite.hideFlags = HideFlags.HideAndDontSave;
             return shadowSprite;
-        }
-        private void BuildShield()
-        {
-            // The domain resolves note-based guarding; this shield only presents the accepted guard action.
-            shield = new GameObject("Guard Pose").transform; shield.SetParent(player, false);
-            shield.localPosition = new Vector3(.13f, .22f, -.32f);
-            shield.localRotation = Quaternion.Euler(Elevation, 0, 0);
-            var outline = shield.gameObject.AddComponent<LineRenderer>();
-            outline.useWorldSpace = false; outline.loop = true; outline.positionCount = 5;
-            outline.sharedMaterial = Material(new Color(.45f, .85f, 1f));
-            outline.startWidth = outline.endWidth = .045f; outline.numCornerVertices = 3;
-            outline.SetPositions(new[] { new Vector3(-.34f,.64f,0),new Vector3(.34f,.64f,0),new Vector3(.29f,.22f,0),new Vector3(0,0,0),new Vector3(-.29f,.22f,0) });
-            Box("Shield Center", shield, new Vector3(0,.33f,0),new Vector3(.055f,.30f,.035f),outline.sharedMaterial);
-            shield.gameObject.SetActive(false);
         }
         private void Frame(Transform parent, float width, float height, float thickness, Material material)
         {

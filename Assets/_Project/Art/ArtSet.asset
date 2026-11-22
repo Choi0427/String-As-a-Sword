@@ -20,8 +20,8 @@ MonoBehaviour:
   kingAnchor: {x: 0, y: 0, z: 5.5}
   kingScale: 1
   bossImage: {fileID: 21300000, guid: a2f549f2158424943a1ccf15d710ce69, type: 3}
-  bossImageHeight: 400
-  bossImageSink: {x: 0, y: 83}
+  bossImageHeight: 348
+  bossImageSink: {x: 0, y: 64}
   noisePrefab: {fileID: 0}
   noiseDormantMaterial: {fileID: 0}
   noiseSprite: {fileID: 21300000, guid: 9ada92326268077428fa603fbf6f21be, type: 3}
@@ -36,10 +36,10 @@ MonoBehaviour:
   ambientColor: {r: 0, g: 0, b: 0, a: 0}
   lightColor: {r: 1, g: 1, b: 1, a: 1}
   lightIntensity: 1
-  cameraSize: 5.1
+  cameraSize: 4.9
   cameraLift: 0
-  cameraElevation: 35
-  cameraFieldOfView: 30
+  cameraElevation: 43
+  cameraFieldOfView: 31
   normalMark: {fileID: 2100000, guid: cfb4941d74cb7e34f81db90cfebbd654, type: 2}
   strongMark: {fileID: 2100000, guid: 68ec3dcb7bdf36045874a17ddf642374, type: 2}
   impactMark: {fileID: 0}
@@ -70,7 +70,7 @@ MonoBehaviour:
   laneStrings: {x: 14, y: 128, z: 257}
   laneNoteSpace: {x: 184, y: 260}
   laneRows: {x: 3, y: 6}
-  laneBoardEdge: 4.38
+  laneBoardEdge: 4.19
   noteSprite: {fileID: 21300000, guid: 2b15bdc155187724d8b107e484c3a5ee, type: 3}
   holdBodySprite: {fileID: 0}
   holdTailSprite: {fileID: 0}
@@ -89,6 +89,7 @@ MonoBehaviour:
   keyGuide: {fileID: 21300000, guid: 53027492787f48944b8aa2b5dee06f0c, type: 3}
   screenFont: {fileID: 11400000, guid: cddfb65d7ebf8724d8854d7fb095a58e, type: 2}
   screenTitleFont: {fileID: 11400000, guid: 463bb0403a855ea49ae21e168c3b27c5, type: 2}
+  outcomeFont: {fileID: 11400000, guid: f11cdb3b0dd6fd645aef4c90eafe389a, type: 2}
   settingsVolume: {fileID: 21300000, guid: 571fa3150c5e49bdb12e49a09660615d, type: 3}
   settingsInputOffset: {fileID: 21300000, guid: 3e28b22c18df4d48912f88ab9d0c7024, type: 3}
   settingsMusicOffset: {fileID: 21300000, guid: 2952d1ab947a42f2af3165878e7dac76, type: 3}

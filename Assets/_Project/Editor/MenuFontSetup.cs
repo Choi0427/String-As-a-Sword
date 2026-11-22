@@ -34,6 +34,27 @@ namespace StringAsASword.Editor
             Save(art);
         }
 
+        [MenuItem("String As a Sword/Art/Set Up Outcome Font")]
+        public static void RunOutcomeFont()
+        {
+            var art = PrototypeSceneSetup.EnsureArtSet();
+            art.outcomeFont = Build("ChakraPetch-Regular.ttf", "ChakraPetch-Regular SDF");
+            Save(art);
+        }
+
+        // Builds the HIT / BLOCK font once, on the first editor load after the font file arrives.
+        [InitializeOnLoadMethod]
+        private static void SetUpOutcomeFontIfMissing()
+        {
+            EditorApplication.delayCall += () =>
+            {
+                if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+                var art = AssetDatabase.LoadAssetAtPath<StringAsASword.Presentation.ArtSet>("Assets/_Project/Art/ArtSet.asset");
+                if (art == null || art.outcomeFont != null || AssetDatabase.LoadAssetAtPath<Font>(Fonts + "ChakraPetch-Regular.ttf") == null) return;
+                RunOutcomeFont();
+            };
+        }
+
         private static TMP_FontAsset Build(string file, string name)
         {
             string source = Fonts + file, path = Fonts + name + ".asset";

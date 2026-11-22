@@ -210,7 +210,7 @@ namespace StringAsASword.Tests
             Assert.That(game.Battle.PlayerHp, Is.EqualTo(game.Stage.PlayerMaxHp));
             Assert.That(EventCount("guard-success"), Is.EqualTo(1));
             Assert.That(EventCount("player-hit"), Is.Zero);
-            Assert.That(ActiveOutcome, Is.EqualTo("BLOCKED"));
+            Assert.That(ActiveOutcome, Is.EqualTo("BLOCK"));
             LogAssert.NoUnexpectedReceived();
         }
         [UnityTest] public IEnumerator GuardOnlyAttackHitsWithoutAGuard()
@@ -238,7 +238,7 @@ namespace StringAsASword.Tests
             Assert.That(EventCount("guard-broken"), Is.EqualTo(1));
             Assert.That(EventCount("player-hit"), Is.EqualTo(1));
             Assert.That(EventCount("guard-success"), Is.Zero);
-            Assert.That(ActiveOutcome, Is.EqualTo("GUARD BROKEN"));
+            Assert.That(ActiveOutcome, Is.EqualTo("HIT"), "A broken guard reads as a plain HIT.");
             LogAssert.NoUnexpectedReceived();
         }
         [UnityTest] public IEnumerator DodgeOnlyAttackMissesAfterARealMoveKey()
