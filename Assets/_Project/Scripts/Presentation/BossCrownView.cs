@@ -7,8 +7,8 @@ namespace StringAsASword.Presentation
 {
     /// <summary>
     /// The crown over the boss picture's head, which replaces the boss HP readout. Each hit carves the active blade from
-    /// the tip down (rightmost blade first) into the artist's spent blade (ArtSet.crownSpent: black inside, thin white
-    /// outline, no glow), with a short white flash, a small shake and a few falling chips. A seam fades out and crackles
+    /// the tip down (rightmost blade first) into the artist's spent blade (ArtSet.crownSpent: an opaque dark-grey
+    /// blade, no glow), with a short white flash, a small shake and a few falling chips. A seam fades out and crackles
     /// with static once the blade before it is spent. The ring and the hooks stay lit to the end, as in the art's last
     /// state. (Fly is no longer called by the game: noise charges the string instead.)
     /// Greys and the knight's black only. A child of the boss picture, so it breathes, flinches and sinks with it.

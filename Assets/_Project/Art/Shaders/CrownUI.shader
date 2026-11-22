@@ -1,7 +1,7 @@
 // The boss crown on the UI canvas (Art/UI/Boss/Crown.png). The picture's opaque lines are the crown, its soft alpha is the glow.
 // A baked region map (CrownLayout.Bake) says which part every pixel belongs to:
-//   blades (boss HP): carved from the tip down by _Blade into the artist's spent picture (_SpentTex: black inside,
-//                     thin white outline, no glow), with a short white flash on the fresh cut (_BladeFlash);
+//   blades (boss HP): carved from the tip down by _Blade into the artist's spent picture (_SpentTex: an opaque
+//                     dark-grey blade, no glow), with a short white flash on the fresh cut (_BladeFlash);
 //   seams:            fade out from the right end by _SeamFill and crackle with static by _SeamNoise;
 //   body (ring, hooks): goes black with _Body.x (the crown keeps it at 0: the art's last state keeps them lit).
 // Only white, greys and the knight's black are ever drawn.
@@ -90,7 +90,7 @@ Shader "String As a Sword/Crown UI"
                     // From the tip (0) down to the base (1); overshoot so a spent blade is spent to its last pixel.
                     float front = gone > 0 ? gone * 1.03 : -1;
                     float carved = saturate((front - region.g) / 0.02 + 0.5);
-                    // The carved part shows the artist's spent blade (black inside, thin white outline, no glow);
+                    // The carved part shows the artist's spent blade (an opaque dark-grey blade, no glow);
                     // the rest is the whole crown, whose glow breathes.
                     fixed4 whole = tex2D(_MainTex, uv);
                     float wholeCore = smoothstep(0.80, 0.95, whole.a);
