@@ -9,7 +9,7 @@
 1. `Assets/_Project/Scenes/RhythmPrototype.unity`를 연다. 메뉴 `String As a Sword > Open Rhythm Prototype`에서도 열 수 있다.
 2. Play를 누르고 Game 뷰를 클릭한다.
 3. Space 또는 Enter, 화면의 Start 버튼으로 시작한다.
-4. 네 박자 카운트인 후 좌우 음표가 보드 양옆의 흰 판정선에 닿을 때 행동한다.
+4. 곡의 도입(첫 노트 앞 4박, 카운트인 없음) 뒤 좌우 음표가 보드 양옆의 흰 판정선에 닿을 때 행동한다.
 
 | 입력 | 동작 |
 |---|---|

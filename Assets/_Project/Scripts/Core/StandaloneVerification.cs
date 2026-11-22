@@ -61,9 +61,9 @@ namespace StringAsASword.Core
             Queue(Key.Space, game.SongTime);
             yield return null; yield return null;
             Release();
-            if (!Check(game.State == PrototypeState.CountIn, "Space did not start the session.")) yield break;
+            if (!Check(game.State == PrototypeState.Playing, "Space did not start the session.")) yield break;
             yield return UntilTime(.05);
-            if (!Check(game.State == PrototypeState.Playing && game.CurrentBeat >= 0 && game.Noise.Pickups.Count == 1, "Count-in did not advance into gameplay.")) yield break;
+            if (!Check(game.State == PrototypeState.Playing && game.CurrentBeat >= 0 && game.Noise.Pickups.Count == 1, "The song's intro did not lead into gameplay.")) yield break;
             if (game.Song.Music != null)
             {
                 bool musicPlaying = false;

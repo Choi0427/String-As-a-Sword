@@ -135,33 +135,6 @@ namespace StringAsASword.Tests
         }
 
         // ---------------------------------------------------------------- recordings
-        /// <summary>The game's whole output, mixed to mono, as the listener hears it.</summary>
-        private sealed class Recorder : MonoBehaviour
-        {
-            public float[] Samples;
-            public int Count, Rate, Gaps;
-            public double StartDsp = -1;
-            public volatile bool Recording;
-            private double next;
-            private void OnAudioFilterRead(float[] data, int channels)
-            {
-                if (!Recording || Samples == null) return;
-                double dsp = AudioSettings.dspTime;
-                int frames = data.Length / channels;
-                if (StartDsp < 0) StartDsp = dsp;
-                else if (Math.Abs(dsp - next) * Rate > .5) Gaps++;
-                next = dsp + (double)frames / Rate;
-                int n = Count;
-                for (int i = 0; i < frames && n < Samples.Length; i++)
-                {
-                    float sum = 0;
-                    for (int c = 0; c < channels; c++) sum += data[i * channels + c];
-                    Samples[n++] = sum / channels;
-                }
-                Count = n;
-            }
-        }
-
         [UnityTest, Explicit("About 45 s: records the whole prologue, J on the second waiting bar's second beat (output/intro-assets/capture_full.wav).")]
         public IEnumerator RecordTheWholePrologue() => Record("capture_full", jumpTo: -1, tearOn: 37);
         [UnityTest, Explicit("About 20 s: records the prologue from beat 27.25, J on the first waiting bar's last beat (output/intro-assets/capture_into_tutorial.wav).")]
@@ -181,15 +154,9 @@ namespace StringAsASword.Tests
             Assert.That(game.TutorialFollowsPrologue);
             // Start again with the recorder running, so the first beat is on the recording.
             intro.Stop();
-            AudioListener listener = null;
-            foreach (var candidate in Object.FindObjectsByType<AudioListener>(FindObjectsSortMode.None)) if (candidate.isActiveAndEnabled) listener = candidate;
-            Assert.That(listener, Is.Not.Null);
-            var recorder = listener.gameObject.AddComponent<Recorder>();
+            var recorder = OutputRecorder.Attach(70);
             try
             {
-                recorder.Rate = AudioSettings.outputSampleRate;
-                recorder.Samples = new float[recorder.Rate * 70];
-                recorder.Recording = true;
                 yield return null; yield return null;
                 game.StartPrologue();
                 if (jumpTo >= 0) intro.JumpForTests(jumpTo);
@@ -209,7 +176,7 @@ namespace StringAsASword.Tests
             }
             finally { Object.Destroy(recorder); }
         }
-        private static void Write(string name, Recorder r, double origin, double tear, double press, double handover, double jumpTo)
+        private static void Write(string name, OutputRecorder r, double origin, double tear, double press, double handover, double jumpTo)
         {
             string dir = Path.GetFullPath("output/intro-assets");
             Directory.CreateDirectory(dir);

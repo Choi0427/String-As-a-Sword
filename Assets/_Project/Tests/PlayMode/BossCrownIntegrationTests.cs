@@ -30,18 +30,16 @@ namespace StringAsASword.Tests
             yield return null;
         }
 
-        [UnityTest] public IEnumerator PlayShowsNoTextHudOnlyTheCountIn()
+        [UnityTest] public IEnumerator PlayShowsNoTextHudAndNoCountIn()
         {
             game.StartSession();
             for (int i = 0; i < 5; i++) yield return null;
             string[] removed = { "GEOM EUL HYEON", "COMBO", "FIND YOUR RHYTHM", "NOISE", "PHASE", "TWO NOTES", "Follow the two", "PLAYER HP", "BOSS HP" };
-            bool countIn = false;
             foreach (var label in view.GetComponentsInChildren<TMP_Text>())
             {
                 foreach (var text in removed) Assert.That(label.text, Does.Not.Contain(text), label.name);
-                countIn |= label.text.StartsWith("GET READY");
+                Assert.That(label.text, Does.Not.StartWith("GET READY"), "The song starts without a count-in.");
             }
-            Assert.That(countIn, Is.True, "The count-in stays on screen.");
         }
         [UnityTest] public IEnumerator CrownSitsOnTheBossAndShowsBossHpOnly()
         {

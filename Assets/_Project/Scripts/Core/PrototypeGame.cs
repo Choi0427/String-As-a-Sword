@@ -188,7 +188,7 @@ namespace StringAsASword.Core
             if (State != PrototypeState.Prologue) return;
             StartTutorial(handoverDsp, afterPrologue: true);
         }
-        /// <summary>Esc in the prologue: on to the tutorial when it follows this prologue, else the count-in.</summary>
+        /// <summary>Esc in the prologue: on to the tutorial when it follows this prologue, else the song.</summary>
         public void SkipPrologue()
         {
             if (State != PrototypeState.Prologue) return;
@@ -245,7 +245,7 @@ namespace StringAsASword.Core
             audioPlayer.Begin(song, clock, Timeline, countInClicks: false);
             tutorialHandover = downbeatDsp;
         }
-        /// <summary>Esc in the tutorial: straight to the song's count-in.</summary>
+        /// <summary>Esc in the tutorial: straight into the song.</summary>
         public void SkipTutorial()
         {
             if (State != PrototypeState.Tutorial) return;
@@ -266,20 +266,21 @@ namespace StringAsASword.Core
             runSaved = false; ResumeAt = double.NegativeInfinity;
             Battle.Reset(SessionId, stage.NoiseSeed);
             Battle.SkipToPhase(GameFlow.StartPhase);
-            // Developer mode: a later phase also starts later in the song, a count-in's length before its note.
-            double countIn = song.CountInBeats * Timeline.SecondsPerBeat;
-            double from = Timeline.TimeOf(DevPhaseNote(GameFlow.StartPhase)) - countIn;
+            // No count-in: the song starts at once and its own intro (four beats before the first note) leads in, as after
+            // the tutorial. Developer mode: a later phase starts later in the song, the same four beats before its note.
+            double lead = song.CountInBeats * Timeline.SecondsPerBeat;
+            double from = Timeline.TimeOf(DevPhaseNote(GameFlow.StartPhase)) - lead;
             if (from > 0)
             {
                 // The skipped notes pass unplayed and unhurt, so the attacks, the noise and the board are where the song is.
                 Battle.Invincible = true; Battle.Advance(from);
                 clock.Start(.30 - from);
             }
-            else clock.Start(.30 + countIn + song.AudioStartOffset);
+            else clock.Start(.30 + song.AudioStartOffset);
             Battle.Invincible = GameFlow.Invincible; Battle.IgnoreBossHp = GameFlow.BossHpOff;
             previousTime = SongTime;
-            State = PrototypeState.CountIn; view.ResetFeedback();
-            audioPlayer.Begin(song, clock, Timeline);
+            State = PrototypeState.Playing; view.ResetFeedback();
+            audioPlayer.Begin(song, clock, Timeline, countInClicks: false);
         }
         /// <summary>Tests only: skip the battle and the finale and start the epilogue now.</summary>
         internal void JumpToEpilogueForTests()

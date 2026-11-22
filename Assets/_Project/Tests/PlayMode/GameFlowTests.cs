@@ -92,7 +92,7 @@ namespace StringAsASword.Tests
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(key)); yield return null;
             InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
         }
-        [UnityTest] public IEnumerator StartOpensWithThePrologueThenTheTutorialAndEscSkipsEachToTheCountIn()
+        [UnityTest] public IEnumerator StartOpensWithThePrologueThenTheTutorialAndEscSkipsEachIntoTheSong()
         {
             yield return LoadAndWait(GameFlow.MenuScene);
             var menu = Object.FindAnyObjectByType<MainMenuView>();
@@ -110,7 +110,7 @@ namespace StringAsASword.Tests
             Assert.That(game.InTutorialBattle);
             Assert.That(game.View.ContentRect.GetComponent<CanvasGroup>().alpha, Is.EqualTo(1));
             yield return Press(Key.Escape);
-            Assert.That(game.State, Is.EqualTo(PrototypeState.CountIn), "Skipping the tutorial goes to the usual count-in.");
+            Assert.That(game.State, Is.EqualTo(PrototypeState.Playing), "Skipping the tutorial starts the song at once, with no count-in.");
             Assert.That(game.Tutorial.Playing, Is.False);
             Assert.That(game.InTutorialBattle, Is.False);
             LogAssert.NoUnexpectedReceived();
@@ -130,7 +130,7 @@ namespace StringAsASword.Tests
                 yield return Press(Key.Escape);
                 Assert.That(game.State, Is.EqualTo(PrototypeState.Tutorial), $"Run {run + 1}: Esc skips to the tutorial.");
                 yield return Press(Key.Escape);
-                Assert.That(game.State, Is.EqualTo(PrototypeState.CountIn), $"Run {run + 1}: Esc skips the tutorial too.");
+                Assert.That(game.State, Is.EqualTo(PrototypeState.Playing), $"Run {run + 1}: Esc skips the tutorial too.");
             }
             // From the pause screen's settings: the run is dropped for the tutorial.
             game.PauseSession(); yield return null;
@@ -171,6 +171,24 @@ namespace StringAsASword.Tests
             Assert.That(game.SongClockOrigin, Is.EqualTo(handover + TutorialDirector.LeadBeats * game.Timeline.SecondsPerBeat).Within(1e-6));
             Assert.That(game.Tutorial.Letterbox.Visible, "The letterbox stays on into the tutorial.");
             Assert.That(game.View.ContentRect.GetComponent<CanvasGroup>().alpha, Is.EqualTo(1));
+            LogAssert.NoUnexpectedReceived();
+        }
+        [UnityTest] public IEnumerator ANewRunAfterTheEndingPutsTheBoardBackWithoutACountIn()
+        {
+            yield return LoadAndWait(GameFlow.MenuScene);
+            GameFlow.StartBattle();
+            yield return UntilScene(GameFlow.BattleScene, 10);
+            var game = Object.FindAnyObjectByType<PrototypeGame>();
+            var board = Object.FindAnyObjectByType<BoardWorldPresenter>();
+            var director = Object.FindAnyObjectByType<FinaleDirector>();
+            game.JumpToEpilogueForTests();
+            yield return new WaitForSecondsRealtime(.3f);
+            Assert.That(board.FreeRoam, "The white world: the knight roams.");
+            game.StartSession();
+            yield return null; yield return null;
+            Assert.That(game.State, Is.EqualTo(PrototypeState.Playing), "Straight into the song.");
+            Assert.That(board.FreeRoam, Is.False, "The board is back for the new run.");
+            Assert.That(director.EpilogueAge, Is.Zero);
             LogAssert.NoUnexpectedReceived();
         }
         [UnityTest] public IEnumerator EpilogueLetsTheKnightRoamToTheNoiseThenTheCutsceneReturnsToAWhiteMenu()
