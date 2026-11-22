@@ -470,6 +470,15 @@ namespace StringAsASword.Tests
             Assert.That(game.State, Is.EqualTo(PrototypeState.Finished));
             Assert.That(screens.Showing, Is.EqualTo(BattleScreens.ScreenKind.GameOver));
             Assert.That(Lean(board), Is.GreaterThan(70));
+            // The song does not cut at the card: it fades out under it, then stops.
+            Assert.That(game.Death.MusicFadedOut, Is.False);
+            var music = System.Array.Find(game.GetComponents<AudioSource>(), s => s.clip != null && s.clip == game.Song.Music);
+            bool wasPlaying = music != null && music.isPlaying;
+            yield return new WaitForSecondsRealtime(1f);
+            if (wasPlaying) Assert.That(music.isPlaying, "Still fading a second into the card.");
+            yield return new WaitForSecondsRealtime(2f);
+            Assert.That(game.Death.MusicFadedOut);
+            if (music != null) Assert.That(music.isPlaying, Is.False, "Stopped once faded out.");
             LogAssert.NoUnexpectedReceived();
         }
         [UnityTest] public IEnumerator LandingCollectsNoiseAndRestartClearsIt()

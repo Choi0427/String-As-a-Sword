@@ -294,11 +294,11 @@ namespace StringAsASword.Core
             if (!clock.Running) StartSession();
             State = PrototypeState.Epilogue; EpilogueStarted?.Invoke();
         }
-        /// <summary>The knight's fall is over (or skipped): the song stops and the game-over card shows.</summary>
+        /// <summary>The knight's fall is over (or skipped): the game-over card shows while the song fades out (DeathDirector).</summary>
         public void FinishDeath()
         {
             if (State != PrototypeState.Dying) return;
-            audioPlayer.Stop(); State = PrototypeState.Finished;
+            State = PrototypeState.Finished;
         }
         public void PauseSession()
         {

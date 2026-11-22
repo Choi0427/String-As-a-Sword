@@ -4,7 +4,7 @@ using UnityEngine;
 namespace StringAsASword.Presentation
 {
     /// <summary>
-    /// The last hit: the board freezes, the song drops to a quiet level, the screen cuts to black with only the knight left on it, and the
+    /// The last hit: the board freezes, the song drops to a quiet level (fading out on the card), the screen cuts to black with only the knight left on it, and the
     /// board camera closes in.
     /// Then the knight tips over the way a real chess piece does: knocked, a slow lean, a breath on the edge of its base,
     /// and the fall, a bounce and a little roll. The game-over card follows. Rules stay in BattleSession; this only reads them.
@@ -12,8 +12,9 @@ namespace StringAsASword.Presentation
     public sealed class DeathDirector : MonoBehaviour
     {
         // Seconds from the last hit.
-        // The song keeps playing under the fall, ducked to DyingMusicLevel of its volume over MusicFade seconds (it stops at the card).
-        private const float MusicFade = .4f, DyingMusicLevel = .25f, ZoomSeconds = 1.4f;
+        // The song keeps playing under the fall, ducked to DyingMusicLevel of its volume over MusicFade seconds, then fades
+        // out over CardFadeSeconds once the game-over card shows, and stops.
+        private const float MusicFade = .4f, DyingMusicLevel = .25f, CardFadeSeconds = 2.5f, ZoomSeconds = 1.4f;
         private const float KnockAt = .5f, KnockPeak = .68f, KnockSettle = 1.1f, CreepEnd = 2.6f, FallAt = 3f, LandAt = 3.45f,
             HopEnd = 3.65f, SecondHopEnd = 3.78f, RollEnd = 3.9f;
         public const float TotalSeconds = 4.7f;
@@ -31,7 +32,7 @@ namespace StringAsASword.Presentation
         private UnityEngine.UI.RawImage knightView;
         private UnityEngine.UI.Image black, flash;
         private AudioSource fallSource;
-        private float age, side = 1;
+        private float age, cardAge, side = 1;
         private int session = -1;
         private bool active, landed;
         private Vector3 basePosition;
@@ -66,7 +67,7 @@ namespace StringAsASword.Presentation
         private void ResetVisuals()
         {
             bool was = active;
-            active = landed = false; age = 0;
+            active = landed = false; age = cardAge = 0;
             layer.gameObject.SetActive(false);
             fallSource.Stop();
             // The board puts the knight and its camera back when the next session starts.
@@ -74,7 +75,7 @@ namespace StringAsASword.Presentation
         }
         private void Begin()
         {
-            active = true; landed = false; age = 0; session = game.SessionId;
+            active = true; landed = false; age = cardAge = 0; session = game.SessionId;
             // Where the knight stands now (a step may be in the air: it falls from the board under it).
             var at = board.PlayerTransform.localPosition;
             basePosition = new Vector3(at.x, 0, at.z);
@@ -93,22 +94,32 @@ namespace StringAsASword.Presentation
             if (dying && active && game.SessionId != session) ResetVisuals();
             if (!active) Begin();
             if (dying) age = Mathf.Min(age + Time.unscaledDeltaTime, TotalSeconds);
+            else cardAge += Time.unscaledDeltaTime;
             Pose(age);
+            Music();
             if (dying && age >= TotalSeconds) game.FinishDeath();
         }
+        /// <summary>Quiet under the fall, then fading out on the card until it stops.</summary>
+        private void Music()
+        {
+            if (cardAge >= CardFadeSeconds) { game.Audio.Stop(); return; }
+            float duck = Mathf.Lerp(1, DyingMusicLevel, Mathf.Clamp01(age / MusicFade));
+            game.Audio.SetMusicFade(duck * (1 - Mathf.Clamp01(cardAge / CardFadeSeconds)));
+        }
+        /// <summary>The game-over card is up and the song has faded out (it stops after <see cref="CardFadeSeconds"/>).</summary>
+        public bool MusicFadedOut => cardAge >= CardFadeSeconds;
         /// <summary>Esc, Space or Enter during the fall: the knight is down at once and the game-over card shows.</summary>
         public void Skip()
         {
             if (game.State != PrototypeState.Dying) return;
             if (!active) Begin();
             landed = true; age = TotalSeconds;
-            Pose(age);
+            Pose(age); Music();
             game.FinishDeath();
         }
         private void Pose(float a)
         {
             board.FreeRoam = true;
-            game.Audio.SetMusicFade(Mathf.Lerp(1, DyingMusicLevel, Mathf.Clamp01(a / MusicFade)));
             Vector3 focus = basePosition + new Vector3(side * FocusSide, FocusHeight, 0);
             board.FocusCamera(focus, CloseDistance, Smooth01(a / ZoomSeconds));
             float roll = side * RollDegrees * Smooth01((a - LandAt) / (RollEnd - LandAt));
