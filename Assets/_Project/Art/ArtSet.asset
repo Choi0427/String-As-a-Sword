@@ -31,6 +31,9 @@ MonoBehaviour:
   darkTile: {fileID: 0}
   boardEdge: {fileID: 0}
   useLighting: 1
+  ambientColor: {r: 0, g: 0, b: 0, a: 0}
+  lightColor: {r: 1, g: 1, b: 1, a: 1}
+  lightIntensity: 1
   cameraSize: 5.1
   cameraLift: 0
   cameraElevation: 35
@@ -59,6 +62,7 @@ MonoBehaviour:
   - sprite: {fileID: 21300000, guid: 0b3ce865041aa7b4f8e90fc37334ce82, type: 3}
     sway: {x: 0, y: 0}
     period: 0
+  prologueBackgroundLayers: []
   laneSprite: {fileID: 21300000, guid: cd5d76bcb9cf94e498cd3261a1d64cd2, type: 3}
   laneBoardGap: {x: 668, y: 1387}
   laneStrings: {x: 14, y: 128, z: 257}
@@ -103,3 +107,8 @@ MonoBehaviour:
   pickupVfx: {fileID: 0}
   bossFireVfx: {fileID: 0}
   phaseVfx: {fileID: 0}
+  knightFallSound: {fileID: 0}
+  uiMoveSound: {fileID: 8300000, guid: 1275806269c3f5e41b3e4f913723ed2a, type: 3}
+  uiMoveVolume: 0.036
+  uiConfirmSound: {fileID: 8300000, guid: d04499712ebfee94eb7e32039d21a59d, type: 3}
+  uiConfirmVolume: 0.12

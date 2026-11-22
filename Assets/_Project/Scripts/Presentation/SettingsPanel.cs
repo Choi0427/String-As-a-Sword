@@ -40,6 +40,7 @@ namespace StringAsASword.Presentation
         private readonly List<UnityEngine.UI.Image>[] rowStrokes = new List<UnityEngine.UI.Image>[RowCount];
         private RectTransform card;
         private GameObject devStrip;
+        private ArtSet art;
         private int heldStep; private float nextRepeat;
         /// <summary>Called after the panel closes, so a running battle can pick up what changed.</summary>
         public event Action Closed;
@@ -69,13 +70,16 @@ namespace StringAsASword.Presentation
         /// <summary>The tutorial again (then the song): closes the panel and asks the owner to start it.</summary>
         public void RequestTutorial()
         {
+            Sfx.UiConfirm(art);
             Close();
             TutorialRequested?.Invoke();
         }
 
         public void Select(int row)
         {
-            SelectedRow = Mathf.Clamp(row, 0, RowCount - 1);
+            row = Mathf.Clamp(row, 0, RowCount - 1);
+            if (row != SelectedRow && IsOpen) Sfx.UiMove(art);
+            SelectedRow = row;
             for (int i = 0; i < RowCount; i++)
             {
                 bands[i].color = i == SelectedRow ? RowBand : new Color(0, 0, 0, 0);
@@ -83,9 +87,11 @@ namespace StringAsASword.Presentation
             }
         }
         /// <summary>A press of A (-1) or D (+1) on a row, as its arrow buttons do.</summary>
-        public void Step(int row, int direction)
+        public void Step(int row, int direction) => Step(row, direction, sound: true);
+        private void Step(int row, int direction, bool sound)
         {
             direction = Math.Sign(direction);
+            if (sound && direction != 0) { if (row == DifficultyRow) Sfx.UiConfirm(art); else Sfx.UiMove(art); }
             switch (row)
             {
                 case VolumeRow: GameFlow.MusicVolume = Mathf.Clamp(VolumePercent + direction * VolumeStep, 0, 100) / 100f; break;
@@ -113,12 +119,13 @@ namespace StringAsASword.Presentation
             if (held == 0) { heldStep = 0; return; }
             // A first press steps at once; held, it repeats after a short wait.
             if (held != heldStep) { heldStep = held; nextRepeat = Time.unscaledTime + RepeatDelay; Step(SelectedRow, held); }
-            else if (Time.unscaledTime >= nextRepeat && SelectedRow != DifficultyRow) { nextRepeat = Time.unscaledTime + RepeatEvery; Step(SelectedRow, held); }
+            else if (Time.unscaledTime >= nextRepeat && SelectedRow != DifficultyRow) { nextRepeat = Time.unscaledTime + RepeatEvery; Step(SelectedRow, held, sound: false); }
         }
 
         // --- Building ------------------------------------------------------------------------------------------
         private void Build(RectTransform shade, ArtSet art)
         {
+            this.art = art;
             font = UiFonts.Korean(art.screenFont != null ? art.screenFont : art.menuFont);
             titleFont = art.screenTitleFont != null ? art.screenTitleFont : font;
             Image(shade, new Color(0, 0, 0, .72f)).raycastTarget = true;
@@ -186,7 +193,7 @@ namespace StringAsASword.Presentation
             var noteText = UiKit.Label(note, "", 20, Caption, TextAlignmentOptions.Left, font);
             noteText.characterSpacing = -5;
             refresh += () => noteText.text = GameFlow.Difficulty == GameDifficulty.Easy ? EasyNote : HardNote;
-            choices["난이도"] = i => { GameFlow.Difficulty = i == 0 ? GameDifficulty.Easy : GameDifficulty.Hard; refresh(); };
+            choices["난이도"] = i => { Sfx.UiConfirm(art); GameFlow.Difficulty = i == 0 ? GameDifficulty.Easy : GameDifficulty.Hard; refresh(); };
 
             // W S ↕   A D ↔   Esc 뒤로
             Picture(art.settingsKeyHints, "Key Hints", 959.91f, 931.42f, 588, 50, "W S  위/아래     A D  조절     Esc  뒤로");

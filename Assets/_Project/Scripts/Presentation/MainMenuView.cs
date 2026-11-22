@@ -104,6 +104,7 @@ namespace StringAsASword.Presentation
 
         public void Select(int index)
         {
+            if (index >= 0 && index != selected) Sfx.UiMove(art);
             selected = index;
             Color text = White ? Invert(Menu) : Menu, hoverText = White ? Invert(HoverText) : HoverText;
             for (int i = 0; i < MenuLabels.Length; i++)
@@ -115,6 +116,7 @@ namespace StringAsASword.Presentation
         public void Activate(int index)
         {
             if (leaving) return;
+            Sfx.UiConfirm(art);
             // The story cards are retired: the prologue tells the same story every time 시작 is pressed.
             if (index == StartItem) Leave(prologue: true);
             else if (index == SettingsItem) settings.Open();

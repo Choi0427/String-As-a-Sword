@@ -60,9 +60,10 @@ namespace StringAsASword.Presentation
             screens.Build(game, art);
             return screens;
         }
+        private ArtSet art;
         private void Build(PrototypeGame owner, ArtSet art)
         {
-            game = owner;
+            game = owner; this.art = art;
             itemFont = UiFonts.Korean(art.screenFont != null ? art.screenFont : art.menuFont);
             titleFont = art.screenTitleFont != null ? art.screenTitleFont : itemFont;
             var frame = (RectTransform)transform;
@@ -245,10 +246,11 @@ namespace StringAsASword.Presentation
             public readonly Item[] Items;
             public readonly TMP_Text Title;
             public int Selected { get; private set; } = -1;
+            private readonly ArtSet art;
 
             public Panel(BattleScreens owner, RectTransform frame, string name, float top, float height, string title, float titleTop, float titleWidth, params Item[] items)
             {
-                Items = items;
+                Items = items; art = owner.art;
                 var card = TopLeft(Rect(frame, name), 598.18f, top, 723.63f, height);
                 root = card.gameObject;
                 // Figma: black at 90%, inside stroke 5 px #D9D9D9.
@@ -281,10 +283,11 @@ namespace StringAsASword.Presentation
             }
             public void Select(int index)
             {
+                if (index >= 0 && index != Selected && root.activeSelf) Sfx.UiMove(art);
                 Selected = index;
                 for (int i = 0; i < labels.Length; i++) { boxes[i].enabled = i == index; labels[i].color = i == index ? HoverText : Ink; }
             }
-            public void Press(int index) { Select(index); Items[index].Pressed(); }
+            public void Press(int index) { Select(index); Sfx.UiConfirm(art); Items[index].Pressed(); }
         }
     }
 }

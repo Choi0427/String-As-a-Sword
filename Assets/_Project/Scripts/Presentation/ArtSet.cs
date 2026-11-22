@@ -148,6 +148,14 @@ namespace StringAsASword.Presentation
         [Header("Sound")]
         [Tooltip("Played once when the fallen knight hits the board after the last hit (a wooden piece knocked over). Empty = silent.")]
         public AudioClip knightFallSound;
+        [Tooltip("A menu or settings row was picked (W/S, hover, A/D): the prologue's metronome (Audio/Prologue/clock).")]
+        public AudioClip uiMoveSound;
+        [Tooltip("Level of the UI move sound at full volume. 0.036 = the prologue's ordinary beat (0.12 x 0.3).")]
+        [Range(0, 1)] public float uiMoveVolume = .036f;
+        [Tooltip("A menu item was pressed (Enter, Space, click): the prologue's chess piece moving (Audio/Prologue/place).")]
+        public AudioClip uiConfirmSound;
+        [Tooltip("Level of the UI confirm sound at full volume. 0.12 = as loud as in the prologue.")]
+        [Range(0, 1)] public float uiConfirmVolume = .12f;
 
         public bool HasCrown => crown != null && crownRegions != null && crownSpent != null && crownMaterial != null;
         public bool HasBackground => background != null || (backgroundLayers != null && backgroundLayers.Length > 0);
