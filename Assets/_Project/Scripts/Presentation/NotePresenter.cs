@@ -18,8 +18,13 @@ namespace StringAsASword.Presentation
         private const float HeadRise = 7; // the string runs through the note head, not the stem
         private const float StringThickness = 3, PegWidth = 6, PegHeight = 22, SnapGap = 12;
         private const double FadeSeconds = .30, FlashSeconds = .15, VibrationHz = 14;
-        // Note sprite: stem up, hollow head at the bottom. HeadPivot is the head's centre, as a share of the sprite's height.
-        private const float SpriteHeight = 100, HeadPivot = .152f, SpriteTone = .85f;
+        // Note sprite: stem up, hollow head at the bottom. HeadPivot is the head's centre and HeadShare its tip-to-tip
+        // height, both as a share of the sprite's height (measured on Note.png: head rows 343-493 of 495).
+        private const float DefaultSpriteHeight = 100, HeadPivot = .152f, HeadShare = .30f, SpriteTone = .85f;
+        // Resonance: a soft dot behind each head. Charged notes (a preview of the window) glow faintly, resonating notes
+        // clearly, flaring on ignition; the last two blink like the gauge.
+        private const float GlowScale = 2.4f, ChargedGlow = .22f, ResonantGlow = .55f, IgniteGlow = .35f;
+        private const int WarningNotes = 2;
         private const float BeamThickness = 8, BeamGap = 5, BeamStub = 16, RailOffset = 5, RailPegHeight = 30;
         /// <summary>Notes closer together than this share of a beat are beamed into one run.</summary>
         private const double RunGapBeats = .75;
@@ -28,8 +33,11 @@ namespace StringAsASword.Presentation
         private readonly Image[,] rails = new Image[2, Slots];
         private readonly Image[,,] beams = new Image[2, Slots, 2];
         private readonly Image[] sparks = new Image[2];
+        private readonly Image[,] glows = new Image[2, Slots];
         private readonly bool art;
-        private readonly float headHalf, stemHalf;
+        private readonly float headHalf, stemHalf, spriteHeight, glowSize;
+        /// <summary>Note heads glowing for resonance on one side this frame.</summary>
+        public int GlowingNotes { get; private set; }
         // Stems lean toward the board by this angle (radians), parallel to the tilted judge lines.
         private readonly float tilt;
         private int[] beamLinks;
@@ -42,15 +50,18 @@ namespace StringAsASword.Presentation
         private bool resolvedHit;
 
         public NotePresenter(RectTransform root, Sprite sprite = null, Sprite holdBody = null, Sprite holdTail = null,
-            float targetX = 310, float spawnX = 715, float laneY = 53, float barHeight = 0, float tilt = 0)
+            float targetX = 310, float spawnX = 715, float laneY = 53, float barHeight = 0, float tilt = 0, float headHeight = 0)
         {
             this.targetX = targetX; this.spawnX = spawnX; this.tilt = tilt;
             stringY = laneY; this.barHeight = barHeight;
             art = sprite != null;
-            // The sprite's head sits on the string; the prototype glyph is lifted so the string runs through its head.
+            // The sprite's head is centred on laneY; the prototype glyph is lifted so the string runs through its head.
             noteY = art ? laneY : laneY + HeadRise;
-            var noteSize = art ? new Vector2(SpriteHeight * sprite.rect.width / sprite.rect.height, SpriteHeight) : new Vector2(23, 31);
+            // headHeight sizes the sprite so its head fills the given height tip to tip; 0 keeps the default size.
+            spriteHeight = headHeight > 0 ? headHeight / HeadShare : DefaultSpriteHeight;
+            var noteSize = art ? new Vector2(spriteHeight * sprite.rect.width / sprite.rect.height, spriteHeight) : new Vector2(23, 31);
             headHalf = noteSize.x * .5f; stemHalf = noteSize.x * .06f;
+            glowSize = GlowScale * (art ? spriteHeight * HeadShare : 23);
             // A bar line per beat scrolls with the notes across all the lane's strings; drawn first, under everything.
             if (barHeight > 0)
                 for (int side = 0; side < 2; side++)
@@ -66,6 +77,13 @@ namespace StringAsASword.Presentation
                     pegs[side, i].rectTransform.localRotation = Lean(side);
                     rails[side, i] = MakeImage(root, $"HoldRail_{side}_{i}", holdBody);
                     for (int n = 0; n < 2; n++) beams[side, i, n] = MakeImage(root, $"Beam_{side}_{i}_{n}", null);
+                }
+            // Glows over the strings, under the heads.
+            for (int side = 0; side < 2; side++)
+                for (int i = 0; i < Slots; i++)
+                {
+                    glows[side, i] = MakeImage(root, $"NoteGlow_{side}_{i}", PrototypeView.SoftDotSprite());
+                    glows[side, i].rectTransform.sizeDelta = Vector2.one * glowSize;
                 }
             for (int side = 0; side < 2; side++)
                 for (int i = 0; i < Slots; i++)
@@ -94,7 +112,8 @@ namespace StringAsASword.Presentation
             image.sprite = sprite; image.raycastTarget = false; image.gameObject.SetActive(false);
             return image;
         }
-        public void Render(PrototypeGame game)
+        /// <param name="ignite">The ignition's flare, 1 at ignition falling to 0 (ResonanceHud.Ignite01).</param>
+        public void Render(PrototypeGame game, float ignite = 0)
         {
             bool active = game.State == PrototypeState.Playing || game.State == PrototypeState.CountIn || game.State == PrototypeState.Finale ||
                 game.State == PrototypeState.Tutorial;
@@ -114,6 +133,14 @@ namespace StringAsASword.Presentation
             if (art && (beamLinks == null || beamLinks.Length != count || beamTimeline != game.Timeline))
             { beamLinks = BeamLinks(game.Timeline, count, session.IsHold); beamTimeline = game.Timeline; }
 
+            // Resonance window: the running one, or while charged a preview of the notes an attack now would ignite.
+            var resonance = game.Battle.Resonance;
+            int nextNote = game.Battle.LastClosedNote + 1, resonating = resonance.Remaining(nextNote);
+            int windowEnd = resonating > 0 ? resonance.EndNote : resonance.Charged ? nextNote + resonance.Length - 1 : -1;
+            float glowAlpha = resonating > 0 ? ResonantGlow + IgniteGlow * Mathf.Clamp01(ignite) : ChargedGlow;
+            if (resonating > 0 && resonating <= WarningNotes && Mathf.Repeat(Time.unscaledTime * 5, 1) < .5f) glowAlpha *= .45f;
+            GlowingNotes = 0;
+
             // One slot before the nearest note keeps a just-passed note (or a held string) on screen.
             int first = Math.Max(0, game.Timeline.NearestBeat(time) - 1);
             for (int i = 0; i < Slots; i++)
@@ -127,14 +154,23 @@ namespace StringAsASword.Presentation
                 bool headVisible = inChart && remaining <= approach &&
                     (holding || !consumed && remaining >= -.14);
                 float headX = holding ? targetX : X(remaining, approach);
-                Color headColor = beat % 4 == 0 ? PrototypeView.InkWhite : new Color(.60f, .65f, .69f);
+                bool glowing = headVisible && beat >= nextNote && beat <= windowEnd;
+                if (glowing) GlowingNotes++;
+                // A glowing note is white whatever its beat.
+                Color headColor = beat % 4 == 0 || glowing ? PrototypeView.InkWhite : new Color(.60f, .65f, .69f);
                 for (int side = 0; side < 2; side++)
                 {
                     var glyph = notes[side, i];
                     glyph.gameObject.SetActive(headVisible);
+                    var glow = glows[side, i];
+                    glow.gameObject.SetActive(glowing);
                     if (!headVisible) continue;
-                    glyph.rectTransform.anchoredPosition = new Vector2(Side(side, headX), noteY);
+                    var at = new Vector2(Side(side, headX), noteY);
+                    glyph.rectTransform.anchoredPosition = at;
                     glyph.color = holding ? PrototypeView.Accent : headColor;
+                    if (!glowing) continue;
+                    glow.rectTransform.anchoredPosition = at;
+                    glow.color = new Color(1, 1, 1, glowAlpha);
                 }
                 if (art)
                 {
@@ -194,7 +230,7 @@ namespace StringAsASword.Presentation
             bool visible = links > 0 && (fromVisible || toVisible);
             float end = Mathf.Min(toX, spawnX), start = fromVisible ? fromX : end - BeamStub;
             var color = new Color(headColor.r * SpriteTone, headColor.g * SpriteTone, headColor.b * SpriteTone, headColor.a);
-            float stem = SpriteHeight * (1 - HeadPivot), sin = Mathf.Sin(tilt), cos = Mathf.Cos(tilt);
+            float stem = spriteHeight * (1 - HeadPivot), sin = Mathf.Sin(tilt), cos = Mathf.Cos(tilt);
             for (int side = 0; side < 2; side++)
                 for (int n = 0; n < 2; n++)
                 {

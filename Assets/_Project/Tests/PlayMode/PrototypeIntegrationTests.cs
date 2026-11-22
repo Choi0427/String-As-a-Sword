@@ -296,11 +296,17 @@ namespace StringAsASword.Tests
             var noiseCell = new GridPosition(6, 1);
             game.Noise.CandidateAllowed = (cell, fallback) => cell.Equals(noiseCell);
             game.StartSession();
-            var hud = Object.FindAnyObjectByType<PrototypeView>().ResonanceHud;
+            var view = Object.FindAnyObjectByType<PrototypeView>();
+            var hud = view.ResonanceHud;
+            Assert.That(GameObject.Find("Resonance Band"),Is.Null,"The lanes no longer glow; the notes do.");
+            Assert.That(GameObject.Find("Resonance Gauge"),Is.Null,"No note count beside the judge lines; the glowing notes are the count.");
             int full = System.Linq.Enumerable.Sum(game.Stage.HealthSegments);
             yield return TapAtBeat(Key.W,0); // g1 to g2: lands on the noise
+            yield return null;
             Assert.That(game.Battle.Resonance.Charged,Is.True);
-            Assert.That(hud.ShownCharged,Is.True,"The lanes show the charge.");
+            Assert.That(hud.ShownCharged,Is.True,"The HUD shows the charge.");
+            Assert.That(view.Screens.JLit,Is.EqualTo(view.Screens.KeyGuideVisible),"The J key lights while the charge waits.");
+            Assert.That(view.Notes.GlowingNotes,Is.InRange(1,game.Battle.Resonance.Length),"The next notes glow faintly as a preview.");
             for(int beat=1;beat<6;beat++) yield return TapAtBeat(Key.W,beat); // g2 to g7
             Assert.That(game.Noise.Pickups,Is.Empty,"No noise spawns while the string is charged.");
             noiseCell = new GridPosition(0, 0); // the next one appears far away, after the resonance
@@ -310,9 +316,14 @@ namespace StringAsASword.Tests
             yield return TapAtBeat(Key.J,7); // ignition
             Assert.That(game.Battle.Resonance.EndNote,Is.EqualTo(14));
             Assert.That(hud.ShownRemaining,Is.EqualTo(7));
+            yield return null;
+            Assert.That(view.Screens.JLit,Is.False,"The light goes out once the charge is spent.");
+            Assert.That(view.Notes.GlowingNotes,Is.InRange(1,7),"Only the resonance notes left glow.");
             Assert.That(game.Health.TotalHp,Is.LessThan(full),"The igniting attack already hurts.");
             for(int beat=8;beat<15;beat++) yield return TapAtBeat(Key.J,beat);
             Assert.That(hud.ShownRemaining,Is.Zero);
+            yield return null;
+            Assert.That(view.Notes.GlowingNotes,Is.Zero,"No note glows after the resonance.");
             int afterResonance = game.Health.TotalHp;
             Assert.That(full - afterResonance,Is.InRange(8,18),"Eight notes at 1 or 2 each, plus a cadence of 2 at most.");
             yield return TapAtBeat(Key.J,15); // nothing left on the string

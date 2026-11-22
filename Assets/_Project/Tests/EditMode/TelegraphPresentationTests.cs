@@ -18,6 +18,18 @@ namespace StringAsASword.Tests
         }
 
         [Test]
+        public void JudgeLinesFlashBrighterForBetterJudgements()
+        {
+            float perfect = PrototypeView.JudgeGlowPeak(StringAsASword.Rhythm.Judgement.Perfect);
+            float good = PrototypeView.JudgeGlowPeak(StringAsASword.Rhythm.Judgement.Good);
+            float miss = PrototypeView.JudgeGlowPeak(StringAsASword.Rhythm.Judgement.Miss);
+            Assert.That(perfect, Is.EqualTo(1f));
+            Assert.That(good, Is.LessThan(perfect).And.GreaterThan(miss));
+            Assert.That(miss, Is.GreaterThan(0f), "a miss still shows, faintly");
+            Assert.That(PrototypeView.JudgeGlowPeak(StringAsASword.Rhythm.Judgement.None), Is.Zero);
+        }
+
+        [Test]
         public void FallbackTilesComeInTwoKindsAndOnlyTheStrongOneIsHatched()
         {
             var build = typeof(BoardWorldPresenter).GetMethod("TelegraphMesh", BindingFlags.Static | BindingFlags.NonPublic, null, new[] { typeof(bool), typeof(bool) }, null);

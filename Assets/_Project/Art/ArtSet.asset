@@ -62,7 +62,7 @@ MonoBehaviour:
   laneSprite: {fileID: 21300000, guid: cd5d76bcb9cf94e498cd3261a1d64cd2, type: 3}
   laneBoardGap: {x: 668, y: 1387}
   laneStrings: {x: 14, y: 128, z: 257}
-  laneNoteString: 190
+  laneNoteSpace: {x: 184, y: 260}
   laneRows: {x: 3, y: 6}
   laneBoardEdge: 4.38
   noteSprite: {fileID: 21300000, guid: 2b15bdc155187724d8b107e484c3a5ee, type: 3}

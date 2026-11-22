@@ -74,11 +74,13 @@ namespace StringAsASword.Presentation
         private TMP_Text stats, beatLabel, position, mode, countIn, devLabel;
         private GameObject overlay;
         private NotePresenter notes;
+        /// <summary>The scrolling notes on both lanes.</summary>
+        public NotePresenter Notes => notes;
         private BoardWorldPresenter boardWorld;
         private BossPortrait bossPortrait;
         public BossPortrait BossPortrait => bossPortrait;
         private ResonanceHud resonanceHud;
-        /// <summary>The lane glow, the remaining-notes gauge and the ghost strike of the resonance rule.</summary>
+        /// <summary>The remaining-notes gauge, the ignition flash and the ghost strike of the resonance rule.</summary>
         public ResonanceHud ResonanceHud => resonanceHud;
         private BossCrownView bossCrown;
         /// <summary>The crown over the boss picture that shows boss HP; null without crown art or a boss picture.</summary>
@@ -111,7 +113,11 @@ namespace StringAsASword.Presentation
         public int HpIconCount => hpIcons.Length;
         private Sprite OnSprite => hpStyle == PlayerHpStyle.Knights ? art.playerHpKnightOn : art.playerHpBarOn;
         private Sprite OffSprite => hpStyle == PlayerHpStyle.Knights ? art.playerHpKnightOff : art.playerHpBarOff;
-        private float pulseAge = 10;
+        // The judge lines flash on each judgement, brighter for a better one, then go dark.
+        private float judgeAge = 10, judgePeak;
+        private const float JudgeFadeSeconds = .12f;
+        /// <summary>The judge lines' glow opacity this frame (0 when no judgement is showing).</summary>
+        public float JudgeGlowAlpha { get; private set; }
         private const float OutcomeSeconds = .6f;
         private static readonly Color BlockedTint = new Color(.45f, .85f, 1f), HitTint = new Color(1f, .42f, .36f);
         private RectTransform outcomeFlash;
@@ -294,7 +300,7 @@ namespace StringAsASword.Presentation
                         new Color(InkWhite.r, InkWhite.g, InkWhite.b, s == 2 ? .55f : .3f));
                 judgeLines[(side + 1) / 2] = Bar("JudgeLine", side * judgeX, laneY, 4, span, InkWhite);
             }
-            BuildResonanceHud(judgeX, laneY, span, 0);
+            BuildResonanceHud();
             notes = new NotePresenter(root, art.noteSprite, art.holdBodySprite, art.holdTailSprite, judgeX, ScreenEdge, laneY, span);
         }
         // Delivered lane art: one sprite with strings on both sides and a gap for the board. Its height is fitted to the
@@ -317,8 +323,10 @@ namespace StringAsASword.Presentation
                 laneY + (art.laneStrings.y - sprite.rect.height * .5f) * scaleY), new Vector2(sprite.rect.width * scaleX, sprite.rect.height * scaleY));
             Image(lane, Color.white).sprite = sprite;
             float tilt = Mathf.Atan2(near.x - far.x, far.y - near.y);
-            // The notes ride their own string; the judge point is where the board's edge crosses it.
-            float noteY = BoardCenter.y + far.y - (art.laneNoteString - art.laneStrings.x) * scaleY;
+            // The note heads fill the space between the bottom two strings, tip to tip; the judge point is where the
+            // board's edge crosses the middle of that space.
+            float noteY = BoardCenter.y + far.y - ((art.laneNoteSpace.x + art.laneNoteSpace.y) * .5f - art.laneStrings.x) * scaleY;
+            float headHeight = (art.laneNoteSpace.y - art.laneNoteSpace.x) * scaleY;
             float noteX = Mathf.Lerp(near.x, far.x, Mathf.InverseLerp(near.y, far.y, noteY - BoardCenter.y));
             Vector2 middle = (near + far) * .5f;
             judgeLines = new UnityEngine.UI.Image[2]; judgeGlows = new UnityEngine.UI.Image[2];
@@ -333,15 +341,15 @@ namespace StringAsASword.Presentation
                 line.rectTransform.localRotation = turn;
                 judgeLines[(side + 1) / 2] = line; judgeGlows[(side + 1) / 2] = glow;
             }
-            BuildResonanceHud(middle.x, BoardCenter.y + middle.y, (far - near).magnitude + 8, tilt);
+            BuildResonanceHud();
             // No scrolling bar lines here: the art has its own frets, and each note carries a stem.
-            notes = new NotePresenter(root, art.noteSprite, art.holdBodySprite, art.holdTailSprite, noteX, ScreenEdge, noteY, 0, tilt);
+            notes = new NotePresenter(root, art.noteSprite, art.holdBodySprite, art.holdTailSprite, noteX, ScreenEdge, noteY, 0, tilt, headHeight);
         }
         // Under the notes, over the lanes.
-        private void BuildResonanceHud(float judgeX, float judgeY, float length, float tilt)
+        private void BuildResonanceHud()
         {
             resonanceHud = MakeRect(root, "Resonance", Vector2.zero, new Vector2(1600, 900)).gameObject.AddComponent<ResonanceHud>();
-            resonanceHud.Initialize(game, GlowSprite(), judgeX, judgeY, length, tilt, ScreenEdge);
+            resonanceHud.Initialize(game);
         }
         // A soft white band: opaque along its centre line, fading out to both sides.
         private static Sprite GlowSprite()
@@ -358,6 +366,24 @@ namespace StringAsASword.Presentation
             glowSprite = Sprite.Create(texture, new Rect(0, 0, width, 1), new Vector2(.5f, .5f));
             glowSprite.hideFlags = HideFlags.HideAndDontSave;
             return glowSprite;
+        }
+        private static Sprite softDotSprite;
+        /// <summary>A soft white dot: the same falloff as <see cref="GlowSprite"/>, round. For a lit key and glowing notes.</summary>
+        public static Sprite SoftDotSprite()
+        {
+            if (softDotSprite != null) return softDotSprite;
+            const int size = 32;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float r = Mathf.Clamp01(new Vector2((x + .5f) / size * 2 - 1, (y + .5f) / size * 2 - 1).magnitude);
+                    texture.SetPixel(x, y, new Color(1, 1, 1, Mathf.Pow(1 - r, 2)));
+                }
+            texture.Apply();
+            softDotSprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(.5f, .5f));
+            softDotSprite.hideFlags = HideFlags.HideAndDontSave;
+            return softDotSprite;
         }
         private void BuildOverlay()
         {
@@ -393,7 +419,7 @@ namespace StringAsASword.Presentation
         private readonly TMP_Text[] devLabels=new TMP_Text[6];
         public void ResetFeedback()
         {
-            pulseAge=10; impactAge=1; impactCells=0; lastClosedNote=-1;
+            judgeAge=10; judgePeak=0; JudgeGlowAlpha=0; impactAge=1; impactCells=0; lastClosedNote=-1;
             outcomeAge=10; seenRecords=game.Battle.Records.Count; outcomeFlash.gameObject.SetActive(false);
             Array.Clear(dangerCounts, 0, dangerCounts.Length);
             for (int i = 0; i < dangerBadges.Length; i++)
@@ -402,17 +428,31 @@ namespace StringAsASword.Presentation
             if (bossCrown != null) bossCrown.ResetVisuals();
             resonanceHud.ResetVisuals();
         }
-        public void Pulse() => pulseAge=0;
-        public void ShowAction(ActionResult result) => boardWorld.ShowAction(result);
-        // Hold releases and misses have no text readout in play; the notes and the board carry them.
-        public void ShowHold(TimingResult result) { }
-        public void ShowMiss(int beat) { }
+        /// <summary>A strike outside the judged notes (the finale): the judge lines flash as for a Perfect.</summary>
+        public void Pulse() => Judge(Judgement.Perfect);
+        public void ShowAction(ActionResult result)
+        {
+            boardWorld.ShowAction(result);
+            if (result.Accepted) Judge(result.Timing.Grade);
+        }
+        // Hold releases and misses have no text readout in play; the judge lines, the notes and the board carry them.
+        public void ShowHold(TimingResult result) => Judge(result.Grade);
+        public void ShowMiss(int beat) => Judge(Judgement.Miss);
+        /// <summary>How bright the judge lines flash for a judgement, as seen: Perfect full, Good about half, Miss faint.</summary>
+        public static float JudgeGlowPeak(Judgement grade) =>
+            grade == Judgement.Perfect ? 1f : grade == Judgement.Good ? .55f : grade == Judgement.Miss ? .25f : 0f;
+        private void Judge(Judgement grade)
+        {
+            float peak = JudgeGlowPeak(grade);
+            if (peak <= 0) return;
+            judgePeak = peak; judgeAge = 0;
+        }
         public void ShowDamage(int damage)
         {
             boardWorld.ShowDamage(damage);
             if (damage > 0 && bossPortrait != null) bossPortrait.Hurt();
         }
-        /// <summary>A noise pickup was collected. It charges the string (ResonanceHud shows the glow); nothing flies to the crown, which is boss HP only.</summary>
+        /// <summary>A noise pickup was collected. It charges the string (the J key lights, the next notes glow); nothing flies to the crown, which is boss HP only.</summary>
         public void ShowNoiseCollected(NoisePickup pickup) { }
         public void ShowIgnition(int note) => resonanceHud.Ignite();
         /// <summary>An attack without resonance: the blade passes through the boss.</summary>
@@ -456,7 +496,7 @@ namespace StringAsASword.Presentation
         public void ShowPhase(int phase) => boardWorld.ShowPhase();
         public void Render()
         {
-            pulseAge+=Time.unscaledDeltaTime;
+            judgeAge+=Time.unscaledDeltaTime;
             var cell=game.Session.Position;
             boardWorld.Render();
             RenderTelegraphs();
@@ -469,13 +509,16 @@ namespace StringAsASword.Presentation
             position.text=$"POSITION  {(char)('A'+cell.X)}{cell.Y+1}     /     " + (dangerCounts[cellIndex] > 0 ? TelegraphHud.ThreatText(dangerResponses[cellIndex], dangerRemaining[cellIndex], dangerCounts[cellIndex]) : "SAFE");
             beatLabel.text=game.CurrentBeat<0?"PREPARE":$"BEAT  {game.CurrentBeat+1:0000}   /   {game.CurrentBeat%4+1}:4";
             mode.text=game.Song.Music!=null?"SONG AUDIO":game.MetronomeMuted?"METRONOME / MUTED":"METRONOME / ON";
-            // The judge lines flash on the beat pulse, then settle back to white.
-            // With the glow, the lines stay white and the glow swells on the beat pulse instead.
+            // No glow at rest: each judgement flashes it, as bright as the judgement was good, and it fades out.
+            // Without the glow (prototype lanes) the lines themselves take the flash.
+            // The peaks are brightness as seen; the project blends in linear space, so the opacity is that to the 2.2
+            // (as UiKit.CardFill), or a half-bright Good would read almost like a Perfect.
+            JudgeGlowAlpha = Mathf.Pow(judgePeak * Mathf.Exp(-judgeAge / JudgeFadeSeconds), 2.2f);
             if (judgeGlows != null)
-                foreach (var glow in judgeGlows) glow.color = new Color(1, 1, 1, Mathf.Lerp(.55f, 1, Mathf.Exp(-8 * pulseAge)));
-            else foreach (var line in judgeLines) line.color = Color.Lerp(InkWhite, Accent, Mathf.Exp(-8 * pulseAge));
+                foreach (var glow in judgeGlows) glow.color = new Color(1, 1, 1, JudgeGlowAlpha);
+            else foreach (var line in judgeLines) line.color = Color.Lerp(InkWhite, Accent, JudgeGlowAlpha);
             resonanceHud.Render();
-            notes.Render(game);
+            notes.Render(game, resonanceHud.Ignite01);
             // Counts down to the first note, or after a resume to the place the song was paused.
             double readyAt=game.State==PrototypeState.CountIn?0:game.State==PrototypeState.Playing&&game.SongTime<game.ResumeAt?game.ResumeAt:double.NaN;
             countIn.text=double.IsNaN(readyAt)?"":$"GET READY  {Mathf.Clamp((int)Math.Ceiling((readyAt-game.SongTime)/game.Timeline.SecondsPerBeat),1,game.Song.CountInBeats)}";

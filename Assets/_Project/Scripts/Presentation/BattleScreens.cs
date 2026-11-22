@@ -21,6 +21,9 @@ namespace StringAsASword.Presentation
         private PrototypeGame game;
         private TMP_FontAsset itemFont, titleFont;
         private GameObject keyGuide;
+        private CanvasGroup jLight;
+        private float jGlow;
+        private const float JFadeSeconds = .12f;
         private Panel pause, gameOver;
         private TMP_Text gameOverTitle;
         private SettingsPanel settings;
@@ -33,6 +36,10 @@ namespace StringAsASword.Presentation
         public bool KeyGuideVisible => keyGuide != null && keyGuide.activeSelf;
         /// <summary>The bottom key guide's opacity: the tutorial dims it while its own prompt is up, so only one is emphasised.</summary>
         public float KeyGuideAlpha { get; set; } = 1;
+        /// <summary>The J key is lit: a collected noise has charged the string and waits for an attack.</summary>
+        public bool JLit { get; private set; }
+        /// <summary>The J light's shown opacity (fades with the key guide).</summary>
+        public float JLightAlpha => jLight != null ? jLight.alpha : 0;
         public string GameOverTitle => gameOverTitle.text;
 
         /// <summary>Builds the screens over <paramref name="parent"/> (the 1600x900 battle content), scaled from 1920x1080.</summary>
@@ -52,6 +59,17 @@ namespace StringAsASword.Presentation
             var frame = (RectTransform)transform;
             if (art.keyGuide != null)
             {
+                // The J key lights from behind while a charge waits for its attack: the guide's key caps are almost
+                // see-through (fill alpha 3/255), so a soft halo and a fill under the picture read as a lit key.
+                // Game Play / 공격 / J: 50 x 50 at (945.5, 965.8).
+                var light = TopLeft(Rect(frame, "J Light"), 945.48f, 965.83f, 50, 50);
+                jLight = light.gameObject.AddComponent<CanvasGroup>();
+                jLight.alpha = 0; jLight.blocksRaycasts = false; jLight.interactable = false;
+                var halo = Image(Rect(light, "Halo", Vector2.zero, new Vector2(104, 104)), Color.white);
+                halo.sprite = PrototypeView.SoftDotSprite(); halo.color = new Color(1, 1, 1, .35f);
+                var fill = Image(Stretch(Rect(light, "Fill")), new Color(Ink.r, Ink.g, Ink.b, .3f));
+                // Inside the cap's rounded border.
+                fill.rectTransform.offsetMin = new Vector2(2, 2); fill.rectTransform.offsetMax = new Vector2(-2, -2);
                 // Game Play / 키 가이드: 723 x 104 at (598.5, 938.7).
                 var guide = Image(TopLeft(Rect(frame, "Key Guide"), 598.45f, 938.74f, 723.10f, 104.17f), Color.white);
                 guide.sprite = art.keyGuide; guide.preserveAspect = true;
@@ -80,6 +98,13 @@ namespace StringAsASword.Presentation
                 keyGuide.SetActive(state != PrototypeState.Epilogue);
                 var guide = keyGuide.GetComponent<UnityEngine.UI.Image>();
                 if (!Mathf.Approximately(guide.color.a, KeyGuideAlpha)) guide.color = new Color(1, 1, 1, KeyGuideAlpha);
+                bool playing = state == PrototypeState.Playing || state == PrototypeState.CountIn || state == PrototypeState.Paused ||
+                    state == PrototypeState.Tutorial;
+                JLit = playing && game.Battle != null && game.Battle.Resonance.Charged;
+                jGlow = Mathf.MoveTowards(jGlow, JLit ? 1 : 0, Time.unscaledDeltaTime / JFadeSeconds);
+                // Breathes at the charge's slow rate, never fully dark while lit.
+                float breath = .78f + .22f * Mathf.Sin(Time.unscaledTime * 3.2f);
+                jLight.alpha = jGlow * breath * KeyGuideAlpha;
             }
             var wanted = state == PrototypeState.Paused ? ScreenKind.Pause : state == PrototypeState.Finished ? ScreenKind.GameOver : ScreenKind.None;
             if (wanted != Showing) Show(wanted);
