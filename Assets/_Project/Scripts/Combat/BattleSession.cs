@@ -112,7 +112,11 @@ namespace StringAsASword.Combat
             Resonance.GhostStrike += n => { AddEvent("ghost-strike", "", Session.Position); Events[Events.Count - 1].noteIndex = n; };
             Resonance.Cadence += n => { AddEvent("resonance-cadence", "", Session.Position); Events[Events.Count - 1].noteIndex = n; };
             Noise.Spawned += n => AddEvent("noise-spawn", n.Id.ToString(), n.Cell, n.Id);
-            Noise.CollectedPickup += n => AddEvent("noise-collect", n.Id.ToString(), n.Cell, n.Id);
+            Noise.CollectedPickup += n =>
+            {
+                AddEvent("noise-collect", n.Id.ToString(), n.Cell, n.Id);
+                if (HealOnNoise && PlayerHp > 0 && PlayerHp < Settings.PlayerMaxHp) { PlayerHp++; AddEvent("player-heal", PlayerHp.ToString(), n.Cell, n.Id); }
+            };
             Noise.SpawnStatus += (reason, beat) => Events.Add(new BattleEvent { type = "noise-" + reason, musicBeat = beat, noteIndex = LastClosedNote, phase = Phases.PhaseId });
             Reset(1, seed);
         }
@@ -140,6 +144,8 @@ namespace StringAsASword.Combat
             => Patterns.Inject(shape, LastClosedNote + warning, warning, Session.Position, LastClosedNote, Settings.NoteCount);
         /// <summary>Developer mode: hits still land and show, but cost no HP.</summary>
         public bool Invincible { get; set; }
+        /// <summary>Difficulty 쉬움: each collected noise heals 1 HP, never above <see cref="BattleSettings.PlayerMaxHp"/>.</summary>
+        public bool HealOnNoise { get; set; }
         /// <summary>Developer mode: the finishing run wins the battle whatever boss HP is left.</summary>
         public bool IgnoreBossHp { get; set; }
         /// <summary>Developer mode: empties the boss HP of the phases before this one (1..4) and opens it. Never goes back.</summary>

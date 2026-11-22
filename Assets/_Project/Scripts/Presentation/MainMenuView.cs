@@ -11,9 +11,8 @@ namespace StringAsASword.Presentation
 {
     /// <summary>
     /// Main menu from the Figma frame "Main Menu" (1920x1080): background art, 시작 / 설정 / 종료, footer credit.
-    /// After a clear the left side of the art is inverted to white (the chessboard stays).
+    /// After a clear the art turns white (Figma "Main Menu_White"; without it the left side is inverted in code).
     /// 시작 always opens with the prologue, then the tutorial, then the song (Esc skips the prologue and the tutorial).
-    /// Settings > 튜토리얼 plays the tutorial alone, then the song.
     /// </summary>
     public sealed class MainMenuView : MonoBehaviour
     {
@@ -37,7 +36,7 @@ namespace StringAsASword.Presentation
         private TMP_Text footer;
         private int selected = -1;
         private SettingsPanel settings;
-        /// <summary>The settings panel (with its 튜토리얼 button).</summary>
+        /// <summary>The settings panel.</summary>
         public SettingsPanel Settings => settings;
         private bool leaving;
         public bool White { get; private set; }
@@ -85,7 +84,7 @@ namespace StringAsASword.Presentation
                 button.Hovered = () => Select(index); button.Clicked = () => Activate(index);
             }
             footer = Label(TopLeft(Rect(root, "Credit"), 15, 1052, 400, 21), "Inspired by 이승윤 <검을 현>", 16, Footer, TextAlignmentOptions.TopLeft);
-            settings = SettingsPanel.Create(root, font);
+            settings = SettingsPanel.Create(root, art);
             settings.TutorialRequested += () => Leave(prologue: false, tutorial: true);
             ApplyTheme();
             Select(-1);

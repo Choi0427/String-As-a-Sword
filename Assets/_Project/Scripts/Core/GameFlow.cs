@@ -5,6 +5,8 @@ namespace StringAsASword.Core
 {
     /// <summary>Player HP under the knight: a row of bar segments, or a row of knight icons.</summary>
     public enum PlayerHpStyle { Bar = 0, Knights = 1 }
+    /// <summary>쉬움: each collected noise heals 1 HP (up to the stage's max). 어려움: the plain rules.</summary>
+    public enum GameDifficulty { Easy = 0, Hard = 1 }
 
     /// <summary>
     /// Scene flow and saved player settings: main menu → 시작: prologue → tutorial → battle → ending → main menu.
@@ -15,7 +17,7 @@ namespace StringAsASword.Core
         public const string MenuScene = "MainMenu", BattleScene = "RhythmPrototype";
         private const string ClearedKey = "StringAsASword.Cleared", VolumeKey = "StringAsASword.MusicVolume",
             InputKey = "StringAsASword.InputOffsetMs", VisualKey = "StringAsASword.VisualOffsetMs", DevKey = "StringAsASword.DevMode",
-            HpStyleKey = "StringAsASword.PlayerHpStyle";
+            HpStyleKey = "StringAsASword.PlayerHpStyle", DifficultyKey = "StringAsASword.Difficulty";
 
         /// <summary>Set by the menu so the battle starts its count-in without the ready overlay.</summary>
         public static bool AutoStartBattle { get; private set; }
@@ -48,7 +50,7 @@ namespace StringAsASword.Core
             set { PlayerPrefs.SetInt(VisualKey, Mathf.Clamp(value, -200, 200)); PlayerPrefs.Save(); }
         }
 
-        /// <summary>Developer mode (saved): shows the phase and invincibility controls in the menus and turns on F1-F5 in battle.</summary>
+        /// <summary>Developer mode (saved; Shift+D in the settings): shows the phase and invincibility switches under the settings card and turns on F1-F5 in battle.</summary>
         public static bool DevMode
         {
             get => PlayerPrefs.GetInt(DevKey, 0) == 1;
@@ -61,6 +63,13 @@ namespace StringAsASword.Core
         public static bool BossHpOff { get => DevMode && devBossHpOff; set => devBossHpOff = value; }
         /// <summary>The boss phase (1..4) a battle starts in.</summary>
         public static int StartPhase { get => DevMode ? devStartPhase : 1; set => devStartPhase = Mathf.Clamp(value, 1, 4); }
+
+        /// <summary>Saved; 어려움 (the plain rules) until the player picks 쉬움.</summary>
+        public static GameDifficulty Difficulty
+        {
+            get => PlayerPrefs.GetInt(DifficultyKey, (int)GameDifficulty.Hard) == 0 ? GameDifficulty.Easy : GameDifficulty.Hard;
+            set { PlayerPrefs.SetInt(DifficultyKey, (int)value); PlayerPrefs.Save(); }
+        }
 
         /// <summary>How the player's HP is drawn under the knight.</summary>
         public static PlayerHpStyle HpStyle

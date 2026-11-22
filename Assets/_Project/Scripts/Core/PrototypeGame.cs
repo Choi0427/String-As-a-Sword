@@ -162,7 +162,7 @@ namespace StringAsASword.Core
             CurrentBeat = -1; SessionId++;
             runSaved = false; ResumeAt = double.NegativeInfinity;
             Battle.Reset(SessionId, stage.NoiseSeed);
-            Battle.Invincible = GameFlow.Invincible; Battle.IgnoreBossHp = GameFlow.BossHpOff;
+            ApplySwitches();
             State = PrototypeState.Prologue; view.ResetFeedback();
             ScheduledSongAudio.Preload(song);
             intro.Play();
@@ -245,7 +245,7 @@ namespace StringAsASword.Core
             Bind(mainBattle, mainTimeline);
             CurrentBeat = -1; runSaved = false; ResumeAt = double.NegativeInfinity;
             Battle.Reset(SessionId, stage.NoiseSeed);
-            Battle.Invincible = GameFlow.Invincible; Battle.IgnoreBossHp = GameFlow.BossHpOff;
+            ApplySwitches();
             clock.StartAt(downbeatDsp - IntroTimeline.HandoverSongTime(Timeline));
             previousTime = SongTime; input.Clear();
             audioPlayer.Begin(song, clock, Timeline, countInClicks: false);
@@ -283,7 +283,7 @@ namespace StringAsASword.Core
                 clock.Start(.30 - from);
             }
             else clock.Start(.30 + song.AudioStartOffset);
-            Battle.Invincible = GameFlow.Invincible; Battle.IgnoreBossHp = GameFlow.BossHpOff;
+            ApplySwitches();
             previousTime = SongTime;
             State = PrototypeState.Playing; view.ResetFeedback();
             audioPlayer.Begin(song, clock, Timeline, countInClicks: false);
@@ -325,10 +325,13 @@ namespace StringAsASword.Core
             if (inputOffsetMs != GameFlow.InputOffsetMs && GameFlow.HasMenu) { SaveRun("Restarted"); GameFlow.StartBattle(); return; }
             StartSession();
         }
-        /// <summary>The pause settings closed: apply what can change mid-battle (developer switches; volume and sync apply on resume).</summary>
-        public void ApplySettings()
+        /// <summary>The pause settings closed: apply what can change mid-battle (developer switches, difficulty; volume and sync apply on resume).</summary>
+        public void ApplySettings() => ApplySwitches();
+        /// <summary>The run's switches from the saved settings: the developer switches and the difficulty.</summary>
+        private void ApplySwitches()
         {
             Battle.Invincible = GameFlow.Invincible; Battle.IgnoreBossHp = GameFlow.BossHpOff;
+            Battle.HealOnNoise = GameFlow.Difficulty == GameDifficulty.Easy;
         }
         public void QuitGame()
         {

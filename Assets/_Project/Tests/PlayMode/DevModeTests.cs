@@ -26,7 +26,7 @@ namespace StringAsASword.Tests
             yield return null;
             var menu = Object.FindAnyObjectByType<MainMenuView>();
             menu.Activate(MainMenuView.SettingsItem);
-            Assert.That(menu.transform.Find("Settings/Card/무적").gameObject.activeSelf, Is.False, "Hidden until developer mode is on.");
+            Assert.That(menu.transform.Find("Settings/Frame/Dev").gameObject.activeSelf, Is.False, "Hidden until developer mode is on.");
             menu.ChooseSetting("무적", 1); menu.ChooseSetting("시작 페이즈", 2);
             Assert.That(GameFlow.Invincible, Is.False, "Without developer mode nothing applies.");
             Assert.That(GameFlow.StartPhase, Is.EqualTo(1));
@@ -34,7 +34,7 @@ namespace StringAsASword.Tests
             Assert.That(GameFlow.BossHpOff, Is.False, "Boss HP is on unless switched off.");
             menu.ChooseSetting("보스 HP", 0);
             Assert.That(GameFlow.BossHpOff);
-            Assert.That(menu.transform.Find("Settings/Card/무적").gameObject.activeSelf);
+            Assert.That(menu.transform.Find("Settings/Frame/Dev/무적").gameObject.activeInHierarchy);
             Assert.That(GameFlow.Invincible); Assert.That(GameFlow.StartPhase, Is.EqualTo(3));
 
             GameFlow.StartBattle();
