@@ -79,9 +79,12 @@ namespace StringAsASword.Presentation
                 boxes[i] = Image(TopLeft(Rect(item, "Hover"), 4.25f, 14.67f, TwoLetterBox * letters, 66.24f), HoverBox);
                 labels[i] = Label(Stretch(Rect(item, "Label")), MenuLabels[i], MenuSize, Menu, TextAlignmentOptions.TopLeft); // child: drawn above the box
                 labels[i].characterSpacing = -4; // -3.2 px at 80 px
-                var hit = Image(Stretch(Rect(item, "Hit")), new Color(0, 0, 0, 0)); hit.raycastTarget = true;
+                // The pointer area is the visible hover box, so the effect shows only while the mouse is on the button itself.
+                var hit = Image(TopLeft(Rect(item, "Hit"), 4.25f, 14.67f, TwoLetterBox * letters, 66.24f), new Color(0, 0, 0, 0)); hit.raycastTarget = true;
                 var button = hit.gameObject.AddComponent<MenuButton>();
                 button.Hovered = () => Select(index); button.Clicked = () => Activate(index);
+                // Leaving the button clears its hover. A keyboard selection made since then (W/S) is left alone.
+                button.Exited = () => { if (selected == index) Select(-1); };
             }
             footer = Label(TopLeft(Rect(root, "Credit"), 15, 1052, 400, 21), "Inspired by 이승윤 <검을 현>", 16, Footer, TextAlignmentOptions.TopLeft);
             settings = SettingsPanel.Create(root, art);

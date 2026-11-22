@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using StringAsASword.Combat;
 using StringAsASword.Core;
-using TMPro;
 using UnityEngine;
 
 namespace StringAsASword.Presentation
@@ -47,7 +46,7 @@ namespace StringAsASword.Presentation
         private UnityEngine.UI.Image[] wholeBoard;
         /// <summary>The whole-board layers' opacity now, back to front (tests and captures).</summary>
         public float[] WholeBoardAlpha => wholeBoard == null ? new float[0] : System.Array.ConvertAll(wholeBoard, i => i == null ? 0 : i.color.a);
-        private TMP_Text skipHint;
+        private CanvasGroup skipHintGroup;
         private KeyPromptCard prompt;
         private CanvasGroup contentGroup, bossGroup;
         private Material flatTemplate;
@@ -707,14 +706,10 @@ namespace StringAsASword.Presentation
             Stretch(introView.rectTransform); introView.raycastTarget = false;
             flash = FullScreen("Crack Flash", Color.white);
             barTop = Bar("Letterbox Top", 1); barBottom = Bar("Letterbox Bottom", 0);
-            var font = UiFonts.Korean(view.Art.menuFont, view.LatinFont);
+            var art = view.Art;
+            var font = UiFonts.Korean(art.screenFont != null ? art.screenFont : art.menuFont, view.LatinFont);
             BuildPrompt();
-            skipHint = PrototypeView.MakeRect(barBottom.rectTransform, "Skip Hint", Vector2.zero, new Vector2(400, 40)).gameObject.AddComponent<TextMeshProUGUI>();
-            var hintRect = skipHint.rectTransform; hintRect.anchorMin = hintRect.anchorMax = hintRect.pivot = new Vector2(1, .5f);
-            hintRect.anchoredPosition = new Vector2(-40, 0);
-            if (font != null) skipHint.font = font;
-            skipHint.fontSize = 18; skipHint.alignment = TextAlignmentOptions.Right; skipHint.raycastTarget = false;
-            skipHint.text = "ESC  건너뛰기"; skipHint.color = new Color(1, 1, 1, .45f);
+            skipHintGroup = Letterbox.MakeSkipHint(barBottom.rectTransform, font, art.skipKeyIcon);
             contentGroup = Group(view.ContentRect);
             if (view.BossPortrait != null) bossGroup = Group((RectTransform)view.BossPortrait.transform);
             layer.gameObject.SetActive(false);
@@ -723,7 +718,12 @@ namespace StringAsASword.Presentation
         /// The J prompt on a card like the pause screen's, so it reads over any part of the board. 5 px in the 1920 frame is
         /// about 4 on this 1600 canvas.
         /// </summary>
-        private void BuildPrompt() => prompt = new KeyPromptCard(layer, "Prompt", view.Art, view.LatinFont, 84, 40, 36);
+        private void BuildPrompt()
+        {
+            prompt = new KeyPromptCard(layer, "Prompt", view.Art, view.LatinFont, 84, 40, 36);
+            // The J of '줄을 끊는다' is the delivered key art (ArtSet.promptJKeyIcon); without it, the plain keycap.
+            prompt.SetKeyIcon("J", view.Art.promptJKeyIcon);
+        }
         private void RenderLayer(float s)
         {
             // The board is whole and the world around it empty until the string tears; then it cracks into the battle's
@@ -746,7 +746,7 @@ namespace StringAsASword.Presentation
             barTop.rectTransform.sizeDelta = barBottom.rectTransform.sizeDelta = new Vector2(0, bar);
             barTop.rectTransform.anchoredPosition = new Vector2(0, bar * (1 - bars));
             barBottom.rectTransform.anchoredPosition = new Vector2(0, -bar * (1 - bars));
-            skipHint.alpha = .45f * bars;
+            skipHintGroup.alpha = Letterbox.SkipHintOpacity * bars;
             // The handover: the battle's own picture comes up over one beat while the prologue's goes.
             float handover = Smooth(s, Handover + 1, End - .15f);
             SetGroups(handover);

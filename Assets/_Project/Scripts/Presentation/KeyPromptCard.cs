@@ -40,6 +40,7 @@ namespace StringAsASword.Presentation
         private readonly Sprite guide;
         private readonly Dictionary<string, Sprite> guideSprites = new Dictionary<string, Sprite>();
         private readonly List<UnityEngine.UI.Image> guideKeys = new List<UnityEngine.UI.Image>();
+        private readonly Dictionary<string, Sprite> keyIcons = new Dictionary<string, Sprite>();
         private PromptPart[] shown = new PromptPart[0];
         public RectTransform Rect { get; }
         public Vector2 Size => Rect.sizeDelta;
@@ -68,6 +69,15 @@ namespace StringAsASword.Presentation
             UiKit.Stroke(Rect, Ink, Stroke);
             Rect.gameObject.SetActive(false);
         }
+        /// <summary>
+        /// Draws <paramref name="key"/> as this picture, at the keycap's height, instead of a keycap or the key guide's cut
+        /// (null goes back to those). It kicks on the beat like a keycap.
+        /// </summary>
+        public void SetKeyIcon(string key, Sprite icon)
+        {
+            if (icon != null) keyIcons[key] = icon; else keyIcons.Remove(key);
+            shown = new PromptPart[0]; // lay the card out again on the next Show
+        }
         /// <summary>A key and a line of text (either may be empty).</summary>
         public void Show(string key, string text)
         {
@@ -81,21 +91,34 @@ namespace StringAsASword.Presentation
             Rect.gameObject.SetActive(true);
             if (Same(parts)) return;
             shown = (PromptPart[])parts.Clone();
-            int keyCount = 0, labelCount = 0, guideCount = 0;
+            // Pictures (key icons and guide cuts) share one pool of images; GuideKeysShown counts only the guide's cuts.
+            int keyCount = 0, labelCount = 0, imageCount = 0, guideCount = 0;
             // A guide key is drawn at the plain keycap's size (one 100 px cap = keySize), so the ㅗ cluster sets the card taller.
             float cardHeight = height, guideScale = keySize / GuideCap;
             foreach (var part in parts)
-                if (part.Type == PromptPart.Kind.Key && GuideSprite(part.Value) != null)
+                if (part.Type == PromptPart.Kind.Key && !keyIcons.ContainsKey(part.Value) && GuideSprite(part.Value) != null)
                     cardHeight = Mathf.Max(cardHeight, GuideCrops[part.Value].height * guideScale + 2 * GuideMargin);
             float x = Padding;
             for (int i = 0; i < parts.Length; i++)
             {
                 var part = parts[i];
                 if (i > 0) x += part.Type == PromptPart.Kind.Small || parts[i - 1].Type == PromptPart.Kind.Small ? SmallGap : Gap;
-                var cut = part.Type == PromptPart.Kind.Key ? GuideSprite(part.Value) : null;
-                if (cut != null)
+                Sprite icon = null;
+                if (part.Type == PromptPart.Kind.Key) keyIcons.TryGetValue(part.Value, out icon);
+                var cut = part.Type == PromptPart.Kind.Key && icon == null ? GuideSprite(part.Value) : null;
+                if (icon != null)
                 {
-                    var image = GuideKeyAt(guideCount++);
+                    var image = GuideKeyAt(imageCount++);
+                    image.sprite = icon;
+                    var size = new Vector2(keySize * icon.rect.width / icon.rect.height, keySize);
+                    image.rectTransform.sizeDelta = size;
+                    image.rectTransform.anchoredPosition = new Vector2(x + size.x * .5f, 0);
+                    x += size.x;
+                }
+                else if (cut != null)
+                {
+                    guideCount++;
+                    var image = GuideKeyAt(imageCount++);
                     image.sprite = cut;
                     var size = GuideCrops[part.Value].size * guideScale;
                     image.rectTransform.sizeDelta = size;
@@ -126,7 +149,7 @@ namespace StringAsASword.Presentation
             }
             for (int i = 0; i < keys.Count; i++) keys[i].gameObject.SetActive(i < keyCount);
             for (int i = 0; i < labels.Count; i++) labels[i].gameObject.SetActive(i < labelCount);
-            for (int i = 0; i < guideKeys.Count; i++) guideKeys[i].gameObject.SetActive(i < guideCount);
+            for (int i = 0; i < guideKeys.Count; i++) guideKeys[i].gameObject.SetActive(i < imageCount);
             GuideKeysShown = guideCount;
             Rect.sizeDelta = new Vector2(x + Padding + 8, cardHeight);
         }

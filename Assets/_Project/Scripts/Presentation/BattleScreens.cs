@@ -268,9 +268,13 @@ namespace StringAsASword.Presentation
                     boxes[i].rectTransform.offsetMin = new Vector2(-14, 14); boxes[i].rectTransform.offsetMax = new Vector2(14, -14);
                     labels[i] = Label(Stretch(Rect(item, "Label")), items[i].Text, ItemSize, Ink, TextAlignmentOptions.Center, owner.itemFont);
                     labels[i].characterSpacing = ItemSpacing;
+                    // The pointer area is the hover box itself, so the effect shows only while the mouse is on it.
                     var hit = Image(Stretch(Rect(item, "Hit")), new Color(0, 0, 0, 0)); hit.raycastTarget = true;
+                    hit.rectTransform.offsetMin = boxes[i].rectTransform.offsetMin; hit.rectTransform.offsetMax = boxes[i].rectTransform.offsetMax;
                     var button = hit.gameObject.AddComponent<MenuButton>();
                     button.Hovered = () => Select(index); button.Clicked = () => Press(index);
+                    // Leaving the item clears its hover. A keyboard pick made since then (W/S) is left alone.
+                    button.Exited = () => { if (Selected == index) Select(-1); };
                 }
                 Select(-1);
             }

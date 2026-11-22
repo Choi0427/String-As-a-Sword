@@ -14,6 +14,7 @@ namespace StringAsASword.Presentation
         private PrototypeGame game;
         private GameObject world;
         private Transform player, knightBody, selection, sword, shield;
+        private SpriteRenderer slashRenderer;
         private Transform[] pickups;
         private Renderer[][] pickupRenderers;
         private Material noiseMaterial;
@@ -182,20 +183,55 @@ namespace StringAsASword.Presentation
             }
             BuildNoise();
             BuildTelegraphs();
-            sword = new GameObject("Sword Swing").transform; sword.SetParent(player, false);
-            var arc = sword.gameObject.AddComponent<LineRenderer>();
-            arc.useWorldSpace = false; arc.sharedMaterial = gold; arc.startWidth = .10f; arc.endWidth = .018f;
-            arc.positionCount = 18; arc.numCapVertices = 3;
-            for (int i = 0; i < 18; i++)
-            {
-                float angle = Mathf.Lerp(-100, 95, i / 17f) * Mathf.Deg2Rad;
-                arc.SetPosition(i, new Vector3(Mathf.Sin(angle) * .72f, .52f + i * .022f, Mathf.Cos(angle) * .68f));
-            }
-            sword.gameObject.SetActive(false);
+            BuildSwordSwing(gold);
             BuildShield();
             BuildBreak();
             ResetVisuals();
         }
+        private const float SlashFps = 24f;
+
+        private void BuildSwordSwing(Material fallbackMaterial)
+        {
+            sword = new GameObject("Sword Swing").transform;
+            sword.SetParent(player, false);
+            if (art.attackSlashFrames != null && art.attackSlashFrames.Length > 0)
+            {
+                slashRenderer = sword.gameObject.AddComponent<SpriteRenderer>();
+                slashRenderer.sharedMaterial = BoardSpriteMaterial();
+                slashRenderer.sortingOrder = 2;
+                sword.localPosition = Vector3.up * .96f + BoardCamera.transform.localRotation * Vector3.back * .2f;
+                sword.localRotation = BoardCamera.transform.localRotation;
+            }
+            else
+            {
+                var arc = sword.gameObject.AddComponent<LineRenderer>();
+                arc.useWorldSpace = false; arc.sharedMaterial = fallbackMaterial; arc.startWidth = .10f; arc.endWidth = .018f;
+                arc.positionCount = 18; arc.numCapVertices = 3;
+                for (int i = 0; i < 18; i++)
+                {
+                    float angle = Mathf.Lerp(-100, 95, i / 17f) * Mathf.Deg2Rad;
+                    arc.SetPosition(i, new Vector3(Mathf.Sin(angle) * .72f, .52f + i * .022f, Mathf.Cos(angle) * .68f));
+                }
+            }
+            sword.gameObject.SetActive(false);
+        }
+
+        private void RenderSwordSwing()
+        {
+            if (!sword.gameObject.activeSelf) return;
+            if (slashRenderer != null)
+            {
+                int frame = (int)(attackAge * SlashFps);
+                bool visible = frame < art.attackSlashFrames.Length;
+                sword.gameObject.SetActive(visible);
+                if (visible) slashRenderer.sprite = art.attackSlashFrames[frame];
+                return;
+            }
+
+            sword.gameObject.SetActive(attackAge < .23f);
+            sword.localRotation = Quaternion.Euler(0, -80 + attackAge / .23f * 125, 0);
+        }
+
         private void BuildBreak()
         {
             viewHome = ((RectTransform)transform).anchoredPosition;
@@ -793,7 +829,13 @@ namespace StringAsASword.Presentation
         public void ShowAction(ActionResult result)
         {
             if (!result.Accepted) return;
-            if (result.Kind == PlayerActionKind.Attack) { attackAge = 0; Cue("Attack", art.attackVfx); }
+            if (result.Kind == PlayerActionKind.Attack)
+            {
+                attackAge = 0;
+                sword.gameObject.SetActive(true);
+                RenderSwordSwing();
+                Cue("Attack", art.attackVfx);
+            }
             if (result.Kind == PlayerActionKind.Guard) { guardAge = 0; guardNote = result.Timing.BeatId; Cue("Guard", art.guardVfx); }
         }
         public void ShowOutcome(string text)
@@ -853,12 +895,12 @@ namespace StringAsASword.Presentation
             }
             if (game.Noise.Collected > lastCollected) ArtCue.Spawn(art.pickupVfx, world.transform, target);
             lastCollected = game.Noise.Collected;
-            moveAge += dt; attackAge += dt; guardAge += dt;
+            moveAge += dt; guardAge += dt;
             float t = Mathf.Clamp01(moveAge / moveSeconds);
             player.localPosition = Vector3.Lerp(moveFrom, moveTarget, Mathf.SmoothStep(0, 1, t)) + Vector3.up * (Mathf.Sin(t * Mathf.PI) * moveHeight);
             selection.localPosition = target;
-            sword.gameObject.SetActive(attackAge < .23f);
-            sword.localRotation = Quaternion.Euler(0, -80 + attackAge / .23f * 125, 0);
+            RenderSwordSwing();
+            attackAge += dt;
             bool guarding = guardAge < .34f && game.Battle.LastClosedNote < guardNote;
             shield.gameObject.SetActive(guarding);
             shield.localScale = Vector3.one * (.85f + .15f * Mathf.Sin(Mathf.Clamp01(guardAge / .34f) * Mathf.PI));
@@ -1416,18 +1458,25 @@ namespace StringAsASword.Presentation
                 item.gameObject.SetActive(false);
             }
         }
-        // The delivered noise picture: a camera-facing sprite that hovers well above its cell, with a soft shadow
-        // on the cell that tightens and darkens as the sprite dips, so it reads as floating rather than lying on the board.
+        private Material BoardSpriteMaterial()
+        {
+            if (art.noiseMaterial != null) return art.noiseMaterial;
+            if (spriteMaterial == null)
+            {
+                spriteMaterial = new Material(Shader.Find(NoiseShader)) { name = "Board Sprite" };
+                resources.Add(spriteMaterial);
+            }
+            return spriteMaterial;
+        }
+
+        // The picture hovers above the cell while its shadow stays on the board.
         private Transform BuildNoiseSprite(int index)
         {
             if (noiseSprites == null)
             {
                 noiseSprites = new SpriteRenderer[pickups.Length]; noiseShadows = new SpriteRenderer[pickups.Length]; noiseFloats = new Transform[pickups.Length];
                 noiseBackings = new SpriteRenderer[pickups.Length];
-                // URP's own sprite shader: the legacy Sprites/Default ignores the colours in this pipeline and draws the
-                // picture, its black glow and the shadow all white, which hides the white line on light tiles.
-                spriteMaterial = art.noiseMaterial;
-                if (spriteMaterial == null) { spriteMaterial = new Material(Shader.Find(NoiseShader)) { name = "Noise Sprite" }; resources.Add(spriteMaterial); }
+                spriteMaterial = BoardSpriteMaterial();
             }
             var item = new GameObject($"Noise_{index}").transform; item.SetParent(world.transform, false);
             var shadow = new GameObject("Noise Shadow", typeof(SpriteRenderer)).GetComponent<SpriteRenderer>();

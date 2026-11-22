@@ -71,10 +71,13 @@ namespace StringAsASword.Core
             set { PlayerPrefs.SetInt(DifficultyKey, (int)value); PlayerPrefs.Save(); }
         }
 
-        /// <summary>How the player's HP is drawn under the knight.</summary>
+        /// <summary>
+        /// How the player's HP is drawn under the knight: knight icons unless a bar was saved. The settings card no longer
+        /// offers the choice (it follows the Figma rows), so this default is what the game shows.
+        /// </summary>
         public static PlayerHpStyle HpStyle
         {
-            get => PlayerPrefs.GetInt(HpStyleKey, 0) == 1 ? PlayerHpStyle.Knights : PlayerHpStyle.Bar;
+            get => PlayerPrefs.GetInt(HpStyleKey, (int)PlayerHpStyle.Knights) == (int)PlayerHpStyle.Bar ? PlayerHpStyle.Bar : PlayerHpStyle.Knights;
             set { PlayerPrefs.SetInt(HpStyleKey, (int)value); PlayerPrefs.Save(); }
         }
 

@@ -120,6 +120,11 @@ namespace StringAsASword.Presentation
         public Sprite mainMenuDark, mainMenuWhite;
         [Tooltip("Main menu and story text (Figma: Hakgyoansim Godeunjemok B). Empty = the OS Korean font at runtime.")]
         public TMP_FontAsset menuFont;
+        [UnityEngine.Serialization.FormerlySerializedAs("prologueSkipKeyIcon")]
+        [Tooltip("ESC key image on the prologue and tutorial skip hints.")]
+        public Sprite skipKeyIcon;
+        [Tooltip("J key image on the prologue's '줄을 끊는다' prompt. Empty = a plain keycap.")]
+        public Sprite promptJKeyIcon;
         [Tooltip("Key guide under the board in battle (Figma 'Game Play' / 키 가이드, exported at 2x). Empty = no guide.")]
         public Sprite keyGuide;
         [Tooltip("Pause and game-over menu items (Figma: Orbit Regular). Empty = menuFont.")]
@@ -134,6 +139,10 @@ namespace StringAsASword.Presentation
         [Tooltip("Player HP under the knight, one sprite per HP: a bar segment or a knight icon, on = left, off = lost. " +
             "The style is picked in the menu settings. An empty slot draws a plain white/grey box.")]
         public Sprite playerHpBarOn, playerHpBarOff, playerHpKnightOn, playerHpKnightOff;
+
+        [Header("Knight sword swing")]
+        [Tooltip("Camera-facing slash frames in playback order, at 24 fps. Leave empty to use the procedural arc.")]
+        public Sprite[] attackSlashFrames;
 
         [Header("VFX prefabs (destroyed after 2 seconds)")]
         public GameObject attackVfx;

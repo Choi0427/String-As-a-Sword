@@ -31,6 +31,9 @@ MonoBehaviour:
   darkTile: {fileID: 0}
   boardEdge: {fileID: 0}
   useLighting: 1
+  ambientColor: {r: 0, g: 0, b: 0, a: 0}
+  lightColor: {r: 1, g: 1, b: 1, a: 1}
+  lightIntensity: 1
   cameraSize: 5.1
   cameraLift: 0
   cameraElevation: 35
@@ -59,6 +62,7 @@ MonoBehaviour:
   - sprite: {fileID: 21300000, guid: 0b3ce865041aa7b4f8e90fc37334ce82, type: 3}
     sway: {x: 0, y: 0}
     period: 0
+  prologueBackgroundLayers: []
   laneSprite: {fileID: 21300000, guid: cd5d76bcb9cf94e498cd3261a1d64cd2, type: 3}
   laneBoardGap: {x: 668, y: 1387}
   laneStrings: {x: 14, y: 128, z: 257}
@@ -77,6 +81,8 @@ MonoBehaviour:
   mainMenuDark: {fileID: 21300000, guid: 9777af6bfeec6ff4985b1678bf6e208c, type: 3}
   mainMenuWhite: {fileID: 21300000, guid: e7b0fb4972684711b832a96bb6c200c1, type: 3}
   menuFont: {fileID: 11400000, guid: 9f923aa8663272541816bacfcefebd7e, type: 2}
+  skipKeyIcon: {fileID: 21300000, guid: 5383798c0dc8a734f80ff292291ce4bc, type: 3}
+  promptJKeyIcon: {fileID: 21300000, guid: 60e62fc4a2d047399fbe135d98b5917d, type: 3}
   keyGuide: {fileID: 21300000, guid: 53027492787f48944b8aa2b5dee06f0c, type: 3}
   screenFont: {fileID: 11400000, guid: cddfb65d7ebf8724d8854d7fb095a58e, type: 2}
   screenTitleFont: {fileID: 11400000, guid: 463bb0403a855ea49ae21e168c3b27c5, type: 2}
@@ -96,6 +102,13 @@ MonoBehaviour:
   playerHpBarOff: {fileID: 21300000, guid: 105bb1444b2d4547a66e4af635c93f64, type: 3}
   playerHpKnightOn: {fileID: 21300000, guid: 73982b22091846d38a027b39e8b7f7ff, type: 3}
   playerHpKnightOff: {fileID: 21300000, guid: bc65e1c6f73f409dbe5766649b54276c, type: 3}
+  attackSlashFrames:
+  - {fileID: 21300000, guid: 287950709d3e038459c360bbf9e19bdd, type: 3}
+  - {fileID: 21300000, guid: 6d74c697450c6fd4eb77cc4fea0244de, type: 3}
+  - {fileID: 21300000, guid: b2c97bfa0d7982f409f278fa31e5685c, type: 3}
+  - {fileID: 21300000, guid: b8b7cd64aa819664aa033baf47a8b0ba, type: 3}
+  - {fileID: 21300000, guid: 093af485644aab145a337e51c409d23d, type: 3}
+  - {fileID: 21300000, guid: 3b883e84253af614b9ecfa2639b61cb0, type: 3}
   attackVfx: {fileID: 0}
   guardVfx: {fileID: 0}
   hitVfx: {fileID: 0}
@@ -103,3 +116,4 @@ MonoBehaviour:
   pickupVfx: {fileID: 0}
   bossFireVfx: {fileID: 0}
   phaseVfx: {fileID: 0}
+  knightFallSound: {fileID: 0}
