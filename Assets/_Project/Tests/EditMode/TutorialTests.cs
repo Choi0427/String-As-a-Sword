@@ -63,6 +63,7 @@ namespace StringAsASword.Tests
             StringAssert.Contains("빗금 패턴은 방어가 불가능합니다", TutorialSteps.Guide(TutorialStep.Slash));
             StringAssert.Contains("주선율", TutorialSteps.Guide(TutorialStep.Noise));
             StringAssert.Contains("8번", TutorialSteps.Guide(TutorialStep.Strike));
+            Assert.That(TutorialSteps.Guide(TutorialStep.Done), Is.EqualTo("판을 벗어나세요."));
         }
 
         [Test] public void TheClockDiesAwayFromTheEndToTheSongsStart()

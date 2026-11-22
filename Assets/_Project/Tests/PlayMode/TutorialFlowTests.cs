@@ -50,6 +50,7 @@ namespace StringAsASword.Tests
             Assert.That(game.View.Screens.KeyGuideAlpha, Is.Zero, "the cards show the keys; the key guide is hidden");
 
             var seen = new List<TutorialStep>();
+            bool moveCardChecked = false;
             int note = 0;
             float deadline = Time.realtimeSinceStartup + 120;
             while (!tutorial.Steps.Finished && Time.realtimeSinceStartup < deadline)
@@ -59,15 +60,55 @@ namespace StringAsASword.Tests
                 if (!tutorial.Steps.Finished && !seen.Contains(tutorial.Step)) seen.Add(tutorial.Step);
                 if (game.View.Screens.KeyGuideAlpha == 0)
                     Assert.That(game.View.Screens.JLightAlpha, Is.Zero, "the J light hides with the key guide");
+                // The cards show the HUD key guide's own keys: WASD as its ㅗ cluster, cut from the same art.
+                if (!moveCardChecked && tutorial.Step == TutorialStep.Move && tutorial.LessonActive && tutorial.Card.Visible)
+                {
+                    moveCardChecked = true;
+                    Assert.That(tutorial.Card.Guide, Is.SameAs(game.View.Art.keyGuide));
+                    if (game.View.Art.keyGuide != null)
+                    {
+                        Assert.That(tutorial.Card.GuideKeysShown, Is.EqualTo(1), "WASD is the guide's ㅗ cluster");
+                        var cut = tutorial.Card.Rect.GetComponentsInChildren<UnityEngine.UI.Image>().First(i => i.name == "Guide Key").sprite;
+                        Assert.That(cut.texture, Is.SameAs(game.View.Art.keyGuide.texture));
+                        Assert.That(cut.rect.width / cut.rect.height, Is.EqualTo(314f / 208).Within(.05f), "the ㅗ cluster, not a single key");
+                    }
+                }
                 if (tutorial.LessonActive) Act(tutorial, note, at);
                 note++;
             }
             Assert.That(tutorial.Steps.Finished, "the tutorial ends when its lessons are done");
+            Assert.That(moveCardChecked, "the move card was seen");
             Assert.That(seen, Is.EqualTo(new[] { TutorialStep.Move, TutorialStep.Attack, TutorialStep.Slash, TutorialStep.Noise, TutorialStep.Strike }));
             Assert.That(game.Health.TotalHp, Is.LessThan(game.Stage.HealthSegments.Sum()), "the resonance cut the crown");
 
-            while (game.State != PrototypeState.Playing && Time.realtimeSinceStartup < deadline) yield return null;
-            Assert.That(game.State, Is.EqualTo(PrototypeState.Playing), "the last downbeat starts the song");
+            // The end: the closing line, a little larger; three seconds later the letterbox lifts. The board never blinks, and
+            // the lanes are empty when the song's battle is bound.
+            string closing = TutorialSteps.Guide(TutorialStep.Done);
+            var content = game.View.ContentRect.GetComponent<CanvasGroup>();
+            double closingAt = -1, liftAt = -1;
+            bool boundChecked = false;
+            while (game.State != PrototypeState.Playing && Time.realtimeSinceStartup < deadline)
+            {
+                var box = tutorial.Letterbox;
+                if (closingAt < 0 && box.Subtitle == closing)
+                {
+                    closingAt = AudioSettings.dspTime;
+                    Assert.That(box.SubtitleFontSize, Is.GreaterThan(Letterbox.SubtitleSize), "the closing line is a little larger");
+                }
+                if (closingAt >= 0 && liftAt < 0 && box.Amount < .999f) liftAt = AudioSettings.dspTime;
+                if (content != null) Assert.That(content.alpha, Is.EqualTo(1f), "the board stays in view");
+                if (!boundChecked && !game.InTutorialBattle)
+                {
+                    boundChecked = true;
+                    foreach (var graphic in game.View.ContentRect.GetComponentsInChildren<UnityEngine.UI.Graphic>())
+                        Assert.That(graphic.name, Does.Not.StartWith("Note_"), "no note is on the lanes when the song's battle is bound");
+                }
+                yield return null;
+            }
+            Assert.That(game.State, Is.EqualTo(PrototypeState.Playing), "the beat after the letterbox lifts starts the song");
+            Assert.That(closingAt, Is.GreaterThan(0), "the closing line was shown");
+            Assert.That(liftAt - closingAt, Is.InRange(2.8, 3.5), "the letterbox lifts three seconds after the closing line");
+            Assert.That(boundChecked);
             Assert.That(game.InTutorialBattle, Is.False);
             Assert.That(game.Session.Position, Is.EqualTo(new GridPosition(6, 0)), "the song's battle starts fresh on g1");
             Assert.That(game.Health.TotalHp, Is.EqualTo(game.Stage.HealthSegments.Sum()));

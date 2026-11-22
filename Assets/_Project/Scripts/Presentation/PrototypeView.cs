@@ -199,12 +199,19 @@ namespace StringAsASword.Presentation
             boardWorld = board.gameObject.AddComponent<BoardWorldPresenter>(); boardWorld.Initialize(game, output, boardMaterial, art);
             if (art.bossImage != null && art.kingPrefab == null)
             {
-                // Under the content layer, so the board and the HUD draw over the picture.
-                var boss = MakeRect((RectTransform)transform, "Boss Portrait", Vector2.zero, Vector2.zero);
-                boss.SetSiblingIndex(root.GetSiblingIndex());
-                float farEdge = BoardCenter.y + boardWorld.ProjectToBoard(new Vector3(0, 0, 4), size).y;
+                // Under the content layer, so the board and the HUD draw over the picture. Its lower part stands behind the
+                // board; it is also cut off at the board's far edge, so it stays hidden when the board fades (the tutorial's
+                // handover dips the content to nothing) instead of showing through.
+                var clip = MakeRect((RectTransform)transform, "Boss Clip", Vector2.zero, Vector2.zero);
+                clip.anchorMin = Vector2.zero; clip.anchorMax = Vector2.one; clip.sizeDelta = Vector2.zero;
+                clip.SetSiblingIndex(root.GetSiblingIndex());
+                var mask = clip.gameObject.AddComponent<UnityEngine.UI.RectMask2D>();
+                var boss = MakeRect(clip, "Boss Portrait", Vector2.zero, Vector2.zero);
+                float farEdgeOnBoard = boardWorld.ProjectToBoard(new Vector3(0, 0, 4), size).y;
+                float farEdge = BoardCenter.y + farEdgeOnBoard;
                 bossPortrait = boss.gameObject.AddComponent<BossPortrait>();
                 bossPortrait.Initialize(game, art.bossImage, new Vector2(BoardCenter.x + art.bossImageSink.x, farEdge - art.bossImageSink.y), Mathf.Max(1, art.bossImageHeight));
+                bossPortrait.ClipBehind(mask, board, farEdgeOnBoard);
                 if (art.HasCrown)
                 {
                     bossCrown = MakeRect(boss, "Boss Crown", Vector2.zero, Vector2.zero).gameObject.AddComponent<BossCrownView>();

@@ -41,6 +41,25 @@ namespace StringAsASword.Tests
                 Assert.That(label.text, Does.Not.StartWith("GET READY"), "The song starts without a count-in.");
             }
         }
+        /// <summary>
+        /// The king's lower part stands behind the board. It is cut off at the board's far edge, so it never shows through
+        /// when the board fades (the tutorial's handover dips the content to nothing).
+        /// </summary>
+        [UnityTest] public IEnumerator KingIsCutOffAtTheBoardsFarEdge()
+        {
+            yield return null;
+            var portrait = view.BossPortrait;
+            Assert.That(portrait, Is.Not.Null);
+            var mask = portrait.Clip;
+            Assert.That(mask, Is.Not.Null);
+            Assert.That(portrait.transform.parent, Is.SameAs(mask.transform));
+            float farEdge = view.BoardViewRect.anchoredPosition.y + view.BoardWorld.ProjectToBoard(new Vector3(0, 0, 4), PrototypeView.BoardSize).y;
+            Assert.That(portrait.ClipLine, Is.LessThanOrEqualTo(farEdge).And.GreaterThan(farEdge - 8), "cut just under the far edge, behind the stone");
+            // The mask covers the canvas, centred: its bottom padding lifts the cut from the canvas's bottom edge to the line.
+            Assert.That(mask.padding.y - mask.rectTransform.rect.height * .5f, Is.EqualTo(portrait.ClipLine).Within(1), "the mask cuts where the line is");
+            var feet = (RectTransform)portrait.transform;
+            Assert.That(feet.anchoredPosition.y, Is.LessThan(portrait.ClipLine - 50), "the cut hides the part the board covers");
+        }
         [UnityTest] public IEnumerator CrownSitsOnTheBossAndShowsBossHpOnly()
         {
             var crown = view.BossCrown;

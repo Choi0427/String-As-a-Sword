@@ -14,10 +14,15 @@ namespace StringAsASword.Presentation
         private readonly TMP_Text hint, subtitle;
         private string subtitleText = "";
         private float subtitleSince = -1;
+        /// <summary>The subtitle's usual size, in canvas pixels.</summary>
+        public const float SubtitleSize = 22;
         public RectTransform Layer => layer;
         public string Subtitle => subtitleText;
+        public float SubtitleFontSize => subtitle.fontSize;
         /// <summary>The bar height last laid out, in canvas pixels.</summary>
         public float Bar { get; private set; }
+        /// <summary>How far the bars are slid in, as last laid out (0 = gone, 1 = in place).</summary>
+        public float Amount { get; private set; }
 
         /// <summary>The prologue's bars: a 2.39:1 picture, never thinner than 6% of the height.</summary>
         public static float CinemaBar(Vector2 size) => Mathf.Max((size.y - size.x / CutscenePlayer.Aspect) / 2, size.y * .06f);
@@ -31,7 +36,7 @@ namespace StringAsASword.Presentation
                 new Color(1, 1, 1, .45f), TextAlignmentOptions.Right, hintFont);
             var hintRect = hint.rectTransform; hintRect.anchorMin = hintRect.anchorMax = hintRect.pivot = new Vector2(1, .5f);
             hintRect.anchoredPosition = new Vector2(-40, 0);
-            subtitle = UiKit.Label(PrototypeView.MakeRect(bottom, "Subtitle", Vector2.zero, new Vector2(1440, 70)), "", 22,
+            subtitle = UiKit.Label(PrototypeView.MakeRect(bottom, "Subtitle", Vector2.zero, new Vector2(1440, 70)), "", SubtitleSize,
                 new Color(1, 1, 1, .92f), TextAlignmentOptions.Center, textFont);
             subtitle.textWrappingMode = TextWrappingModes.Normal; subtitle.lineSpacing = -8;
             layer.gameObject.SetActive(false);
@@ -40,7 +45,7 @@ namespace StringAsASword.Presentation
         /// <summary>Bars of height <paramref name="bar"/>, slid in by <paramref name="amount"/> (0 = gone, 1 = in place).</summary>
         public void Layout(float bar, float amount)
         {
-            Bar = bar;
+            Bar = bar; Amount = amount;
             top.sizeDelta = bottom.sizeDelta = new Vector2(0, bar);
             top.anchoredPosition = new Vector2(0, bar * (1 - amount));
             bottom.anchoredPosition = new Vector2(0, -bar * (1 - amount));
@@ -50,10 +55,11 @@ namespace StringAsASword.Presentation
             // One line where it fits (the longest guide line just does at 22 px); two when the screen is narrow.
             subtitle.rectTransform.sizeDelta = new Vector2(Mathf.Min(1480, layer.rect.width - 100), Mathf.Max(30, bar - 8));
         }
-        /// <summary>The guidance line in the bottom bar; a new line fades in.</summary>
-        public void SetSubtitle(string text)
+        /// <summary>The guidance line in the bottom bar, at <paramref name="size"/> px; a new line fades in.</summary>
+        public void SetSubtitle(string text, float size = SubtitleSize)
         {
             text = text ?? "";
+            if (!Mathf.Approximately(subtitle.fontSize, size)) subtitle.fontSize = size;
             if (text == subtitleText) return;
             subtitleText = text; subtitle.text = text; subtitleSince = Time.unscaledTime;
         }

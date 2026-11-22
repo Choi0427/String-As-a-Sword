@@ -232,7 +232,7 @@ namespace StringAsASword.Core
         }
         /// <summary>
         /// The tutorial is done: the song's battle is bound again, fresh, and the song is scheduled so that its intro starts on
-        /// <paramref name="downbeatDsp"/> (a tutorial downbeat), four beats before the first note, as after the prologue.
+        /// <paramref name="downbeatDsp"/> (a tutorial beat), four beats before the first note, as after the prologue.
         /// </summary>
         public void FinishTutorial(double downbeatDsp)
         {
