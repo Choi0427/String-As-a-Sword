@@ -124,6 +124,7 @@ namespace StringAsASword.Presentation
             BoardCamera.orthographic = !perspective; BoardCamera.orthographicSize = size;
             if (perspective) BoardCamera.fieldOfView = art.cameraFieldOfView;
             BoardCamera.nearClipPlane = .1f; BoardCamera.farClipPlane = distance + 16;
+            cameraHome = BoardCamera.transform.localPosition;
             BoardCamera.clearFlags = CameraClearFlags.SolidColor;
             // With background art the board view is see-through, so the board sits in the scene instead of on a panel.
             // See-through uses black: anti-aliased edges blend toward the clear colour, and a tinted one leaves a fringe.
@@ -688,6 +689,38 @@ namespace StringAsASword.Presentation
             if (king == null) return;
             king.transform.localRotation = Quaternion.Euler(-80 * Mathf.SmoothStep(0, 1, t), 0, 0);
         }
+        // Where the battle camera stands; the death close-up moves it and the next session puts it back.
+        private Vector3 cameraHome;
+        private bool cameraFocused;
+        /// <summary>Battle camera position (board-local).</summary>
+        public Vector3 CameraHome => cameraHome;
+        /// <summary>
+        /// Moves the board camera along its own view toward <paramref name="localFocus"/> (board-local), without turning it:
+        /// 0 = the battle view, 1 = <paramref name="closeDistance"/> in front of the focus.
+        /// </summary>
+        public void FocusCamera(Vector3 localFocus, float closeDistance, float t)
+        {
+            var cam = BoardCamera.transform;
+            Vector3 close = localFocus - cam.localRotation * Vector3.forward * closeDistance;
+            cam.localPosition = Vector3.LerpUnclamped(cameraHome, close, t);
+            cameraFocused = true;
+        }
+        /// <summary>
+        /// The knight tipped over like a chess piece: it turns about the rim of its base on the side it falls to.
+        /// <paramref name="side"/> is +1 (falls toward +x) or -1; <paramref name="degrees"/> is the tilt from upright;
+        /// <paramref name="roll"/> turns the fallen piece about its own long axis. Needs FreeRoam, or Render puts it back.
+        /// </summary>
+        public void SetKnightDown(Vector3 basePosition, float side, float degrees, float roll, float baseRadius)
+        {
+            var tilt = Quaternion.AngleAxis(-side * degrees, Vector3.forward) * Quaternion.AngleAxis(roll, Vector3.up);
+            Vector3 rim = new Vector3(side * baseRadius, 0, 0);
+            player.localRotation = tilt;
+            player.localPosition = basePosition + rim - tilt * rim;
+            player.localScale = Vector3.one;
+            sword.gameObject.SetActive(false); shield.gameObject.SetActive(false);
+        }
+        /// <summary>Jolts the board view for a quarter second, as a break of the board does.</summary>
+        public void Jolt() => shakeAge = 0;
         private const float StepSeconds = .13f, StepHeight = .13f, LiftHeight = .55f;
         private float moveSeconds = StepSeconds, moveHeight = StepHeight, liftNext, liftUntil;
         /// <summary>
@@ -712,7 +745,9 @@ namespace StringAsASword.Presentation
             guardNote = -1;
             moveFrom = moveTarget = CellPosition(game.Session.Position);
             player.localPosition = moveTarget; selection.localPosition = moveTarget;
-            player.localScale = Vector3.one; sword.gameObject.SetActive(false); shield.gameObject.SetActive(false);
+            player.localScale = Vector3.one; player.localRotation = Quaternion.identity;
+            sword.gameObject.SetActive(false); shield.gameObject.SetActive(false);
+            if (cameraFocused) { BoardCamera.transform.localPosition = cameraHome; cameraFocused = false; }
             impactAge = 1; impactCells = 0; lastClosedNote = -1;
             lastTelegraphId = -1; lastCollected = game.Noise.Collected;
             for (int i = 0; i < impacts.Length; i++)

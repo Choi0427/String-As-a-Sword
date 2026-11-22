@@ -11,7 +11,8 @@ namespace StringAsASword.Core
     // Finale: the battle is won, the song plays on with no judgement. Epilogue: free movement and the ending.
     // Prologue: the opening cutscene; its last downbeat hands over to the tutorial (or straight to Playing without one).
     // Tutorial: a practice battle of its own, on an even beat with no song; its end hands over to the song's start.
-    public enum PrototypeState { Ready, CountIn, Playing, Paused, Finished, Finale, Epilogue, Prologue, Tutorial }
+    // Dying: the last hit landed; the board is frozen while the knight topples (DeathDirector), then Finished.
+    public enum PrototypeState { Ready, CountIn, Playing, Paused, Finished, Finale, Epilogue, Prologue, Tutorial, Dying }
 
     [RequireComponent(typeof(PlayerInputAdapter), typeof(ScheduledSongAudio))]
     public sealed class PrototypeGame : MonoBehaviour
@@ -57,6 +58,9 @@ namespace StringAsASword.Core
         private TutorialDirector tutorial;
         /// <summary>The tutorial; null when the prologue's data (its clock tick) is missing.</summary>
         public TutorialDirector Tutorial => tutorial;
+        private DeathDirector death;
+        /// <summary>The knight's fall after the last hit.</summary>
+        public DeathDirector Death => death;
         // The song's battle, and the tutorial's: a battle of its own on an even beat, bound in its place while it runs.
         private BattleSession mainBattle, tutorialBattle;
         private IBeatTimeline mainTimeline, tutorialTimeline;
@@ -93,6 +97,7 @@ namespace StringAsASword.Core
             FinaleEndTime = System.Math.Max(end, hold) + .8;
             FinaleStrikeTime = Timeline.TimeOf(System.Math.Min(settings.FinishNote + 2, last));
             view.gameObject.AddComponent<FinaleDirector>().Initialize(this, view);
+            death = view.gameObject.AddComponent<DeathDirector>(); death.Initialize(this, view);
             var prologue = Resources.Load<PrologueDefinition>(PrologueDefinition.ResourceName);
             if (prologue != null) { intro = view.gameObject.AddComponent<IntroDirector>(); intro.Initialize(this, view, prologue); }
             if (prologue != null) { tutorial = view.gameObject.AddComponent<TutorialDirector>(); tutorial.Initialize(this, view, prologue); }
@@ -289,6 +294,12 @@ namespace StringAsASword.Core
             if (!clock.Running) StartSession();
             State = PrototypeState.Epilogue; EpilogueStarted?.Invoke();
         }
+        /// <summary>The knight's fall is over (or skipped): the song stops and the game-over card shows.</summary>
+        public void FinishDeath()
+        {
+            if (State != PrototypeState.Dying) return;
+            audioPlayer.Stop(); State = PrototypeState.Finished;
+        }
         public void PauseSession()
         {
             if (State != PrototypeState.Playing && State != PrototypeState.CountIn) return;
@@ -376,6 +387,14 @@ namespace StringAsASword.Core
                 else if (command == "mute") audioPlayer.ToggleMute();
                 return;
             }
+            // The fall plays without a menu: Esc, Space or Enter go straight to the game-over card.
+            if (State == PrototypeState.Dying)
+            {
+                if (command == "pause" || command == "start") death.Skip();
+                else if (command == "mute") audioPlayer.ToggleMute();
+                else if (command == "restart") StartSession();
+                return;
+            }
             if (command.StartsWith("dev-phase")) { DevGoToPhase(command[command.Length - 1] - '0'); return; }
             if (command == "dev-invincible") { DevSetInvincible(!GameFlow.Invincible); return; }
             if (command == "dev-bosshp") { DevSetBossHp(GameFlow.BossHpOff); return; }
@@ -445,6 +464,12 @@ namespace StringAsASword.Core
                 {
                     // Won on the finishing run: keep the song and the notes going, without judgement.
                     State = PrototypeState.Finale; SaveRun("Completed"); FinaleStarted?.Invoke();
+                }
+                else if (Battle.Outcome == BattleOutcome.Dead && !InTutorialBattle && (State == PrototypeState.Playing || State == PrototypeState.CountIn))
+                {
+                    // The last hit freezes the board; the song fades under the knight's fall (DeathDirector), then FinishDeath.
+                    clock.Stop(); input.Clear(); State = PrototypeState.Dying;
+                    SaveRun("Completed");
                 }
                 else if (Battle.Outcome != BattleOutcome.Running && (State == PrototypeState.Playing || State == PrototypeState.CountIn))
                 {

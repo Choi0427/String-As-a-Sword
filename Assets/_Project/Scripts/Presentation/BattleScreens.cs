@@ -95,7 +95,8 @@ namespace StringAsASword.Presentation
             var state = game.State;
             if (keyGuide != null)
             {
-                keyGuide.SetActive(state != PrototypeState.Epilogue);
+                // The death close-up darkens everything under these screens; the guide would float over it.
+                keyGuide.SetActive(state != PrototypeState.Epilogue && (game.Death == null || !game.Death.Covering));
                 var guide = keyGuide.GetComponent<UnityEngine.UI.Image>();
                 if (!Mathf.Approximately(guide.color.a, KeyGuideAlpha)) guide.color = new Color(1, 1, 1, KeyGuideAlpha);
                 bool playing = state == PrototypeState.Playing || state == PrototypeState.CountIn || state == PrototypeState.Paused ||
