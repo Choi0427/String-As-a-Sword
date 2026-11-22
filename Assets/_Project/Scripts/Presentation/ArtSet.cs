@@ -142,6 +142,10 @@ namespace StringAsASword.Presentation
         public GameObject bossFireVfx;
         public GameObject phaseVfx;
 
+        [Header("Sound")]
+        [Tooltip("Played once when the fallen knight hits the board after the last hit (a wooden piece knocked over). Empty = silent.")]
+        public AudioClip knightFallSound;
+
         public bool HasCrown => crown != null && crownRegions != null && crownSpent != null && crownMaterial != null;
         public bool HasBackground => background != null || (backgroundLayers != null && backgroundLayers.Length > 0);
         /// <summary>The prologue's whole-board set is delivered (at least one layer has a picture).</summary>

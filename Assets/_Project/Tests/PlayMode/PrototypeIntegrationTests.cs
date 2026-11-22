@@ -393,6 +393,13 @@ namespace StringAsASword.Tests
             // Running out of notes ends on the game-over screen; 첫 수부터 restarts.
             game.Battle.Advance(game.Timeline.TimeOf(game.Song.NoteCount - 1) + game.Song.GoodWindow + .001);
             yield return null; yield return null;
+            // A death plays the knight's fall first; skipping it lands on the same card.
+            if (game.Battle.Outcome == BattleOutcome.Dead)
+            {
+                Assert.That(game.State, Is.EqualTo(PrototypeState.Dying));
+                Assert.That(screens.Showing, Is.EqualTo(BattleScreens.ScreenKind.None));
+                game.Death.Skip(); yield return null;
+            }
             Assert.That(game.State, Is.EqualTo(PrototypeState.Finished));
             Assert.That(screens.Showing, Is.EqualTo(BattleScreens.ScreenKind.GameOver));
             Assert.That(screens.GameOverTitle, Is.EqualTo("FALLEN"));
@@ -402,6 +409,62 @@ namespace StringAsASword.Tests
             Assert.That(game.SessionId, Is.EqualTo(session + 1));
             Assert.That(game.State, Is.EqualTo(PrototypeState.Playing), "No count-in: the song starts at once.");
             Assert.That(screens.Showing, Is.EqualTo(BattleScreens.ScreenKind.None));
+            LogAssert.NoUnexpectedReceived();
+        }
+        // One HP, one full-board hit with no guard: the last hit.
+        private IEnumerator UntilDying(BoardWorldPresenter board)
+        {
+            game.Battle.Settings.PlayerMaxHp = 1;
+            yield return StartWith(RequiredGuard(), AttackResponse.GuardOnly);
+            double timeout = Time.realtimeSinceStartupAsDouble + 8;
+            while (game.State != PrototypeState.Dying && Time.realtimeSinceStartupAsDouble < timeout) yield return null;
+            Assert.That(game.State, Is.EqualTo(PrototypeState.Dying), "The last hit starts the knight's fall, not the card.");
+            Assert.That(game.Battle.Outcome, Is.EqualTo(BattleOutcome.Dead));
+        }
+        private static float Lean(BoardWorldPresenter board) => Quaternion.Angle(board.PlayerTransform.localRotation, Quaternion.identity);
+        [UnityTest] public IEnumerator LastHitTopplesTheKnightAndSpaceSkipsToFallen()
+        {
+            var board = Object.FindAnyObjectByType<BoardWorldPresenter>();
+            var screens = game.GetComponentInChildren<BattleScreens>(true);
+            yield return UntilDying(board);
+            yield return null;
+            Assert.That(screens.Showing, Is.EqualTo(BattleScreens.ScreenKind.None));
+            Assert.That(game.Death.Covering);
+            Assert.That(board.KnightIsolated, "The screen is black but for the knight.");
+            double frozen = game.SongTime;
+            // On the edge of its base: leaning, the camera close, the board frozen.
+            while (game.Death.Age < 2.8f && game.State == PrototypeState.Dying) yield return null;
+            Assert.That(game.State, Is.EqualTo(PrototypeState.Dying));
+            Assert.That(game.SongTime, Is.EqualTo(frozen), "The board stays frozen while the knight falls.");
+            Assert.That(Lean(board), Is.EqualTo(30).Within(2), "It holds at its tipping point.");
+            Assert.That(Vector3.Distance(board.BoardCamera.transform.localPosition, board.CameraHome), Is.GreaterThan(5), "The camera has closed in.");
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Space)); yield return null; yield return null;
+            InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
+            Assert.That(game.State, Is.EqualTo(PrototypeState.Finished), "Space skips to the card.");
+            Assert.That(screens.Showing, Is.EqualTo(BattleScreens.ScreenKind.GameOver));
+            Assert.That(screens.GameOverTitle, Is.EqualTo("FALLEN"));
+            Assert.That(Lean(board), Is.GreaterThan(70), "The knight lies on the board.");
+            Assert.That(game.Death.Covering, "The darkness stays under the card.");
+            screens.Press(0);
+            yield return null; yield return null;
+            Assert.That(game.State, Is.EqualTo(PrototypeState.Playing));
+            Assert.That(Lean(board), Is.LessThan(.01f), "The knight stands again.");
+            Assert.That(Vector3.Distance(board.BoardCamera.transform.localPosition, board.CameraHome), Is.LessThan(.001f));
+            Assert.That(game.Death.Covering, Is.False);
+            Assert.That(board.KnightIsolated, Is.False, "The board is drawn again.");
+            LogAssert.NoUnexpectedReceived();
+        }
+        [UnityTest] public IEnumerator UnskippedFallEndsOnFallen()
+        {
+            var board = Object.FindAnyObjectByType<BoardWorldPresenter>();
+            var screens = game.GetComponentInChildren<BattleScreens>(true);
+            yield return UntilDying(board);
+            double timeout = Time.realtimeSinceStartupAsDouble + DeathDirector.TotalSeconds + 2;
+            while (game.State == PrototypeState.Dying && Time.realtimeSinceStartupAsDouble < timeout) yield return null;
+            yield return null;
+            Assert.That(game.State, Is.EqualTo(PrototypeState.Finished));
+            Assert.That(screens.Showing, Is.EqualTo(BattleScreens.ScreenKind.GameOver));
+            Assert.That(Lean(board), Is.GreaterThan(70));
             LogAssert.NoUnexpectedReceived();
         }
         [UnityTest] public IEnumerator LandingCollectsNoiseAndRestartClearsIt()
