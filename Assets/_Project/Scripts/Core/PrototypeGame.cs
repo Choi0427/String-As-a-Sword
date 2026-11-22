@@ -470,7 +470,7 @@ namespace StringAsASword.Core
                 }
                 else if (Battle.Outcome == BattleOutcome.Dead && !InTutorialBattle && (State == PrototypeState.Playing || State == PrototypeState.CountIn))
                 {
-                    // The last hit freezes the board; the song fades under the knight's fall (DeathDirector), then FinishDeath.
+                    // The last hit freezes the board; the song plays on quietly under the knight's fall (DeathDirector), then FinishDeath.
                     clock.Stop(); input.Clear(); State = PrototypeState.Dying;
                     SaveRun("Completed");
                 }

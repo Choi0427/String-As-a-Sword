@@ -22,8 +22,8 @@ namespace StringAsASword.Presentation
         // height, both as a share of the sprite's height (measured on Note.png: head rows 343-493 of 495).
         private const float DefaultSpriteHeight = 100, HeadPivot = .152f, HeadShare = .30f, SpriteTone = .85f;
         // Resonance: a soft dot behind each head. Charged notes (a preview of the window) glow faintly, resonating notes
-        // clearly, flaring on ignition; the last two blink like the gauge. GlowStrength scales all three (cut to 0.3x on request).
-        private const float GlowScale = 2.4f, GlowStrength = .3f, ChargedGlow = .22f * GlowStrength, ResonantGlow = .55f * GlowStrength,
+        // clearly, flaring on ignition; the last two blink like the gauge. GlowStrength scales all three (0.6x on request).
+        private const float GlowScale = 2.4f, GlowStrength = .6f, ChargedGlow = .22f * GlowStrength, ResonantGlow = .55f * GlowStrength,
             IgniteGlow = .35f * GlowStrength;
         private const int WarningNotes = 2;
         private const float BeamThickness = 8, BeamGap = 5, BeamStub = 16, RailOffset = 5, RailPegHeight = 30;

@@ -4,7 +4,7 @@ using UnityEngine;
 namespace StringAsASword.Presentation
 {
     /// <summary>
-    /// The last hit: the board freezes, the song fades, the screen cuts to black with only the knight left on it, and the
+    /// The last hit: the board freezes, the song drops to a quiet level, the screen cuts to black with only the knight left on it, and the
     /// board camera closes in.
     /// Then the knight tips over the way a real chess piece does: knocked, a slow lean, a breath on the edge of its base,
     /// and the fall, a bounce and a little roll. The game-over card follows. Rules stay in BattleSession; this only reads them.
@@ -12,7 +12,8 @@ namespace StringAsASword.Presentation
     public sealed class DeathDirector : MonoBehaviour
     {
         // Seconds from the last hit.
-        private const float MusicFade = .4f, ZoomSeconds = 1.4f;
+        // The song keeps playing under the fall, ducked to DyingMusicLevel of its volume over MusicFade seconds (it stops at the card).
+        private const float MusicFade = .4f, DyingMusicLevel = .25f, ZoomSeconds = 1.4f;
         private const float KnockAt = .5f, KnockPeak = .68f, KnockSettle = 1.1f, CreepEnd = 2.6f, FallAt = 3f, LandAt = 3.45f,
             HopEnd = 3.65f, SecondHopEnd = 3.78f, RollEnd = 3.9f;
         public const float TotalSeconds = 4.7f;
@@ -107,7 +108,7 @@ namespace StringAsASword.Presentation
         private void Pose(float a)
         {
             board.FreeRoam = true;
-            game.Audio.SetMusicFade(1 - Mathf.Clamp01(a / MusicFade));
+            game.Audio.SetMusicFade(Mathf.Lerp(1, DyingMusicLevel, Mathf.Clamp01(a / MusicFade)));
             Vector3 focus = basePosition + new Vector3(side * FocusSide, FocusHeight, 0);
             board.FocusCamera(focus, CloseDistance, Smooth01(a / ZoomSeconds));
             float roll = side * RollDegrees * Smooth01((a - LandAt) / (RollEnd - LandAt));
