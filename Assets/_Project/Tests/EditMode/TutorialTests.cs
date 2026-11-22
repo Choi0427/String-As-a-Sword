@@ -65,6 +65,20 @@ namespace StringAsASword.Tests
             StringAssert.Contains("8번", TutorialSteps.Guide(TutorialStep.Strike));
         }
 
+        [Test] public void TheClockDiesAwayFromTheEndToTheSongsStart()
+        {
+            Assert.That(TutorialDirector.ClockFade(12, -1, -1), Is.EqualTo(1), "Full while the lessons run.");
+            Assert.That(TutorialDirector.ClockFade(9, 10, 16), Is.EqualTo(1), "Full before the fade.");
+            float last = 1;
+            for (int tick = 10; tick < 16; tick++)
+            {
+                float level = TutorialDirector.ClockFade(tick, 10, 16);
+                Assert.That(level, Is.LessThan(last), $"Quieter on every tick ({tick}).");
+                last = level;
+            }
+            Assert.That(last, Is.LessThan(.05f), "Nearly nothing on the last tick before the song.");
+        }
+
         // ── The practice battle ──
         private static BattleSettings Practice()
         {

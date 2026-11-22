@@ -102,7 +102,7 @@ namespace StringAsASword.Tests
             InputSystem.QueueStateEvent(keyboard,new KeyboardState(Key.Space));
             yield return null; yield return null;
             InputSystem.QueueStateEvent(keyboard,new KeyboardState());
-            Assert.That(game.State,Is.EqualTo(PrototypeState.CountIn));
+            Assert.That(game.State,Is.EqualTo(PrototypeState.Playing), "No count-in: the song starts at once.");
             yield return UntilSongTime(FirstNote);
             double at=InputState.currentTime+FirstNote-game.SongTime;
             InputSystem.QueueStateEvent(keyboard,new KeyboardState(Key.W,Key.D),at);
@@ -125,7 +125,7 @@ namespace StringAsASword.Tests
             Assert.That(game.SessionId,Is.EqualTo(oldSession+1));
             Assert.That(game.Session.Position,Is.EqualTo(new GridPosition(6,0)));
             Assert.That(game.Session.AcceptedMoves,Is.Zero); Assert.That(game.Session.MissCount,Is.Zero);
-            Assert.That(game.State,Is.EqualTo(PrototypeState.CountIn));
+            Assert.That(game.State,Is.EqualTo(PrototypeState.Playing), "No count-in: the song starts at once.");
             LogAssert.NoUnexpectedReceived();
         }
         [UnityTest] public IEnumerator MirroredNotesAndKnightHaveRenderableGeometry()
@@ -389,7 +389,7 @@ namespace StringAsASword.Tests
             screens.Press(0);
             yield return null;
             Assert.That(game.SessionId, Is.EqualTo(session + 1));
-            Assert.That(game.State, Is.EqualTo(PrototypeState.CountIn));
+            Assert.That(game.State, Is.EqualTo(PrototypeState.Playing), "No count-in: the song starts at once.");
             Assert.That(screens.Showing, Is.EqualTo(BattleScreens.ScreenKind.None));
             LogAssert.NoUnexpectedReceived();
         }

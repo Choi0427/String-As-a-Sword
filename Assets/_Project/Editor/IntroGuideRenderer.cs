@@ -34,7 +34,7 @@ namespace StringAsASword.Editor
         public static void CompareMenu()
         {
             string dir = Path.GetFullPath(OutputFolder);
-            foreach (var name in new[] { "capture_into_song", "capture_into_tutorial" })
+            foreach (var name in new[] { "capture_full", "capture_into_tutorial" })
                 if (File.Exists(Path.Combine(dir, name + ".json"))) Debug.Log(CompareCapture(dir, name));
         }
 
@@ -66,7 +66,7 @@ namespace StringAsASword.Editor
             public PrologueDefinition Data;
             public SongDefinition Song;
             public float[] SongSamples;
-            public double Spb, SongAfterHandover;
+            public double Spb;
             /// <summary>
             /// A section's placeholder (or composed) sound, scheduled as the game does from <paramref name="at"/>. A sound due
             /// before <paramref name="now"/> (the J press) plays 10 ms after it, the composed piece 20 ms after it from the matching sample.
@@ -93,13 +93,12 @@ namespace StringAsASword.Editor
                     mix.Add(Samples(Data.Tick(accent)), from + b * Spb, Data.volume * Data.TickVolume(accent), $"tutorial {b} clock{(accent ? " accent" : "")}");
                 }
             }
-            public void SongFrom(Mix mix, double handover) => mix.Add(SongSamples, handover + SongAfterHandover, Song.Volume, "song");
             /// <summary>
             /// A whole prologue in intro-beat seconds: section A (from <paramref name="jumpTo"/> when jumped), the waiting bars
             /// queued before the J press at <paramref name="press"/> (tearing on <paramref name="tearIntroBeat"/>), section B, and
-            /// the song or the tutorial's clock.
+            /// the tutorial's clock after the handover.
             /// </summary>
-            public Mix Run(string name, double start, double end, double jumpTo, double tearIntroBeat, double press, bool tutorialNext)
+            public Mix Run(string name, double start, double end, double jumpTo, double tearIntroBeat, double press)
             {
                 var mix = new Mix(name, start, end);
                 double tear = tearIntroBeat * Spb, handover = tear + IntroTimeline.AfterTear * Spb, cut = Math.Max(tear, press + .01) + TearCut;
@@ -111,7 +110,7 @@ namespace StringAsASword.Editor
                     Section(mix, IntroDirector.WaitBarCues(), Data.cueWait, bar, cut, "Wait" + (k + 1));
                 }
                 Section(mix, IntroDirector.SectionBCues(), Data.cueB, tear, double.PositiveInfinity, "B", press);
-                if (tutorialNext) Ticks(mix, handover, (int)Math.Ceiling((end - handover) / Spb) + 1); else SongFrom(mix, handover);
+                Ticks(mix, handover, (int)Math.Ceiling((end - handover) / Spb) + 1);
                 mix.Joins.Add((cut, "waiting bar cut"));
                 mix.Joins.Add((handover, "handover"));
                 return mix;
@@ -123,13 +122,8 @@ namespace StringAsASword.Editor
             var data = AssetDatabase.LoadAssetAtPath<PrologueDefinition>(PrologueAudioSetup.DefinitionPath);
             var settings = BattleAnalysis.LoadSettings();
             var song = FirstSong();
-            // The song's mp3 starts this long after the handover beat (negative: before it), as ScheduleSongFromPrologue
-            // schedules it: the clock's origin is handover - S*, and the mp3 plays from origin - its start offset.
-            return new Context
-            {
-                Data = data, Song = song, SongSamples = Samples(song.Music), Spb = 60.0 / settings.Bpm,
-                SongAfterHandover = -IntroTimeline.HandoverSongTime(settings.CreateTimeline()) - song.AudioStartOffset,
-            };
+            // The song is only the yardstick for levels: the prologue always hands over to the tutorial, not to the song.
+            return new Context { Data = data, Song = song, SongSamples = Samples(song.Music), Spb = 60.0 / settings.Bpm };
         }
 
         private static readonly Dictionary<AudioClip, float[]> cache = new Dictionary<AudioClip, float[]>();
@@ -190,11 +184,12 @@ namespace StringAsASword.Editor
             var w = new Mix("guide_Wait", 0, bar + 3);
             ctx.Section(w, IntroDirector.WaitBarCues(), data.cueWait, 0, inf, "Wait");
             mixes.Add(w);
-            // Section B from the tear's beat; what still sounds at the handover rings on, and the song comes in.
-            var bMix = new Mix("guide_B", 0, b20 + 10);
+            // Section B from the tear's beat; what still sounds at the handover rings on over the tutorial's chess clock, which
+            // starts with an accent on that downbeat.
+            var bMix = new Mix("guide_B", 0, b20 + 8 * spb);
             ctx.Section(bMix, IntroDirector.SectionBCues(), data.cueB, 0, inf, "B");
-            ctx.SongFrom(bMix, b20);
-            bMix.Joins.Add((b20, "handover")); bMix.Joins.Add((b20 + ctx.SongAfterHandover, "song enters"));
+            ctx.Ticks(bMix, b20, 8);
+            bMix.Joins.Add((b20, "handover"));
             mixes.Add(bMix);
             // Joins: the waiting bar three times over.
             var loop = new Mix("seam_wait_x3", 0, 3 * bar + 3);
@@ -213,12 +208,7 @@ namespace StringAsASword.Editor
                 t.Joins.Add((tear + TearCut, "waiting bar cut"));
                 mixes.Add(t);
             }
-            // Joins: the end of section B into the song, and into the tutorial's clock (its first accent on the handover).
-            var toSong = new Mix("seam_B_to_song", 14 * spb, b20 + 8);
-            ctx.Section(toSong, IntroDirector.SectionBCues(), data.cueB, 0, inf, "B");
-            ctx.SongFrom(toSong, b20);
-            toSong.Joins.Add((b20, "handover")); toSong.Joins.Add((b20 + ctx.SongAfterHandover, "song enters"));
-            mixes.Add(toSong);
+            // Joins: the end of section B into the tutorial's clock (its first accent on the handover).
             var toTutorial = new Mix("seam_B_to_tutorial", 14 * spb, b20 + 8 * spb);
             ctx.Section(toTutorial, IntroDirector.SectionBCues(), data.cueB, 0, inf, "B");
             ctx.Ticks(toTutorial, b20, 8);
@@ -228,7 +218,7 @@ namespace StringAsASword.Editor
             var report = new StringBuilder();
             var inv = CultureInfo.InvariantCulture;
             report.AppendLine("Intro guide tracks and join check (" + DateTime.Now.ToString("yyyy-MM-dd HH:mm", inv) + ")");
-            report.AppendLine($"87 BPM: beat {spb:0.0000} s, bar {bar:0.0000} s. The song's mp3 enters {-ctx.SongAfterHandover * 1000:0.0} ms before the handover beat.");
+            report.AppendLine($"87 BPM: beat {spb:0.0000} s, bar {bar:0.0000} s. Section B hands over to the tutorial's chess clock (no music) on beat 20.");
             report.AppendLine($"Pieces: Cue_A {Name(data.cueA)}, Cue_Wait {Name(data.cueWait)}, Cue_B {Name(data.cueB)}; clock {Name(data.clockTick)} / {Name(data.clockAccent)}.");
             report.AppendLine("Levels are as heard in game at full music volume, as the mono mix of the output (song x" + ctx.Song.Volume.ToString("0.###", inv) + ", placeholders x" +
                 data.volume.ToString("0.###", inv) + " x cue, composed pieces x" + data.cueVolume.ToString("0.###", inv) + "; mono clips 3 dB down from panning). The WAV files are each scaled to peak at -1 dBFS.");
@@ -237,11 +227,10 @@ namespace StringAsASword.Editor
             // 1. Levels.
             var song = ctx.SongSamples; float sg = ctx.Song.Volume;
             double songRms = Rms(song, 0, Math.Min(song.Length, 60 * Rate)) * sg;
-            int enter = bMix.Index(b20 + ctx.SongAfterHandover);
             report.AppendLine("1. Levels");
             report.AppendLine($"   Song file (mono mix): RMS {Db(Rms(song, 0, song.Length)):0.0} dBFS, peak {Db(Peak(song, 0, song.Length)):0.0} dBFS.");
-            report.AppendLine($"   Song in game: RMS {Db(songRms):0.0} dB over its first minute, {Db(Rms(bMix.Buffer, bMix.Index(b20), bMix.Index(b20 + 10))):0.0} dB in the 10 s after the handover; peak {Db(Peak(song, 0, song.Length) * sg):0.0} dB.");
-            foreach (var (mix, end) in new[] { (a, a.Buffer.Length), (w, w.Buffer.Length), (bMix, enter) })
+            report.AppendLine($"   Song in game: RMS {Db(songRms):0.0} dB over its first minute; peak {Db(Peak(song, 0, song.Length) * sg):0.0} dB.");
+            foreach (var (mix, end) in new[] { (a, a.Buffer.Length), (w, w.Buffer.Length), (bMix, bMix.Index(b20)) })
             {
                 double rms = Rms(mix.Buffer, 0, end), peak = Peak(mix.Buffer, 0, end);
                 report.AppendLine($"   {mix.Name} in game: RMS {Db(rms):0.0} dB ({Db(rms) - Db(songRms):+0.0;-0.0} dB against the song), peak {Db(peak):0.0} dB" + (peak >= 1 ? "  !! clips" : ""));
@@ -340,7 +329,7 @@ namespace StringAsASword.Editor
         }
 
         // ---------------------------------------------------------------- against a recording of the game
-        [Serializable] private class CaptureInfo { public int rate, frames, gaps; public double startDsp, origin, tearIntroBeat, pressDsp, handoverDsp, jumpTo, scale, musicVolume; public bool tutorialNext; }
+        [Serializable] private class CaptureInfo { public int rate, frames, gaps; public double startDsp, origin, tearIntroBeat, pressDsp, handoverDsp, jumpTo, scale, musicVolume; }
         /// <summary>
         /// Compares a recording of the running game (output/intro-assets/<paramref name="name"/>.wav and .json, written by
         /// PrologueAudioTests) with the model of the same run: how closely they agree in each part, every sound's level against
@@ -353,14 +342,14 @@ namespace StringAsASword.Editor
             var cap = Resample(ReadWav(Path.Combine(dir, name + ".wav"), 1 / info.scale), info.rate);
             double spb = ctx.Spb, t0 = info.startDsp - info.origin;
             double press = info.pressDsp > 0 ? info.pressDsp - info.origin : info.tearIntroBeat * spb;
-            var model = ctx.Run(name + "_model", t0, t0 + (double)cap.Length / Rate, info.jumpTo, info.tearIntroBeat, press, info.tutorialNext);
+            var model = ctx.Run(name + "_model", t0, t0 + (double)cap.Length / Rate, info.jumpTo, info.tearIntroBeat, press);
             var m = model.Buffer;
             double tear = info.tearIntroBeat * spb, handover = tear + IntroTimeline.AfterTear * spb;
             int n = Math.Min(m.Length, cap.Length);
             // Fine alignment (the recording's start is known to the DSP block), then the overall gain (music volume, panning).
             int lag = BestLag(cap, m, model.Index(tear - .5), model.Index(tear + 4), Rate / 100);
             float C(int i) => i + lag >= 0 && i + lag < cap.Length ? cap[i + lag] : 0;
-            int fitEnd = Math.Min(n, model.Index(info.tutorialNext ? handover : handover + ctx.SongAfterHandover));
+            int fitEnd = Math.Min(n, model.Index(handover));
             double cm = 0, mm = 0;
             for (int i = 0; i < fitEnd; i++) { cm += C(i) * m[i]; mm += m[i] * m[i]; }
             double g = mm > 0 ? cm / mm : 1;
@@ -370,8 +359,8 @@ namespace StringAsASword.Editor
             var inv = CultureInfo.InvariantCulture;
             var report = new StringBuilder();
             report.AppendLine($"{name}: the game's own output against the model of the same run ({DateTime.Now.ToString("yyyy-MM-dd HH:mm", inv)})");
-            report.AppendLine($"   {(double)cap.Length / Rate:0.0} s at {info.rate} Hz; recorded from intro beat {t0 / spb:0.00}; J pressed {(press - tear) * 1000:+0;-0} ms from intro beat {info.tearIntroBeat}; then " +
-                (info.tutorialNext ? "the tutorial." : "the song.") + $" DSP gaps in the recording: {info.gaps}.");
+            report.AppendLine($"   {(double)cap.Length / Rate:0.0} s at {info.rate} Hz; recorded from intro beat {t0 / spb:0.00}; J pressed {(press - tear) * 1000:+0;-0} ms from intro beat {info.tearIntroBeat}; then the tutorial." +
+                $" DSP gaps in the recording: {info.gaps}.");
             report.AppendLine($"   Alignment: {lag * 1000.0 / Rate:+0.00;-0.00} ms from the DSP clock; gain {Db(g):0.0} dB (music volume {Db(info.musicVolume):0.0} dB).");
             report.AppendLine("1. Agreement (difference against the recording; -20 dB or lower means the model is what the game plays)");
             foreach (var (label, from, to) in new[] { ("section A", t0, 32 * spb), ("waiting bars", 32 * spb, tear), ("section B", tear, handover), ("after the handover", handover, model.End) })

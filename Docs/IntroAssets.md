@@ -25,18 +25,19 @@
 ## 재생 규칙 (게임 녹음으로 확인)
 
 - **첫 샘플 = 박.** 모든 클립은 첫 샘플이 박에 오도록 `PlayScheduled`로 예약된다.
-- **줄을 끊을 때:** 대기 마디(와 Cue_A)는 끊는 소리가 시작되고 30ms 뒤에 멈춘다. 박 직후(0.25박 이내)에 늦게 누르면 그 박에 끊긴 것으로 치고, 끊는 소리는 누른 순간에 나며, Cue_B는 늦은 만큼 앞을 건너뛰고 재생해 끝을 곡 시작 박에 맞춘다.
-- **곡 시작 박(이양):** 프롤로그 소리는 자르지 않고 울리게 둔다(Cue_B와 임시 소리의 꼬리 모두). 원곡 mp3는 이 박보다 0.2276초 먼저 들어오지만 처음 약 1초가 거의 무음이고 약 2.3초에 걸쳐 커지므로, 꼬리가 그 사이를 메운다.
-- **튜토리얼로 넘어갈 때(처음 한 번):** 튜토리얼 클록의 첫 강세는 곡 시작 박에 온다. 튜토리얼은 그 박 다음 프레임에야 시작해 첫 박을 예약할 수 없으므로, 프롤로그가 미리 예약해 둔다.
+- **줄을 끊을 때:** 대기 마디(와 Cue_A)는 끊는 소리가 시작되고 30ms 뒤에 멈춘다. 박 직후(0.25박 이내)에 늦게 누르면 그 박에 끊긴 것으로 치고, 끊는 소리는 누른 순간에 나며, Cue_B는 늦은 만큼 앞을 건너뛰고 재생해 끝을 이양 박에 맞춘다.
+- **이양 박(구간 B 20박):** 프롤로그는 언제나 튜토리얼로 넘어간다(시작할 때마다 프롤로그 → 튜토리얼 → 곡, Esc로 각각 건너뜀). 이 박부터는 음악 없이 튜토리얼의 체스 클록만 이어진다. 프롤로그 소리는 자르지 않고 그 위로 울리게 둔다(Cue_B와 임시 소리의 꼬리 모두).
+- **튜토리얼 클록의 첫 강세:** 이양 박에 온다. 튜토리얼은 그 박 다음 프레임에야 시작해 첫 박을 예약할 수 없으므로, 프롤로그가 미리 예약해 둔다.
+- **곡:** 튜토리얼이 끝나면 체스 클록이 한 박씩 잦아들어 사라지고, 그 다운비트에 곡의 도입이 시작된다(카운트인 없음). 프롤로그 소리와는 만나지 않는다.
 - **ESC:** 모든 소리를 즉시 멈춘다.
 
 ## 확인 도구
 
 - **String As a Sword > Audio > Render Intro Guide Tracks:** 게임과 같은 규칙(같은 큐·음량·자르기, 조각이 있으면 조각)으로 `output/intro-assets/`에 렌더한다.
-  - `guide_A/Wait/B.wav`: 작곡가용 가이드 트랙. guide_B에는 원곡 도입 10초가 들어 있다.
-  - `seam_*.wav`: 대기 마디 3회 반복, 네 박 각각에서 끊기, 곡과 튜토리얼로 넘어가기.
+  - `guide_A/Wait/B.wav`: 작곡가용 가이드 트랙. guide_B 뒤에는 튜토리얼 클록 8박이 이어진다.
+  - `seam_*.wav`: 대기 마디 3회 반복, 네 박 각각에서 끊기, 튜토리얼로 넘어가기.
   - `events.csv`: 소리마다 박과 초.
   - `audio_check.txt`: 음량(원곡 대비), 클립 앞 무음, 잘리는 곳마다 얼마나 가려지는지, 이음새를 넘어 울리는 소리, 빈 박.
-- **게임 녹음:** PlayMode의 `PrologueAudioTests.RecordThePrologueIntoTheSong` / `...IntoTheTutorial`(Explicit, 약 45초·20초)이 AudioListener에서 실제 출력을 녹음해 `capture_into_*.wav`와 `.json`을 쓴다. **String As a Sword > Audio > Compare Prologue Recordings**가 같은 진행의 모델과 비교해 `capture_into_*_check.txt`와 100ms 단위 `_profile.csv`를 쓴다. 2026-11-22 기준 두 녹음 모두 차이가 구간 A·대기·B에서 −21~−30 dB, 곡 진입 뒤 −53 dB이고 모든 소리가 제 음량(±3 dB)으로 있다. 남는 차이는 클록 어택의 첫 몇 ms뿐이다.
+- **게임 녹음:** PlayMode의 `PrologueAudioTests.RecordTheWholePrologue` / `RecordThePrologueIntoTheTutorial`(Explicit, 약 45초·20초)이 AudioListener에서 실제 출력을 녹음해 `capture_full.wav` / `capture_into_tutorial.wav`와 `.json`을 쓴다. **String As a Sword > Audio > Compare Prologue Recordings**가 같은 진행의 모델과 비교해 `*_check.txt`와 100ms 단위 `_profile.csv`를 쓴다. 2026-11-22 기준 두 녹음 모두 차이가 구간 A·대기·B에서 −21~−30 dB이고 모든 소리가 제 음량(±3 dB)으로 있다. 남는 차이는 클록 어택의 첫 몇 ms뿐이다.
 - **듣기:** `output/intro-assets/listen.py`가 Earshot의 음성(Windows, 한국어)으로 이름을 읽고 파일을 끝까지 튼다. `python listen.py game|seams|guides`.
 - 모델의 음량은 출력의 모노 합 기준이다. Unity는 2D 소스의 모노 클립을 양쪽 채널에 3 dB 낮춰 내보내고 스테레오 클립은 그대로 낸다(녹음과 맞춰 확인).

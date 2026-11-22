@@ -19,13 +19,12 @@ namespace StringAsASword.Tests
     /// </summary>
     public sealed class PrologueAudioTests
     {
-        private bool hadTutorial, background;
-        [SetUp] public void SetUp() { hadTutorial = GameFlow.TutorialSeen; background = Application.runInBackground; Application.runInBackground = true; }
+        private bool background;
+        [SetUp] public void SetUp() { background = Application.runInBackground; Application.runInBackground = true; }
         [UnityTearDown] public IEnumerator TearDown()
         {
             var game = Object.FindAnyObjectByType<PrototypeGame>();
             if (game != null) game.PauseSession();
-            if (hadTutorial) GameFlow.MarkTutorialSeen(); else GameFlow.ResetTutorialSeen();
             Application.runInBackground = background;
             yield return null;
         }
@@ -63,7 +62,6 @@ namespace StringAsASword.Tests
             try
             {
                 data.cueA = a; data.cueWait = w; data.cueB = b;
-                GameFlow.ResetTutorialSeen();
                 yield return OpenThePrologue();
                 var game = Object.FindAnyObjectByType<PrototypeGame>();
                 var intro = game.Intro;
@@ -137,41 +135,14 @@ namespace StringAsASword.Tests
         }
 
         // ---------------------------------------------------------------- recordings
-        /// <summary>The game's whole output, mixed to mono, as the listener hears it.</summary>
-        private sealed class Recorder : MonoBehaviour
-        {
-            public float[] Samples;
-            public int Count, Rate, Gaps;
-            public double StartDsp = -1;
-            public volatile bool Recording;
-            private double next;
-            private void OnAudioFilterRead(float[] data, int channels)
-            {
-                if (!Recording || Samples == null) return;
-                double dsp = AudioSettings.dspTime;
-                int frames = data.Length / channels;
-                if (StartDsp < 0) StartDsp = dsp;
-                else if (Math.Abs(dsp - next) * Rate > .5) Gaps++;
-                next = dsp + (double)frames / Rate;
-                int n = Count;
-                for (int i = 0; i < frames && n < Samples.Length; i++)
-                {
-                    float sum = 0;
-                    for (int c = 0; c < channels; c++) sum += data[i * channels + c];
-                    Samples[n++] = sum / channels;
-                }
-                Count = n;
-            }
-        }
+        [UnityTest, Explicit("About 45 s: records the whole prologue, J on the second waiting bar's second beat (output/intro-assets/capture_full.wav).")]
+        public IEnumerator RecordTheWholePrologue() => Record("capture_full", jumpTo: -1, tearOn: 37);
+        [UnityTest, Explicit("About 20 s: records the prologue from beat 27.25, J on the first waiting bar's last beat (output/intro-assets/capture_into_tutorial.wav).")]
+        public IEnumerator RecordThePrologueIntoTheTutorial() => Record("capture_into_tutorial", jumpTo: 27.25, tearOn: 35);
 
-        [UnityTest, Explicit("About 45 s: records the whole prologue into the song (output/intro-assets/capture_into_song.wav).")]
-        public IEnumerator RecordThePrologueIntoTheSong() => Record("capture_into_song", tutorialNext: false, jumpTo: -1, tearOn: 37);
-        [UnityTest, Explicit("About 20 s: records the prologue from beat 27.25 into the tutorial (output/intro-assets/capture_into_tutorial.wav).")]
-        public IEnumerator RecordThePrologueIntoTheTutorial() => Record("capture_into_tutorial", tutorialNext: true, jumpTo: 27.25, tearOn: 35);
-
-        private static IEnumerator Record(string name, bool tutorialNext, double jumpTo, double tearOn)
+        /// <summary>The prologue as the game plays it, J pressed 50 ms after <paramref name="tearOn"/>, into the tutorial's clock.</summary>
+        private static IEnumerator Record(string name, double jumpTo, double tearOn)
         {
-            if (tutorialNext) GameFlow.ResetTutorialSeen(); else GameFlow.MarkTutorialSeen();
             yield return SceneManager.LoadSceneAsync(GameFlow.MenuScene);
             yield return null;
             GameFlow.StartBattle(prologue: true);
@@ -180,18 +151,12 @@ namespace StringAsASword.Tests
             yield return null;
             var game = Object.FindAnyObjectByType<PrototypeGame>();
             var intro = game.Intro;
-            Assert.That(game.TutorialFollowsPrologue, Is.EqualTo(tutorialNext));
+            Assert.That(game.TutorialFollowsPrologue);
             // Start again with the recorder running, so the first beat is on the recording.
             intro.Stop();
-            AudioListener listener = null;
-            foreach (var candidate in Object.FindObjectsByType<AudioListener>(FindObjectsSortMode.None)) if (candidate.isActiveAndEnabled) listener = candidate;
-            Assert.That(listener, Is.Not.Null);
-            var recorder = listener.gameObject.AddComponent<Recorder>();
+            var recorder = OutputRecorder.Attach(70);
             try
             {
-                recorder.Rate = AudioSettings.outputSampleRate;
-                recorder.Samples = new float[recorder.Rate * 70];
-                recorder.Recording = true;
                 yield return null; yield return null;
                 game.StartPrologue();
                 if (jumpTo >= 0) intro.JumpForTests(jumpTo);
@@ -203,15 +168,15 @@ namespace StringAsASword.Tests
                 Assert.That(intro.TearIntroBeat, Is.EqualTo(tearOn), "J tore on the planned beat.");
                 double handover = intro.HandoverDsp;
                 yield return UntilDsp(handover + 4, 30);
-                Assert.That(game.State, Is.EqualTo(tutorialNext ? PrototypeState.Tutorial : PrototypeState.CountIn).Or.EqualTo(PrototypeState.Playing));
+                Assert.That(game.State, Is.EqualTo(PrototypeState.Tutorial));
                 recorder.Recording = false;
                 yield return null;
                 Assert.That(recorder.Gaps, Is.Zero, "The recording is continuous.");
-                Write(name, recorder, origin, intro.TearIntroBeat, press, handover, tutorialNext, jumpTo);
+                Write(name, recorder, origin, intro.TearIntroBeat, press, handover, jumpTo);
             }
             finally { Object.Destroy(recorder); }
         }
-        private static void Write(string name, Recorder r, double origin, double tear, double press, double handover, bool tutorialNext, double jumpTo)
+        private static void Write(string name, OutputRecorder r, double origin, double tear, double press, double handover, double jumpTo)
         {
             string dir = Path.GetFullPath("output/intro-assets");
             Directory.CreateDirectory(dir);
@@ -228,8 +193,8 @@ namespace StringAsASword.Tests
                 for (int i = 0; i < n; i++) writer.Write((short)Mathf.Clamp(Mathf.RoundToInt(r.Samples[i] * scale * 32767), -32768, 32767));
             }
             File.WriteAllText(Path.Combine(dir, name + ".json"), string.Format(CultureInfo.InvariantCulture,
-                "{{\"rate\":{0},\"frames\":{1},\"gaps\":{2},\"startDsp\":{3:R},\"origin\":{4:R},\"tearIntroBeat\":{5:R},\"pressDsp\":{6:R},\"handoverDsp\":{7:R},\"jumpTo\":{8:R},\"scale\":{9:R},\"musicVolume\":{10:R},\"tutorialNext\":{11}}}",
-                r.Rate, n, r.Gaps, r.StartDsp, origin, tear, press, handover, jumpTo, (double)scale, (double)GameFlow.MusicVolume, tutorialNext ? "true" : "false"));
+                "{{\"rate\":{0},\"frames\":{1},\"gaps\":{2},\"startDsp\":{3:R},\"origin\":{4:R},\"tearIntroBeat\":{5:R},\"pressDsp\":{6:R},\"handoverDsp\":{7:R},\"jumpTo\":{8:R},\"scale\":{9:R},\"musicVolume\":{10:R} }}",
+                r.Rate, n, r.Gaps, r.StartDsp, origin, tear, press, handover, jumpTo, (double)scale, (double)GameFlow.MusicVolume));
         }
     }
 }

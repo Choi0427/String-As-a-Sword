@@ -34,7 +34,7 @@ namespace StringAsASword.Presentation
         private AudioSource noiseSource;
         private AudioClip noiseClip;
         private float flashAge = 10, epilogueAge, exitAge = -1;
-        private int lastFinishHit = -1;
+        private int lastFinishHit = -1, checkedSession = -1;
         private Vector3 roam, noiseAt;
         private bool placed, entered, touched, returned;
         public float EpilogueAge => epilogueAge;
@@ -122,7 +122,12 @@ namespace StringAsASword.Presentation
             if (game == null || game.Battle == null) return;
             var settings = game.Battle.Settings;
             if (!settings.HasFinale) return;
-            if (game.State == PrototypeState.CountIn && (lastFinishHit >= 0 || epilogueAge > 0 || board.FreeRoam)) ResetVisuals();
+            // A new run of the song (it starts straight in, with no count-in) puts the board back after an ending.
+            if ((game.State == PrototypeState.Playing || game.State == PrototypeState.CountIn) && game.SessionId != checkedSession)
+            {
+                checkedSession = game.SessionId;
+                if (lastFinishHit >= 0 || epilogueAge > 0 || board.FreeRoam) ResetVisuals();
+            }
             double time = game.SongTime;
             flashAge += Time.unscaledDeltaTime;
             SetAlpha(flash, .55f * Mathf.Exp(-12 * flashAge));

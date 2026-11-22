@@ -50,7 +50,7 @@ namespace StringAsASword.Presentation
         private bool attackPending;
         private GridPosition noiseCell;
         // The end: the song's battle is bound on finishBeat, and the song starts on handoverBeat.
-        private int finishBeat = -1, handoverBeat = -1;
+        private int finishBeat = -1, handoverBeat = -1, fadeFrom = -1;
         private bool handedOver;
 
         public bool Playing => playing;
@@ -64,6 +64,10 @@ namespace StringAsASword.Presentation
         public bool LessonActive => playing && active && !steps.Finished;
         /// <summary>The cell of the noise lesson's noise.</summary>
         public GridPosition NoiseCell => noiseCell;
+        /// <summary>Tests: the DSP time of tutorial beat 0, the beat the song takes over (-1 before the end), the clock's fade start.</summary>
+        internal double OriginDsp => origin;
+        internal int HandoverBeat => handoverBeat;
+        internal int FadeFromBeat => fadeFrom;
 
         public void Initialize(PrototypeGame owner, PrototypeView prototypeView, PrologueDefinition definition)
         {
@@ -105,7 +109,7 @@ namespace StringAsASword.Presentation
             // The first line is up at once, even before the lead-in's first beat; its card comes with the first note.
             lineBeat = int.MinValue / 2; activeBeat = 0; active = false;
             ResetSituation();
-            nextTick = -LeadBeats; finishBeat = handoverBeat = -1; handedOver = false;
+            nextTick = -LeadBeats; finishBeat = handoverBeat = fadeFrom = -1; handedOver = false;
             letterbox.Visible = true; card.Hide();
             playing = true;
             LateUpdate();
@@ -150,6 +154,8 @@ namespace StringAsASword.Presentation
                 // The song's battle comes on the next bar line at least two beats away; the song starts a bar after that.
                 lineBeat = now + 1;
                 finishBeat = NextBar(now + 2); handoverBeat = finishBeat + BarBeats;
+                // From the next tick not yet queued, the clock dies away to the song's start.
+                fadeFrom = nextTick;
                 return;
             }
             lineBeat = now + PraiseBeats;
@@ -303,11 +309,22 @@ namespace StringAsASword.Presentation
                 {
                     var source = sources[nextSource++ % sources.Count];
                     source.Stop(); source.clip = tick;
-                    source.volume = data.volume * GameFlow.MusicVolume * data.TickVolume(accent);
+                    source.volume = data.volume * GameFlow.MusicVolume * data.TickVolume(accent) * ClockFade(nextTick, fadeFrom, handoverBeat);
                     source.PlayScheduled(at);
                 }
                 nextTick++;
             }
+        }
+        /// <summary>
+        /// The clock's level on <paramref name="tick"/> as the tutorial ends: full until <paramref name="from"/>, then dying away
+        /// tick by tick (squared, so it fades as the ear hears it) to nearly nothing on the last tick before
+        /// <paramref name="handover"/>, where the song's intro starts. Full while the tutorial runs (<paramref name="from"/> &lt; 0).
+        /// </summary>
+        public static float ClockFade(int tick, int from, int handover)
+        {
+            if (from < 0 || handover <= from || tick < from) return 1;
+            float u = Mathf.Clamp01((float)(handover - tick) / (handover - from + 1));
+            return u * u;
         }
         private static float Smooth(float s, float a, float b) { float u = Mathf.Clamp01((s - a) / (b - a)); return u * u * (3 - 2 * u); }
         private void OnDestroy() { steps.Advanced -= OnAdvanced; Unsubscribe(); }

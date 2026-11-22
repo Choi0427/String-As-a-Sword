@@ -16,14 +16,12 @@ namespace StringAsASword.Tests
     public sealed class TutorialFlowTests
     {
         private PrototypeGame game;
-        private bool originalBackground, hadTutorial;
+        private bool originalBackground;
 
         [UnitySetUp] public IEnumerator SetUp()
         {
             originalBackground = Application.runInBackground;
             Application.runInBackground = true;
-            // Finishing or skipping the tutorial marks it done; the player's own record must survive the tests.
-            hadTutorial = GameFlow.TutorialSeen;
             yield return SceneManager.LoadSceneAsync(GameFlow.BattleScene);
             game = Object.FindAnyObjectByType<PrototypeGame>();
             typeof(PrototypeGame).GetField("pauseOnFocusLoss", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).SetValue(game, false);
@@ -32,7 +30,6 @@ namespace StringAsASword.Tests
         [UnityTearDown] public IEnumerator TearDown()
         {
             Application.runInBackground = originalBackground;
-            if (hadTutorial) GameFlow.MarkTutorialSeen(); else GameFlow.ResetTutorialSeen();
             yield return null;
         }
 
@@ -75,7 +72,6 @@ namespace StringAsASword.Tests
             Assert.That(game.SongTime, Is.EqualTo(IntroTimeline.HandoverSongTime(game.Timeline)).Within(.15));
             Assert.That(tutorial.Playing, Is.False);
             Assert.That(game.View.Screens.KeyGuideAlpha, Is.EqualTo(1f));
-            Assert.That(GameFlow.TutorialSeen, "done once: later prologues lead to the song");
             LogAssert.NoUnexpectedReceived();
         }
         /// <summary>
@@ -104,6 +100,63 @@ namespace StringAsASword.Tests
             Assert.That(game.State, Is.EqualTo(PrototypeState.Playing), "The song starts after it.");
             LogAssert.NoUnexpectedReceived();
         }
+        /// <summary>
+        /// When the last lesson is done the tutorial's clock dies away tick by tick to the song's start and stops there. Heard in
+        /// the game's own output: the song's intro is near silent at first, so the ticks stand out.
+        /// </summary>
+        [UnityTest] public IEnumerator TheClockFadesOutWhenTheTutorialEndsThenTheSongStarts() => TutorialEnd(null);
+        [UnityTest, Explicit("About 12 s: records the tutorial's end into the song (output/intro-assets/capture_tutorial_end.wav and its tick levels).")]
+        public IEnumerator RecordTheTutorialEndIntoTheSong() => TutorialEnd("capture_tutorial_end");
+        private IEnumerator TutorialEnd(string recordAs)
+        {
+            game.StartTutorial();
+            var tutorial = game.Tutorial;
+            yield return null;
+            var recorder = OutputRecorder.Attach(30);
+            try
+            {
+                double spb = game.Timeline.SecondsPerBeat;
+                float deadline = Time.realtimeSinceStartup + 30;
+                while (tutorial.Beat < 1.2 && Time.realtimeSinceStartup < deadline) yield return null;
+                // The lessons passed at once: the end is what is listened to here.
+                var steps = tutorial.Steps;
+                for (int i = 0; i < TutorialSteps.MovesNeeded; i++) steps.Moved();
+                steps.AttackFell(false); steps.AttackFell(false); steps.NoiseCollected(); steps.ResonanceStarted(); steps.ResonanceEnded();
+                Assert.That(steps.Finished);
+                int from = tutorial.FadeFromBeat, handover = tutorial.HandoverBeat;
+                Assert.That(handover - from, Is.GreaterThanOrEqualTo(4), "The fade spans a bar or more.");
+                double origin = tutorial.OriginDsp;
+                while (AudioSettings.dspTime < origin + (handover + (recordAs != null ? 8 : 2)) * spb && Time.realtimeSinceStartup < deadline) yield return null;
+                recorder.Recording = false;
+                Assert.That(game.State, Is.EqualTo(PrototypeState.Playing), "The song has started.");
+                Assert.That(recorder.Gaps, Is.Zero, "The recording is continuous.");
+                // Each tick's peak over its first 60 ms, against its own level (bar lines are accented).
+                var data = Resources.Load<PrologueDefinition>(PrologueDefinition.ResourceName);
+                float Level(int b) => recorder.Peak(origin + b * spb, origin + b * spb + .06) / data.TickVolume(b % 4 == 0);
+                float before = Level(from - 1);
+                if (recordAs != null)
+                {
+                    var levels = new System.Text.StringBuilder($"tick,beats_before_song,level_db (against the last full tick)\n");
+                    for (int b = from - 2; b < handover; b++)
+                        levels.AppendLine($"{b},{handover - b},{20 * Mathf.Log10(Mathf.Max(Level(b), 1e-6f) / before):0.0}");
+                    levels.AppendLine($"song's first beat,0,{20 * Mathf.Log10(Mathf.Max(recorder.Peak(origin + handover * spb, origin + (handover + 1) * spb), 1e-6f) / before):0.0} (peak of anything)");
+                    recorder.Save(recordAs, levels.ToString());
+                }
+                Assert.That(before, Is.GreaterThan(0), "The clock sounds before the fade.");
+                float previous = before;
+                for (int b = from; b < handover; b++)
+                {
+                    float level = Level(b);
+                    Assert.That(level, Is.LessThan(previous), $"Tick {b} is quieter than the one before (fade {from}..{handover}).");
+                    previous = level;
+                }
+                Assert.That(previous, Is.LessThan(before * .2f), "The last tick before the song is 14 dB or more under the clock.");
+                Assert.That(recorder.Peak(origin + handover * spb, origin + (handover + 1) * spb), Is.LessThan(before * .1f),
+                    "No tick on the song's first beat.");
+            }
+            finally { Object.Destroy(recorder); }
+            LogAssert.NoUnexpectedReceived();
+        }
         // What a player reading the card does on this note.
         private void Act(TutorialDirector tutorial, int note, double at)
         {
@@ -130,12 +183,13 @@ namespace StringAsASword.Tests
                     break;
             }
         }
-        [UnityTest] public IEnumerator EscSkipsTheTutorialToTheCountIn()
+        [UnityTest] public IEnumerator EscSkipsTheTutorialStraightIntoTheSong()
         {
             game.StartTutorial();
             yield return null;
             game.SkipTutorial();
-            Assert.That(game.State, Is.EqualTo(PrototypeState.CountIn));
+            Assert.That(game.State, Is.EqualTo(PrototypeState.Playing), "No count-in: the song starts at once.");
+            Assert.That(game.SongTime, Is.LessThan(0), "Its own intro leads in before the first note.");
             Assert.That(game.InTutorialBattle, Is.False);
             Assert.That(game.Tutorial.Playing, Is.False);
             Assert.That(game.Tutorial.Letterbox.Visible, Is.False);
