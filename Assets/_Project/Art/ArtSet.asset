@@ -75,11 +75,17 @@ MonoBehaviour:
   crownWidth: 0.6
   crownSeamHeight: 0.1
   mainMenuDark: {fileID: 21300000, guid: 9777af6bfeec6ff4985b1678bf6e208c, type: 3}
-  mainMenuWhite: {fileID: 0}
+  mainMenuWhite: {fileID: 21300000, guid: e7b0fb4972684711b832a96bb6c200c1, type: 3}
   menuFont: {fileID: 11400000, guid: 9f923aa8663272541816bacfcefebd7e, type: 2}
   keyGuide: {fileID: 21300000, guid: 53027492787f48944b8aa2b5dee06f0c, type: 3}
   screenFont: {fileID: 11400000, guid: cddfb65d7ebf8724d8854d7fb095a58e, type: 2}
   screenTitleFont: {fileID: 11400000, guid: 463bb0403a855ea49ae21e168c3b27c5, type: 2}
+  settingsVolume: {fileID: 21300000, guid: 571fa3150c5e49bdb12e49a09660615d, type: 3}
+  settingsInputOffset: {fileID: 21300000, guid: 3e28b22c18df4d48912f88ab9d0c7024, type: 3}
+  settingsMusicOffset: {fileID: 21300000, guid: 2952d1ab947a42f2af3165878e7dac76, type: 3}
+  settingsDifficulty: {fileID: 21300000, guid: 9fe4eca14c2648e3962f5f7677d04ba5, type: 3}
+  settingsKeyHints: {fileID: 21300000, guid: de275032bb2147dab5f767e86f2d5d16, type: 3}
+  settingsArrow: {fileID: 21300000, guid: 90af87e492fc4902a80621f87cfa5953, type: 3}
   knightBadgeBox:
     serializedVersion: 2
     x: -26

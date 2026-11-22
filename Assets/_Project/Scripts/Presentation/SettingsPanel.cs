@@ -3,111 +3,298 @@ using System.Collections.Generic;
 using StringAsASword.Core;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using static StringAsASword.Presentation.UiKit;
 
 namespace StringAsASword.Presentation
 {
     /// <summary>
-    /// Saved settings (music volume, input/visual sync, HP style, developer mode) on a card 820x895 in 1920x1080 pixels.
-    /// Opened from the main menu and from the battle's pause screen. Built as "Settings/Card/&lt;row&gt;" under its parent.
+    /// Saved settings from the Figma frame "Game Play" / Settings (1920x1080 pixels): 음량, 입력 판정 보정, 음악 싱크 보정 and
+    /// 난이도 on a 1266x951 card. W/S pick a row, A/D (or the arrow buttons) change it, Esc goes back (handled by the owner).
+    /// Opened from the main menu and from the battle's pause screen. Built as "Settings/Frame/Card/&lt;row&gt;" under its parent.
+    /// Hidden: Shift+D toggles developer mode, whose switches show in a strip under the card.
     /// </summary>
     public sealed class SettingsPanel : MonoBehaviour
     {
-        private static readonly Color Text = Hex(0xD9D9D9), Box = Hex(0x929292), BoxText = Hex(0x0C0C0C), Hint = Hex(0x929292);
-        private TMP_FontAsset font;
+        // Figma values, in 1920x1080 pixels from the frame's top-left corner (y down).
+        private static readonly Color Ink = Hex(0xD9D9D9), Line = Hex(0x6D6D6D), Caption = Hex(0x6F6F6E);
+        // Figma's rules are #6C6C6C at 50% on the black card: #363636 once blended.
+        private static readonly Color Rule = Hex(0x363636);
+        // The picked row: a faint band (linear-space alpha for ~8% white over black).
+        private static readonly Color RowBand = new Color(1, 1, 1, Mathf.Pow(.08f, 2.2f));
+        private const float CardLeft = 326.92f, CardTop = 64.23f, CardWidth = 1266.17f, CardHeight = 950.64f;
+        private const float RuleLeft = 391.69f, RuleWidth = 1136.62f;
+        private static readonly float[] Rules = { 266.32f, 416.38f, 566.44f, 716.49f, 866.55f };
+        private static readonly float[] RowCenters = { 341.35f, 477.06f, 627.41f, 791.88f };
+        private const float LeftButton = 989.98f, RightButton = 1453.14f, ButtonSize = 65, ValueCenter = 1222.06f;
+        public const int VolumeRow = 0, InputRow = 1, MusicRow = 2, DifficultyRow = 3, RowCount = 4;
+        /// <summary>One A/D press or arrow click: volume in percent, the two syncs in milliseconds.</summary>
+        public const int VolumeStep = 5, OffsetStep = 5;
+        private const float RepeatDelay = .35f, RepeatEvery = .06f;
+        public const string EasyNote = "쉬움: 잡음을 먹으면 체력 1칸 회복 (최대 5칸)", HardNote = "어려움: 체력 회복 없음";
+
+        private TMP_FontAsset font, titleFont;
         private Action refresh = () => { };
         private readonly Dictionary<string, Action<int>> choices = new Dictionary<string, Action<int>>();
+        private readonly UnityEngine.UI.Image[] bands = new UnityEngine.UI.Image[RowCount];
+        private readonly List<UnityEngine.UI.Image>[] rowStrokes = new List<UnityEngine.UI.Image>[RowCount];
+        private RectTransform card;
+        private GameObject devStrip;
+        private int heldStep; private float nextRepeat;
         /// <summary>Called after the panel closes, so a running battle can pick up what changed.</summary>
         public event Action Closed;
-        /// <summary>The 튜토리얼 button was pressed (after the panel closed).</summary>
+        /// <summary>Asks the owner (menu or battle) to start the tutorial, after the panel closed.</summary>
         public event Action TutorialRequested;
         public bool IsOpen => gameObject.activeSelf;
+        /// <summary>The row W/S or hovering picked (0 = 음량).</summary>
+        public int SelectedRow { get; private set; }
+        public bool DevStripVisible => devStrip.activeSelf;
 
-        public static SettingsPanel Create(RectTransform parent, TMP_FontAsset font)
+        public static SettingsPanel Create(RectTransform parent, ArtSet art)
         {
             var shade = Stretch(Rect(parent, "Settings"));
             var panel = shade.gameObject.AddComponent<SettingsPanel>();
-            panel.font = font; panel.Build(shade);
+            panel.Build(shade, art);
             shade.gameObject.SetActive(false);
             return panel;
         }
-        public void Open() { refresh(); gameObject.SetActive(true); }
+        public void Open() { refresh(); Select(VolumeRow); heldStep = 0; gameObject.SetActive(true); }
         public void Close()
         {
             if (!IsOpen) return;
             gameObject.SetActive(false); Closed?.Invoke();
         }
-        /// <summary>Picks an option of a row as if it were clicked (0 = first).</summary>
+        /// <summary>Picks an option of a choice row as if it were clicked (0 = first): 난이도, 개발자 모드, 무적, 보스 HP, 시작 페이즈.</summary>
         public void Choose(string row, int option) => choices[row](option);
-
-        private void Build(RectTransform shade)
-        {
-            Image(shade, new Color(0, 0, 0, .72f)).raycastTarget = true;
-            var card = Rect(shade, "Card", Vector2.zero, new Vector2(820, 895));
-            Image(card, Hex(0x0C0C0C)).raycastTarget = true;
-            Write(Rect(card, "Title", new Vector2(0, 392), new Vector2(700, 80)), "설정", 56, Text, TextAlignmentOptions.Center);
-            SliderRow(card, 282, "음악 볼륨", 0, 100, () => Mathf.RoundToInt(GameFlow.MusicVolume * 100), v => GameFlow.MusicVolume = v / 100f, v => v + "%");
-            SliderRow(card, 187, "입력 싱크", -200, 200, () => GameFlow.InputOffsetMs, v => GameFlow.InputOffsetMs = v, v => (v > 0 ? "+" : "") + v + " ms");
-            SliderRow(card, 92, "화면 싱크", -200, 200, () => GameFlow.VisualOffsetMs, v => GameFlow.VisualOffsetMs = v, v => (v > 0 ? "+" : "") + v + " ms");
-            ChoiceRow(card, 10, "체력 표시", new[] { "막대", "기사" }, () => (int)GameFlow.HpStyle, i => GameFlow.HpStyle = (PlayerHpStyle)i);
-            Write(Rect(card, "Help", new Vector2(0, -50), new Vector2(760, 40)), "입력 싱크: 판정이 늦으면 +   /   화면 싱크: 노트가 소리보다 늦게 보이면 -", 18, Hint, TextAlignmentOptions.Center);
-            // Developer mode: the rows under it only show while it is on.
-            Image(Rect(card, "Rule", new Vector2(0, -90), new Vector2(720, 2)), Hex(0x333333));
-            ChoiceRow(card, -133, "개발자 모드", new[] { "꺼짐", "켜짐" }, () => GameFlow.DevMode ? 1 : 0, i => GameFlow.DevMode = i == 1);
-            var invincible = ChoiceRow(card, -198, "무적", new[] { "꺼짐", "켜짐" }, () => GameFlow.Invincible ? 1 : 0, i => GameFlow.Invincible = i == 1);
-            var bossHp = ChoiceRow(card, -263, "보스 HP", new[] { "꺼짐", "켜짐" }, () => GameFlow.BossHpOff ? 0 : 1, i => GameFlow.BossHpOff = i == 0);
-            var phase = ChoiceRow(card, -328, "시작 페이즈", new[] { "1", "2", "3", "4" }, () => GameFlow.StartPhase - 1, i => GameFlow.StartPhase = i + 1);
-            refresh += () => { invincible.SetActive(GameFlow.DevMode); phase.SetActive(GameFlow.DevMode); bossHp.SetActive(GameFlow.DevMode); };
-            // 튜토리얼 plays the tutorial again (then the song); 닫기 goes back.
-            var tutorial = Rect(card, "Tutorial", new Vector2(-115, -403), new Vector2(200, 56));
-            Image(tutorial, Hex(0x1E1E1E)).raycastTarget = true;
-            Stroke(tutorial, Box, 2);
-            Write(Stretch(Rect(tutorial, "Label")), "튜토리얼", 26, Text, TextAlignmentOptions.Center);
-            tutorial.gameObject.AddComponent<MenuButton>().Clicked = RequestTutorial;
-            var close = Rect(card, "Close", new Vector2(115, -403), new Vector2(200, 56));
-            Image(close, Box).raycastTarget = true;
-            Write(Stretch(Rect(close, "Label")), "닫기  ESC", 26, BoxText, TextAlignmentOptions.Center);
-            close.gameObject.AddComponent<MenuButton>().Clicked = Close;
-            refresh();
-        }
-        /// <summary>The 튜토리얼 button: closes the panel and asks its owner (menu or battle) to start the tutorial.</summary>
+        /// <summary>The tutorial again (then the song): closes the panel and asks the owner to start it.</summary>
         public void RequestTutorial()
         {
             Close();
             TutorialRequested?.Invoke();
         }
-        // A label and a few boxes to click; the chosen one is filled.
-        private GameObject ChoiceRow(RectTransform card, float y, string name, string[] options, Func<int> current, Action<int> set)
+
+        public void Select(int row)
         {
-            var row = Rect(card, name, new Vector2(0, y), new Vector2(760, 50));
-            Write(Rect(row, "Name", new Vector2(-250, 0), new Vector2(220, 50)), name, 30, Text, TextAlignmentOptions.Left);
+            SelectedRow = Mathf.Clamp(row, 0, RowCount - 1);
+            for (int i = 0; i < RowCount; i++)
+            {
+                bands[i].color = i == SelectedRow ? RowBand : new Color(0, 0, 0, 0);
+                foreach (var stroke in rowStrokes[i]) stroke.color = i == SelectedRow ? Ink : Line;
+            }
+        }
+        /// <summary>A press of A (-1) or D (+1) on a row, as its arrow buttons do.</summary>
+        public void Step(int row, int direction)
+        {
+            direction = Math.Sign(direction);
+            switch (row)
+            {
+                case VolumeRow: GameFlow.MusicVolume = Mathf.Clamp(VolumePercent + direction * VolumeStep, 0, 100) / 100f; break;
+                case InputRow: GameFlow.InputOffsetMs += direction * OffsetStep; break;
+                // 늦춤 plays the music later against the notes: the notes are drawn earlier.
+                case MusicRow: GameFlow.VisualOffsetMs -= direction * OffsetStep; break;
+                case DifficultyRow: GameFlow.Difficulty = direction < 0 ? GameDifficulty.Easy : GameDifficulty.Hard; break;
+            }
+            refresh();
+        }
+        private static int VolumePercent => Mathf.RoundToInt(GameFlow.MusicVolume * 100);
+        /// <summary>음악 싱크 보정 in milliseconds: + plays the music later. It is the old visual offset, sign flipped.</summary>
+        public static int MusicSyncMs => -GameFlow.VisualOffsetMs;
+        public static string Ms(int value) => value == 0 ? "0 ms" : (value < 0 ? "- " : "+ ") + Math.Abs(value) + " ms";
+
+        private void Update()
+        {
+            var keyboard = Keyboard.current;
+            if (keyboard == null) return;
+            bool shift = keyboard.shiftKey.isPressed;
+            if (shift && keyboard.dKey.wasPressedThisFrame) { Choose("개발자 모드", GameFlow.DevMode ? 0 : 1); return; }
+            if (keyboard.wKey.wasPressedThisFrame || keyboard.upArrowKey.wasPressedThisFrame) Select(SelectedRow == 0 ? RowCount - 1 : SelectedRow - 1);
+            if (keyboard.sKey.wasPressedThisFrame || keyboard.downArrowKey.wasPressedThisFrame) Select(SelectedRow == RowCount - 1 ? 0 : SelectedRow + 1);
+            int held = shift ? 0 : (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed ? -1 : 0) + (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed ? 1 : 0);
+            if (held == 0) { heldStep = 0; return; }
+            // A first press steps at once; held, it repeats after a short wait.
+            if (held != heldStep) { heldStep = held; nextRepeat = Time.unscaledTime + RepeatDelay; Step(SelectedRow, held); }
+            else if (Time.unscaledTime >= nextRepeat && SelectedRow != DifficultyRow) { nextRepeat = Time.unscaledTime + RepeatEvery; Step(SelectedRow, held); }
+        }
+
+        // --- Building ------------------------------------------------------------------------------------------
+        private void Build(RectTransform shade, ArtSet art)
+        {
+            font = UiFonts.Korean(art.screenFont != null ? art.screenFont : art.menuFont);
+            titleFont = art.screenTitleFont != null ? art.screenTitleFont : font;
+            Image(shade, new Color(0, 0, 0, .72f)).raycastTarget = true;
+            var frame = Rect(shade, "Frame", Vector2.zero, new Vector2(1920, 1080));
+            card = TopLeft(Rect(frame, "Card"), CardLeft, CardTop, CardWidth, CardHeight);
+            Image(Stretch(Rect(card, "Fill")), CardFill).raycastTarget = true;
+            Stroke(card, Ink, 5);
+            Text(At("Title", 959.91f, 121.78f + 44, 588, 88), "SETTINGS", 80, Ink, titleFont);
+            foreach (float y in Rules) Image(At("Rule", RuleLeft + RuleWidth / 2, y - 1, RuleWidth, 2), Rule);
+
+            for (int i = 0; i < RowCount; i++)
+            {
+                int row = i;
+                rowStrokes[i] = new List<UnityEngine.UI.Image>();
+                // The row between its rules: hover picks it, and it shows faintly while picked.
+                bands[i] = Image(At("Row " + i, RuleLeft + RuleWidth / 2, (Rules[i] + Rules[i + 1]) / 2, RuleWidth, Rules[i + 1] - Rules[i] - 2), Color.clear);
+                bands[i].raycastTarget = true;
+                bands[i].gameObject.AddComponent<MenuButton>().Hovered = () => Select(row);
+            }
+
+            // 음량: ◀ 80% ───◇── ▶
+            Picture(art.settingsVolume, "음량", 487.25f, RowCenters[VolumeRow], 106.11f, 57.72f, "음량");
+            Steppers(art, VolumeRow, captions: false);
+            var volumeText = Text(At("음량 Value", 1089.73f, 315.35f + 26, 120, 52), "", 40, Ink, font);
+            volumeText.characterSpacing = -5;
+            BuildSlider(VolumeRow);
+            refresh += () => volumeText.text = VolumePercent + "%";
+
+            // 입력 판정 보정 / 음악 싱크 보정: ◀ 0 ms ▶ with 앞당김 / 늦춤 under the buttons.
+            Picture(art.settingsInputOffset, "입력 판정 보정", 622.39f, 491.86f, 370.19f, 95.97f, "입력 판정 보정", "키 입력을 판정하는 시점");
+            Steppers(art, InputRow, captions: true);
+            var input = Text(At("입력 판정 보정 Value", ValueCenter, 451.06f + 26, 200, 52), "", 40, Color.white, font);
+            input.characterSpacing = -5;
+            refresh += () => input.text = Ms(GameFlow.InputOffsetMs);
+            Picture(art.settingsMusicOffset, "음악 싱크 보정", 620.83f, 641.91f, 373.31f, 95.27f, "음악 싱크 보정", "음악이 재생되는 시점");
+            Steppers(art, MusicRow, captions: true);
+            var music = Text(At("음악 싱크 보정 Value", ValueCenter, 600.33f + 26, 200, 52), "", 40, Color.white, font);
+            music.characterSpacing = -5;
+            refresh += () => music.text = Ms(MusicSyncMs);
+
+            // 난이도: [쉬움] [어려움], with what the picked one does in small type under the title.
+            Picture(art.settingsDifficulty, "난이도", 514.49f, 791.52f, 153.32f, 57.72f, "난이도");
+            string[] levels = { "쉬움", "어려움" };
+            float[] levelCenters = { 1087.48f, 1355.64f };
+            for (int i = 0; i < levels.Length; i++)
+            {
+                int index = i;
+                var box = At("Option " + levels[i], levelCenters[i], RowCenters[DifficultyRow], 260, 75);
+                var fill = Image(box, Ink); fill.raycastTarget = true;
+                var stroke = StrokeImages(box, 2);
+                var label = Text(Stretch(Rect(box, "Label")), levels[i], 32, Color.black, font);
+                label.characterSpacing = -5;
+                var button = box.gameObject.AddComponent<MenuButton>();
+                button.Hovered = () => Select(DifficultyRow); button.Clicked = () => choices["난이도"](index);
+                refresh += () =>
+                {
+                    bool on = (int)GameFlow.Difficulty == index;
+                    fill.color = on ? Ink : new Color(0, 0, 0, 0);
+                    foreach (var edge in stroke) edge.enabled = !on;
+                    label.color = on ? Color.black : Color.white;
+                };
+                rowStrokes[DifficultyRow].AddRange(stroke);
+            }
+            var note = TopLeft(Rect(card, "난이도 Note"), 437.83f - CardLeft, 832 - CardTop, 480, 24);
+            var noteText = UiKit.Label(note, "", 20, Caption, TextAlignmentOptions.Left, font);
+            noteText.characterSpacing = -5;
+            refresh += () => noteText.text = GameFlow.Difficulty == GameDifficulty.Easy ? EasyNote : HardNote;
+            choices["난이도"] = i => { GameFlow.Difficulty = i == 0 ? GameDifficulty.Easy : GameDifficulty.Hard; refresh(); };
+
+            // W S ↕   A D ↔   Esc 뒤로
+            Picture(art.settingsKeyHints, "Key Hints", 959.91f, 931.42f, 588, 50, "W S  위/아래     A D  조절     Esc  뒤로");
+
+            BuildDevStrip(frame);
+            refresh();
+        }
+
+        /// <summary>Hidden developer switches under the card (Shift+D). Not part of the Figma design.</summary>
+        private void BuildDevStrip(RectTransform frame)
+        {
+            var strip = TopLeft(Rect(frame, "Dev"), CardLeft, CardTop + CardHeight + 12, CardWidth, 44);
+            devStrip = strip.gameObject;
+            var title = UiKit.Label(TopLeft(Rect(strip, "Label"), 0, 0, 80, 44), "DEV", 22, Caption, TextAlignmentOptions.Left, font);
+            title.characterSpacing = -5;
+            DevRow(strip, 90, 80, "무적", new[] { "꺼짐", "켜짐" }, () => GameFlow.Invincible ? 1 : 0, i => GameFlow.Invincible = i == 1);
+            DevRow(strip, 360, 110, "보스 HP", new[] { "꺼짐", "켜짐" }, () => GameFlow.BossHpOff ? 0 : 1, i => GameFlow.BossHpOff = i == 0);
+            DevRow(strip, 660, 140, "시작 페이즈", new[] { "1", "2", "3", "4" }, () => GameFlow.StartPhase - 1, i => GameFlow.StartPhase = i + 1);
+            choices["개발자 모드"] = i => { GameFlow.DevMode = i == 1; refresh(); };
+            refresh += () => devStrip.SetActive(GameFlow.DevMode);
+        }
+        private void DevRow(RectTransform strip, float left, float nameWidth, string name, string[] options, Func<int> current, Action<int> set)
+        {
+            var row = TopLeft(Rect(strip, name), left, 0, nameWidth + 74 * options.Length, 44);
+            UiKit.Label(TopLeft(Rect(row, "Name"), 0, 0, nameWidth, 44), name, 22, Ink, TextAlignmentOptions.Left, font);
             for (int i = 0; i < options.Length; i++)
             {
                 int index = i;
-                var box = Rect(row, "Option " + options[i], new Vector2(-80 + 110 * i, 0), new Vector2(100, 46));
-                var fill = Image(box, Box); fill.raycastTarget = true;
-                var label = Write(Stretch(Rect(box, "Label")), options[i], 24, Text, TextAlignmentOptions.Center);
+                var box = TopLeft(Rect(row, "Option " + options[i]), nameWidth + 74 * i, 4, 66, 36);
+                var fill = Image(box, Ink); fill.raycastTarget = true;
+                var label = UiKit.Label(Stretch(Rect(box, "Label")), options[i], 20, Color.black, TextAlignmentOptions.Center, font);
                 box.gameObject.AddComponent<MenuButton>().Clicked = () => choices[name](index);
-                refresh += () => { bool on = current() == index; fill.color = on ? Box : Hex(0x1E1E1E); label.color = on ? BoxText : Text; };
+                refresh += () => { bool on = current() == index; fill.color = on ? Ink : Hex(0x1E1E1E); label.color = on ? Color.black : Ink; };
             }
             choices[name] = i => { set(i); refresh(); };
-            return row.gameObject;
         }
-        private void SliderRow(RectTransform card, float y, string name, int min, int max, Func<int> value, Action<int> set, Func<int, string> show)
+
+        /// <summary>The ◀ and ▶ buttons of a row (65x65, 2 px #6D6D6D stroke), optionally with 앞당김 / 늦춤 under them.</summary>
+        private void Steppers(ArtSet art, int row, bool captions)
         {
-            Write(Rect(card, name, new Vector2(-250, y), new Vector2(220, 50)), name, 30, Text, TextAlignmentOptions.Left);
-            var valueText = Write(Rect(card, name + " Value", new Vector2(300, y), new Vector2(150, 50)), show(value()), 26, Text, TextAlignmentOptions.Right);
-            var area = Rect(card, name + " Slider", new Vector2(40, y), new Vector2(360, 24));
-            Image(Stretch(Rect(area, "Track")), Hex(0x333333));
-            var fill = Stretch(Rect(Stretch(Rect(area, "Fill Area")), "Fill")); Image(fill, Box);
-            var handle = Rect(Stretch(Rect(area, "Handle Area")), "Handle", Vector2.zero, new Vector2(20, 40)); Image(handle, Text).raycastTarget = true;
-            var slider = area.gameObject.AddComponent<UnityEngine.UI.Slider>();
-            slider.fillRect = fill; slider.handleRect = handle; slider.targetGraphic = handle.GetComponent<UnityEngine.UI.Image>();
-            slider.wholeNumbers = true; slider.minValue = min; slider.maxValue = max; slider.SetValueWithoutNotify(value());
-            slider.onValueChanged.AddListener(v => { set((int)v); valueText.text = show((int)v); });
-            // Another panel (menu or battle) may have changed the saved value since this one was built.
-            refresh += () => { slider.SetValueWithoutNotify(value()); valueText.text = show(value()); };
+            for (int side = 0; side < 2; side++)
+            {
+                int direction = side == 0 ? -1 : 1;
+                float x = side == 0 ? LeftButton : RightButton;
+                var box = At(row + (side == 0 ? " Left" : " Right"), x, RowCenters[row], ButtonSize, ButtonSize);
+                Image(box, new Color(0, 0, 0, 0)).raycastTarget = true;
+                rowStrokes[row].AddRange(StrokeImages(box, 2));
+                // The arrow sits 2 px off centre toward where it points.
+                var arrow = Rect(box, "Arrow", new Vector2(2 * direction, 0), new Vector2(18.18f, 30.19f));
+                if (art.settingsArrow != null)
+                {
+                    Image(arrow, Color.white).sprite = art.settingsArrow;
+                    if (direction > 0) arrow.localScale = new Vector3(-1, 1, 1);
+                }
+                else Text(Stretch(arrow), direction < 0 ? "◀" : "▶", 30, Ink, font);
+                var button = box.gameObject.AddComponent<MenuButton>();
+                button.Hovered = () => Select(row); button.Clicked = () => { Select(row); Step(row, direction); };
+                if (captions)
+                {
+                    var text = Text(At(row + (side == 0 ? " 앞당김" : " 늦춤"), x, RowCenters[row] + 50, 90, 35), side == 0 ? "앞당김" : "늦춤", 24, Caption, font);
+                    text.characterSpacing = -10;
+                }
+            }
         }
-        private TMP_Text Write(RectTransform rect, string text, float size, Color color, TextAlignmentOptions align) => Label(rect, text, size, color, align, font);
+        /// <summary>The volume line: #D9D9D9 up to the value, #6D6D6D after, and a hollow diamond to drag.</summary>
+        private void BuildSlider(int row)
+        {
+            var area = At("음량 Slider", 1268.17f, 341.2f, 250, 24);
+            var track = Rect(area, "Track"); Stretch(track); track.anchorMin = new Vector2(0, .5f); track.anchorMax = new Vector2(1, .5f); track.sizeDelta = new Vector2(0, 5);
+            Image(track, Line).raycastTarget = true;
+            var fillArea = Rect(area, "Fill Area"); Stretch(fillArea); fillArea.anchorMin = new Vector2(0, .5f); fillArea.anchorMax = new Vector2(1, .5f); fillArea.sizeDelta = new Vector2(0, 5);
+            var fill = Stretch(Rect(fillArea, "Fill")); Image(fill, Ink);
+            var handle = Rect(Stretch(Rect(area, "Handle Area")), "Handle", Vector2.zero, new Vector2(36, 12));
+            var hit = Image(handle, new Color(0, 0, 0, 0)); hit.raycastTarget = true;
+            // Figma: a 25 px black square with a 5 px #D9D9D9 border, turned 45 degrees.
+            var diamond = Rect(handle, "Diamond", Vector2.zero, new Vector2(25, 25));
+            diamond.localEulerAngles = new Vector3(0, 0, 45);
+            Image(diamond, Ink);
+            Image(Rect(diamond, "Hole", Vector2.zero, new Vector2(15, 15)), Color.black);
+            var slider = area.gameObject.AddComponent<UnityEngine.UI.Slider>();
+            slider.fillRect = fill; slider.handleRect = handle; slider.targetGraphic = hit; slider.transition = UnityEngine.UI.Selectable.Transition.None;
+            slider.navigation = new UnityEngine.UI.Navigation { mode = UnityEngine.UI.Navigation.Mode.None };
+            slider.wholeNumbers = true; slider.minValue = 0; slider.maxValue = 100; slider.SetValueWithoutNotify(VolumePercent);
+            slider.onValueChanged.AddListener(v => { GameFlow.MusicVolume = v / 100f; Select(row); refresh(); });
+            // Another panel (menu or battle) may have changed the saved value since this one was built.
+            refresh += () => slider.SetValueWithoutNotify(VolumePercent);
+        }
+
+        /// <summary>A Figma row title exported as a picture; plain text when the picture is not delivered.</summary>
+        private void Picture(Sprite sprite, string name, float centerX, float centerY, float width, float height, string title, string caption = null)
+        {
+            var rect = At(name, centerX, centerY, width, height);
+            if (sprite != null) { Image(rect, Color.white).sprite = sprite; return; }
+            var text = UiKit.Label(Stretch(rect), caption == null ? title : title + "\n<size=40%><color=#6F6F6E>" + caption, 48, Ink, TextAlignmentOptions.Left, font);
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+        }
+        /// <summary>A rect by its centre in Figma frame pixels, placed in the card.</summary>
+        private RectTransform At(string name, float centerX, float centerY, float width, float height) =>
+            Rect(card, name, new Vector2(centerX - (CardLeft + CardWidth / 2), -(centerY - (CardTop + CardHeight / 2))), new Vector2(width, height));
+        private List<UnityEngine.UI.Image> StrokeImages(RectTransform box, float width)
+        {
+            int before = box.childCount;
+            Stroke(box, Line, width);
+            var edges = new List<UnityEngine.UI.Image>();
+            for (int i = before; i < box.childCount; i++) edges.Add(box.GetChild(i).GetComponent<UnityEngine.UI.Image>());
+            return edges;
+        }
+        private TMP_Text Text(RectTransform rect, string text, float size, Color color, TMP_FontAsset face) =>
+            Label(rect, text, size, color, TextAlignmentOptions.Center, face);
     }
 }

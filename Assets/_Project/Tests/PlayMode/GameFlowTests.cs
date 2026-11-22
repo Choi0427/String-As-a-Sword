@@ -65,7 +65,7 @@ namespace StringAsASword.Tests
             yield return null;
         }
 
-        [UnityTest] public IEnumerator MenuFollowsTheFigmaLayoutAndHoverAndTurnsWhiteOnTheLeftAfterAClear()
+        [UnityTest] public IEnumerator MenuFollowsTheFigmaLayoutAndHoverAndTurnsWhiteAfterAClear()
         {
             yield return LoadAndWait(GameFlow.MenuScene);
             var menu = Object.FindAnyObjectByType<MainMenuView>();
@@ -83,9 +83,56 @@ namespace StringAsASword.Tests
 
             GameFlow.MarkCleared(); menu.ApplyTheme();
             Assert.That(menu.White);
-            Assert.That(art.material.GetFloat("_Invert"), Is.EqualTo(1), "Only the left side is inverted by the shader.");
+            Assert.That(art.sprite.name, Is.EqualTo("MainMenu_Logo_BG_White"), "Figma 'Main Menu_White' replaces the dark art.");
+            Assert.That(art.material.GetFloat("_Invert"), Is.Zero, "The hand-made white art is not inverted again.");
             Assert.That(menu.LabelColorHex(1), Is.EqualTo("262626"));
             LogAssert.NoUnexpectedReceived();
+        }
+        [UnityTest] public IEnumerator SettingsFollowTheFigmaCardAndStepTheSavedValues()
+        {
+            float volume = GameFlow.MusicVolume; int input = GameFlow.InputOffsetMs, visual = GameFlow.VisualOffsetMs;
+            var difficulty = GameFlow.Difficulty; bool dev = GameFlow.DevMode;
+            try
+            {
+                GameFlow.MusicVolume = .8f; GameFlow.InputOffsetMs = 0; GameFlow.VisualOffsetMs = 0;
+                GameFlow.Difficulty = GameDifficulty.Hard; GameFlow.DevMode = false;
+                yield return LoadAndWait(GameFlow.MenuScene);
+                var menu = Object.FindAnyObjectByType<MainMenuView>();
+                menu.Activate(MainMenuView.SettingsItem);
+                var settings = menu.Settings;
+                Assert.That(settings.IsOpen);
+                var card = (RectTransform)menu.transform.Find("Settings/Frame/Card");
+                Assert.That(card.rect.size.x, Is.EqualTo(1266.17f).Within(.01f));
+                Assert.That(card.rect.size.y, Is.EqualTo(950.64f).Within(.01f));
+                // Only the four Figma rows: no tutorial, close, sync-on-screen, HP style or developer buttons on the card.
+                foreach (string gone in new[] { "Tutorial", "Close", "화면 싱크", "체력 표시", "개발자 모드" })
+                    Assert.That(card.Find(gone), Is.Null, gone);
+                Assert.That(menu.transform.Find("Settings/Frame/Dev").gameObject.activeSelf, Is.False);
+                TMPro.TMP_Text Value(string row) => card.Find(row + " Value").GetComponent<TMPro.TMP_Text>();
+                Assert.That(Value("음량").text, Is.EqualTo("80%"));
+
+                settings.Step(SettingsPanel.VolumeRow, 1);
+                Assert.That(GameFlow.MusicVolume, Is.EqualTo(.85f).Within(.001f));
+                settings.Step(SettingsPanel.InputRow, -1);
+                Assert.That(GameFlow.InputOffsetMs, Is.EqualTo(-SettingsPanel.OffsetStep));
+                Assert.That(Value("입력 판정 보정").text, Is.EqualTo("- 5 ms"));
+                settings.Step(SettingsPanel.MusicRow, 1);
+                Assert.That(SettingsPanel.MusicSyncMs, Is.EqualTo(SettingsPanel.OffsetStep), "늦춤 plays the music later...");
+                Assert.That(GameFlow.VisualOffsetMs, Is.EqualTo(-SettingsPanel.OffsetStep), "...so the notes are drawn earlier.");
+                Assert.That(Value("음악 싱크 보정").text, Is.EqualTo("+ 5 ms"));
+                settings.Step(SettingsPanel.DifficultyRow, -1);
+                Assert.That(GameFlow.Difficulty, Is.EqualTo(GameDifficulty.Easy));
+                Assert.That(card.Find("난이도 Note").GetComponent<TMPro.TMP_Text>().text, Is.EqualTo(SettingsPanel.EasyNote));
+                settings.Choose("개발자 모드", 1);
+                Assert.That(menu.transform.Find("Settings/Frame/Dev").gameObject.activeSelf, "Shift+D's switch shows the developer strip.");
+                settings.Close();
+                Assert.That(settings.IsOpen, Is.False);
+            }
+            finally
+            {
+                GameFlow.MusicVolume = volume; GameFlow.InputOffsetMs = input; GameFlow.VisualOffsetMs = visual;
+                GameFlow.Difficulty = difficulty; GameFlow.DevMode = dev;
+            }
         }
         private IEnumerator Press(Key key)
         {

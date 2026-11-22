@@ -373,6 +373,10 @@ namespace StringAsASword.Tests
             InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
             Assert.That(game.State, Is.EqualTo(PrototypeState.Paused));
             Assert.That(screens.Showing, Is.EqualTo(BattleScreens.ScreenKind.Pause));
+            yield return null;
+            // The blur is a screenshot, which batch mode cannot take: there the card shows over the sharp game.
+            if (!Application.isBatchMode) Assert.That(screens.BlurShown, "The game behind the pause card is blurred.");
+            Assert.That(game.GetComponentInChildren<BattleScreens>().transform.Find("Pause").gameObject.activeSelf, "The card shows once the still is taken.");
             double paused = game.SongTime;
             screens.Press(1);
             Assert.That(screens.SettingsOpen);
@@ -388,6 +392,7 @@ namespace StringAsASword.Tests
             Assert.That(game.State, Is.EqualTo(PrototypeState.Playing));
             Assert.That(screens.Showing, Is.EqualTo(BattleScreens.ScreenKind.None));
             Assert.That(game.ResumeAt, Is.EqualTo(paused).Within(1e-6));
+            Assert.That(screens.BlurShown, Is.False, "The blur goes with the pause card.");
             Assert.That(game.SongTime, Is.LessThan(paused - game.Timeline.SecondsPerBeat), "The song rewinds before the paused place.");
 
             // Running out of notes ends on the game-over screen; 첫 수부터 restarts.
