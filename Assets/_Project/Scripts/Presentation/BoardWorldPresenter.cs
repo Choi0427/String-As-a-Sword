@@ -688,6 +688,14 @@ namespace StringAsASword.Presentation
             if (king == null) return;
             king.transform.localRotation = Quaternion.Euler(-80 * Mathf.SmoothStep(0, 1, t), 0, 0);
         }
+        private const float StepSeconds = .13f, StepHeight = .13f, LiftHeight = .55f;
+        private float moveSeconds = StepSeconds, moveHeight = StepHeight, liftNext, liftUntil;
+        /// <summary>
+        /// The knight's next change of cell, if it comes in the next quarter second, is not a step: it is lifted and carried
+        /// there over <paramref name="seconds"/>, as a piece is set back up (the tutorial's end, when the song's battle puts it
+        /// on its start cell). Without a change it lapses, so a later step is never slowed.
+        /// </summary>
+        public void LiftNextMove(float seconds) { liftNext = seconds; liftUntil = Time.unscaledTime + .25f; }
         public void SetVoidColor(Color color) => BoardCamera.backgroundColor = color;
         /// <summary>Back to the battle's clear colour (transparent when background art is assigned).</summary>
         public void ResetVoid() => BoardCamera.backgroundColor = clearColor;
@@ -700,6 +708,7 @@ namespace StringAsASword.Presentation
         public void ResetVisuals()
         {
             moveAge = attackAge = guardAge = 1;
+            moveSeconds = StepSeconds; moveHeight = StepHeight; liftNext = 0;
             guardNote = -1;
             moveFrom = moveTarget = CellPosition(game.Session.Position);
             player.localPosition = moveTarget; selection.localPosition = moveTarget;
@@ -772,12 +781,19 @@ namespace StringAsASword.Presentation
             if (FreeRoam) return;
             RenderTelegraphs(dt);
             Vector3 target = CellPosition(game.Session.Position);
-            if (target != moveTarget) { moveFrom = player.localPosition; moveTarget = target; moveAge = 0; ArtCue.Trigger(player.gameObject, "Move"); }
+            if (target != moveTarget)
+            {
+                moveFrom = player.localPosition; moveTarget = target; moveAge = 0;
+                // A step hops; a piece set back up is lifted clear of the board and carried.
+                bool lifted = liftNext > 0 && Time.unscaledTime <= liftUntil;
+                moveSeconds = lifted ? liftNext : StepSeconds; moveHeight = lifted ? LiftHeight : StepHeight; liftNext = 0;
+                if (!lifted) ArtCue.Trigger(player.gameObject, "Move");
+            }
             if (game.Noise.Collected > lastCollected) ArtCue.Spawn(art.pickupVfx, world.transform, target);
             lastCollected = game.Noise.Collected;
             moveAge += dt; attackAge += dt; guardAge += dt;
-            float t = Mathf.Clamp01(moveAge / .13f);
-            player.localPosition = Vector3.Lerp(moveFrom, moveTarget, Mathf.SmoothStep(0, 1, t)) + Vector3.up * (Mathf.Sin(t * Mathf.PI) * .13f);
+            float t = Mathf.Clamp01(moveAge / moveSeconds);
+            player.localPosition = Vector3.Lerp(moveFrom, moveTarget, Mathf.SmoothStep(0, 1, t)) + Vector3.up * (Mathf.Sin(t * Mathf.PI) * moveHeight);
             selection.localPosition = target;
             sword.gameObject.SetActive(attackAge < .23f);
             sword.localRotation = Quaternion.Euler(0, -80 + attackAge / .23f * 125, 0);
