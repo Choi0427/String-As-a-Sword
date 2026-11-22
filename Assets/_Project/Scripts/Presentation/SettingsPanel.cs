@@ -29,7 +29,7 @@ namespace StringAsASword.Presentation
         private const float LeftButton = 989.98f, RightButton = 1453.14f, ButtonSize = 65, ValueCenter = 1222.06f;
         public const int VolumeRow = 0, InputRow = 1, MusicRow = 2, DifficultyRow = 3, RowCount = 4;
         /// <summary>One A/D press or arrow click: volume in percent, the two syncs in milliseconds.</summary>
-        public const int VolumeStep = 5, OffsetStep = 5;
+        public const int VolumeStep = 5, OffsetStep = 1;
         private const float RepeatDelay = .35f, RepeatEvery = .06f;
         private const string EasyNote = "잡음 획득 시 체력 1칸 회복", HardNote = "체력 회복 없음";
 
@@ -41,6 +41,13 @@ namespace StringAsASword.Presentation
         private RectTransform card;
         private GameObject devStrip;
         private int heldStep; private float nextRepeat;
+        // Press feedback on the ◀ ▶ boxes (index row * 2 + side, 0 = ◀): a white fill that lights when the box steps and fades.
+        private readonly UnityEngine.UI.Image[] stepFlashes = new UnityEngine.UI.Image[RowCount * 2];
+        private readonly float[] flashAges = new float[RowCount * 2];
+        // One short, hard blink per step: about 25% white (alpha for the Linear colour space), on at once and off at once
+        // 0.08 s later. No fade: on the dark button a fade shows as visible steps instead of one clean blink.
+        private static readonly float FlashPeak = Mathf.Pow(.25f, 2.2f);
+        private const float FlashSeconds = .08f;
         /// <summary>Called after the panel closes, so a running battle can pick up what changed.</summary>
         public event Action Closed;
         /// <summary>Asks the owner (menu or battle) to start the tutorial, after the panel closed.</summary>
@@ -59,7 +66,7 @@ namespace StringAsASword.Presentation
             return panel;
         }
         // Opens with no row lit, like the menus: a row shows while hovered or once W/S picks it.
-        public void Open() { refresh(); Select(-1); heldStep = 0; gameObject.SetActive(true); }
+        public void Open() { refresh(); Select(-1); heldStep = 0; ResetFlashes(); gameObject.SetActive(true); }
         public void Close()
         {
             if (!IsOpen) return;
@@ -97,6 +104,34 @@ namespace StringAsASword.Presentation
                 case DifficultyRow: GameFlow.Difficulty = direction < 0 ? GameDifficulty.Easy : GameDifficulty.Hard; break;
             }
             refresh();
+            LightStepper(row, direction);
+        }
+        /// <summary>Blinks the ◀ (direction &lt; 0) or ▶ box of a row once. Rows without boxes: nothing.</summary>
+        private void LightStepper(int row, int direction)
+        {
+            if (row < 0 || row >= RowCount || direction == 0) return;
+            int i = row * 2 + (direction < 0 ? 0 : 1);
+            if (stepFlashes[i] == null) return;
+            flashAges[i] = 0;
+            stepFlashes[i].color = new Color(1, 1, 1, FlashPeak);
+        }
+        private void AnimateFlashes()
+        {
+            for (int i = 0; i < stepFlashes.Length; i++)
+            {
+                if (stepFlashes[i] == null || flashAges[i] > FlashSeconds) continue;
+                // Unscaled: the panel also opens over the paused battle.
+                flashAges[i] += Time.unscaledDeltaTime;
+                if (flashAges[i] > FlashSeconds) stepFlashes[i].color = new Color(1, 1, 1, 0);
+            }
+        }
+        private void ResetFlashes()
+        {
+            for (int i = 0; i < stepFlashes.Length; i++)
+            {
+                flashAges[i] = FlashSeconds + 1;
+                if (stepFlashes[i] != null) stepFlashes[i].color = new Color(1, 1, 1, 0);
+            }
         }
         private static int VolumePercent => Mathf.RoundToInt(GameFlow.MusicVolume * 100);
         /// <summary>음악 싱크 보정 in milliseconds: + plays the music later. It is the old visual offset, sign flipped.</summary>
@@ -105,6 +140,7 @@ namespace StringAsASword.Presentation
 
         private void Update()
         {
+            AnimateFlashes();
             var keyboard = Keyboard.current;
             if (keyboard == null) return;
             bool shift = keyboard.shiftKey.isPressed;
@@ -174,7 +210,7 @@ namespace StringAsASword.Presentation
                 var box = At("Option " + levels[i], levelCenters[i], buttonY, buttonWidth, buttonHeight);
                 var fill = SlicedImage(box, Ink, art.settingsRoundedFill); fill.raycastTarget = true;
                 var stroke = StrokeImages(box, art.settingsRoundedButtonBorder);
-                var label = Text(Stretch(Rect(box, "Label")), levels[i], 32, Color.black, font);
+                var label = Label(Stretch(Rect(box, "Label")), levels[i], 32, Color.black, TextAlignmentOptions.Midline, font);
                 label.characterSpacing = -5;
                 var button = HoverRow(box.gameObject, DifficultyRow);
                 button.Clicked = () => choices["난이도"](index);
@@ -210,6 +246,7 @@ namespace StringAsASword.Presentation
 
             BuildDevStrip(frame);
             refresh();
+            ResetFlashes();
         }
 
         /// <summary>Hidden developer switches under the card (Shift+D). Not part of the Figma design.</summary>
@@ -251,6 +288,8 @@ namespace StringAsASword.Presentation
                 var box = At(row + (side == 0 ? " Left" : " Right"), x, RowCenters[row], ButtonSize, ButtonSize);
                 Image(box, new Color(0, 0, 0, 0)).raycastTarget = true;
                 rowStrokes[row].AddRange(StrokeImages(box, art.settingsRoundedButtonBorder));
+                // Press flash: the box's rounded shape in white, over the border and under the arrow, clear until it steps.
+                stepFlashes[row * 2 + side] = SlicedImage(Stretch(Rect(box, "Press Flash")), new Color(1, 1, 1, 0), art.settingsRoundedFill);
                 // The arrow sits 2 px off centre toward where it points.
                 var arrow = Rect(box, "Arrow", new Vector2(2 * direction, 0), new Vector2(18.18f, 30.19f));
                 if (art.settingsArrow != null)
@@ -261,6 +300,7 @@ namespace StringAsASword.Presentation
                 else Text(Stretch(arrow), direction < 0 ? "◀" : "▶", 30, Ink, font);
                 var button = HoverRow(box.gameObject, row);
                 button.Clicked = () => { Select(row); Step(row, direction); };
+                if (row == InputRow || row == MusicRow) button.RepeatWhileHeld(RepeatDelay, RepeatEvery);
                 if (captions)
                 {
                     var text = Text(At(row + (side == 0 ? " 앞당김" : " 늦춤"), x, RowCenters[row] + 50, 90, 35), side == 0 ? "앞당김" : "늦춤", 24, Caption, font);

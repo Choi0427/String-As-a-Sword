@@ -13,6 +13,8 @@ MonoBehaviour:
   m_Name: ArtSet
   m_EditorClassIdentifier: StringAsASword.Runtime::StringAsASword.Presentation.ArtSet
   knightPrefab: {fileID: 2136183865469953749, guid: ad6eb1cf2996e64489b5ddbcb6f9d896, type: 3}
+  knightGlowColor: {r: 1, g: 1, b: 1, a: 0.65}
+  knightGlowSize: 0.008
   swordPrefab: {fileID: 3338993447774502876, guid: 45c2dc6f06e843c419c9f808cf20bd3a, type: 3}
   kingPrefab: {fileID: 0}
   kingAnchor: {x: 0, y: 0, z: 5.5}

@@ -14,6 +14,7 @@ namespace StringAsASword.Presentation
         private PrototypeGame game;
         private GameObject world;
         private Transform player, knightBody, selection, sword, shield;
+        private KnightGlow knightGlow;
         private SpriteRenderer slashRenderer;
         private Transform[] pickups;
         private Renderer[][] pickupRenderers;
@@ -30,6 +31,8 @@ namespace StringAsASword.Presentation
         private Material materialTemplate;
         private Material outlineMaterial;
         private Color outlineAccent, outlineColor;
+        private Renderer[] outlineEdges = new Renderer[0];
+        private bool outlineShown = true;
         // Two tile kinds: normal (guard or leave) and strong (a guard does not protect: AttackResponse.DodgeOnly).
         // A full-board GuardOnly attack is a normal attack with nowhere to go, so it shows the normal tile.
         private const int NormalTile = 0, StrongTile = 1;
@@ -92,7 +95,10 @@ namespace StringAsASword.Presentation
         public Camera BoardCamera { get; private set; }
         public RenderTexture Texture { get; private set; }
         public Transform PlayerTransform => player;
-        /// <summary>The mint outline of the knight's cell. The prologue hides it until it hands over to the battle.</summary>
+        /// <summary>
+        /// The outline of the knight's cell. It only shows (orange) while a move-away attack is aimed at that cell; there is no
+        /// plain mint outline. The prologue hides it until it hands over to the battle.
+        /// </summary>
         public Transform CellOutline => selection;
         /// <summary>The root every board object hangs under (cells are its local space).</summary>
         public Transform WorldRoot => world.transform;
@@ -175,7 +181,11 @@ namespace StringAsASword.Presentation
             }
             selection = new GameObject("Player Cell Outline").transform; selection.SetParent(world.transform, false);
             Frame(selection, .91f, .026f, .042f, accent);
+            outlineEdges = selection.GetComponentsInChildren<Renderer>(true);
+            ShowOutline(false);
             BuildPlayer();
+            // Built before the sword swing and the shield are added, so only the knight itself glows.
+            knightGlow = new KnightGlow(BoardCamera, player, player.GetComponentsInChildren<Renderer>(true), art);
             if (art.kingPrefab != null)
             {
                 king = Instantiate(art.kingPrefab, world.transform, false); king.name = "King";
@@ -818,6 +828,7 @@ namespace StringAsASword.Presentation
                 impacts[i].SetActive(false);
                 foreach (var pool in warnings) pool[i].SetActive(false);
             }
+            ShowOutline(false);
             lastSession = game.SessionId;
             HideSummons();
             FreeRoam = false; SetKingDown(0);
@@ -882,7 +893,7 @@ namespace StringAsASword.Presentation
             // While the centre comes apart the view keeps trembling, more as the light grows.
             float jolt = Mathf.Clamp01(1 - shakeAge / .25f) * 7 + Mathf.Clamp01(BreakStage - 2) * 2;
             ((RectTransform)transform).anchoredPosition = viewHome + new Vector2(Mathf.Sin(shakeAge * 95), Mathf.Cos(shakeAge * 71)) * jolt;
-            if (FreeRoam) return;
+            if (FreeRoam) { ShowOutline(false); return; }
             RenderTelegraphs(dt);
             Vector3 target = CellPosition(game.Session.Position);
             if (target != moveTarget)
@@ -995,15 +1006,25 @@ namespace StringAsASword.Presentation
                     warnings[kind][i].SetActive(warning && kind == tile);
                 impacts[i].SetActive(fired);
             }
-            // The knight's pedestal covers its own cell's mark, so the outline carries that cell's response.
+            // The knight's pedestal covers its own cell's mark, so a move-away attack on that cell shows as an orange outline.
+            // Any other time the cell has no outline (the plain mint one is gone).
             var position = game.Session.Position;
             int cell = position.Y * 8 + position.X;
-            Color outline = cellCounts[cell] > 0 ? TelegraphHud.ResponseColor(cellResponses[cell], outlineAccent) : outlineAccent;
+            bool dodge = cellCounts[cell] > 0 && cellResponses[cell] == AttackResponse.DodgeOnly;
+            Color outline = dodge ? TelegraphHud.ResponseColor(AttackResponse.DodgeOnly, outlineAccent) : outlineAccent;
             if (outlineColor != outline)
             {
                 outlineMaterial.color = outlineColor = outline;
                 if (outlineMaterial.HasProperty("_BaseColor")) outlineMaterial.SetColor("_BaseColor", outline);
             }
+            ShowOutline(dodge);
+        }
+        /// <summary>Turns the cell outline's edges on or off. The prologue's SetActive on <see cref="CellOutline"/> still applies on top.</summary>
+        private void ShowOutline(bool show)
+        {
+            if (outlineShown == show) return;
+            outlineShown = show;
+            foreach (var edge in outlineEdges) if (edge != null) edge.enabled = show;
         }
         private static Mesh TelegraphMesh(bool impact) => TelegraphMesh(impact, true);
         // The fallback marks: a dark underlay and a frame, plus an X (impact) or diagonal hatching (strong) when striped.
@@ -1487,7 +1508,7 @@ namespace StringAsASword.Presentation
             var picture = new GameObject("Noise Sprite", typeof(SpriteRenderer)).GetComponent<SpriteRenderer>();
             picture.transform.SetParent(hover, false);
             picture.sprite = art.noiseSprite; picture.sharedMaterial = spriteMaterial; picture.sortingOrder = 1;
-            // About a cell wide, whatever the picture's pixels-per-unit.
+            // Within one cell, dark backing included (1.1x the picture), whatever the picture's pixels-per-unit.
             float scale = NoiseWidth / Mathf.Max(.0001f, art.noiseSprite.bounds.size.x);
             picture.transform.localScale = Vector3.one * scale;
             // The picture is white and the tiles are light: a dark, slightly larger copy right behind it gives the line
@@ -1499,7 +1520,9 @@ namespace StringAsASword.Presentation
             noiseSprites[index] = picture; noiseShadows[index] = shadow; noiseFloats[index] = hover; noiseBackings[index] = backing;
             return item;
         }
-        private const float NoiseWidth = 1.4f, NoiseHover = .5f, NoiseBob = .08f;
+        // The picture is about .41 cells tall (pivot at its centre): at .26 it floats just clear of its own cell, low
+        // enough that it reads as on that cell rather than on the one behind it. The bob stays clear of the tile too.
+        private const float NoiseWidth = .85f, NoiseHover = .26f, NoiseBob = .04f;
         public const string NoiseShader = "Universal Render Pipeline/2D/Sprite-Unlit-Default";
         /// <summary>Height above its cell at which a noise pickup is drawn (where collected noise starts its flight).</summary>
         public float NoiseHeight => noiseSprites != null ? NoiseHover : .12f;
@@ -1613,6 +1636,7 @@ namespace StringAsASword.Presentation
         }
         private void OnDestroy()
         {
+            knightGlow?.Dispose();
             if (BoardCamera != null) BoardCamera.targetTexture = null;
             if (Texture != null) Texture.Release();
             if (world != null) Destroy(world);

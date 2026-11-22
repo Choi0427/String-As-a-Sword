@@ -78,9 +78,10 @@ namespace StringAsASword.Presentation
         public NotePresenter Notes => notes;
         private BoardWorldPresenter boardWorld;
         private BossPortrait bossPortrait;
+        private int ghostStrikeNote = -1;
         public BossPortrait BossPortrait => bossPortrait;
         private ResonanceHud resonanceHud;
-        /// <summary>The remaining-notes gauge, the ignition flash and the ghost strike of the resonance rule.</summary>
+        /// <summary>The remaining-notes gauge and the ignition flash of the resonance rule.</summary>
         public ResonanceHud ResonanceHud => resonanceHud;
         private BossCrownView bossCrown;
         /// <summary>The crown over the boss picture that shows boss HP; null without crown art or a boss picture.</summary>
@@ -106,6 +107,8 @@ namespace StringAsASword.Presentation
         private TMP_Text playerHp;
         // Player HP under the knight, one image per HP. Sizes are cell widths, measured from the HUD mockup.
         private UnityEngine.UI.Image[] hpIcons;
+        // The HP row's width as a share of the knight's cell width.
+        private const float HpRowShareOfCell = .855f;
         private RectTransform hpRow;
         private PlayerHpStyle hpStyle;
         public PlayerHpStyle HpStyle => hpStyle;
@@ -210,7 +213,7 @@ namespace StringAsASword.Presentation
                 float farEdgeOnBoard = boardWorld.ProjectToBoard(new Vector3(0, 0, 4), size).y;
                 float farEdge = BoardCenter.y + farEdgeOnBoard;
                 bossPortrait = boss.gameObject.AddComponent<BossPortrait>();
-                bossPortrait.Initialize(game, art.bossImage, new Vector2(BoardCenter.x + art.bossImageSink.x, farEdge - art.bossImageSink.y), Mathf.Max(1, art.bossImageHeight));
+                bossPortrait.Initialize(game, art.bossImage, new Vector2(BoardCenter.x + art.bossImageSink.x, farEdge - art.bossImageSink.y), Mathf.Max(1, art.bossImageHeight), UiFonts.Korean(art.screenFont != null ? art.screenFont : art.menuFont, LatinFont));
                 bossPortrait.ClipBehind(mask, board, farEdgeOnBoard);
                 if (art.HasCrown)
                 {
@@ -270,6 +273,10 @@ namespace StringAsASword.Presentation
             // Bar: 0.14 x 0.033 segments every 0.16, centred 0.086 above the edge. Knights: 0.156 tall every 0.125, feet 0.04 above it.
             Vector2 size = knights ? new Vector2(.125f, .156f) * cell : new Vector2(.14f, .033f) * cell;
             float pitch = (knights ? .125f : .16f) * cell;
+            // Scaled up so the whole row is a little narrower than the cell, whatever the max HP.
+            float rowWidth = (hpIcons.Length - 1) * pitch + size.x;
+            float grow = HpRowShareOfCell * cell / Mathf.Max(rowWidth, .0001f);
+            size *= grow; pitch *= grow;
             hpRow.anchoredPosition = (left + right) * .5f + Vector2.up * (knights ? .04f * cell + size.y * .5f : .086f * cell);
             int hp = game.Battle.PlayerHp;
             for (int i = 0; i < hpIcons.Length; i++)
@@ -306,6 +313,9 @@ namespace StringAsASword.Presentation
         // Delivered lane art: one sprite with strings on both sides and a gap for the board. Its height is fitted to the
         // board rows in ArtSet.laneRows and its width so the middle string ends on the board's side edges, so the two
         // scales differ. The judge lines lie along those edges over the same rows, tilted with the board's perspective.
+        // The lane art's strings are 217 grey at 50% in the file; blended in linear space they showed as ~161/255 over black.
+        // At 0.45 more they show as ~110/255, the grey of the approved battle screenshot.
+        private const float LaneArtAlpha = .45f;
         private void BuildLaneArt()
         {
             var sprite = art.laneSprite;
@@ -321,7 +331,7 @@ namespace StringAsASword.Presentation
             var lane = MakeRect(root, "Lane Art", new Vector2(
                 BoardCenter.x + (sprite.rect.width - art.laneBoardGap.x - art.laneBoardGap.y) * .5f * scaleX,
                 laneY + (art.laneStrings.y - sprite.rect.height * .5f) * scaleY), new Vector2(sprite.rect.width * scaleX, sprite.rect.height * scaleY));
-            Image(lane, Color.white).sprite = sprite;
+            Image(lane, new Color(1, 1, 1, LaneArtAlpha)).sprite = sprite;
             float tilt = Mathf.Atan2(near.x - far.x, far.y - near.y);
             // The note heads fill the space between the bottom two strings, tip to tip; the judge point is where the
             // board's edge crosses the middle of that space.
@@ -425,6 +435,8 @@ namespace StringAsASword.Presentation
             for (int i = 0; i < dangerBadges.Length; i++)
             { dangerBadges[i].SetActive(false); dangerConnectors[i].gameObject.SetActive(false); }
             boardWorld.ResetVisuals();
+            ghostStrikeNote = -1;
+            if (bossPortrait != null) bossPortrait.ResetHitFeedback();
             if (bossCrown != null) bossCrown.ResetVisuals();
             resonanceHud.ResetVisuals();
         }
@@ -449,18 +461,19 @@ namespace StringAsASword.Presentation
         }
         public void ShowDamage(int damage)
         {
+            // Damage resolves before the current note becomes LastClosedNote.
+            if (damage <= 0 || ghostStrikeNote == game.Battle.LastClosedNote + 1) return;
             boardWorld.ShowDamage(damage);
-            if (damage > 0 && bossPortrait != null) bossPortrait.Hurt();
+            if (bossPortrait != null) bossPortrait.Hurt();
         }
         /// <summary>A noise pickup was collected. It charges the string (the J key lights, the next notes glow); nothing flies to the crown, which is boss HP only.</summary>
         public void ShowNoiseCollected(NoisePickup pickup) { }
         public void ShowIgnition(int note) => resonanceHud.Ignite();
-        /// <summary>An attack without resonance: the blade passes through the boss.</summary>
+        /// <summary>Show the MISS label for an attack without resonance.</summary>
         public void ShowGhostStrike(int note)
         {
-            var boss = bossPortrait != null ? (RectTransform)bossPortrait.transform : null;
-            resonanceHud.Ghost(boss != null ? boss.TransformPoint(new Vector3(0, boss.sizeDelta.y * .6f, 0))
-                : boardRect.TransformPoint(new Vector3(0, BoardSize.y * .45f, 0)));
+            ghostStrikeNote = note;
+            if (bossPortrait != null) bossPortrait.ShowMiss();
         }
         // Beside the knight, because that is where the eye already is. Near the top it drops below instead.
         private void ShowOutcome(string text)
@@ -518,7 +531,7 @@ namespace StringAsASword.Presentation
                 foreach (var glow in judgeGlows) glow.color = new Color(1, 1, 1, JudgeGlowAlpha);
             else foreach (var line in judgeLines) line.color = Color.Lerp(InkWhite, Accent, JudgeGlowAlpha);
             resonanceHud.Render();
-            notes.Render(game, resonanceHud.Ignite01);
+            notes.Render(game);
             // Counts down to the first note, or after a resume to the place the song was paused.
             double readyAt=game.State==PrototypeState.CountIn?0:game.State==PrototypeState.Playing&&game.SongTime<game.ResumeAt?game.ResumeAt:double.NaN;
             countIn.text=double.IsNaN(readyAt)?"":$"GET READY  {Mathf.Clamp((int)Math.Ceiling((readyAt-game.SongTime)/game.Timeline.SecondsPerBeat),1,game.Song.CountInBeats)}";

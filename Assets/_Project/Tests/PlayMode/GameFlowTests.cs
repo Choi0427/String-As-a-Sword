@@ -121,11 +121,11 @@ namespace StringAsASword.Tests
                 Assert.That(GameFlow.MusicVolume, Is.EqualTo(.85f).Within(.001f));
                 settings.Step(SettingsPanel.InputRow, -1);
                 Assert.That(GameFlow.InputOffsetMs, Is.EqualTo(-SettingsPanel.OffsetStep));
-                Assert.That(Value("입력 판정 보정").text, Is.EqualTo("- 5 ms"));
+                Assert.That(Value("입력 판정 보정").text, Is.EqualTo("- 1 ms"));
                 settings.Step(SettingsPanel.MusicRow, 1);
                 Assert.That(SettingsPanel.MusicSyncMs, Is.EqualTo(SettingsPanel.OffsetStep), "늦춤 plays the music later...");
                 Assert.That(GameFlow.VisualOffsetMs, Is.EqualTo(-SettingsPanel.OffsetStep), "...so the notes are drawn earlier.");
-                Assert.That(Value("음악 싱크 보정").text, Is.EqualTo("+ 5 ms"));
+                Assert.That(Value("음악 싱크 보정").text, Is.EqualTo("+ 1 ms"));
                 settings.Select(SettingsPanel.DifficultyRow);
                 yield return Press(Key.A);
                 Assert.That(GameFlow.Difficulty, Is.EqualTo(GameDifficulty.Easy));

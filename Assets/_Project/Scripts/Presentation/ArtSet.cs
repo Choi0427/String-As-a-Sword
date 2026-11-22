@@ -10,6 +10,12 @@ namespace StringAsASword.Presentation
         [Header("3D models (1 unit = 1 cell, pivot at bottom centre, front faces -Z)")]
         [Tooltip("Replaces the procedural knight. Animator triggers: Move, Attack, Guard, Hit, Block.")]
         public GameObject knightPrefab;
+        [Tooltip("Soft outer glow around the knight in the board view, like the one painted around the boss picture. " +
+            "RGB = colour; A = strength at the knight's edge, as it would look in Photoshop or Figma (0 = no glow). Can be tuned in Play mode.")]
+        public Color knightGlowColor = new Color(1, 1, 1, .65f);
+        [Tooltip("How far the knight's glow spreads: its blur radius (sigma) as a share of the board view's height. " +
+            "It fades out at about twice this. Can be tuned in Play mode.")]
+        public float knightGlowSize = .008f;
         [Tooltip("The knight's sword in the prologue (the torn string). Pivot at the grip, blade along +Y. Empty = a white line.")]
         public GameObject swordPrefab;
         [Tooltip("Placed only when assigned. Animator triggers: Telegraph, Attack, Hurt, PhaseUp.")]
@@ -132,8 +138,7 @@ namespace StringAsASword.Presentation
         [Tooltip("Pause and game-over menu items (Figma: Orbit Regular). Empty = menuFont.")]
         public TMP_FontAsset screenFont;
         [Tooltip("PAUSED / FALLEN titles (Figma: Media Sans Extended Black). Empty = screenFont.")]
-        public TMP_FontAsset screenTitleFont;
-        [Tooltip("Settings card art (Figma 'Game Play' / Settings, exported at 2x): the row titles with their captions, the key hints " +
+        public TMP_FontAsset screenTitleFont;        [Tooltip("Settings card art (Figma 'Game Play' / Settings, exported at 2x): the row titles with their captions, the key hints " +
             "at the bottom and the left-pointing arrow of the step buttons (flipped for the right one). Empty = plain text.")]
         public Sprite settingsVolume, settingsInputOffset, settingsMusicOffset, settingsDifficulty, settingsKeyHints, settingsArrow;
         [Tooltip("Captions under the selected difficulty button on the settings card.")]

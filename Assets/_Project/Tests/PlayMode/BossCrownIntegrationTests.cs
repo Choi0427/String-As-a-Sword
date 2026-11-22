@@ -102,7 +102,7 @@ namespace StringAsASword.Tests
             var pickup = world.Find("Noise_0");
             Assert.That(pickup.gameObject.activeSelf, Is.True);
             var hover = pickup.Find("Noise Float");
-            Assert.That(hover.localPosition.y, Is.GreaterThan(.35f), "The picture hovers well above its cell.");
+            Assert.That(hover.localPosition.y, Is.InRange(.2f, .32f), "The picture floats just above its own cell, not over the one behind.");
             var picture = hover.Find("Noise Sprite").GetComponent<SpriteRenderer>();
             Assert.That(picture.sprite, Is.SameAs(view.Art.noiseSprite));
             // The legacy Sprites/Default draws everything white in this pipeline; URP's sprite shader keeps the colours.
