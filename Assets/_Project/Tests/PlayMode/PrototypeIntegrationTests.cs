@@ -430,6 +430,7 @@ namespace StringAsASword.Tests
             yield return null;
             Assert.That(screens.Showing, Is.EqualTo(BattleScreens.ScreenKind.None));
             Assert.That(game.Death.Covering);
+            Assert.That(board.KnightIsolated, "The screen is black but for the knight.");
             double frozen = game.SongTime;
             // On the edge of its base: leaning, the camera close, the board frozen.
             while (game.Death.Age < 2.8f && game.State == PrototypeState.Dying) yield return null;
@@ -450,6 +451,7 @@ namespace StringAsASword.Tests
             Assert.That(Lean(board), Is.LessThan(.01f), "The knight stands again.");
             Assert.That(Vector3.Distance(board.BoardCamera.transform.localPosition, board.CameraHome), Is.LessThan(.001f));
             Assert.That(game.Death.Covering, Is.False);
+            Assert.That(board.KnightIsolated, Is.False, "The board is drawn again.");
             LogAssert.NoUnexpectedReceived();
         }
         [UnityTest] public IEnumerator UnskippedFallEndsOnFallen()

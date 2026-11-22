@@ -721,6 +721,32 @@ namespace StringAsASword.Presentation
         }
         /// <summary>Jolts the board view for a quarter second, as a break of the board does.</summary>
         public void Jolt() => shakeAge = 0;
+        // A layer no other object uses: while the knight dies the board camera draws it alone, on a clear background.
+        private const int KnightAloneLayer = 31;
+        private readonly List<(GameObject go, int layer)> knightLayers = new List<(GameObject, int)>();
+        private int cullingHome;
+        /// <summary>The board camera draws only the knight (the death close-up), until the next session.</summary>
+        public bool KnightIsolated { get; private set; }
+        public void IsolateKnight()
+        {
+            if (KnightIsolated) return;
+            KnightIsolated = true;
+            cullingHome = BoardCamera.cullingMask;
+            knightLayers.Clear();
+            foreach (var part in player.GetComponentsInChildren<Transform>(true))
+            { knightLayers.Add((part.gameObject, part.gameObject.layer)); part.gameObject.layer = KnightAloneLayer; }
+            BoardCamera.cullingMask = 1 << KnightAloneLayer;
+            BoardCamera.backgroundColor = Color.clear;
+        }
+        private void ReleaseKnight()
+        {
+            if (!KnightIsolated) return;
+            KnightIsolated = false;
+            foreach (var (go, layer) in knightLayers) if (go != null) go.layer = layer;
+            knightLayers.Clear();
+            BoardCamera.cullingMask = cullingHome;
+            ResetVoid();
+        }
         private const float StepSeconds = .13f, StepHeight = .13f, LiftHeight = .55f;
         private float moveSeconds = StepSeconds, moveHeight = StepHeight, liftNext, liftUntil;
         /// <summary>
@@ -748,6 +774,7 @@ namespace StringAsASword.Presentation
             player.localScale = Vector3.one; player.localRotation = Quaternion.identity;
             sword.gameObject.SetActive(false); shield.gameObject.SetActive(false);
             if (cameraFocused) { BoardCamera.transform.localPosition = cameraHome; cameraFocused = false; }
+            ReleaseKnight();
             impactAge = 1; impactCells = 0; lastClosedNote = -1;
             lastTelegraphId = -1; lastCollected = game.Noise.Collected;
             for (int i = 0; i < impacts.Length; i++)
