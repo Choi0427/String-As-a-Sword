@@ -61,7 +61,10 @@ namespace StringAsASword.Presentation
                 default: return new PromptPart[0];
             }
         }
-        /// <summary>The guidance line in the letterbox for a lesson. Lines 1-3 are the director's own wording.</summary>
+        /// <summary>
+        /// The guidance line in the letterbox for a lesson. Lines 1-3 are the director's own wording. When it is done, the
+        /// closing line (shown a little larger) holds until the letterbox lifts on the song.
+        /// </summary>
         public static string Guide(TutorialStep step)
         {
             switch (step)
@@ -71,7 +74,7 @@ namespace StringAsASword.Presentation
                 case TutorialStep.Slash: return "빗금 패턴은 방어가 불가능합니다. WASD로 회피하세요.";
                 case TutorialStep.Noise: return "왕의 주선율에서 벗어난 소리가 잡음입니다. 잡음을 밟으면 현이 울리고, 울리는 현만이 왕에게 닿습니다.";
                 case TutorialStep.Strike: return "현이 울리는 동안 맨 윗줄에서 J로 베면 공명이 시작됩니다. 공명이 이어지는 8번의 공격은 강화되어 왕관을 깎습니다.";
-                default: return "이제 왕의 판입니다.";
+                default: return "판을 벗어나세요.";
             }
         }
     }

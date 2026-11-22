@@ -27,6 +27,32 @@ namespace StringAsASword.Presentation
             rect.anchoredPosition = home = bottomCentre;
         }
         public void Hurt() => hurtAge = 0;
+
+        // Clipped where the board's far edge is: below it the board covers the picture anyway, and when the board fades the
+        // picture must not show through. A little under the edge, feathered, so the cut itself is always behind the stone.
+        private const float ClipInset = 4;
+        private UnityEngine.UI.RectMask2D clip;
+        private RectTransform board;
+        private float farEdgeOnBoard;
+        /// <summary>The canvas y (centre origin) under which the picture is cut off: the board's far edge, less a few pixels.</summary>
+        public float ClipLine => board != null ? board.anchoredPosition.y + farEdgeOnBoard - ClipInset : float.NegativeInfinity;
+        public UnityEngine.UI.RectMask2D Clip => clip;
+        /// <summary>Cuts the picture off under the far edge of <paramref name="boardRect"/> (<paramref name="farEdge"/> above its centre).</summary>
+        public void ClipBehind(UnityEngine.UI.RectMask2D mask, RectTransform boardRect, float farEdge)
+        {
+            clip = mask; board = boardRect; farEdgeOnBoard = farEdge;
+            clip.softness = new Vector2Int(0, (int)ClipInset);
+            UpdateClip();
+        }
+        // Follows the canvas size and the board's shake.
+        private void UpdateClip()
+        {
+            if (clip == null) return;
+            float bottom = clip.rectTransform.rect.height * .5f + ClipLine;
+            if (!Mathf.Approximately(clip.padding.y, bottom)) clip.padding = new Vector4(0, bottom, 0, 0);
+        }
+        private void LateUpdate() => UpdateClip();
+
         private void Update()
         {
             if (game == null || game.Battle == null) return;

@@ -100,6 +100,8 @@ namespace StringAsASword.Presentation
                 game.State == PrototypeState.Tutorial;
             // The bound battle's notes: the song's, or the tutorial's even beat.
             int count = game.Battle.Settings.NoteCount;
+            // After the last lesson no tutorial note enters, so the lanes are empty when the song's battle is bound.
+            if (game.InTutorialBattle && game.Tutorial != null) count = Math.Min(count, game.Tutorial.LaneEnd);
             var session = game.Session;
             double time = game.SongTime + game.VisualOffset;
             double approach = game.Song.NoteApproachBeats * game.Timeline.SecondsPerBeat;

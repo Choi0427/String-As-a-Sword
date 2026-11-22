@@ -13,8 +13,9 @@ namespace StringAsASword.Presentation
     /// 87 BPM beat and notes run on the lanes. Each lesson first shows its line in the letterbox, a bar later its card beside
     /// the knight (beside the noise in the noise lesson) and its situation: an attack on the knight's row, a slash down its
     /// column, a noise two cells above it. It moves on only when the player has done it (<see cref="TutorialSteps"/>); a hit
-    /// brings the attack back. When the resonance has played out, the song's battle is bound again and the song starts on a
-    /// downbeat as the letterbox lifts, as after the prologue.
+    /// brings the attack back. When the resonance has played out, the closing line shows, a little larger; the lanes run
+    /// empty; three seconds later the letterbox lifts as the song's battle is bound (the knight is lifted back to its start
+    /// cell, the board stays in view) and the song starts on the beat after, as after the prologue.
     /// </summary>
     public sealed class TutorialDirector : MonoBehaviour
     {
@@ -23,6 +24,12 @@ namespace StringAsASword.Presentation
         private const int BarBeats = 4, LineBeats = 4, PraiseBeats = 2, Warning = 2, RetryGap = 2;
         // The tutorial's bars are thinner than the prologue's 2.39:1, so the knight's front row stays clear of them.
         private const float BarShare = .09f;
+        /// <summary>Seconds the closing line holds before the letterbox lifts.</summary>
+        public const double ClosingHoldSeconds = 3;
+        /// <summary>The closing line's size: a little larger than the lessons' lines.</summary>
+        public const float ClosingLineSize = 28;
+        // Beats the letterbox takes to lift; the song starts on the first beat after it is gone.
+        private const double LiftBeats = 1.5;
         // The lessons' attacks, as drawn in the boss chart: a rook across the knight's row (normal) and down its column (slash).
         public const string LessonShapes =
             "shape 룩가로 anchor=4,4 piece=룩\n00000000\n00000000\n00000000\n11111111\n00000000\n00000000\n00000000\n00000000\n" +
@@ -33,7 +40,6 @@ namespace StringAsASword.Presentation
         private PrologueDefinition data;
         private Letterbox letterbox;
         private KeyPromptCard card;
-        private CanvasGroup content;
         private readonly List<AudioSource> sources = new List<AudioSource>();
         private BossChartShape rowShape, columnShape;
         private readonly TutorialSteps steps = new TutorialSteps();
@@ -49,8 +55,10 @@ namespace StringAsASword.Presentation
         private int attackNote = -1, retryNote = -1;
         private bool attackPending;
         private GridPosition noiseCell;
-        // The end: the song's battle is bound on finishBeat, and the song starts on handoverBeat.
-        private int finishBeat = -1, handoverBeat = -1, fadeFrom = -1;
+        // The end: no tutorial note from laneEnd on; the letterbox lifts from liftBeat, the song's battle is bound on
+        // finishBeat, and the song starts on handoverBeat.
+        private int finishBeat = -1, handoverBeat = -1, fadeFrom = -1, laneEnd = int.MaxValue;
+        private double liftBeat = double.MaxValue;
         private bool handedOver;
 
         public bool Playing => playing;
@@ -64,6 +72,8 @@ namespace StringAsASword.Presentation
         public bool LessonActive => playing && active && !steps.Finished;
         /// <summary>The cell of the noise lesson's noise.</summary>
         public GridPosition NoiseCell => noiseCell;
+        /// <summary>The lanes show the tutorial's notes before this one only: after the last lesson they run empty for the song.</summary>
+        public int LaneEnd => playing ? laneEnd : int.MaxValue;
         /// <summary>Tests: the DSP time of tutorial beat 0, the beat the song takes over (-1 before the end), the clock's fade start.</summary>
         internal double OriginDsp => origin;
         internal int HandoverBeat => handoverBeat;
@@ -83,9 +93,8 @@ namespace StringAsASword.Presentation
             var art = view.Art;
             var text = UiFonts.Korean(art.screenFont != null ? art.screenFont : art.menuFont, view.LatinFont);
             letterbox = new Letterbox(view.CanvasRect, "Tutorial Letterbox", text, UiFonts.Korean(art.menuFont, view.LatinFont), "ESC  튜토리얼 건너뛰기");
-            card = new KeyPromptCard(view.BoardViewRect, "Tutorial Card", art, view.LatinFont, 72, 34, 30);
-            content = view.ContentRect.GetComponent<CanvasGroup>();
-            if (content == null) content = view.ContentRect.gameObject.AddComponent<CanvasGroup>();
+            // The keys are cut from the HUD's key guide (WASD as its ㅗ cluster), so the cards teach the guide the song shows.
+            card = new KeyPromptCard(view.BoardViewRect, "Tutorial Card", art, view.LatinFont, 72, 34, 30, art.keyGuide);
             for (int i = 0; i < 8; i++)
             {
                 var source = gameObject.AddComponent<AudioSource>();
@@ -110,6 +119,7 @@ namespace StringAsASword.Presentation
             lineBeat = int.MinValue / 2; activeBeat = 0; active = false;
             ResetSituation();
             nextTick = -LeadBeats; finishBeat = handoverBeat = fadeFrom = -1; handedOver = false;
+            laneEnd = int.MaxValue; liftBeat = double.MaxValue;
             letterbox.Visible = true; card.Hide();
             playing = true;
             LateUpdate();
@@ -121,7 +131,6 @@ namespace StringAsASword.Presentation
             Unsubscribe();
             foreach (var source in sources) source.Stop();
             letterbox.Visible = false; card.Hide();
-            content.alpha = 1;
             if (view.Screens != null) view.Screens.KeyGuideAlpha = 1;
         }
 
@@ -151,9 +160,16 @@ namespace StringAsASword.Presentation
             active = false; ResetSituation(); card.Hide();
             if (step == TutorialStep.Done)
             {
-                // The song's battle comes on the next bar line at least two beats away; the song starts a bar after that.
+                // The closing line on the next beat. No tutorial note enters the lanes after the ones already on them, so
+                // they run empty before the song's battle is bound and nothing on them jumps.
                 lineBeat = now + 1;
-                finishBeat = NextBar(now + 2); handoverBeat = finishBeat + BarBeats;
+                laneEnd = now + game.Song.NoteApproachBeats + 1;
+                // The letterbox lifts once the line has held; the song starts on the first beat after it is gone.
+                liftBeat = lineBeat + ClosingHoldSeconds / spb;
+                handoverBeat = (int)System.Math.Ceiling(liftBeat + LiftBeats);
+                // Bound once the lanes are empty, two beats before the song so its audio is scheduled in good time.
+                finishBeat = System.Math.Max(laneEnd, handoverBeat - 2);
+                if (handoverBeat < finishBeat + 2) handoverBeat = finishBeat + 2;
                 // From the next tick not yet queued, the clock dies away to the song's start.
                 fadeFrom = nextTick;
                 return;
@@ -161,7 +177,6 @@ namespace StringAsASword.Presentation
             lineBeat = now + PraiseBeats;
             activeBeat = lineBeat + LineBeats;
         }
-        private static int NextBar(int beat) => (beat + BarBeats - 1) / BarBeats * BarBeats;
         private void Activate()
         {
             active = true;
@@ -219,21 +234,25 @@ namespace StringAsASword.Presentation
             double now = AudioSettings.dspTime, beat = (now - origin) / spb;
             ScheduleTicks(now);
             if (!steps.Finished && !active && beat >= activeBeat && beat >= lineBeat) Activate();
-            if (beat >= lineBeat && line != TutorialSteps.Guide(steps.Step)) { line = TutorialSteps.Guide(steps.Step); letterbox.SetSubtitle(line); }
+            if (beat >= lineBeat && line != TutorialSteps.Guide(steps.Step))
+            {
+                line = TutorialSteps.Guide(steps.Step);
+                letterbox.SetSubtitle(line, steps.Finished ? ClosingLineSize : Letterbox.SubtitleSize);
+            }
             if (steps.Finished) Finish(beat);
             RenderLetterbox(beat);
             RenderCard(beat);
             if (view.Screens != null) view.Screens.KeyGuideAlpha = 0;
         }
-        // The song's battle is bound on finishBeat, hidden by a quick dip of the board; the song starts on handoverBeat.
+        // The song's battle is bound on finishBeat, in full view: the lanes are empty by then and the knight is lifted back to
+        // its start cell over a beat, like a piece set up again. The song starts on handoverBeat.
         private void Finish(double beat)
         {
-            float dip = 1 - Mathf.Clamp01(1 - Mathf.Abs((float)(beat - finishBeat)) * 2);
-            content.alpha = dip;
             if (!handedOver && beat >= finishBeat)
             {
                 handedOver = true;
                 Unsubscribe();
+                view.BoardWorld.LiftNextMove((float)spb);
                 game.FinishTutorial(origin + handoverBeat * spb);
             }
         }
@@ -244,7 +263,7 @@ namespace StringAsASword.Presentation
             float settle = Smooth((float)beat, -LeadBeats, -LeadBeats + 1.5f);
             float bar = afterPrologue ? Mathf.Lerp(cinema, thin, settle) : thin;
             float amount = afterPrologue ? 1 : settle;
-            if (handoverBeat >= 0) amount *= 1 - Smooth((float)beat, handoverBeat - 1.5f, handoverBeat);
+            if (handoverBeat >= 0) amount *= 1 - Smooth((float)beat, (float)liftBeat, (float)(liftBeat + LiftBeats));
             letterbox.Layout(bar, amount);
         }
         private void RenderCard(double beat)
