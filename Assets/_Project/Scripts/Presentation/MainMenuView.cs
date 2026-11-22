@@ -33,7 +33,7 @@ namespace StringAsASword.Presentation
         private Material backgroundMaterial;
         private readonly TMP_Text[] labels = new TMP_Text[MenuLabels.Length];
         private readonly UnityEngine.UI.Image[] boxes = new UnityEngine.UI.Image[MenuLabels.Length];
-        private TMP_Text footer;
+        private UnityEngine.UI.Graphic footer;
         private int selected = -1;
         private SettingsPanel settings;
         /// <summary>The settings panel.</summary>
@@ -86,7 +86,20 @@ namespace StringAsASword.Presentation
                 // Leaving the button clears its hover. A keyboard selection made since then (W/S) is left alone.
                 button.Exited = () => { if (selected == index) Select(-1); };
             }
-            footer = Label(TopLeft(Rect(root, "Credit"), 15, 1052, 400, 21), "Inspired by 이승윤 <검을 현>", 16, Footer, TextAlignmentOptions.TopLeft);
+            if (art.mainMenuCredit != null)
+            {
+                var credit = Rect(root, "Credit", Vector2.zero, art.mainMenuCredit.rect.size);
+                credit.anchorMin = credit.anchorMax = credit.pivot = Vector2.zero;
+                credit.anchoredPosition = new Vector2(20, 10);
+                var image = Image(credit, Color.white);
+                image.sprite = art.mainMenuCredit;
+                image.preserveAspect = true;
+                footer = image;
+            }
+            else
+            {
+                footer = Label(TopLeft(Rect(root, "Credit"), 15, 1052, 400, 21), "Inspired by 이승윤 <검을 현>", 16, Footer, TextAlignmentOptions.TopLeft);
+            }
             settings = SettingsPanel.Create(root, art);
             settings.TutorialRequested += () => Leave(prologue: false, tutorial: true);
             ApplyTheme();
@@ -138,7 +151,8 @@ namespace StringAsASword.Presentation
             else if (art.mainMenuDark != null) background.sprite = art.mainMenuDark;
             if (backgroundMaterial != null) backgroundMaterial.SetFloat("_Invert", White && !handMade ? 1 : 0);
             foreach (var box in boxes) box.color = White ? Invert(HoverBox) : HoverBox;
-            footer.color = White ? Invert(Footer) : Footer;
+            if (art.mainMenuCredit != null) footer.color = White ? Hex(0xBFBFBF) : Color.white;
+            else footer.color = White ? Invert(Footer) : Footer;
             Select(selected);
         }
 

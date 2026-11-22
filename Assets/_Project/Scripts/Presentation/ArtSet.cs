@@ -118,6 +118,8 @@ namespace StringAsASword.Presentation
         [Tooltip("Main menu background (Figma 'Main Menu' / MainMenu_Logo_BG). After a clear mainMenuWhite (Figma 'Main Menu_White') " +
             "replaces it; with mainMenuWhite empty the left side of the dark art is inverted to white in code.")]
         public Sprite mainMenuDark, mainMenuWhite;
+        [Tooltip("Inspired by credit shown in the bottom-left corner of the main menu.")]
+        public Sprite mainMenuCredit;
         [Tooltip("Main menu and story text (Figma: Hakgyoansim Godeunjemok B). Empty = the OS Korean font at runtime.")]
         public TMP_FontAsset menuFont;
         [UnityEngine.Serialization.FormerlySerializedAs("prologueSkipKeyIcon")]
@@ -134,6 +136,10 @@ namespace StringAsASword.Presentation
         [Tooltip("Settings card art (Figma 'Game Play' / Settings, exported at 2x): the row titles with their captions, the key hints " +
             "at the bottom and the left-pointing arrow of the step buttons (flipped for the right one). Empty = plain text.")]
         public Sprite settingsVolume, settingsInputOffset, settingsMusicOffset, settingsDifficulty, settingsKeyHints, settingsArrow;
+        [Tooltip("Captions under the selected difficulty button on the settings card.")]
+        public Sprite settingsDifficultyEasyNote, settingsDifficultyHardNote;
+        [Tooltip("Nine-sliced rounded fill and outlines for menu cards and buttons.")]
+        public Sprite settingsRoundedFill, settingsRoundedPanelBorder, settingsRoundedButtonBorder;
         [Tooltip("Telegraph countdown badges move away from this box around the knight, in board-view pixels.")]
         public Rect knightBadgeBox = new Rect(-26, 5, 52, 76);
         [Tooltip("Player HP under the knight, one sprite per HP: a bar segment or a knight icon, on = left, off = lost. " +

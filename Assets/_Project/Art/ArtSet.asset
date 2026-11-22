@@ -19,7 +19,7 @@ MonoBehaviour:
   kingScale: 1
   bossImage: {fileID: 21300000, guid: a2f549f2158424943a1ccf15d710ce69, type: 3}
   bossImageHeight: 400
-  bossImageSink: {x: 0, y: 110}
+  bossImageSink: {x: 0, y: 83}
   noisePrefab: {fileID: 0}
   noiseDormantMaterial: {fileID: 0}
   noiseSprite: {fileID: 21300000, guid: 9ada92326268077428fa603fbf6f21be, type: 3}
@@ -76,10 +76,11 @@ MonoBehaviour:
   crownRegions: {fileID: 2800000, guid: b887644898d947945896b165855fa7f7, type: 3}
   crownSpent: {fileID: 2800000, guid: 9bfbce1b968228d4abc95604bc5ad22f, type: 3}
   crownMaterial: {fileID: 2100000, guid: 5ae475cc9e4d6084a8ad16485301d8b1, type: 2}
-  crownWidth: 0.6
-  crownSeamHeight: 0.1
+  crownWidth: 0.5
+  crownSeamHeight: 0.2
   mainMenuDark: {fileID: 21300000, guid: 9777af6bfeec6ff4985b1678bf6e208c, type: 3}
   mainMenuWhite: {fileID: 21300000, guid: e7b0fb4972684711b832a96bb6c200c1, type: 3}
+  mainMenuCredit: {fileID: 21300000, guid: fa93713e7dff7fb44aadbf130438721f, type: 3}
   menuFont: {fileID: 11400000, guid: 9f923aa8663272541816bacfcefebd7e, type: 2}
   skipKeyIcon: {fileID: 21300000, guid: 5383798c0dc8a734f80ff292291ce4bc, type: 3}
   promptJKeyIcon: {fileID: 21300000, guid: 60e62fc4a2d047399fbe135d98b5917d, type: 3}
@@ -92,6 +93,11 @@ MonoBehaviour:
   settingsDifficulty: {fileID: 21300000, guid: 9fe4eca14c2648e3962f5f7677d04ba5, type: 3}
   settingsKeyHints: {fileID: 21300000, guid: de275032bb2147dab5f767e86f2d5d16, type: 3}
   settingsArrow: {fileID: 21300000, guid: 90af87e492fc4902a80621f87cfa5953, type: 3}
+  settingsDifficultyEasyNote: {fileID: 21300000, guid: 7f4b09dcde482184280bae4cfda95ae9, type: 3}
+  settingsDifficultyHardNote: {fileID: 21300000, guid: e220e4081c8cda34b8da72ae4fdc23d3, type: 3}
+  settingsRoundedFill: {fileID: 21300000, guid: 94d7b009fd9691b44a2d084686d2e0af, type: 3}
+  settingsRoundedPanelBorder: {fileID: 21300000, guid: 4c2b3ea422933f04a854a3aaed0bae56, type: 3}
+  settingsRoundedButtonBorder: {fileID: 21300000, guid: 606828aec28b88c4889342d0d7e11f41, type: 3}
   knightBadgeBox:
     serializedVersion: 2
     x: -26

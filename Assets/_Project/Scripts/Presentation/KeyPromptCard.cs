@@ -26,7 +26,7 @@ namespace StringAsASword.Presentation
     public sealed class KeyPromptCard
     {
         private static readonly Color Ink = UiKit.Hex(0xD9D9D9), KeyInk = UiKit.Hex(0x0C0C0C), SmallInk = UiKit.Hex(0x929292);
-        private const float Padding = 22, Gap = 16, SmallGap = 10, Stroke = 4, GuideMargin = 9;
+        private const float Padding = 22, Gap = 16, SmallGap = 10, Stroke = 4, GuideMargin = 15;
         // The key guide's art (KeyGuide.png, 1447 x 209): each key's box in its pixels, from the top-left. A keycap is 100 px.
         private const float GuideWidth = 1447, GuideHeight = 209, GuideCap = 100;
         private static readonly Dictionary<string, Rect> GuideCrops = new Dictionary<string, Rect>

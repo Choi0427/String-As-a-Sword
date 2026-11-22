@@ -25,6 +25,26 @@ namespace StringAsASword.Presentation
             var image = rect.gameObject.AddComponent<UnityEngine.UI.Image>(); image.color = color; image.raycastTarget = false;
             return image;
         }
+        internal static UnityEngine.UI.Image SlicedImage(RectTransform rect, Color color, Sprite sprite)
+        {
+            var image = Image(rect, color);
+            if (sprite != null)
+            {
+                image.sprite = sprite;
+                image.type = UnityEngine.UI.Image.Type.Sliced;
+            }
+            return image;
+        }
+
+        internal static void DrawMenuCard(RectTransform card, Color borderColor, ArtSet art)
+        {
+            SlicedImage(Stretch(Rect(card, "Fill")), CardFill, art.settingsRoundedFill).raycastTarget = true;
+            if (art.settingsRoundedPanelBorder != null)
+                SlicedImage(Stretch(Rect(card, "Border")), borderColor, art.settingsRoundedPanelBorder).fillCenter = false;
+            else
+                Stroke(card, borderColor, 5);
+        }
+
         public static TMP_Text Label(RectTransform rect, string text, float size, Color color, TextAlignmentOptions align, TMP_FontAsset font)
         {
             var label = rect.gameObject.AddComponent<TextMeshProUGUI>();

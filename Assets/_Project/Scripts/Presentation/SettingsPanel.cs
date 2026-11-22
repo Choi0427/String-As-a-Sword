@@ -31,7 +31,7 @@ namespace StringAsASword.Presentation
         /// <summary>One A/D press or arrow click: volume in percent, the two syncs in milliseconds.</summary>
         public const int VolumeStep = 5, OffsetStep = 5;
         private const float RepeatDelay = .35f, RepeatEvery = .06f;
-        public const string EasyNote = "쉬움: 잡음을 먹으면 체력 1칸 회복 (최대 5칸)", HardNote = "어려움: 체력 회복 없음";
+        private const string EasyNote = "잡음 획득 시 체력 1칸 회복", HardNote = "체력 회복 없음";
 
         private TMP_FontAsset font, titleFont;
         private Action refresh = () => { };
@@ -127,8 +127,7 @@ namespace StringAsASword.Presentation
             Image(shade, new Color(0, 0, 0, .72f)).raycastTarget = true;
             var frame = Rect(shade, "Frame", Vector2.zero, new Vector2(1920, 1080));
             card = TopLeft(Rect(frame, "Card"), CardLeft, CardTop, CardWidth, CardHeight);
-            Image(Stretch(Rect(card, "Fill")), CardFill).raycastTarget = true;
-            Stroke(card, Ink, 5);
+            DrawMenuCard(card, Ink, art);
             Text(At("Title", 959.91f, 121.78f + 44, 588, 88), "SETTINGS", 80, Ink, titleFont);
             foreach (float y in Rules) Image(At("Rule", RuleLeft + RuleWidth / 2, y - 1, RuleWidth, 2), Rule);
 
@@ -162,33 +161,48 @@ namespace StringAsASword.Presentation
             music.characterSpacing = -5;
             refresh += () => music.text = Ms(MusicSyncMs);
 
-            // 난이도: [쉬움] [어려움], with what the picked one does in small type under the title.
+            // Leave space below the buttons for the caption that belongs to the selected option.
             Picture(art.settingsDifficulty, "난이도", 514.49f, 791.52f, 153.32f, 57.72f, "난이도");
             string[] levels = { "쉬움", "어려움" };
             float[] levelCenters = { 1087.48f, 1355.64f };
+            const float buttonWidth = 260, buttonHeight = 75, noteHeight = 22, noteGap = 10;
+            float buttonY = RowCenters[DifficultyRow] - 12;
+            float noteY = buttonY + buttonHeight / 2 + noteGap + noteHeight / 2;
             for (int i = 0; i < levels.Length; i++)
             {
                 int index = i;
-                var box = At("Option " + levels[i], levelCenters[i], RowCenters[DifficultyRow], 260, 75);
-                var fill = Image(box, Ink); fill.raycastTarget = true;
-                var stroke = StrokeImages(box, 2);
+                var box = At("Option " + levels[i], levelCenters[i], buttonY, buttonWidth, buttonHeight);
+                var fill = SlicedImage(box, Ink, art.settingsRoundedFill); fill.raycastTarget = true;
+                var stroke = StrokeImages(box, art.settingsRoundedButtonBorder);
                 var label = Text(Stretch(Rect(box, "Label")), levels[i], 32, Color.black, font);
                 label.characterSpacing = -5;
                 var button = HoverRow(box.gameObject, DifficultyRow);
                 button.Clicked = () => choices["난이도"](index);
+
+                var noteSprite = i == 0 ? art.settingsDifficultyEasyNote : art.settingsDifficultyHardNote;
+                float noteWidth = noteSprite == null ? buttonWidth : noteHeight * noteSprite.rect.width / noteSprite.rect.height;
+                var note = At("Note " + levels[i], levelCenters[i], noteY, noteWidth, noteHeight);
+                if (noteSprite != null)
+                {
+                    var image = Image(note, Color.white);
+                    image.sprite = noteSprite;
+                    image.preserveAspect = true;
+                }
+                else
+                {
+                    UiKit.Label(note, i == 0 ? EasyNote : HardNote, 20, Caption, TextAlignmentOptions.Center, font);
+                }
+
                 refresh += () =>
                 {
                     bool on = (int)GameFlow.Difficulty == index;
                     fill.color = on ? Ink : new Color(0, 0, 0, 0);
                     foreach (var edge in stroke) edge.enabled = !on;
                     label.color = on ? Color.black : Color.white;
+                    note.gameObject.SetActive(on);
                 };
                 rowStrokes[DifficultyRow].AddRange(stroke);
             }
-            var note = TopLeft(Rect(card, "난이도 Note"), 437.83f - CardLeft, 832 - CardTop, 480, 24);
-            var noteText = UiKit.Label(note, "", 20, Caption, TextAlignmentOptions.Left, font);
-            noteText.characterSpacing = -5;
-            refresh += () => noteText.text = GameFlow.Difficulty == GameDifficulty.Easy ? EasyNote : HardNote;
             choices["난이도"] = i => { GameFlow.Difficulty = i == 0 ? GameDifficulty.Easy : GameDifficulty.Hard; refresh(); };
 
             // W S ↕   A D ↔   Esc 뒤로
@@ -236,7 +250,7 @@ namespace StringAsASword.Presentation
                 float x = side == 0 ? LeftButton : RightButton;
                 var box = At(row + (side == 0 ? " Left" : " Right"), x, RowCenters[row], ButtonSize, ButtonSize);
                 Image(box, new Color(0, 0, 0, 0)).raycastTarget = true;
-                rowStrokes[row].AddRange(StrokeImages(box, 2));
+                rowStrokes[row].AddRange(StrokeImages(box, art.settingsRoundedButtonBorder));
                 // The arrow sits 2 px off centre toward where it points.
                 var arrow = Rect(box, "Arrow", new Vector2(2 * direction, 0), new Vector2(18.18f, 30.19f));
                 if (art.settingsArrow != null)
@@ -302,10 +316,17 @@ namespace StringAsASword.Presentation
         /// <summary>A rect by its centre in Figma frame pixels, placed in the card.</summary>
         private RectTransform At(string name, float centerX, float centerY, float width, float height) =>
             Rect(card, name, new Vector2(centerX - (CardLeft + CardWidth / 2), -(centerY - (CardTop + CardHeight / 2))), new Vector2(width, height));
-        private List<UnityEngine.UI.Image> StrokeImages(RectTransform box, float width)
+        private List<UnityEngine.UI.Image> StrokeImages(RectTransform box, Sprite sprite)
         {
+            if (sprite != null)
+            {
+                var border = SlicedImage(Stretch(Rect(box, "Border")), Line, sprite);
+                border.fillCenter = false;
+                return new List<UnityEngine.UI.Image> { border };
+            }
+
             int before = box.childCount;
-            Stroke(box, Line, width);
+            Stroke(box, Line, 2);
             var edges = new List<UnityEngine.UI.Image>();
             for (int i = before; i < box.childCount; i++) edges.Add(box.GetChild(i).GetComponent<UnityEngine.UI.Image>());
             return edges;
