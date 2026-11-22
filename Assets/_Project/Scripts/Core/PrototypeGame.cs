@@ -294,11 +294,11 @@ namespace StringAsASword.Core
             if (!clock.Running) StartSession();
             State = PrototypeState.Epilogue; EpilogueStarted?.Invoke();
         }
-        /// <summary>The knight's fall is over (or skipped): the song stops and the game-over card shows.</summary>
+        /// <summary>The knight's fall is over (or skipped): the game-over card shows while the song fades out (DeathDirector).</summary>
         public void FinishDeath()
         {
             if (State != PrototypeState.Dying) return;
-            audioPlayer.Stop(); State = PrototypeState.Finished;
+            State = PrototypeState.Finished;
         }
         public void PauseSession()
         {
@@ -470,7 +470,7 @@ namespace StringAsASword.Core
                 }
                 else if (Battle.Outcome == BattleOutcome.Dead && !InTutorialBattle && (State == PrototypeState.Playing || State == PrototypeState.CountIn))
                 {
-                    // The last hit freezes the board; the song fades under the knight's fall (DeathDirector), then FinishDeath.
+                    // The last hit freezes the board; the song plays on quietly under the knight's fall (DeathDirector), then FinishDeath.
                     clock.Stop(); input.Clear(); State = PrototypeState.Dying;
                     SaveRun("Completed");
                 }
