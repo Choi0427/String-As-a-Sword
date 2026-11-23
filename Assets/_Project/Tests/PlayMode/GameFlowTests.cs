@@ -304,7 +304,12 @@ namespace StringAsASword.Tests
             Assert.That(director.EndingPlaying, Is.False, "Space skips the ending.");
             yield return UntilScene(GameFlow.MenuScene, 10);
             Assert.That(GameFlow.Cleared);
-            Assert.That(Object.FindAnyObjectByType<MainMenuView>().White);
+            var menu = Object.FindAnyObjectByType<MainMenuView>();
+            Assert.That(menu.White);
+            Assert.That(menu.ArrivalCover, Is.GreaterThan(.5f), "The menu opens under the ending's white.");
+            yield return new WaitForSecondsRealtime(MainMenuView.ArrivalHoldSeconds + MainMenuView.ArrivalFadeSeconds + .3f);
+            Assert.That(menu.ArrivalCover, Is.Zero, "The white clears into the menu.");
+            Assert.That(GameFlow.ArrivingFromEnding, Is.False);
             LogAssert.NoUnexpectedReceived();
         }
     }
