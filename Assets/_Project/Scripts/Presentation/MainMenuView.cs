@@ -33,7 +33,7 @@ namespace StringAsASword.Presentation
         private Material backgroundMaterial;
         private readonly TMP_Text[] labels = new TMP_Text[MenuLabels.Length];
         private readonly UnityEngine.UI.Image[] boxes = new UnityEngine.UI.Image[MenuLabels.Length];
-        private TMP_Text footer;
+        private UnityEngine.UI.Graphic footer;
         private int selected = -1;
         private SettingsPanel settings;
         /// <summary>The settings panel.</summary>
@@ -79,11 +79,27 @@ namespace StringAsASword.Presentation
                 boxes[i] = Image(TopLeft(Rect(item, "Hover"), 4.25f, 14.67f, TwoLetterBox * letters, 66.24f), HoverBox);
                 labels[i] = Label(Stretch(Rect(item, "Label")), MenuLabels[i], MenuSize, Menu, TextAlignmentOptions.TopLeft); // child: drawn above the box
                 labels[i].characterSpacing = -4; // -3.2 px at 80 px
-                var hit = Image(Stretch(Rect(item, "Hit")), new Color(0, 0, 0, 0)); hit.raycastTarget = true;
+                // The pointer area is the visible hover box, so the effect shows only while the mouse is on the button itself.
+                var hit = Image(TopLeft(Rect(item, "Hit"), 4.25f, 14.67f, TwoLetterBox * letters, 66.24f), new Color(0, 0, 0, 0)); hit.raycastTarget = true;
                 var button = hit.gameObject.AddComponent<MenuButton>();
                 button.Hovered = () => Select(index); button.Clicked = () => Activate(index);
+                // Leaving the button clears its hover. A keyboard selection made since then (W/S) is left alone.
+                button.Exited = () => { if (selected == index) Select(-1); };
             }
-            footer = Label(TopLeft(Rect(root, "Credit"), 15, 1052, 400, 21), "Inspired by 이승윤 <검을 현>", 16, Footer, TextAlignmentOptions.TopLeft);
+            if (art.mainMenuCredit != null)
+            {
+                var credit = Rect(root, "Credit", Vector2.zero, art.mainMenuCredit.rect.size);
+                credit.anchorMin = credit.anchorMax = credit.pivot = Vector2.zero;
+                credit.anchoredPosition = new Vector2(20, 10);
+                var image = Image(credit, Color.white);
+                image.sprite = art.mainMenuCredit;
+                image.preserveAspect = true;
+                footer = image;
+            }
+            else
+            {
+                footer = Label(TopLeft(Rect(root, "Credit"), 15, 1052, 400, 21), "Inspired by 이승윤 <검을 현>", 16, Footer, TextAlignmentOptions.TopLeft);
+            }
             settings = SettingsPanel.Create(root, art);
             settings.TutorialRequested += () => Leave(prologue: false, tutorial: true);
             ApplyTheme();
@@ -135,7 +151,8 @@ namespace StringAsASword.Presentation
             else if (art.mainMenuDark != null) background.sprite = art.mainMenuDark;
             if (backgroundMaterial != null) backgroundMaterial.SetFloat("_Invert", White && !handMade ? 1 : 0);
             foreach (var box in boxes) box.color = White ? Invert(HoverBox) : HoverBox;
-            footer.color = White ? Invert(Footer) : Footer;
+            if (art.mainMenuCredit != null) footer.color = White ? Hex(0xBFBFBF) : Color.white;
+            else footer.color = White ? Invert(Footer) : Footer;
             Select(selected);
         }
 

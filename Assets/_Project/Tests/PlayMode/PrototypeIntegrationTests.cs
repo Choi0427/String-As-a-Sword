@@ -210,7 +210,7 @@ namespace StringAsASword.Tests
             Assert.That(game.Battle.PlayerHp, Is.EqualTo(game.Stage.PlayerMaxHp));
             Assert.That(EventCount("guard-success"), Is.EqualTo(1));
             Assert.That(EventCount("player-hit"), Is.Zero);
-            Assert.That(ActiveOutcome, Is.EqualTo("BLOCKED"));
+            Assert.That(ActiveOutcome, Is.EqualTo("BLOCK"));
             LogAssert.NoUnexpectedReceived();
         }
         [UnityTest] public IEnumerator GuardOnlyAttackHitsWithoutAGuard()
@@ -238,7 +238,7 @@ namespace StringAsASword.Tests
             Assert.That(EventCount("guard-broken"), Is.EqualTo(1));
             Assert.That(EventCount("player-hit"), Is.EqualTo(1));
             Assert.That(EventCount("guard-success"), Is.Zero);
-            Assert.That(ActiveOutcome, Is.EqualTo("GUARD BROKEN"));
+            Assert.That(ActiveOutcome, Is.EqualTo("HIT"), "A broken guard reads as a plain HIT.");
             LogAssert.NoUnexpectedReceived();
         }
         [UnityTest] public IEnumerator DodgeOnlyAttackMissesAfterARealMoveKey()
@@ -267,6 +267,33 @@ namespace StringAsASword.Tests
             yield return new WaitForSecondsRealtime(.7f);
             Assert.That(ActiveOutcome, Is.Empty, "The flash is short-lived.");
             LogAssert.NoUnexpectedReceived();
+        }
+        [UnityTest] public IEnumerator AcceptedSwordKeyPlaysAndClearsKnightSlash()
+        {
+            game.StartSession();
+            var board = Object.FindAnyObjectByType<BoardWorldPresenter>();
+            var slash = board.PlayerTransform.Find("Sword Swing").GetComponent<SpriteRenderer>();
+            Assert.That(slash, Is.Not.Null);
+            Assert.That(slash.gameObject.activeSelf, Is.False);
+            Sprite atAttack = null;
+            // Observe synchronously with the accepted input, even on a slow test-runner frame.
+            game.Session.ActionEvaluated += result =>
+            {
+                if (result.Accepted && result.Kind == StringAsASword.Player.PlayerActionKind.Attack
+                    && slash.gameObject.activeSelf) atAttack = slash.sprite;
+            };
+            yield return UntilSongTime(FirstNote);
+            Queue(Key.J, FirstNote, true);
+            yield return UntilSongTime(FirstNote + .15);
+            Assert.That(game.Session.AcceptedAttacks, Is.EqualTo(1));
+            Assert.That(atAttack, Is.Not.Null);
+            var frames = Object.FindAnyObjectByType<PrototypeView>().Art.attackSlashFrames;
+            Assert.That(atAttack, Is.SameAs(frames[0]));
+            Assert.That(Quaternion.Angle(slash.transform.rotation, board.BoardCamera.transform.rotation), Is.LessThan(.1f));
+            Queue(Key.J, game.SongTime, false);
+            yield return new WaitForSecondsRealtime(.35f);
+            yield return null;
+            Assert.That(slash.gameObject.activeSelf, Is.False);
         }
         [UnityTest] public IEnumerator AttackGuardAndMovementRespectTiePriorityAndHoldEdges()
         {

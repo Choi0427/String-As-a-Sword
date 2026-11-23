@@ -87,11 +87,11 @@ namespace StringAsASword.Presentation
             // Under the cards, over the game and the key guide.
             blur = Rect(frame, "Pause Blur").gameObject.AddComponent<UnityEngine.UI.RawImage>();
             blur.raycastTarget = false; blur.enabled = false;
-            pause = new Panel(this, frame, "Pause", 287.59f, 504.81f, "PAUSED", 341.95f, 470,
+            pause = new Panel(this, art, frame, "Pause", 287.59f, 504.81f, "PAUSED", 341.95f, 470,
                 new Item("판으로 복귀", 810.5f, 462.76f, 300, game.ResumeSession),
                 new Item("설정", 905.5f, 556.76f, 111, OpenSettings),
                 new Item("메인 메뉴", 836, 650.76f, 248, game.QuitGame));
-            gameOver = new Panel(this, frame, "Game Over", 327.19f, 425.63f, "FALLEN", 383.54f, 431,
+            gameOver = new Panel(this, art, frame, "Game Over", 327.19f, 425.63f, "FALLEN", 383.54f, 431,
                 new Item("첫 수부터", 836.5f, 502.26f, 248, game.RestartFromMenu),
                 new Item("메인 메뉴", 836, 596.26f, 248, game.QuitGame));
             gameOverTitle = gameOver.Title;
@@ -246,15 +246,12 @@ namespace StringAsASword.Presentation
             public readonly TMP_Text Title;
             public int Selected { get; private set; } = -1;
 
-            public Panel(BattleScreens owner, RectTransform frame, string name, float top, float height, string title, float titleTop, float titleWidth, params Item[] items)
+            public Panel(BattleScreens owner, ArtSet art, RectTransform frame, string name, float top, float height, string title, float titleTop, float titleWidth, params Item[] items)
             {
                 Items = items;
                 var card = TopLeft(Rect(frame, name), 598.18f, top, 723.63f, height);
                 root = card.gameObject;
-                // Figma: black at 90%, inside stroke 5 px #D9D9D9.
-                var fill = Image(Stretch(Rect(card, "Fill")), CardFill);
-                fill.raycastTarget = true; // Clicks on the card do not fall through to the game.
-                Stroke(card, Ink, 5);
+                DrawMenuCard(card, Ink, art);
                 Title = Label(TopLeft(Rect(frame, name + " Title"), 960 - titleWidth / 2, titleTop, titleWidth, 88), title, 80, Ink, TextAlignmentOptions.Center, owner.titleFont);
                 Title.transform.SetParent(card, true);
                 labels = new TMP_Text[items.Length]; boxes = new UnityEngine.UI.Image[items.Length];
@@ -264,13 +261,17 @@ namespace StringAsASword.Presentation
                     var item = TopLeft(Rect(frame, "Item " + items[i].Text), items[i].Left, items[i].Top, items[i].Width, 94);
                     item.SetParent(card, true);
                     // Hover, as on the main menu: a #929292 box behind the label, which turns #0C0C0C.
-                    boxes[i] = Image(Stretch(Rect(item, "Hover")), HoverBox);
+                    boxes[i] = SlicedImage(Stretch(Rect(item, "Hover")), HoverBox, art.settingsRoundedFill);
                     boxes[i].rectTransform.offsetMin = new Vector2(-14, 14); boxes[i].rectTransform.offsetMax = new Vector2(14, -14);
                     labels[i] = Label(Stretch(Rect(item, "Label")), items[i].Text, ItemSize, Ink, TextAlignmentOptions.Center, owner.itemFont);
                     labels[i].characterSpacing = ItemSpacing;
+                    // The pointer area is the hover box itself, so the effect shows only while the mouse is on it.
                     var hit = Image(Stretch(Rect(item, "Hit")), new Color(0, 0, 0, 0)); hit.raycastTarget = true;
+                    hit.rectTransform.offsetMin = boxes[i].rectTransform.offsetMin; hit.rectTransform.offsetMax = boxes[i].rectTransform.offsetMax;
                     var button = hit.gameObject.AddComponent<MenuButton>();
                     button.Hovered = () => Select(index); button.Clicked = () => Press(index);
+                    // Leaving the item clears its hover. A keyboard pick made since then (W/S) is left alone.
+                    button.Exited = () => { if (Selected == index) Select(-1); };
                 }
                 Select(-1);
             }

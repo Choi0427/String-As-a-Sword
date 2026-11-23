@@ -13,13 +13,15 @@ MonoBehaviour:
   m_Name: ArtSet
   m_EditorClassIdentifier: StringAsASword.Runtime::StringAsASword.Presentation.ArtSet
   knightPrefab: {fileID: 2136183865469953749, guid: ad6eb1cf2996e64489b5ddbcb6f9d896, type: 3}
+  knightGlowColor: {r: 1, g: 1, b: 1, a: 0.65}
+  knightGlowSize: 0.008
   swordPrefab: {fileID: 3338993447774502876, guid: 45c2dc6f06e843c419c9f808cf20bd3a, type: 3}
   kingPrefab: {fileID: 0}
   kingAnchor: {x: 0, y: 0, z: 5.5}
   kingScale: 1
   bossImage: {fileID: 21300000, guid: a2f549f2158424943a1ccf15d710ce69, type: 3}
-  bossImageHeight: 400
-  bossImageSink: {x: 0, y: 110}
+  bossImageHeight: 348
+  bossImageSink: {x: 0, y: 64}
   noisePrefab: {fileID: 0}
   noiseDormantMaterial: {fileID: 0}
   noiseSprite: {fileID: 21300000, guid: 9ada92326268077428fa603fbf6f21be, type: 3}
@@ -31,10 +33,13 @@ MonoBehaviour:
   darkTile: {fileID: 0}
   boardEdge: {fileID: 0}
   useLighting: 1
-  cameraSize: 5.1
+  ambientColor: {r: 0, g: 0, b: 0, a: 0}
+  lightColor: {r: 1, g: 1, b: 1, a: 1}
+  lightIntensity: 1
+  cameraSize: 4.9
   cameraLift: 0
-  cameraElevation: 35
-  cameraFieldOfView: 30
+  cameraElevation: 43
+  cameraFieldOfView: 31
   normalMark: {fileID: 2100000, guid: cfb4941d74cb7e34f81db90cfebbd654, type: 2}
   strongMark: {fileID: 2100000, guid: 68ec3dcb7bdf36045874a17ddf642374, type: 2}
   impactMark: {fileID: 0}
@@ -59,12 +64,13 @@ MonoBehaviour:
   - sprite: {fileID: 21300000, guid: 0b3ce865041aa7b4f8e90fc37334ce82, type: 3}
     sway: {x: 0, y: 0}
     period: 0
+  prologueBackgroundLayers: []
   laneSprite: {fileID: 21300000, guid: cd5d76bcb9cf94e498cd3261a1d64cd2, type: 3}
   laneBoardGap: {x: 668, y: 1387}
   laneStrings: {x: 14, y: 128, z: 257}
   laneNoteSpace: {x: 184, y: 260}
   laneRows: {x: 3, y: 6}
-  laneBoardEdge: 4.38
+  laneBoardEdge: 4.19
   noteSprite: {fileID: 21300000, guid: 2b15bdc155187724d8b107e484c3a5ee, type: 3}
   holdBodySprite: {fileID: 0}
   holdTailSprite: {fileID: 0}
@@ -72,20 +78,29 @@ MonoBehaviour:
   crownRegions: {fileID: 2800000, guid: b887644898d947945896b165855fa7f7, type: 3}
   crownSpent: {fileID: 2800000, guid: 9bfbce1b968228d4abc95604bc5ad22f, type: 3}
   crownMaterial: {fileID: 2100000, guid: 5ae475cc9e4d6084a8ad16485301d8b1, type: 2}
-  crownWidth: 0.6
-  crownSeamHeight: 0.1
+  crownWidth: 0.5
+  crownSeamHeight: 0.2
   mainMenuDark: {fileID: 21300000, guid: 9777af6bfeec6ff4985b1678bf6e208c, type: 3}
   mainMenuWhite: {fileID: 21300000, guid: e7b0fb4972684711b832a96bb6c200c1, type: 3}
+  mainMenuCredit: {fileID: 21300000, guid: fa93713e7dff7fb44aadbf130438721f, type: 3}
   menuFont: {fileID: 11400000, guid: 9f923aa8663272541816bacfcefebd7e, type: 2}
+  skipKeyIcon: {fileID: 21300000, guid: 5383798c0dc8a734f80ff292291ce4bc, type: 3}
+  promptJKeyIcon: {fileID: 21300000, guid: 60e62fc4a2d047399fbe135d98b5917d, type: 3}
   keyGuide: {fileID: 21300000, guid: 53027492787f48944b8aa2b5dee06f0c, type: 3}
   screenFont: {fileID: 11400000, guid: cddfb65d7ebf8724d8854d7fb095a58e, type: 2}
   screenTitleFont: {fileID: 11400000, guid: 463bb0403a855ea49ae21e168c3b27c5, type: 2}
+  outcomeFont: {fileID: 11400000, guid: f11cdb3b0dd6fd645aef4c90eafe389a, type: 2}
   settingsVolume: {fileID: 21300000, guid: 571fa3150c5e49bdb12e49a09660615d, type: 3}
   settingsInputOffset: {fileID: 21300000, guid: 3e28b22c18df4d48912f88ab9d0c7024, type: 3}
   settingsMusicOffset: {fileID: 21300000, guid: 2952d1ab947a42f2af3165878e7dac76, type: 3}
   settingsDifficulty: {fileID: 21300000, guid: 9fe4eca14c2648e3962f5f7677d04ba5, type: 3}
   settingsKeyHints: {fileID: 21300000, guid: de275032bb2147dab5f767e86f2d5d16, type: 3}
   settingsArrow: {fileID: 21300000, guid: 90af87e492fc4902a80621f87cfa5953, type: 3}
+  settingsDifficultyEasyNote: {fileID: 21300000, guid: 7f4b09dcde482184280bae4cfda95ae9, type: 3}
+  settingsDifficultyHardNote: {fileID: 21300000, guid: e220e4081c8cda34b8da72ae4fdc23d3, type: 3}
+  settingsRoundedFill: {fileID: 21300000, guid: 94d7b009fd9691b44a2d084686d2e0af, type: 3}
+  settingsRoundedPanelBorder: {fileID: 21300000, guid: 4c2b3ea422933f04a854a3aaed0bae56, type: 3}
+  settingsRoundedButtonBorder: {fileID: 21300000, guid: 606828aec28b88c4889342d0d7e11f41, type: 3}
   knightBadgeBox:
     serializedVersion: 2
     x: -26
@@ -96,6 +111,13 @@ MonoBehaviour:
   playerHpBarOff: {fileID: 21300000, guid: 105bb1444b2d4547a66e4af635c93f64, type: 3}
   playerHpKnightOn: {fileID: 21300000, guid: 73982b22091846d38a027b39e8b7f7ff, type: 3}
   playerHpKnightOff: {fileID: 21300000, guid: bc65e1c6f73f409dbe5766649b54276c, type: 3}
+  attackSlashFrames:
+  - {fileID: 21300000, guid: 287950709d3e038459c360bbf9e19bdd, type: 3}
+  - {fileID: 21300000, guid: 6d74c697450c6fd4eb77cc4fea0244de, type: 3}
+  - {fileID: 21300000, guid: b2c97bfa0d7982f409f278fa31e5685c, type: 3}
+  - {fileID: 21300000, guid: b8b7cd64aa819664aa033baf47a8b0ba, type: 3}
+  - {fileID: 21300000, guid: 093af485644aab145a337e51c409d23d, type: 3}
+  - {fileID: 21300000, guid: 3b883e84253af614b9ecfa2639b61cb0, type: 3}
   attackVfx: {fileID: 0}
   guardVfx: {fileID: 0}
   hitVfx: {fileID: 0}
@@ -103,3 +125,4 @@ MonoBehaviour:
   pickupVfx: {fileID: 0}
   bossFireVfx: {fileID: 0}
   phaseVfx: {fileID: 0}
+  knightFallSound: {fileID: 0}

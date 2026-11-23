@@ -29,9 +29,9 @@ namespace StringAsASword.Presentation
         private const float LeftButton = 989.98f, RightButton = 1453.14f, ButtonSize = 65, ValueCenter = 1222.06f;
         public const int VolumeRow = 0, InputRow = 1, MusicRow = 2, DifficultyRow = 3, RowCount = 4;
         /// <summary>One A/D press or arrow click: volume in percent, the two syncs in milliseconds.</summary>
-        public const int VolumeStep = 5, OffsetStep = 5;
+        public const int VolumeStep = 5, OffsetStep = 1;
         private const float RepeatDelay = .35f, RepeatEvery = .06f;
-        public const string EasyNote = "쉬움: 잡음을 먹으면 체력 1칸 회복 (최대 5칸)", HardNote = "어려움: 체력 회복 없음";
+        private const string EasyNote = "잡음 획득 시 체력 1칸 회복", HardNote = "체력 회복 없음";
 
         private TMP_FontAsset font, titleFont;
         private Action refresh = () => { };
@@ -41,13 +41,20 @@ namespace StringAsASword.Presentation
         private RectTransform card;
         private GameObject devStrip;
         private int heldStep; private float nextRepeat;
+        // Press feedback on the ◀ ▶ boxes (index row * 2 + side, 0 = ◀): a white fill that lights when the box steps and fades.
+        private readonly UnityEngine.UI.Image[] stepFlashes = new UnityEngine.UI.Image[RowCount * 2];
+        private readonly float[] flashAges = new float[RowCount * 2];
+        // One short, hard blink per step: about 25% white (alpha for the Linear colour space), on at once and off at once
+        // 0.08 s later. No fade: on the dark button a fade shows as visible steps instead of one clean blink.
+        private static readonly float FlashPeak = Mathf.Pow(.25f, 2.2f);
+        private const float FlashSeconds = .08f;
         /// <summary>Called after the panel closes, so a running battle can pick up what changed.</summary>
         public event Action Closed;
         /// <summary>Asks the owner (menu or battle) to start the tutorial, after the panel closed.</summary>
         public event Action TutorialRequested;
         public bool IsOpen => gameObject.activeSelf;
-        /// <summary>The row W/S or hovering picked (0 = 음량).</summary>
-        public int SelectedRow { get; private set; }
+        /// <summary>The row W/S or hovering picked (0 = 음량, -1 = none).</summary>
+        public int SelectedRow { get; private set; } = -1;
         public bool DevStripVisible => devStrip.activeSelf;
 
         public static SettingsPanel Create(RectTransform parent, ArtSet art)
@@ -58,7 +65,8 @@ namespace StringAsASword.Presentation
             shade.gameObject.SetActive(false);
             return panel;
         }
-        public void Open() { refresh(); Select(VolumeRow); heldStep = 0; gameObject.SetActive(true); }
+        // Opens with no row lit, like the menus: a row shows while hovered or once W/S picks it.
+        public void Open() { refresh(); Select(-1); heldStep = 0; ResetFlashes(); gameObject.SetActive(true); }
         public void Close()
         {
             if (!IsOpen) return;
@@ -73,9 +81,10 @@ namespace StringAsASword.Presentation
             TutorialRequested?.Invoke();
         }
 
+        /// <summary>Lights a row (0 = 음량), or none with -1.</summary>
         public void Select(int row)
         {
-            SelectedRow = Mathf.Clamp(row, 0, RowCount - 1);
+            SelectedRow = row < 0 ? -1 : Mathf.Clamp(row, 0, RowCount - 1);
             for (int i = 0; i < RowCount; i++)
             {
                 bands[i].color = i == SelectedRow ? RowBand : new Color(0, 0, 0, 0);
@@ -95,6 +104,34 @@ namespace StringAsASword.Presentation
                 case DifficultyRow: GameFlow.Difficulty = direction < 0 ? GameDifficulty.Easy : GameDifficulty.Hard; break;
             }
             refresh();
+            LightStepper(row, direction);
+        }
+        /// <summary>Blinks the ◀ (direction &lt; 0) or ▶ box of a row once. Rows without boxes: nothing.</summary>
+        private void LightStepper(int row, int direction)
+        {
+            if (row < 0 || row >= RowCount || direction == 0) return;
+            int i = row * 2 + (direction < 0 ? 0 : 1);
+            if (stepFlashes[i] == null) return;
+            flashAges[i] = 0;
+            stepFlashes[i].color = new Color(1, 1, 1, FlashPeak);
+        }
+        private void AnimateFlashes()
+        {
+            for (int i = 0; i < stepFlashes.Length; i++)
+            {
+                if (stepFlashes[i] == null || flashAges[i] > FlashSeconds) continue;
+                // Unscaled: the panel also opens over the paused battle.
+                flashAges[i] += Time.unscaledDeltaTime;
+                if (flashAges[i] > FlashSeconds) stepFlashes[i].color = new Color(1, 1, 1, 0);
+            }
+        }
+        private void ResetFlashes()
+        {
+            for (int i = 0; i < stepFlashes.Length; i++)
+            {
+                flashAges[i] = FlashSeconds + 1;
+                if (stepFlashes[i] != null) stepFlashes[i].color = new Color(1, 1, 1, 0);
+            }
         }
         private static int VolumePercent => Mathf.RoundToInt(GameFlow.MusicVolume * 100);
         /// <summary>음악 싱크 보정 in milliseconds: + plays the music later. It is the old visual offset, sign flipped.</summary>
@@ -103,17 +140,19 @@ namespace StringAsASword.Presentation
 
         private void Update()
         {
+            AnimateFlashes();
             var keyboard = Keyboard.current;
             if (keyboard == null) return;
             bool shift = keyboard.shiftKey.isPressed;
             if (shift && keyboard.dKey.wasPressedThisFrame) { Choose("개발자 모드", GameFlow.DevMode ? 0 : 1); return; }
-            if (keyboard.wKey.wasPressedThisFrame || keyboard.upArrowKey.wasPressedThisFrame) Select(SelectedRow == 0 ? RowCount - 1 : SelectedRow - 1);
-            if (keyboard.sKey.wasPressedThisFrame || keyboard.downArrowKey.wasPressedThisFrame) Select(SelectedRow == RowCount - 1 ? 0 : SelectedRow + 1);
+            // With no row lit, W starts from the bottom and S from the top, as on the menus.
+            if (keyboard.wKey.wasPressedThisFrame || keyboard.upArrowKey.wasPressedThisFrame) Select(SelectedRow <= 0 ? RowCount - 1 : SelectedRow - 1);
+            if (keyboard.sKey.wasPressedThisFrame || keyboard.downArrowKey.wasPressedThisFrame) Select(SelectedRow < 0 || SelectedRow == RowCount - 1 ? 0 : SelectedRow + 1);
             int held = shift ? 0 : (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed ? -1 : 0) + (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed ? 1 : 0);
             if (held == 0) { heldStep = 0; return; }
-            // A first press steps at once; held, it repeats after a short wait.
-            if (held != heldStep) { heldStep = held; nextRepeat = Time.unscaledTime + RepeatDelay; Step(SelectedRow, held); }
-            else if (Time.unscaledTime >= nextRepeat && SelectedRow != DifficultyRow) { nextRepeat = Time.unscaledTime + RepeatEvery; Step(SelectedRow, held); }
+            // A first press steps at once; held, it repeats after a short wait. With no row lit, A/D works on 음량 (and lights it).
+            if (held != heldStep) { heldStep = held; nextRepeat = Time.unscaledTime + RepeatDelay; if (SelectedRow < 0) Select(VolumeRow); Step(SelectedRow, held); }
+            else if (Time.unscaledTime >= nextRepeat && SelectedRow >= 0 && SelectedRow != DifficultyRow) { nextRepeat = Time.unscaledTime + RepeatEvery; Step(SelectedRow, held); }
         }
 
         // --- Building ------------------------------------------------------------------------------------------
@@ -124,8 +163,7 @@ namespace StringAsASword.Presentation
             Image(shade, new Color(0, 0, 0, .72f)).raycastTarget = true;
             var frame = Rect(shade, "Frame", Vector2.zero, new Vector2(1920, 1080));
             card = TopLeft(Rect(frame, "Card"), CardLeft, CardTop, CardWidth, CardHeight);
-            Image(Stretch(Rect(card, "Fill")), CardFill).raycastTarget = true;
-            Stroke(card, Ink, 5);
+            DrawMenuCard(card, Ink, art);
             Text(At("Title", 959.91f, 121.78f + 44, 588, 88), "SETTINGS", 80, Ink, titleFont);
             foreach (float y in Rules) Image(At("Rule", RuleLeft + RuleWidth / 2, y - 1, RuleWidth, 2), Rule);
 
@@ -136,7 +174,7 @@ namespace StringAsASword.Presentation
                 // The row between its rules: hover picks it, and it shows faintly while picked.
                 bands[i] = Image(At("Row " + i, RuleLeft + RuleWidth / 2, (Rules[i] + Rules[i + 1]) / 2, RuleWidth, Rules[i + 1] - Rules[i] - 2), Color.clear);
                 bands[i].raycastTarget = true;
-                bands[i].gameObject.AddComponent<MenuButton>().Hovered = () => Select(row);
+                HoverRow(bands[i].gameObject, row);
             }
 
             // 음량: ◀ 80% ───◇── ▶
@@ -159,33 +197,48 @@ namespace StringAsASword.Presentation
             music.characterSpacing = -5;
             refresh += () => music.text = Ms(MusicSyncMs);
 
-            // 난이도: [쉬움] [어려움], with what the picked one does in small type under the title.
+            // Leave space below the buttons for the caption that belongs to the selected option.
             Picture(art.settingsDifficulty, "난이도", 514.49f, 791.52f, 153.32f, 57.72f, "난이도");
             string[] levels = { "쉬움", "어려움" };
             float[] levelCenters = { 1087.48f, 1355.64f };
+            const float buttonWidth = 260, buttonHeight = 75, noteHeight = 22, noteGap = 10;
+            float buttonY = RowCenters[DifficultyRow] - 12;
+            float noteY = buttonY + buttonHeight / 2 + noteGap + noteHeight / 2;
             for (int i = 0; i < levels.Length; i++)
             {
                 int index = i;
-                var box = At("Option " + levels[i], levelCenters[i], RowCenters[DifficultyRow], 260, 75);
-                var fill = Image(box, Ink); fill.raycastTarget = true;
-                var stroke = StrokeImages(box, 2);
-                var label = Text(Stretch(Rect(box, "Label")), levels[i], 32, Color.black, font);
+                var box = At("Option " + levels[i], levelCenters[i], buttonY, buttonWidth, buttonHeight);
+                var fill = SlicedImage(box, Ink, art.settingsRoundedFill); fill.raycastTarget = true;
+                var stroke = StrokeImages(box, art.settingsRoundedButtonBorder);
+                var label = Label(Stretch(Rect(box, "Label")), levels[i], 32, Color.black, TextAlignmentOptions.Midline, font);
                 label.characterSpacing = -5;
-                var button = box.gameObject.AddComponent<MenuButton>();
-                button.Hovered = () => Select(DifficultyRow); button.Clicked = () => choices["난이도"](index);
+                var button = HoverRow(box.gameObject, DifficultyRow);
+                button.Clicked = () => choices["난이도"](index);
+
+                var noteSprite = i == 0 ? art.settingsDifficultyEasyNote : art.settingsDifficultyHardNote;
+                float noteWidth = noteSprite == null ? buttonWidth : noteHeight * noteSprite.rect.width / noteSprite.rect.height;
+                var note = At("Note " + levels[i], levelCenters[i], noteY, noteWidth, noteHeight);
+                if (noteSprite != null)
+                {
+                    var image = Image(note, Color.white);
+                    image.sprite = noteSprite;
+                    image.preserveAspect = true;
+                }
+                else
+                {
+                    UiKit.Label(note, i == 0 ? EasyNote : HardNote, 20, Caption, TextAlignmentOptions.Center, font);
+                }
+
                 refresh += () =>
                 {
                     bool on = (int)GameFlow.Difficulty == index;
                     fill.color = on ? Ink : new Color(0, 0, 0, 0);
                     foreach (var edge in stroke) edge.enabled = !on;
                     label.color = on ? Color.black : Color.white;
+                    note.gameObject.SetActive(on);
                 };
                 rowStrokes[DifficultyRow].AddRange(stroke);
             }
-            var note = TopLeft(Rect(card, "난이도 Note"), 437.83f - CardLeft, 832 - CardTop, 480, 24);
-            var noteText = UiKit.Label(note, "", 20, Caption, TextAlignmentOptions.Left, font);
-            noteText.characterSpacing = -5;
-            refresh += () => noteText.text = GameFlow.Difficulty == GameDifficulty.Easy ? EasyNote : HardNote;
             choices["난이도"] = i => { GameFlow.Difficulty = i == 0 ? GameDifficulty.Easy : GameDifficulty.Hard; refresh(); };
 
             // W S ↕   A D ↔   Esc 뒤로
@@ -193,6 +246,7 @@ namespace StringAsASword.Presentation
 
             BuildDevStrip(frame);
             refresh();
+            ResetFlashes();
         }
 
         /// <summary>Hidden developer switches under the card (Shift+D). Not part of the Figma design.</summary>
@@ -233,7 +287,9 @@ namespace StringAsASword.Presentation
                 float x = side == 0 ? LeftButton : RightButton;
                 var box = At(row + (side == 0 ? " Left" : " Right"), x, RowCenters[row], ButtonSize, ButtonSize);
                 Image(box, new Color(0, 0, 0, 0)).raycastTarget = true;
-                rowStrokes[row].AddRange(StrokeImages(box, 2));
+                rowStrokes[row].AddRange(StrokeImages(box, art.settingsRoundedButtonBorder));
+                // Press flash: the box's rounded shape in white, over the border and under the arrow, clear until it steps.
+                stepFlashes[row * 2 + side] = SlicedImage(Stretch(Rect(box, "Press Flash")), new Color(1, 1, 1, 0), art.settingsRoundedFill);
                 // The arrow sits 2 px off centre toward where it points.
                 var arrow = Rect(box, "Arrow", new Vector2(2 * direction, 0), new Vector2(18.18f, 30.19f));
                 if (art.settingsArrow != null)
@@ -242,8 +298,9 @@ namespace StringAsASword.Presentation
                     if (direction > 0) arrow.localScale = new Vector3(-1, 1, 1);
                 }
                 else Text(Stretch(arrow), direction < 0 ? "◀" : "▶", 30, Ink, font);
-                var button = box.gameObject.AddComponent<MenuButton>();
-                button.Hovered = () => Select(row); button.Clicked = () => { Select(row); Step(row, direction); };
+                var button = HoverRow(box.gameObject, row);
+                button.Clicked = () => { Select(row); Step(row, direction); };
+                if (row == InputRow || row == MusicRow) button.RepeatWhileHeld(RepeatDelay, RepeatEvery);
                 if (captions)
                 {
                     var text = Text(At(row + (side == 0 ? " 앞당김" : " 늦춤"), x, RowCenters[row] + 50, 90, 35), side == 0 ? "앞당김" : "늦춤", 24, Caption, font);
@@ -270,11 +327,24 @@ namespace StringAsASword.Presentation
             slider.fillRect = fill; slider.handleRect = handle; slider.targetGraphic = hit; slider.transition = UnityEngine.UI.Selectable.Transition.None;
             slider.navigation = new UnityEngine.UI.Navigation { mode = UnityEngine.UI.Navigation.Mode.None };
             slider.wholeNumbers = true; slider.minValue = 0; slider.maxValue = 100; slider.SetValueWithoutNotify(VolumePercent);
-            slider.onValueChanged.AddListener(v => { GameFlow.MusicVolume = v / 100f; Select(row); refresh(); });
+            // The slider sits on top of its row, so it lights the row while hovered like the row itself does.
+            HoverRow(area.gameObject, row);
+            slider.onValueChanged.AddListener(v => { GameFlow.MusicVolume = v / 100f; refresh(); });
             // Another panel (menu or battle) may have changed the saved value since this one was built.
             refresh += () => slider.SetValueWithoutNotify(VolumePercent);
         }
 
+        /// <summary>
+        /// Hovering <paramref name="target"/> lights <paramref name="row"/>; leaving it clears the light. A row picked since
+        /// then with W/S is left alone, and moving onto another part of the same row lights it again at once.
+        /// </summary>
+        private MenuButton HoverRow(GameObject target, int row)
+        {
+            var button = target.AddComponent<MenuButton>();
+            button.Hovered = () => Select(row);
+            button.Exited = () => { if (SelectedRow == row) Select(-1); };
+            return button;
+        }
         /// <summary>A Figma row title exported as a picture; plain text when the picture is not delivered.</summary>
         private void Picture(Sprite sprite, string name, float centerX, float centerY, float width, float height, string title, string caption = null)
         {
@@ -286,10 +356,17 @@ namespace StringAsASword.Presentation
         /// <summary>A rect by its centre in Figma frame pixels, placed in the card.</summary>
         private RectTransform At(string name, float centerX, float centerY, float width, float height) =>
             Rect(card, name, new Vector2(centerX - (CardLeft + CardWidth / 2), -(centerY - (CardTop + CardHeight / 2))), new Vector2(width, height));
-        private List<UnityEngine.UI.Image> StrokeImages(RectTransform box, float width)
+        private List<UnityEngine.UI.Image> StrokeImages(RectTransform box, Sprite sprite)
         {
+            if (sprite != null)
+            {
+                var border = SlicedImage(Stretch(Rect(box, "Border")), Line, sprite);
+                border.fillCenter = false;
+                return new List<UnityEngine.UI.Image> { border };
+            }
+
             int before = box.childCount;
-            Stroke(box, Line, width);
+            Stroke(box, Line, 2);
             var edges = new List<UnityEngine.UI.Image>();
             for (int i = before; i < box.childCount; i++) edges.Add(box.GetChild(i).GetComponent<UnityEngine.UI.Image>());
             return edges;

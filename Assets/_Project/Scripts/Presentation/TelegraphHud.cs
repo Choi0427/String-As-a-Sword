@@ -11,7 +11,8 @@ namespace StringAsASword.Presentation
     {
         // A row, column or cross always keeps its per-cell numbers; wider attacks would bury the board marks.
         public const int DenseBadgeLimit = 16;
-        public const string Blocked = "BLOCKED", Hit = "HIT", GuardBroken = "GUARD BROKEN";
+        // A failed guard reads as a plain HIT, the same as any other hit.
+        public const string Blocked = "BLOCK", Hit = "HIT";
 
         public static string ResponseWord(AttackResponse response)
             => response == AttackResponse.GuardOnly ? "GUARD" : response == AttackResponse.DodgeOnly ? "MOVE" : "EITHER";
@@ -29,7 +30,7 @@ namespace StringAsASword.Presentation
 
         // A guard that was ignored is both a hit and a guard record, so it has to be read before the plain hit.
         public static string OutcomeText(NoteRecord record)
-            => record.hit ? (record.category == "Guard" ? GuardBroken : Hit) : record.guardSuccess ? Blocked : null;
+            => record.hit ? Hit : record.guardSuccess ? Blocked : null;
 
         // Later hits stay in the active list, so a cell the next hit misses still reports the hit that reaches it.
         // Equal impacts report the strictest response, as BattleSession's response events do.
@@ -49,6 +50,23 @@ namespace StringAsASword.Presentation
                     { soonest[i] = remaining; responses[i] = attack.Response; }
                 }
             }
+        }
+
+        // A countdown describes the next impact on a cell. Single-note warnings rely on the board mark.
+        public static ulong CountdownCells(IReadOnlyList<BossTelegraph> active, int lastClosed, int[] soonest)
+        {
+            ulong cells = 0;
+            foreach (var attack in active)
+            {
+                if (attack.WarningNotes == 1) continue;
+                int remaining = attack.Remaining(lastClosed);
+                for (int i = 0; i < soonest.Length; i++)
+                {
+                    ulong cell = 1UL << i;
+                    if ((attack.Cells & cell) != 0 && soonest[i] == remaining) cells |= cell;
+                }
+            }
+            return cells;
         }
 
         // Id - Hit is shared by every hit of a sequence, so one attack takes one line however many hits remain.

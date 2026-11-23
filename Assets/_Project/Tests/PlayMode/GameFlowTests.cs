@@ -110,19 +110,32 @@ namespace StringAsASword.Tests
                 Assert.That(menu.transform.Find("Settings/Frame/Dev").gameObject.activeSelf, Is.False);
                 TMPro.TMP_Text Value(string row) => card.Find(row + " Value").GetComponent<TMPro.TMP_Text>();
                 Assert.That(Value("음량").text, Is.EqualTo("80%"));
+                var easyNote = card.Find("Note 쉬움").GetComponent<UnityEngine.UI.Image>();
+                var hardNote = card.Find("Note 어려움").GetComponent<UnityEngine.UI.Image>();
+                Assert.That(easyNote.sprite.name, Is.EqualTo("Settings_DifficultyEasyNote"));
+                Assert.That(hardNote.sprite.name, Is.EqualTo("Settings_DifficultyHardNote"));
+                Assert.That(easyNote.gameObject.activeSelf, Is.False);
+                Assert.That(hardNote.gameObject.activeSelf, Is.True);
 
                 settings.Step(SettingsPanel.VolumeRow, 1);
                 Assert.That(GameFlow.MusicVolume, Is.EqualTo(.85f).Within(.001f));
                 settings.Step(SettingsPanel.InputRow, -1);
                 Assert.That(GameFlow.InputOffsetMs, Is.EqualTo(-SettingsPanel.OffsetStep));
-                Assert.That(Value("입력 판정 보정").text, Is.EqualTo("- 5 ms"));
+                Assert.That(Value("입력 판정 보정").text, Is.EqualTo("- 1 ms"));
                 settings.Step(SettingsPanel.MusicRow, 1);
                 Assert.That(SettingsPanel.MusicSyncMs, Is.EqualTo(SettingsPanel.OffsetStep), "늦춤 plays the music later...");
                 Assert.That(GameFlow.VisualOffsetMs, Is.EqualTo(-SettingsPanel.OffsetStep), "...so the notes are drawn earlier.");
-                Assert.That(Value("음악 싱크 보정").text, Is.EqualTo("+ 5 ms"));
-                settings.Step(SettingsPanel.DifficultyRow, -1);
+                Assert.That(Value("음악 싱크 보정").text, Is.EqualTo("+ 1 ms"));
+                settings.Select(SettingsPanel.DifficultyRow);
+                yield return Press(Key.A);
                 Assert.That(GameFlow.Difficulty, Is.EqualTo(GameDifficulty.Easy));
-                Assert.That(card.Find("난이도 Note").GetComponent<TMPro.TMP_Text>().text, Is.EqualTo(SettingsPanel.EasyNote));
+                Assert.That(easyNote.gameObject.activeSelf, Is.True);
+                Assert.That(hardNote.gameObject.activeSelf, Is.False);
+
+                card.Find("Option 어려움").GetComponent<MenuButton>().OnPointerClick(null);
+                Assert.That(GameFlow.Difficulty, Is.EqualTo(GameDifficulty.Hard));
+                Assert.That(easyNote.gameObject.activeSelf, Is.False);
+                Assert.That(hardNote.gameObject.activeSelf, Is.True);
                 settings.Choose("개발자 모드", 1);
                 Assert.That(menu.transform.Find("Settings/Frame/Dev").gameObject.activeSelf, "Shift+D's switch shows the developer strip.");
                 settings.Close();
