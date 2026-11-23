@@ -1,0 +1,54 @@
+d312 iter 1: scale 1.9000 hp 124/28/49/190 median never
+d312 iter 2: scale 1.1000 hp 71/16/29/110 median 205.0
+d312 iter 3: scale 1.5000 hp 98/22/39/150 median never
+d312 iter 4: scale 1.3000 hp 84/19/34/130 median 270.0
+d312 iter 5: scale 1.2000 hp 78/18/31/120 median 230.0
+d312 iter 6: scale 1.2500 hp 81/19/32/125 median 242.0
+d312 iter 7: scale 1.2750 hp 83/19/33/127 median 258.0
+d312 iter 8: scale 1.2875 hp 84/19/33/129 median 269.0
+d312 fit -> 83/19/33/128 (263)
+d322 iter 1: scale 1.9000 hp 124/28/49/190 median never
+d322 iter 2: scale 1.1000 hp 71/16/29/110 median 205.0
+d322 iter 3: scale 1.5000 hp 98/22/39/150 median never
+d322 iter 4: scale 1.3000 hp 84/19/34/130 median 269.5
+d322 iter 5: scale 1.2000 hp 78/18/31/120 median 228.5
+d322 iter 6: scale 1.2500 hp 81/19/32/125 median 242.0
+d322 iter 7: scale 1.2750 hp 83/19/33/127 median 257.0
+d322 iter 8: scale 1.2875 hp 84/19/33/129 median 269.0
+d322 fit -> 83/19/33/128 (263)
+d323 iter 1: scale 1.9000 hp 124/28/49/190 median never
+d323 iter 2: scale 1.1000 hp 71/16/29/110 median 200.5
+d323 iter 3: scale 1.5000 hp 98/22/39/150 median never
+d323 iter 4: scale 1.3000 hp 84/19/34/130 median 243.0
+d323 iter 5: scale 1.4000 hp 91/21/36/140 median 276.0
+d323 iter 6: scale 1.3500 hp 88/20/35/135 median 270.0
+d323 iter 7: scale 1.3250 hp 86/20/34/132 median 257.0
+d323 iter 8: scale 1.3375 hp 87/20/35/134 median 269.0
+d323 fit -> 87/20/35/133 (275)
+d222 iter 1: scale 1.9000 hp 124/28/49/190 median never
+d222 iter 2: scale 1.1000 hp 71/16/29/110 median never
+d222 iter 3: scale 0.7000 hp 46/10/18/70 median 194.0
+d222 iter 4: scale 0.9000 hp 58/13/23/90 median 269.0
+d222 iter 5: scale 0.8000 hp 52/12/21/80 median 218.0
+d222 iter 6: scale 0.8500 hp 55/13/22/85 median 239.0
+d222 iter 7: scale 0.8750 hp 57/13/23/87 median 245.0
+d222 iter 8: scale 0.8875 hp 58/13/23/89 median 269.0
+d222 fit -> 57/13/23/88 (181)
+d223 iter 1: scale 1.9000 hp 124/28/49/190 median never
+d223 iter 2: scale 1.1000 hp 71/16/29/110 median never
+d223 iter 3: scale 0.7000 hp 46/10/18/70 median 183.0
+d223 iter 4: scale 0.9000 hp 58/13/23/90 median 238.0
+d223 iter 5: scale 1.0000 hp 65/15/26/100 median 286.5
+d223 iter 6: scale 0.9500 hp 62/14/25/95 median 270.0
+d223 iter 7: scale 0.9250 hp 60/14/24/92 median 255.0
+d223 iter 8: scale 0.9375 hp 61/14/24/94 median 269.0
+d223 fit -> 61/14/24/93 (192)
+d224 iter 1: scale 1.9000 hp 124/28/49/190 median never
+d224 iter 2: scale 1.1000 hp 71/16/29/110 median never
+d224 iter 3: scale 0.7000 hp 46/10/18/70 median 174.0
+d224 iter 4: scale 0.9000 hp 58/13/23/90 median 220.0
+d224 iter 5: scale 1.0000 hp 65/15/26/100 median 271.0
+d224 iter 6: scale 0.9500 hp 62/14/25/95 median 241.5
+d224 iter 7: scale 0.9750 hp 63/15/25/97 median 255.0
+d224 iter 8: scale 0.9875 hp 64/15/26/99 median 270.0
+d224 fit -> 64/15/26/98 (203)

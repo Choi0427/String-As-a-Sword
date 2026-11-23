@@ -40,6 +40,8 @@ namespace StringAsASword.Simulation
         public int ResonanceNotes;                   // notes inside a running resonance window
         public int DamageDealt;                      // sum of Records[].damage
         public int HitsTaken;                        // player-hit events
+        public int Heals;                            // player-heal events (difficulty 쉬움)
+        public bool HealOnNoise;
         public int StunnedNote = -1;                 // -1 when the king was never stunned
         public int ClosedNotes;                      // Records.Count
         public int Moves, Guards, EffectiveAttacks, OtherActions;   // Records[].category counts
@@ -52,18 +54,18 @@ namespace StringAsASword.Simulation
         // battleSeed drives the BattleSession (noise/patterns); skillSeed drives only timing error,
         // drops and unread telegraphs. Perfect reproduces BattleSimulator.RunOne exactly.
         public static SkilledRun RunSkilled(BattleSettings settings, int battleSeed, int skillSeed,
-            StrategyKind strategy, SkillProfile skill, bool keepBattle = false)
+            StrategyKind strategy, SkillProfile skill, bool keepBattle = false, bool healOnNoise = false)
         {
             if (skill == null) throw new ArgumentNullException(nameof(skill));
             var timer = Stopwatch.StartNew();
             bool perfect = skill.IsPerfect;
-            var battle = new BattleSession(settings, battleSeed, null);
+            var battle = new BattleSession(settings, battleSeed, null) { HealOnNoise = healOnNoise };
             var result = new BattleRun
             {
                 Seed = battleSeed, Strategy = strategy, Battle = battle,
                 Phases = Enumerable.Range(1, 4).Select(p => new PhaseSample { phase = p }).ToArray()
             };
-            var skilled = new SkilledRun { Run = result, Skill = skill.Name, BattleSeed = battleSeed, SkillSeed = skillSeed };
+            var skilled = new SkilledRun { Run = result, Skill = skill.Name, BattleSeed = battleSeed, SkillSeed = skillSeed, HealOnNoise = healOnNoise };
             var rng = new Random(skillSeed);
             var unread = new HashSet<int>();
             double secondsPerBeat = 60.0 / settings.Bpm;
@@ -107,7 +109,7 @@ namespace StringAsASword.Simulation
                 previousPhase = phase;
             }
             skilled.UnreadTelegraphs = unread.Count;
-            FinishRun(settings, battle, result);
+            FinishRun(settings, battle, result, healOnNoise);
             timer.Stop(); result.ElapsedMilliseconds = timer.Elapsed.TotalMilliseconds;
 
             var records = battle.Records;
@@ -143,6 +145,7 @@ namespace StringAsASword.Simulation
                     case "resonance-cadence": skilled.Cadences++; break;
                     case "ghost-strike": skilled.GhostStrikes++; break;
                     case "player-hit": skilled.HitsTaken++; break;
+                    case "player-heal": skilled.Heals++; break;
                 }
             }
             if (!keepBattle) result.Battle = null;
@@ -183,7 +186,7 @@ namespace StringAsASword.Simulation
         }
 
         // Same outcome fields and invariant checks as BattleSimulator.RunOne.
-        private static void FinishRun(BattleSettings settings, BattleSession battle, BattleRun result)
+        private static void FinishRun(BattleSettings settings, BattleSession battle, BattleRun result, bool healOnNoise)
         {
             foreach (var record in battle.Records)
             {
@@ -226,7 +229,8 @@ namespace StringAsASword.Simulation
                     Bump(result.InvariantFailures, "attack-damage");
                 if ((record.category == "EffectiveAttack") != (record.damage > 0))
                     Bump(result.InvariantFailures, "attack-category");
-                if (record.playerHp < 0 || record.playerHp > previousHp)
+                // 쉬움: a noise collected on this note may heal 1 HP (never above the max).
+                if (record.playerHp < 0 || record.playerHp > (healOnNoise ? Math.Min(settings.PlayerMaxHp, previousHp + 1) : previousHp))
                     Bump(result.InvariantFailures, "player-hp");
                 if (record.bossHp < 0) Bump(result.InvariantFailures, "boss-hp");
                 previousHp = record.playerHp;
