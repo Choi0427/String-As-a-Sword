@@ -42,15 +42,16 @@ namespace StringAsASword.Presentation
 
         /// <summary>
         /// Which shot a story beat belongs to (prologue revision: one meaning per shot). rule: every piece hangs on the king's
-        /// strings and moves one square a beat. offbeat: the knight will not move on its beat, then leaps half a beat late
-        /// off the board. bind: six strings drag it back and pin it to its square; the lowest one lights up. wait: the bar
-        /// repeated until J. string: the string tears and becomes the sword. lanes: the five left become the lanes, the king
-        /// takes the pieces away. face: the knight and the king alone, the discarded noise settling on the board.
-        /// handover: the battle camera.
+        /// strings and moves one square a beat to the square he lights. offbeat: three times the knight jumps an L to the
+        /// left instead of the right, on the beat, then off it, then off it again, and is put back by its string. bind: six
+        /// strings catch it by the legs and pin it low to its square; the lowest one lights up and it takes it in its hand.
+        /// wait: the bar repeated until J (현을 뜯는다). string: the string comes away and becomes the sword. lanes: the
+        /// five left become the lanes, the king takes the pieces away. face: the knight and the king alone, the discarded
+        /// noise settling on the board. handover: the battle camera.
         /// </summary>
         public static string Shot(double story)
         {
-            if (story < 12) return "rule";
+            if (story < 10) return "rule";
             if (story < 16) return "offbeat";
             if (story < LoopStart) return "bind";
             if (story < Tear) return "wait";

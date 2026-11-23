@@ -135,7 +135,7 @@ namespace StringAsASword.Presentation
         [UnityEngine.Serialization.FormerlySerializedAs("prologueSkipKeyIcon")]
         [Tooltip("ESC key image on the prologue and tutorial skip hints.")]
         public Sprite skipKeyIcon;
-        [Tooltip("J key image on the prologue's '줄을 끊는다' prompt. Empty = a plain keycap.")]
+        [Tooltip("J key image on the prologue's '현을 뜯는다' prompt. Empty = a plain keycap.")]
         public Sprite promptJKeyIcon;
         [Tooltip("Key guide under the board in battle (Figma 'Game Play' / 키 가이드, exported at 2x). Empty = no guide.")]
         public Sprite keyGuide;

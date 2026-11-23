@@ -7,9 +7,9 @@ namespace StringAsASword.Presentation
     /// <see cref="IntroTimeline"/> and <see cref="IntroDirector"/>.
     ///
     /// The prologue has five sounds (prologue revision R6-A): the chess clock, a piece set down, the noise's crackle (the
-    /// ending's white noise), and two recordings, a string under strain and a string snapping. The last two are slots: until
-    /// a file is delivered (String As a Sword > Audio > Set Up Prologue Audio) the strain is silent and the snap is the
-    /// crackle over a heavy piece. A composed cue (S1-B) plays on top of them when assigned; see Docs/IntroAssets.md.
+    /// ending's white noise), and two recordings, a string under strain and a string plucked hard (현을 뜯는다, the J). The
+    /// last two are slots: until a file is delivered (String As a Sword > Audio > Set Up Prologue Audio) the strain is
+    /// silent and the pluck is the crackle over a heavy piece. A composed cue (S1-B) plays on top of them when assigned; see Docs/IntroAssets.md.
     /// </summary>
     [CreateAssetMenu(menuName = "String As a Sword/Prologue", fileName = "Prologue")]
     public sealed class PrologueDefinition : ScriptableObject
@@ -20,7 +20,7 @@ namespace StringAsASword.Presentation
         /// <summary>How far a piece may fall short of its beats and still count as on length.</summary>
         public const double LengthTolerance = .01;
         /// <summary>The cue names the prologue plays (<see cref="IntroDirector.Cue"/>).</summary>
-        public const string ClockName = "clock", PlaceName = "place", NoiseName = "noise", StrainName = "strain", SnapName = "snap";
+        public const string ClockName = "clock", PlaceName = "place", NoiseName = "noise", StrainName = "strain", PluckName = "pluck";
 
         [Tooltip("The clips found by name: clock, place, noise.")]
         public AudioClip[] clips;
@@ -30,8 +30,8 @@ namespace StringAsASword.Presentation
         [Header("String recordings (R6-A): silent / stood in for until delivered")]
         [Tooltip("A taut string creaking under strain: the knight pinned to the board, struggling, the waiting bar.")]
         public AudioClip stringStrain;
-        [Tooltip("A string snapping: the player's J. Until delivered, the noise's crackle over a heavy piece stands in.")]
-        public AudioClip stringSnap;
+        [Tooltip("A string plucked hard enough to come away (현을 뜯는다): the player's J. Until delivered, the noise's crackle over a heavy piece stands in.")]
+        public AudioClip stringPluck;
 
         [Header("Composed cue (S1-B): music under the sounds when assigned")]
         [Tooltip("Section A: sample 0 = story beat 0; 32 beats (22.069 s), a tail may run on.")]
@@ -53,7 +53,7 @@ namespace StringAsASword.Presentation
         public AudioClip Clip(string clipName)
         {
             if (clipName == StrainName) return stringStrain;
-            if (clipName == SnapName) return stringSnap;
+            if (clipName == PluckName) return stringPluck;
             if (clips == null) return null;
             foreach (var clip in clips) if (clip != null && clip.name == clipName) return clip;
             return null;

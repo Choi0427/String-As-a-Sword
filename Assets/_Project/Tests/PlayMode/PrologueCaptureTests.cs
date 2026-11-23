@@ -17,10 +17,12 @@ namespace StringAsASword.Tests
     {
         private static readonly float[] Beats =
         {
-            1, 5, 9.6f, 11.6f,              // rule: strings, a ply, up the strings to the king
-            12.8f, 13.9f, 15.4f,             // offbeat: the knight's beat, the leap, off the edge
-            16.25f, 16.8f, 18.6f, 22.4f, 26.5f, // bind: caught, dragged back, pinned, struggles
-            30, 33,                          // the lit string, the waiting bar
+            1, 4.7f, 9.3f,                   // rule: strings, a ply on its lit square, up the strings to the king
+            10.4f, 10.8f, 11.3f, 11.8f,      // offbeat: h3 lit, the first try in the air, on e2, put back
+            12.6f, 13.3f, 13.6f, 13.8f,      // h3 again, the second try, on e2 off the beat, put back roughly
+            15.2f, 15.8f,                    // the third try, its string slipping free
+            16.25f, 16.8f, 17.6f, 18.4f, 22.4f, // bind: caught by the legs, dragged down, pinned low, the noise thrown away, a struggle
+            29, 30, 33,                      // the lit string taken into the hand, the waiting bar
             36.4f, 37.9f, 39.6f,             // the tear and the sword
             41, 43.5f, 46.5f,                // lanes, pieces lifted away
             49.5f, 52.5f, 55.5f              // face, settle, the handover

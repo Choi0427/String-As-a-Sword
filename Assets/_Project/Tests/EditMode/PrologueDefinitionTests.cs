@@ -38,36 +38,41 @@ namespace StringAsASword.Tests
         [Test] public void TheStringRecordingsComeFromTheirSlotsAndAreMissingUntilDelivered()
         {
             Assert.That(data.Clip(PrologueDefinition.StrainName), Is.Null);
-            Assert.That(data.Clip(PrologueDefinition.SnapName), Is.Null);
-            var snap = AudioClip.Create("String_Snap", 480, 1, 48000, false);
+            Assert.That(data.Clip(PrologueDefinition.PluckName), Is.Null);
+            var pluck = AudioClip.Create("String_Pluck", 480, 1, 48000, false);
             try
             {
-                data.stringSnap = snap;
-                Assert.That(data.Clip(PrologueDefinition.SnapName), Is.SameAs(snap));
-                Assert.That(data.Clip("String_Snap"), Is.Null, "Slots are found by cue name, not by file name.");
+                data.stringPluck = pluck;
+                Assert.That(data.Clip(PrologueDefinition.PluckName), Is.SameAs(pluck));
+                Assert.That(data.Clip("String_Pluck"), Is.Null, "Slots are found by cue name, not by file name.");
             }
-            finally { Object.DestroyImmediate(snap); }
+            finally { Object.DestroyImmediate(pluck); }
         }
-        [Test] public void OnlyTheFiveSoundsAreCuedAndTheSnapHasAStandIn()
+        [Test] public void OnlyTheFiveSoundsAreCuedAndThePluckHasAStandIn()
         {
             var palette = new[] { PrologueDefinition.ClockName, PrologueDefinition.PlaceName, PrologueDefinition.NoiseName,
-                PrologueDefinition.StrainName, PrologueDefinition.SnapName };
+                PrologueDefinition.StrainName, PrologueDefinition.PluckName };
             var all = new List<IntroDirector.Cue>();
             all.AddRange(IntroDirector.SectionACues()); all.AddRange(IntroDirector.WaitBarCues()); all.AddRange(IntroDirector.SectionBCues());
             foreach (var cue in all) Assert.That(palette, Does.Contain(cue.Clip), $"beat {cue.Beat}: {cue.Clip}");
             var b = IntroDirector.SectionBCues();
-            Assert.That(b.Exists(c => c.Beat == 0 && c.Clip == PrologueDefinition.SnapName && c.Unless == null));
-            Assert.That(b.FindAll(c => c.Unless == PrologueDefinition.SnapName), Has.Count.EqualTo(2), "The crackle and a heavy piece, until the snap is delivered.");
+            Assert.That(b.Exists(c => c.Beat == 0 && c.Clip == PrologueDefinition.PluckName && c.Unless == null));
+            Assert.That(b.FindAll(c => c.Unless == PrologueDefinition.PluckName), Has.Count.EqualTo(2), "The crackle and a heavy piece, until the pluck is delivered.");
         }
-        [Test] public void TheClockStopsWhileTheKnightIsInTheAirAndAfterTheTear()
+        [Test] public void TheKnightsSecondTryLandsBetweenTheBeatsOfAClockThatNeverStops()
         {
             var a = IntroDirector.SectionACues();
             bool Clock(List<IntroDirector.Cue> cues, float beat) => cues.Exists(c => c.Beat == beat && PrologueDefinition.IsClock(c.Clip));
-            Assert.That(Clock(a, 13), "The knight's beat still ticks.");
-            Assert.That(a.Exists(c => c.Beat > 12.9f && c.Beat < 13.4f && c.Clip == PrologueDefinition.PlaceName), Is.False, "Nothing is set down on it.");
-            Assert.That(Clock(a, 14) || Clock(a, 15), Is.False, "Silence in the air.");
-            Assert.That(Clock(a, 16), "The clock comes back with the strings.");
-            Assert.That(a.FindAll(c => c.Clip == PrologueDefinition.PlaceName && c.Beat < 12), Has.Count.EqualTo(8), "One piece set down on each beat 4-11.");
+            bool Place(float from, float to) => a.Exists(c => c.Beat >= from && c.Beat < to && c.Clip == PrologueDefinition.PlaceName);
+            for (int beat = 0; beat < IntroTimeline.LoopStart; beat++) Assert.That(Clock(a, beat), $"The clock ticks on beat {beat}: an off beat is only heard against it.");
+            Assert.That(a.FindAll(c => c.Clip == PrologueDefinition.PlaceName && c.Beat < 10), Has.Count.EqualTo(6), "One piece set down on each beat 4-9.");
+            Assert.That(Place(11, 11.1f), "The first try lands on the beat (the wrong square).");
+            Assert.That(Place(12, 12.1f) && Place(14, 14.1f), "The king puts it back on the beat, twice.");
+            Assert.That(Place(13, 13.1f), Is.False, "Nothing is set down on the knight's beat.");
+            Assert.That(Place(13.45f, 13.6f), "The second try lands half a beat off.");
+            Assert.That(a.Exists(c => c.Beat == 13.5f && c.Clip == PrologueDefinition.NoiseName), "The noise is born of it.");
+            Assert.That(Place(15, 15.1f), Is.False, "Nothing on beat 15 either: the third try jumps on the off beat.");
+            Assert.That(a.Exists(c => c.Beat == 15.5f && c.Clip == PrologueDefinition.NoiseName));
             var b = IntroDirector.SectionBCues();
             for (int beat = 0; beat < 4; beat++) Assert.That(Clock(b, beat), Is.False, $"Silence while the string becomes the sword ({beat}).");
             Assert.That(Clock(b, 4), "The clock comes back with the lanes.");

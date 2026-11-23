@@ -10,7 +10,7 @@ namespace StringAsASword.Editor
     /// Wires the delivered prologue audio (intro review S1-B, S2-A, prologue revision R6-A; Docs/IntroAssets.md) into
     /// Resources/Prologue.asset: the composed cue (Audio/Prologue/Cue/Cue_A, Cue_Wait, Cue_B), the recorded chess clock
     /// (Audio/Prologue/Clock/Clock_Tick, Clock_Accent) and the string recordings (Audio/Prologue/String/String_Strain,
-    /// String_Snap). Sets their import settings and checks each piece against its beats. A missing file leaves its slot
+    /// String_Pluck). Sets their import settings and checks each piece against its beats. A missing file leaves its slot
     /// empty, so its stand-in (or nothing) plays. Re-running is safe.
     /// </summary>
     public static class PrologueAudioSetup
@@ -32,7 +32,7 @@ namespace StringAsASword.Editor
             definition.clockTick = Clock("Clock_Tick", report);
             definition.clockAccent = Clock("Clock_Accent", report);
             definition.stringStrain = StringSound("String_Strain", 3, "nothing plays (the knight strains in silence)", report);
-            definition.stringSnap = StringSound("String_Snap", 2, "the noise's crackle over a heavy piece stands in", report);
+            definition.stringPluck = StringSound("String_Pluck", 2, "the noise's crackle over a heavy piece stands in", report);
             EditorUtility.SetDirty(definition);
             AssetDatabase.SaveAssets();
             string text = "Prologue audio set up:\n" + string.Join("\n", report);

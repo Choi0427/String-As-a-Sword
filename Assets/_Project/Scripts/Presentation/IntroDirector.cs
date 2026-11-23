@@ -6,11 +6,13 @@ namespace StringAsASword.Presentation
 {
     /// <summary>
     /// The prologue (prologue revision R1-A..R7-A: one meaning per shot, no captions). rule: every piece hangs on a string
-    /// from the king and moves one square on a beat of the chess clock. offbeat: on its own beat the knight does not move;
-    /// half a beat late it leaps over the pieces and off the edge of the board, its string slipping free, and the noise is
-    /// born from it. bind: six strings from the king catch it in the air, drag it back and pin it to its square; the
-    /// noise is torn off it and thrown away into the dark; the lowest string lights up by its hand. The player tears that
-    /// string with J. string: it becomes the sword. lanes: the five left stretch across the board and become the lanes;
+    /// from the king, who lights the square it is to go to, and moves one square on a beat of the chess clock. offbeat:
+    /// the king lights h3 for the knight; three times it jumps an L the other way, to e2. The first time on the beat (the
+    /// wrong square), and the king's string puts it back; the second half a beat off (the noise is born of it), put back
+    /// again; the third, half a beat off again, its own string slipping free. bind: six strings from the king catch it by
+    /// the legs in the air, drag it down and pin it low to its square; the noise is torn off it and thrown away into the
+    /// dark; the lowest string lights up and the knight takes it in its hand. The player plucks that string with J (현을
+    /// 뜯는다). string: it becomes the sword. lanes: the five left stretch across the board and become the lanes;
     /// the king takes his pieces away. face: the knight and the king alone, the discarded noise settling on the board. Its
     /// last downbeat is the tutorial's (or the song's) start.
     ///
@@ -22,16 +24,19 @@ namespace StringAsASword.Presentation
     public sealed class IntroDirector : MonoBehaviour
     {
         // Story beats of the shots (see IntroTimeline.Shot).
-        private const float FirstPly = 4, KnightTurn = 12.5f, Leap = 13.5f, Caught = 16, Pinned = 17, Glow = 28,
+        private const float FirstPly = 4, Caught = 16, Pinned = 17, Glow = 28,
             TearStory = 36, Lanes = 40, Withdraw = 42, Face = 48, Settle = 52, Handover = 54, End = 56;
+        // The knight's three tries (offbeat): each an L to the left, landing on the beat (11), then off it (13.5), then a
+        // jump off the beat (15.5) that is caught in the air. After the first two the king puts it back on the beat.
+        private const float Try1 = 11, Back1 = 12, Try2 = 13.5f, Back2 = 14, Try3 = 15.5f;
+        // When the king lights the square he wants for the knight (h3): from each order to just after the try against it.
+        private static readonly (float from, float to)[] KnightOrders = { (10, 11.3f), (12.1f, 13.7f), (14.1f, 15.7f) };
         private static readonly float[] Struggles = { 22, 26 };
         private const float BossDepth = 7f, PieceScale = .75f;
-        // One ply on each beat 4-11, white and black in turn: the king plays both sides.
+        // One ply on each beat 4-9, white and black in turn: the king plays both sides.
         private static readonly (string from, string to)[] PlyMoves =
-            { ("e7", "e5"), ("e2", "e4"), ("d7", "d6"), ("g2", "g3"), ("c8", "g4"), ("d2", "d3"), ("f8", "e7"), ("c1", "e3") };
+            { ("e7", "e5"), ("e2", "e4"), ("d7", "d6"), ("g2", "g3"), ("c8", "g4"), ("d2", "d3") };
         private static int Plies => PlyMoves.Length;
-        // The knight's leap: an L from g1 that ends off the board (where i2 would be) and falls on into the dark.
-        private static readonly Vector3 LeapTo = new Vector3(5.3f, 0, -2.1f);
 
         private PrototypeGame game;
         private PrototypeView view;
@@ -93,7 +98,7 @@ namespace StringAsASword.Presentation
                 : new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default"));
             whiteMarble = Marble(new Color(.86f, .85f, .82f), new Color(.55f, .55f, .56f), 7);
             blackMarble = Marble(new Color(.075f, .075f, .085f), new Color(.30f, .30f, .32f), 11);
-            BuildLayer(); BuildPieces(); BuildStrings(); BuildBossAndCrown(); BuildNoise();
+            BuildLayer(); BuildPieces(); BuildOrder(); BuildStrings(); BuildBossAndCrown(); BuildNoise();
             BuildAudio();
         }
 
@@ -190,6 +195,7 @@ namespace StringAsASword.Presentation
             RenderKnight(s);
             RenderCamera(s);
             RenderPieces(s);
+            RenderOrder(s);
             RenderStrings(s);
             RenderBoss(s);
             RenderNoise(s);
@@ -198,31 +204,33 @@ namespace StringAsASword.Presentation
         }
 
         // Camera keys: board-local position, look point, vertical field of view. The king stays within ±25° of front (A6-A).
-        // A cut only where a shot starts (12, 16, 28, 40, 48); nothing moves while the waiting bar repeats (32-36).
+        // A cut only at 10, 17 (the slam), 28, 40 and 48; nothing moves while the waiting bar repeats (32-36).
         private struct Key { public Vector3 Pos, Look; public float Fov; public Key(Vector3 p, Vector3 l, float f) { Pos = p; Look = l; Fov = f; } }
         private Vector3 crownAt, bossMid, kingHand;
         private void RenderCamera(float s)
         {
             Vector3 g1 = Cell("g1");
             Key k; float shake = 0;
-            if (s < 8)
+            if (s < 7)
                 // rule: high over the board, every string running up out of the top of the frame.
-                k = Lerp(new Key(new Vector3(0, 12.5f, -6.5f), new Vector3(0, 0, .2f), 42), new Key(new Vector3(0, 10.0f, -9.2f), new Vector3(0, .3f, .8f), 44), Smooth(s, 0, 8));
-            else if (s < 12)
+                k = Lerp(new Key(new Vector3(0, 12.5f, -6.5f), new Vector3(0, 0, .2f), 42), new Key(new Vector3(0, 10.0f, -9.2f), new Vector3(0, .3f, .8f), 44), Smooth(s, 0, 7));
+            else if (s < 10)
                 // Up along the strings to the one who holds them.
-                k = Lerp(new Key(new Vector3(0, 10.0f, -9.2f), new Vector3(0, .3f, .8f), 44), new Key(new Vector3(0, 3.2f, -8.6f), Vector3.Lerp(bossMid, crownAt, .45f), 46), Smooth(s, 8, 11.4f));
-            else if (s < Caught)
-                // offbeat: low, past the knight towards the board's right edge and the dark beyond it.
-                k = Lerp(new Key(new Vector3(-.6f, 2.4f, -7.6f), new Vector3(3.4f, .9f, -2.6f), 46), new Key(new Vector3(-.3f, 2.5f, -7.9f), new Vector3(3.7f, .9f, -2.5f), 43), Smooth(s, 12, Caught));
+                k = Lerp(new Key(new Vector3(0, 10.0f, -9.2f), new Vector3(0, .3f, .8f), 44), new Key(new Vector3(0, 3.2f, -8.6f), Vector3.Lerp(bossMid, crownAt, .45f), 46), Smooth(s, 7, 9.6f));
+            else if (s < Pinned)
+                // offbeat: in front of the knight's corner, a little above: g1, e2 to its left and h3 to its right all in
+                // frame, the board's left on the screen's left. It holds through the catch: the strings come down from the
+                // top of the frame, from the king, onto the knight's legs.
+                k = Lerp(new Key(new Vector3(1.8f, 4.1f, -8.5f), new Vector3(2.0f, .8f, -2.4f), 38), new Key(new Vector3(1.9f, 3.9f, -8.0f), new Vector3(2.0f, 1.1f, -2.4f), 36), Smooth(s, 10, Pinned));
             else if (s < Glow)
-                // bind: wide enough for the strings from the king and the drag back, then in on the pinned knight.
-                k = Lerp(new Key(new Vector3(1.2f, 4.6f, -11.0f), new Vector3(1.6f, 1.8f, 1.0f), 50), new Key(new Vector3(3.8f, 5.0f, -7.4f), g1 + new Vector3(-.1f, .2f, .7f), 38), Smooth(s, 18, 27));
+                // bind: cut on the slam, low and close on the pinned knight, the strings round its legs nailed into the board.
+                k = Lerp(new Key(new Vector3(4.8f, 1.6f, -6.8f), new Vector3(2.4f, .35f, -3.2f), 36), new Key(new Vector3(4.4f, 1.4f, -6.2f), new Vector3(2.4f, .3f, -3.3f), 31), Smooth(s, Pinned + .5f, 27));
             else if (s < Lanes)
             {
                 // The hand and the lit string, from the front right on a long lens so the strings run across the frame and
                 // not at the lens; still through the waiting bar; after the tear, out a little to the sword.
                 float fov = 30 - 4 * Smooth(s, Glow, (float)IntroTimeline.LoopStart) + 10 * Smooth(s, TearStory + 1.6f, Lanes);
-                k = new Key(new Vector3(5.4f, 2.1f, -1.2f), g1 + new Vector3(0, .55f, 0), fov);
+                k = new Key(new Vector3(5.4f, 2.1f, -1.2f), g1 + new Vector3(0, .4f, 0), fov);
                 shake = .05f * (s >= TearStory ? 1 - Smooth(s, TearStory, TearStory + 1.2f) : 0);
             }
             else if (s < Face)
@@ -321,68 +329,120 @@ namespace StringAsASword.Presentation
                 if (up > 0) alpha = Mathf.Lerp(.3f, .7f, Smooth01(Mathf.Clamp01(up * 4))) * (1 - up);
                 SetSegment(piece.String, p + Vector3.up * piece.Height, Hand(piece.Home.x), Mathf.Lerp(.012f, .022f, tug), alpha);
             }
-            // The knight's own string: drawn taut on its beat (12.5) like the others, it slips free when the knight leaps.
+            // The knight's own string: drawn taut with each order like the others', taut again when the king pulls the knight
+            // back; it slips free on the third try.
             var knight = board.PlayerTransform.localPosition;
             Vector3 top = knight + Vector3.up * 1.05f, hand = Hand(knight.x);
-            float pull = Smooth(s, KnightTurn, KnightTurn + .2f), free = Smooth(s, Leap, Leap + .6f);
-            float knightAlpha = Mathf.Lerp(.3f, .9f, pull) * (1 - free);
-            SetSegment(knightString, Vector3.Lerp(top, hand, free * .85f), hand, Mathf.Lerp(.014f, .026f, pull), knightAlpha);
+            float pull = 0;
+            foreach (var (from, _) in KnightOrders) pull = Mathf.Max(pull, Smooth(s, from + .1f, from + .3f) * (1 - Smooth(s, from + .5f, from + .9f)));
+            foreach (float back in new[] { Back1, Back2 }) pull = Mathf.Max(pull, Smooth(s, back - .5f, back - .4f) * (1 - Smooth(s, back, back + .3f)));
+            float free = Smooth(s, Try3, Try3 + .6f);
+            float knightAlpha = Mathf.Lerp(.3f, .95f, pull) * (1 - free);
+            SetSegment(knightString, Vector3.Lerp(top, hand, free * .85f), hand, Mathf.Lerp(.014f, .03f, pull), knightAlpha);
+        }
+
+        // ---------------------------------------------------------------- the king's order: the square he wants a piece on
+        private Transform order;
+        private void BuildOrder()
+        {
+            // A soft lit square on the board: a white frame on a dark one (so it reads on either square) round a faint fill.
+            order = new GameObject("King's Order").transform; order.SetParent(root, false);
+            var under = SquareMesh(.98f, .74f); var frame = SquareMesh(.9f, .82f); var fill = SquareMesh(.82f, 0);
+            resources.Add(under); resources.Add(frame); resources.Add(fill);
+            var u = MakeMesh(order, "Under", under, Flat(Color.black));
+            var f = MakeMesh(order, "Fill", fill, Flat(Color.white)); f.transform.localPosition = Vector3.up * .002f;
+            var l = MakeMesh(order, "Frame", frame, Flat(Color.white)); l.transform.localPosition = Vector3.up * .004f;
+            u.GetComponent<MeshRenderer>().sortingOrder = 2; f.GetComponent<MeshRenderer>().sortingOrder = 3; l.GetComponent<MeshRenderer>().sortingOrder = 3;
+            order.gameObject.SetActive(false);
+        }
+        /// <summary>
+        /// Every move the king orders is shown the same way: the square lights half a beat before the piece is set down on it.
+        /// The knight's is h3, to its right; it goes left instead.
+        /// </summary>
+        private void RenderOrder(float s)
+        {
+            float a = 0; Vector3 at = Vector3.zero;
+            for (int k = 0; k < Plies; k++)
+            {
+                float land = FirstPly + k, w = Smooth(s, land - .5f, land - .4f) * (1 - Smooth(s, land + .05f, land + .3f));
+                if (w > a) { a = w; at = Cell(PlyMoves[k].to); }
+            }
+            foreach (var (from, to) in KnightOrders)
+            {
+                float w = Smooth(s, from, from + .2f) * (1 - Smooth(s, to - .2f, to));
+                if (w > a) { a = w; at = Cell("h3"); }
+            }
+            order.gameObject.SetActive(a > .01f); if (a <= .01f) return;
+            order.localPosition = at + Vector3.up * .014f;
+            foreach (var r in order.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                float k = r.name == "Under" ? .5f : r.name == "Fill" ? .16f : .85f;
+                var c = r.sharedMaterial.color; c.a = a * k; r.sharedMaterial.color = c;
+            }
         }
 
         // ---------------------------------------------------------------- the knight
-        private Vector3 LeapPosition(float s)
+        /// <summary>The knight's L to the left, g1 to e2: two squares across, then the turn of the L in the air, one square up.</summary>
+        private static Vector3 LeftL(float u, float height)
         {
-            float u = Mathf.Clamp01((s - Leap) / (Caught - Leap));
-            var p = Vector3.Lerp(Cell("g1"), LeapTo, u);
-            p.y = 6.4f * u * (1 - u) - .6f * u * u;
-            return p;
+            Vector3 g1 = Cell("g1"), e2 = Cell("e2");
+            float across = Smooth01(Mathf.Clamp01(u / .62f)), up = Smooth01(Mathf.Clamp01((u - .62f) / .38f));
+            return new Vector3(Mathf.Lerp(g1.x, e2.x, across), height * Mathf.Sin(Mathf.PI * Mathf.Clamp01(u)), Mathf.Lerp(g1.z, e2.z, up));
         }
+        /// <summary>u from 0 to 1 while <paramref name="s"/> is in [a, b), else -1.</summary>
+        private static float Span(float s, float a, float b) => s >= a && s < b ? (s - a) / (b - a) : -1;
+        // The third try: higher and slower, caught at its top.
+        private const float Try3Beats = 1.1f, Try3Height = 1.45f;
         private void RenderKnight(float s)
         {
-            Vector3 g1 = Cell("g1");
-            Vector3 p = g1; float yaw = 0, tilt = 0, squash = 1;
-            float faceLeap = Mathf.Atan2(LeapTo.x - g1.x, LeapTo.z - g1.z) * Mathf.Rad2Deg;
-            if (s < Leap)
+            Vector3 g1 = Cell("g1"), e2 = Cell("e2");
+            Vector3 p = g1; float yaw = 0, tilt = 0, squash = 1, u;
+            const float left = -80;
+            if (s < Caught)
             {
-                // Its beat comes (13) and it does not move: it digs in against its string, then gathers itself.
-                float resist = Smooth(s, KnightTurn, KnightTurn + .4f) * (1 - Smooth(s, Leap - .3f, Leap));
-                tilt = -7 * resist;
-                squash = 1 - .08f * resist - .1f * Smooth(s, Leap - .4f, Leap);
-                yaw = faceLeap * Smooth(s, Leap - .35f, Leap);
-            }
-            else if (s < Caught)
-            {
-                // Half a beat late, an L over the pieces that ends off the board, and on into the dark.
-                float u = Mathf.Clamp01((s - Leap) / (Caught - Leap));
-                p = LeapPosition(s); yaw = faceLeap;
-                squash = s < Leap + .25f ? 1.12f : 1;
-                tilt = 12 * Mathf.Sin(Mathf.PI * u);
+                bool home = false;
+                if ((u = Span(s, Try1 - .5f, Try1)) >= 0) { p = LeftL(u, 1.0f); yaw = left * Smooth01(Mathf.Clamp01(u * 3)); squash = u < .2f ? 1.1f : 1; }
+                else if ((u = Span(s, Try1, Back1 - .45f)) >= 0) { p = e2; yaw = left; squash = 1 - .12f * Mathf.Sin(Mathf.PI * Mathf.Clamp01(u * 2.5f)); }
+                // Put back: hauled up by its string and set down on its square, on the beat.
+                else if ((u = Span(s, Back1 - .45f, Back1)) >= 0) { p = Vector3.Lerp(e2, g1, Smooth01(u)); p.y = .7f * Mathf.Sin(Mathf.PI * u); yaw = left * (1 - u); tilt = 16 * Mathf.Sin(Mathf.PI * u); }
+                else if ((u = Span(s, Try2 - .45f, Try2)) >= 0) { p = LeftL(u, 1.0f); yaw = left * Smooth01(Mathf.Clamp01(u * 3)); squash = u < .2f ? 1.1f : 1; }
+                else if ((u = Span(s, Try2, Back2 - .4f)) >= 0) { p = e2; yaw = left; squash = 1 - .12f * Mathf.Sin(Mathf.PI * Mathf.Clamp01(u * 2.5f)); }
+                // The second time rougher: higher, and spun.
+                else if ((u = Span(s, Back2 - .4f, Back2)) >= 0) { p = Vector3.Lerp(e2, g1, Smooth01(u)); p.y = 1.0f * Mathf.Sin(Mathf.PI * u); yaw = left * (1 - u) + 40 * Mathf.Sin(Mathf.PI * u); tilt = 24 * Mathf.Sin(Mathf.PI * u); }
+                else if ((u = Span(s, Try3, Caught)) >= 0) { p = LeftL(u * (Caught - Try3) / Try3Beats, Try3Height); yaw = left * Smooth01(Mathf.Clamp01(u * 2)); squash = u < .15f ? 1.12f : 1; tilt = -10 * u; }
+                else home = true;
+                // On its square between tries, the king's order lit to its right: it gathers itself to go left.
+                if (home)
+                    foreach (float next in new[] { Try1 - .5f, Try2 - .45f, Try3 })
+                        if (s < next) squash = Mathf.Min(squash, 1 - .1f * Smooth(s, next - .2f, next));
             }
             else if (s < Pinned)
             {
-                // Caught in the air: a jolt, then dragged back to its square and set down hard on the beat.
-                var from = LeapPosition(Caught);
-                float u = Mathf.Clamp01((s - Caught - .15f) / (Pinned - Caught - .15f));
+                // Caught by the legs at the top of the jump: a jolt, then dragged down to its square and set down hard on the beat.
+                var from = LeftL((Caught - Try3) / Try3Beats, Try3Height);
+                u = Mathf.Clamp01((s - Caught - .15f) / (Pinned - Caught - .15f));
                 p = Vector3.Lerp(from, g1, u * u * u);
-                p.y = Mathf.Lerp(from.y, 0, u * u * u) + Mathf.Sin(Mathf.PI * u) * .3f;
-                if (s < Caught + .15f) p += (g1 - from).normalized * .15f * Mathf.Sin(Mathf.PI * (s - Caught) / .15f);
-                yaw = Mathf.Lerp(faceLeap, 0, u); tilt = -14 * (1 - u);
+                p.y = Mathf.Lerp(from.y, 0, u * u);
+                if (s < Caught + .15f) p.y += .12f * Mathf.Sin(Mathf.PI * (s - Caught) / .15f);
+                yaw = Mathf.Lerp(left, 0, u); tilt = 18 * (1 - u);
             }
             else if (s < TearStory)
             {
-                squash = 1 - .22f * Mathf.Sin(Mathf.PI * Mathf.Clamp01((s - Pinned) / .45f));
+                // Pinned low: pressed down to the board, crouched, until it takes the lit string in its hand.
+                squash = Mathf.Min(1 - .22f * Mathf.Sin(Mathf.PI * Mathf.Clamp01((s - Pinned) / .45f)), Mathf.Lerp(1, .86f, Smooth(s, Pinned + .2f, Pinned + .6f)));
                 foreach (float t in Struggles)
                 {
-                    float u = (s - t) / .8f;
-                    if (u > 0 && u < 1) { p.y += Mathf.Sin(Mathf.PI * u) * .28f; tilt = Mathf.Sin(u * Mathf.PI * 3) * 8; }
+                    u = (s - t) / .8f;
+                    if (u > 0 && u < 1) { p.y += Mathf.Sin(Mathf.PI * u) * .12f; tilt = Mathf.Sin(u * Mathf.PI * 3) * 8; }
                 }
-                // Gripping the lit string; the tremble repeats with the waiting bar (6 a beat).
-                if (s >= Glow) { tilt = -6 * Smooth(s, Glow, Glow + 1) + Mathf.Sin(s * Mathf.PI * 12) * .8f; squash = .94f; }
+                // Rising a little as it grips the lit string; the tremble repeats with the waiting bar (6 a beat).
+                if (s >= Glow) { tilt = -6 * Smooth(s, Glow, Glow + 1) + Mathf.Sin(s * Mathf.PI * 12) * .8f; squash = Mathf.Lerp(.86f, .94f, Smooth(s, Glow, Glow + 1.5f)); }
             }
             else if (s < Face)
             {
-                float u = Mathf.Clamp01((s - TearStory) / .4f);
+                u = Mathf.Clamp01((s - TearStory) / .4f);
                 tilt = Mathf.Lerp(-6, 0, Smooth(s, TearStory + .4f, TearStory + 1.4f)) + (u < 1 ? 10 * Mathf.Sin(Mathf.PI * u) : 0);
+                squash = Mathf.Lerp(.94f, 1, Smooth(s, TearStory, TearStory + .6f));
             }
             var knight = board.PlayerTransform;
             knight.localPosition = p;
@@ -416,8 +476,9 @@ namespace StringAsASword.Presentation
             // Where the six strings come from (under the king) and where they pin the knight to the board around g1. #6 (index
             // 5) is the lowest, by the knight's hand: the one it tears.
             kingBase = new Vector3[6]; for (int i = 0; i < 6; i++) kingBase[i] = new Vector3(-1.5f + .6f * i, .45f, 5.6f);
-            anchors = new[] { new Vector3(.6f, .02f, -3.0f), new Vector3(1.0f, .02f, -1.8f), new Vector3(2.0f, .02f, -1.4f),
-                new Vector3(3.2f, .02f, -1.6f), new Vector3(1.4f, .02f, -3.9f), new Vector3(3.75f, .02f, -3.6f) };
+            // Close round g1 and low, so the strings press the knight down by its legs.
+            anchors = new[] { new Vector3(1.3f, .02f, -3.3f), new Vector3(1.6f, .02f, -2.4f), new Vector3(2.4f, .02f, -2.2f),
+                new Vector3(3.3f, .02f, -2.5f), new Vector3(1.9f, .02f, -3.95f), new Vector3(3.6f, .02f, -3.4f) };
             lanes = new LineRenderer[10];
             for (int i = 0; i < 10; i++) lanes[i] = MakeLine(parent, "Lane " + i, 2, i % 5 == 2 ? .05f : .035f);
             blade = MakeLine(parent, "String Blade", 2, .035f);
@@ -430,7 +491,8 @@ namespace StringAsASword.Presentation
         private void RenderStrings(float s)
         {
             var knight = board.PlayerTransform.localPosition;
-            Vector3 attach = knight + Vector3.up * .55f, hand = knight + new Vector3(.18f, .62f, -.05f);
+            // Tied at the legs; the hand stays free for the lit string.
+            Vector3 attach = knight + Vector3.up * .15f, hand = knight + new Vector3(.18f, .62f, -.05f);
             float jerk = JerkAmount(s), glow = Smooth(s, Glow, Glow + 1.5f);
             for (int i = 0; i < 6; i++)
             {
@@ -451,6 +513,8 @@ namespace StringAsASword.Presentation
                 if (torn)
                 {
                     width = Mathf.Lerp(.045f, .075f, glow);
+                    // Lit, the knight takes it up from its legs into its hand and holds it taut.
+                    a = Vector3.Lerp(a, hand, glow);
                     if (s >= Glow && s < TearStory) amp = .05f + .03f * Mathf.Sin(s * Mathf.PI * 10);
                     else if (s >= TearStory)
                     {
@@ -586,7 +650,8 @@ namespace StringAsASword.Presentation
         {
             float v = 0;
             for (int k = 0; k < Plies; k++) { float t = FirstPly + k - .5f; if (s >= t) v = Mathf.Max(v, Mathf.Exp(-(s - t) * 4)); }
-            foreach (float t in new[] { KnightTurn, Caught, Withdraw }) if (s >= t) v = Mathf.Max(v, Mathf.Exp(-(s - t) * 4));
+            foreach (var (from, _) in KnightOrders) if (s >= from) v = Mathf.Max(v, Mathf.Exp(-(s - from) * 4));
+            foreach (float t in new[] { Back1 - .45f, Back2 - .4f, Caught, Withdraw }) if (s >= t) v = Mathf.Max(v, Mathf.Exp(-(s - t) * 4));
             return v;
         }
 
@@ -596,7 +661,8 @@ namespace StringAsASword.Presentation
         // Where the discarded noise settles in the face shot: between the knight and the king, the first (g3) where the
         // tutorial's noise lesson puts its own.
         private static readonly string[] FragmentCells = { "g3", "d4", "f5", "b6", "e7" };
-        private static readonly Vector3 Discarded = new Vector3(7.5f, 3.8f, 2.0f);
+        // Up and away over the board into the dark, out of the top of the bind shot.
+        private static readonly Vector3 Discarded = new Vector3(-1.5f, 3.5f, 3.0f);
         private void BuildNoise()
         {
             var parent = new GameObject("Noise").transform; parent.SetParent(root, false);
@@ -615,9 +681,12 @@ namespace StringAsASword.Presentation
         {
             var knight = board.PlayerTransform.localPosition;
             var offset = new Vector3(.55f, 1.0f, 0);
-            // Born from the off-beat leap and carried with the knight; torn off it when it is pinned and thrown into the dark.
-            if (s >= Leap && s < Pinned)
-                Billboard(spark, knight + offset, Mathf.Lerp(1.5f, 1.1f, Smooth(s, Leap, Leap + .5f)), Smooth(s, Leap, Leap + .2f));
+            // Born of the knight's off-beat landing and carried with it; torn off it when it is pinned and thrown into the dark.
+            if (s >= Try2 && s < Pinned)
+            {
+                float burst = Mathf.Lerp(1.5f, 1.1f, Smooth(s, Try2, Try2 + .5f)) + .4f * Smooth(s, Try3, Try3 + .2f) * (1 - Smooth(s, Try3 + .3f, Caught));
+                Billboard(spark, knight + offset, burst, Smooth(s, Try2, Try2 + .2f));
+            }
             else if (s >= Pinned && s < Pinned + 1.8f)
             {
                 float u = Mathf.Clamp01((s - Pinned) / 1.8f);
@@ -671,7 +740,7 @@ namespace StringAsASword.Presentation
         private void BuildPrompt()
         {
             prompt = new KeyPromptCard(layer, "Prompt", view.Art, view.LatinFont, 84, 40, 36);
-            // The J of '줄을 끊는다' is the delivered key art (ArtSet.promptJKeyIcon); without it, the plain keycap.
+            // The J of '현을 뜯는다' is the delivered key art (ArtSet.promptJKeyIcon); without it, the plain keycap.
             prompt.SetKeyIcon("J", view.Art.promptJKeyIcon);
         }
         private void RenderLayer(float s)
@@ -707,7 +776,7 @@ namespace StringAsASword.Presentation
             if (!waiting) prompt.Hide();
             else
             {
-                prompt.Show("J", "줄을 끊는다");
+                prompt.Show("J", "현을 뜯는다");
                 // The keycap kicks on every beat of the waiting bar.
                 prompt.Pulse(s % 1);
                 // Beside the knight's hand on the lowest string; the intro camera renders at screen size, so its screen point is a screen point.
@@ -745,12 +814,16 @@ namespace StringAsASword.Presentation
         public static List<Cue> SectionACues()
         {
             var cues = new List<Cue>();
-            // The king's beat is a chess clock (S2). It stops while the knight is in the air (14, 15) and comes back with the strings.
-            for (int b = 0; b < IntroTimeline.LoopStart; b++)
-                if (b != 14 && b != 15) cues.Add(new Cue(b, PrologueDefinition.ClockName, b % 4 == 0 ? .45f : .3f));
-            // One piece set down on each beat 4-11. Beat 13 is the knight's, and nothing is set down on it.
+            // The king's beat is a chess clock (S2) on every beat: the knight's off-beat tries are only heard against it.
+            for (int b = 0; b < IntroTimeline.LoopStart; b++) cues.Add(new Cue(b, PrologueDefinition.ClockName, b % 4 == 0 ? .45f : .3f));
+            // A piece set down on each beat 4-9; the knight's first try (11) and the king putting it back (12, 14) on the beat too.
             for (int k = 0; k < Plies; k++) cues.Add(new Cue(FirstPly + k + .02f, PrologueDefinition.PlaceName));
-            cues.Add(new Cue(Leap, PrologueDefinition.NoiseName, NoiseVolume));
+            foreach (float t in new[] { Try1, Back1, Back2 }) cues.Add(new Cue(t + .02f, PrologueDefinition.PlaceName));
+            // The second try lands between the beats, and the noise is born of it; nothing is set down on 13 or 15.
+            cues.Add(new Cue(Try2, PrologueDefinition.NoiseName, NoiseVolume));
+            cues.Add(new Cue(Try2 + .02f, PrologueDefinition.PlaceName));
+            cues.Add(new Cue(Try3, PrologueDefinition.NoiseName, NoiseVolume * 1.4f));
+            cues.Add(new Cue(Caught + .2f, PrologueDefinition.StrainName));
             cues.Add(new Cue(Pinned + .02f, PrologueDefinition.PlaceName, HeavyPlace));
             foreach (float t in Struggles) cues.Add(new Cue(t, PrologueDefinition.StrainName));
             cues.Sort((a, b) => a.Beat.CompareTo(b.Beat));
@@ -767,12 +840,12 @@ namespace StringAsASword.Presentation
         /// <summary>Section B's sounds, in beats after the tear (20 beats to the handover).</summary>
         public static List<Cue> SectionBCues()
         {
-            // The snap, then silence while the string becomes the sword; the clock comes back with the lanes (story 40).
+            // The pluck, then silence while the string becomes the sword; the clock comes back with the lanes (story 40).
             var cues = new List<Cue>
             {
-                new Cue(0, PrologueDefinition.SnapName),
-                new Cue(0, PrologueDefinition.NoiseName, NoiseVolume, PrologueDefinition.SnapName),
-                new Cue(.02f, PrologueDefinition.PlaceName, HeavyPlace, PrologueDefinition.SnapName),
+                new Cue(0, PrologueDefinition.PluckName),
+                new Cue(0, PrologueDefinition.NoiseName, NoiseVolume, PrologueDefinition.PluckName),
+                new Cue(.02f, PrologueDefinition.PlaceName, HeavyPlace, PrologueDefinition.PluckName),
             };
             for (int b = (int)(Lanes - TearStory); b < IntroTimeline.AfterTear; b++)
                 cues.Add(new Cue(b, PrologueDefinition.ClockName, (TearStory + b) % 4 == 0 ? .45f : .3f));
@@ -970,6 +1043,17 @@ namespace StringAsASword.Presentation
                 t[i * 3] = 0; t[i * 3 + 1] = (i + 1) % steps + 1; t[i * 3 + 2] = i + 1;
             }
             return FlatMesh("Disc", v, t);
+        }
+        /// <summary>A square (inner 0) or a square frame lying on the board, centred, sides in board units.</summary>
+        private static Mesh SquareMesh(float outer, float inner)
+        {
+            float h = outer / 2, i = inner / 2;
+            if (inner <= 0)
+                return FlatMesh("Square", new[] { new Vector3(-h, 0, -h), new Vector3(-h, 0, h), new Vector3(h, 0, h), new Vector3(h, 0, -h) }, new[] { 0, 1, 2, 0, 2, 3 });
+            return FlatMesh("Frame", new[] {
+                new Vector3(-h, 0, -h), new Vector3(-h, 0, h), new Vector3(h, 0, h), new Vector3(h, 0, -h),
+                new Vector3(-i, 0, -i), new Vector3(-i, 0, i), new Vector3(i, 0, i), new Vector3(i, 0, -i) },
+                new[] { 0, 1, 5, 0, 5, 4, 1, 2, 6, 1, 6, 5, 2, 3, 7, 2, 7, 6, 3, 0, 4, 3, 4, 7 });
         }
         /// <summary>Where a string is nailed into the board: a white head on a dark ring, so it reads on either square.</summary>
         private Transform MakePin(Transform parent, string name)
