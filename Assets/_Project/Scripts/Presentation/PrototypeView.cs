@@ -31,10 +31,6 @@ namespace StringAsASword.Presentation
         private RectTransform layer;
         private UnityEngine.UI.Image[] judgeLines;
         private RectTransform judgeRims;
-        // White glow behind the delivered lane art's judge lines; null with the prototype lanes.
-        private UnityEngine.UI.Image[] judgeGlows;
-        private const float JudgeGlowWidth = 44;
-        private static Sprite glowSprite;
         public Material BoardMaterial => boardMaterial;
         public ArtSet Art => art;
         public BoardWorldPresenter BoardWorld => boardWorld;
@@ -96,9 +92,6 @@ namespace StringAsASword.Presentation
         private readonly UnityEngine.UI.Image[] dangerBackgrounds = new UnityEngine.UI.Image[64];
         private static readonly Color BadgeDark = new Color(.025f,.035f,.045f,.97f);
         private readonly Vector2[] dangerPoints = new Vector2[64];
-        private readonly RectTransform[] dangerConnectors = new RectTransform[64];
-        private readonly Rect[] badgeBounds = new Rect[64];
-        private readonly bool[] badgePlaced = new bool[64];
         private readonly int[] dangerCounts = new int[64];
         private readonly int[] dangerRemaining = new int[64];
         private readonly AttackResponse[] dangerResponses = new AttackResponse[64];
@@ -118,21 +111,22 @@ namespace StringAsASword.Presentation
         public int HpIconCount => hpIcons.Length;
         private Sprite OnSprite => hpStyle == PlayerHpStyle.Knights ? art.playerHpKnightOn : art.playerHpBarOn;
         private Sprite OffSprite => hpStyle == PlayerHpStyle.Knights ? art.playerHpKnightOff : art.playerHpBarOff;
-        // The judge lines flash on each judgement, brighter for a better one, then go dark.
+        // The judge lines stretch up and down on each judgement, further for a better one, then settle back.
         private float judgeAge = 10, judgePeak;
         private const float JudgeFadeSeconds = .12f;
-        /// <summary>The judge lines' glow opacity this frame (0 when no judgement is showing).</summary>
-        public float JudgeGlowAlpha { get; private set; }
+        /// <summary>Extra vertical length at a Perfect, as a share of the line's own length. Width never changes.</summary>
+        private const float JudgeStretch = .18f;
+        /// <summary>The judge lines' pulse this frame, 0..1 (0 when no judgement is showing).</summary>
+        public float JudgePulse { get; private set; }
         private const float OutcomeSeconds = .6f;
         private RectTransform outcomeFlash;
         private CanvasGroup outcomeGroup;
         private TMP_Text outcomeLabel;
-        // HIT / BLOCK: black text on a #8A8A8A box.
-        private static readonly Color OutcomeBox = UiKit.Hex(0x8A8A8A), OutcomeInk = Color.black;
+        private static readonly Color OutcomeBox = UiKit.Hex(0x202020), OutcomeInk = Color.white;
         // HIT / BLOCK's font size and the gap between the knight's head and the word's bottom (board-view units).
-        private const int OutcomeSize = 22;
-        // Letter spacing -15% (TMP counts it in hundredths of an em) and the box's margin around the capitals (x, y).
-        private const float OutcomeTracking = -15;
+        private const int OutcomeSize = 18;
+        // Letter spacing (TMP counts it in hundredths of an em) and the box's margin around the capitals (x, y).
+        private const float OutcomeTracking = -10;
         private static readonly Vector2 OutcomePadding = new Vector2(3, 1);
         private const float OutcomeHeadGap = 4;
         private float outcomeAge = 10;
@@ -231,14 +225,10 @@ namespace StringAsASword.Presentation
                     bossCrown.Initialize(game, bossPortrait, art);
                 }
             }
-            var connectors = MakeRect(board, "DangerConnectors", Vector2.zero, size);
             for (int i = 0; i < 64; i++)
             {
                 Vector2 point = boardWorld.ProjectToBoard(new Vector3(i % 8 - 3.5f, .035f, i / 8 - 3.80f), size);
                 dangerPoints[i] = point;
-                dangerConnectors[i] = MakeRect(connectors, "CellConnector", point, Vector2.one);
-                Image(dangerConnectors[i], new Color(.94f,.93f,.88f,.65f));
-                dangerConnectors[i].gameObject.SetActive(false);
                 var badge = MakeRect(board, $"DangerBadge_{i % 8}_{i / 8}", point, new Vector2(40,20));
                 dangerBackgrounds[i] = Image(badge, BadgeDark); dangerBadges[i] = badge.gameObject;
                 dangerLabels[i] = Text(badge, "Countdown", "", Vector2.zero, new Vector2(40,20), 17, InkWhite);
@@ -250,7 +240,6 @@ namespace StringAsASword.Presentation
             outcomeFlash = MakeRect(board, "OutcomeFlash", Vector2.zero, new Vector2(264,48));
             outcomeGroup = outcomeFlash.gameObject.AddComponent<CanvasGroup>();
             outcomeGroup.blocksRaycasts = false; outcomeGroup.interactable = false;
-            // Black text (Chakra Petch) on a #8A8A8A box.
             Image(outcomeFlash, OutcomeBox);
             outcomeLabel = Text(outcomeFlash, "Outcome", "", Vector2.zero, new Vector2(240,44), OutcomeSize, OutcomeInk);
             if (art.outcomeFont != null) outcomeLabel.font = art.outcomeFont;
@@ -329,7 +318,7 @@ namespace StringAsASword.Presentation
         // board rows in ArtSet.laneRows and its width so the middle string ends on the board's side edges, so the two
         // scales differ. The judge lines lie along those edges over the same rows, tilted with the board's perspective.
         // The lane art's strings are 217 grey at 50% in the file; blended in linear space they showed as ~161/255 over black.
-        // At 0.15 more they show as ~67/255: well under the resting notes' #6D6D6D (109), so a dim note never blends into a string.
+        // At 0.15 more they show as ~67/255: well under the resting note brightness, so a dim note never blends into a string.
         private const float LaneArtAlpha = .15f;
         private void BuildLaneArt()
         {
@@ -358,22 +347,13 @@ namespace StringAsASword.Presentation
             const float playingSurfaceEdge = 4;
             Vector2 nearInner = boardWorld.ProjectToBoard(new Vector3(playingSurfaceEdge, 0, nearRow), BoardSize);
             Vector2 farInner = boardWorld.ProjectToBoard(new Vector3(playingSurfaceEdge, 0, farRow), BoardSize);
-            Vector2 nearCenter = (near + nearInner) * .5f, farCenter = (far + farInner) * .5f;
-            Vector2 middle = (nearCenter + farCenter) * .5f;
-            float length = (farCenter - nearCenter).magnitude;
-            float rimTilt = Mathf.Atan2(nearCenter.x - farCenter.x, farCenter.y - nearCenter.y);
             judgeRims = MakeRect(root, "Judge Rims", boardRect.anchoredPosition, BoardSize);
-            judgeLines = new UnityEngine.UI.Image[2]; judgeGlows = new UnityEngine.UI.Image[2];
+            judgeLines = new UnityEngine.UI.Image[2];
             for (int side = -1; side <= 1; side += 2)
             {
                 Vector2 Mirror(Vector2 point) => new Vector2(side * point.x, point.y);
                 bool left = side < 0;
                 int index = (side + 1) / 2;
-                // The glow is built first so the rim strip draws over it.
-                var glow = Image(MakeRect(judgeRims, "JudgeGlow", Mirror(middle), new Vector2(JudgeGlowWidth, length + 12)), Color.white);
-                glow.sprite = GlowSprite();
-                glow.rectTransform.localRotation = Quaternion.Euler(0, 0, side * rimTilt * Mathf.Rad2Deg);
-                judgeGlows[index] = glow;
                 judgeLines[index] = JudgeRimImage.Create(judgeRims,
                     Mirror(left ? near : nearInner), Mirror(left ? far : farInner),
                     Mirror(left ? farInner : far), Mirror(left ? nearInner : near));
@@ -388,24 +368,8 @@ namespace StringAsASword.Presentation
             resonanceHud = MakeRect(root, "Resonance", Vector2.zero, new Vector2(1600, 900)).gameObject.AddComponent<ResonanceHud>();
             resonanceHud.Initialize(game);
         }
-        // A soft white band: opaque along its centre line, fading out to both sides.
-        private static Sprite GlowSprite()
-        {
-            if (glowSprite != null) return glowSprite;
-            const int width = 64;
-            var texture = new Texture2D(width, 1, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
-            for (int x = 0; x < width; x++)
-            {
-                float fromCentre = Mathf.Abs((x + .5f) / width * 2 - 1);
-                texture.SetPixel(x, 0, new Color(1, 1, 1, Mathf.Pow(1 - fromCentre, 2)));
-            }
-            texture.Apply();
-            glowSprite = Sprite.Create(texture, new Rect(0, 0, width, 1), new Vector2(.5f, .5f));
-            glowSprite.hideFlags = HideFlags.HideAndDontSave;
-            return glowSprite;
-        }
         private static Sprite softDotSprite;
-        /// <summary>A soft white dot: the same falloff as <see cref="GlowSprite"/>, round. For a lit key and glowing notes.</summary>
+        /// <summary>A soft white dot, opaque at its centre and fading out with a squared falloff. For a lit key and glowing notes.</summary>
         public static Sprite SoftDotSprite()
         {
             if (softDotSprite != null) return softDotSprite;
@@ -456,11 +420,11 @@ namespace StringAsASword.Presentation
         private readonly TMP_Text[] devLabels=new TMP_Text[6];
         public void ResetFeedback()
         {
-            judgeAge=10; judgePeak=0; JudgeGlowAlpha=0; impactAge=1; impactCells=0; lastClosedNote=-1;
+            judgeAge=10; judgePeak=0; JudgePulse=0; impactAge=1; impactCells=0; lastClosedNote=-1;
             outcomeAge=10; seenRecords=game.Battle.Records.Count; outcomeFlash.gameObject.SetActive(false);
             Array.Clear(dangerCounts, 0, dangerCounts.Length);
             for (int i = 0; i < dangerBadges.Length; i++)
-            { dangerBadges[i].SetActive(false); dangerConnectors[i].gameObject.SetActive(false); }
+                dangerBadges[i].SetActive(false);
             boardWorld.ResetVisuals();
             ghostStrikeNote = -1;
             if (bossPortrait != null) bossPortrait.ResetHitFeedback();
@@ -477,7 +441,7 @@ namespace StringAsASword.Presentation
         // Hold releases and misses have no text readout in play; the judge lines, the notes and the board carry them.
         public void ShowHold(TimingResult result) => Judge(result.Grade);
         public void ShowMiss(int beat) => Judge(Judgement.Miss);
-        /// <summary>How bright the judge lines flash for a judgement, as seen: Perfect full, Good about half, Miss faint.</summary>
+        /// <summary>How strongly the judge lines pulse for a judgement: Perfect full, Good about half, Miss faint.</summary>
         public static float JudgeGlowPeak(Judgement grade) =>
             grade == Judgement.Perfect ? 1f : grade == Judgement.Good ? .55f : grade == Judgement.Miss ? .25f : 0f;
         private void Judge(Judgement grade)
@@ -553,23 +517,29 @@ namespace StringAsASword.Presentation
             attackHint.text = !game.Attacks.IsInRange(cell) ? "J / SWING ONLY - DAMAGE FROM ROW 8" : game.Health.Defeated ? "J / SWING - ALL HP CLEARED" : game.Battle.Resonance.Enabled && !game.Battle.Resonance.Busy(game.Battle.LastClosedNote + 1) ? "J / 0 DAMAGE - COLLECT NOISE" : "J / ATTACK - DAMAGE ENABLED";
             stats.text=$"PERFECT     {game.Session.PerfectCount:000}\nGOOD            {game.Session.GoodCount:000}\nMISS              {game.Session.MissCount:000}\nBEST              {game.Session.BestCombo:000}";
             int cellIndex = cell.Y * 8 + cell.X;
-            position.text=$"POSITION  {(char)('A'+cell.X)}{cell.Y+1}     /     " + (dangerCounts[cellIndex] > 0 ? TelegraphHud.ThreatText(dangerResponses[cellIndex], dangerRemaining[cellIndex], dangerCounts[cellIndex]) : "SAFE");
+            position.text=$"POSITION  {(char)('A'+cell.X)}{cell.Y+1}     /     " + (dangerCounts[cellIndex] > 0 ? TelegraphHud.ThreatText(dangerResponses[cellIndex], dangerRemaining[cellIndex], 1) : "SAFE");
             beatLabel.text=game.CurrentBeat<0?"PREPARE":$"BEAT  {game.CurrentBeat+1:0000}   /   {game.CurrentBeat%4+1}:4";
             mode.text=game.Song.Music!=null?"SONG AUDIO":game.MetronomeMuted?"METRONOME / MUTED":"METRONOME / ON";
-            // No glow at rest: each judgement flashes it, as bright as the judgement was good, and it fades out.
-            // Without the glow (prototype lanes) the lines themselves take the flash.
-            // The peaks are brightness as seen; the project blends in linear space, so the opacity is that to the 2.2
-            // (as UiKit.CardFill), or a half-bright Good would read almost like a Perfect.
-            JudgeGlowAlpha = Mathf.Pow(judgePeak * Mathf.Exp(-judgeAge / JudgeFadeSeconds), 2.2f);
-            if (judgeGlows != null)
-                foreach (var glow in judgeGlows) glow.color = new Color(1, 1, 1, JudgeGlowAlpha);
-            else foreach (var line in judgeLines) line.color = Color.Lerp(InkWhite, Accent, JudgeGlowAlpha);
+            // No glow: each judgement lengthens the lines about their centre, further for a better judgement, and they
+            // settle back. On the board's rim the strip grows along the rim's own axis; the prototype bars are upright.
+            // Either way the lines keep their width.
+            JudgePulse = judgePeak * Mathf.Exp(-judgeAge / JudgeFadeSeconds);
+            float stretch = 1 + JudgeStretch * JudgePulse;
+            foreach (var line in judgeLines)
+            {
+                if (line is JudgeRimImage rim) rim.Stretch = stretch;
+                else if (line != null) line.rectTransform.localScale = new Vector3(1, stretch, 1);
+            }
             resonanceHud.Render();
             notes.Render(game);
             // Counts down to the first note, or after a resume to the place the song was paused.
             double songTime = game.SongTime;
-            double readyAt = game.State == PrototypeState.CountIn ? 0 : game.ResumeAt;
-            bool countingIn = (game.State == PrototypeState.CountIn || game.State == PrototypeState.Playing) && songTime < readyAt;
+            double readyAt = game.State == PrototypeState.CountIn ? 0 : game.CountdownEnd;
+            // Each number shows from its own beat, the moment its click sounds (ScheduledSongAudio.ScheduleCountdown):
+            // nothing before the first one, even in the short lead before the song picks up.
+            double countFrom = readyAt - game.Song.CountInBeats * game.Timeline.SecondsPerBeat;
+            bool countingIn = (game.State == PrototypeState.CountIn || game.State == PrototypeState.Playing) &&
+                songTime >= countFrom && songTime < readyAt;
             if (countingIn)
             {
                 int beatsLeft = Mathf.Clamp((int)Math.Ceiling((readyAt - songTime) / game.Timeline.SecondsPerBeat), 1, game.Song.CountInBeats);
@@ -615,8 +585,6 @@ namespace StringAsASword.Presentation
             shown = TelegraphHud.AppendPatternLines(patternText, active, battle.LastClosedNote, shown, 5);
             if (shown > 5) patternText.Append('+').Append(shown - 5).Append(" patterns");
             patternList.text = patternText.Length == 0 ? "CLEAR / NO ATTACK QUEUED" : patternText.ToString();
-            Vector2 knightPoint = boardWorld.ProjectToBoard(boardWorld.PlayerTransform.localPosition, BoardSize);
-            var knightBounds = new Rect(knightPoint + art.knightBadgeBox.position, art.knightBadgeBox.size);
             ulong countdowns = TelegraphHud.CountdownCells(active, battle.LastClosedNote, dangerRemaining);
             var player = game.Session.Position;
             // Only countdowns get a badge: a cell whose attack just landed shows no separate X.
@@ -626,53 +594,16 @@ namespace StringAsASword.Presentation
                 ulong cell = 1UL << i;
                 bool hasCountdown = (countdowns & cell) != 0;
                 bool visible = (badges & cell) != 0;
+                // A badge always stays on its own cell, even where the knight covers it.
                 dangerBadges[i].SetActive(visible);
-                badgeBounds[i] = new Rect(dangerPoints[i] - new Vector2(20,10), new Vector2(40,20));
-                badgePlaced[i] = visible && !knightBounds.Overlaps(badgeBounds[i]);
-                if (hasCountdown)
-                    dangerLabels[i].text = dangerRemaining[i] + (dangerCounts[i] > 1 ? $"<size=11> +{dangerCounts[i] - 1}</size>" : "");
+                // Only the soonest impact: a later attack on the same cell gets its own badge once this one has landed.
+                if (hasCountdown) dangerLabels[i].text = dangerRemaining[i].ToString();
                 if (!visible) continue;
                 var response = dangerResponses[i];
                 dangerBackgrounds[i].color = TelegraphHud.ResponseColor(response, BadgeDark);
                 // Only a strong attack's badge is tinted; every other badge is dark and needs the light number.
                 dangerLabels[i].color = response == AttackResponse.DodgeOnly ? BadgeDark : InkWhite;
             }
-            for (int i = 0; i < 64; i++)
-            {
-                bool visible = dangerBadges[i].activeSelf;
-                Vector2 point = dangerPoints[i];
-                if (visible && !badgePlaced[i]) point = PlaceCountdown(i, knightBounds);
-                ((RectTransform)dangerBadges[i].transform).anchoredPosition = point;
-                Vector2 delta = point - dangerPoints[i];
-                var line = dangerConnectors[i]; line.gameObject.SetActive(visible && delta.sqrMagnitude > 1);
-                if (!line.gameObject.activeSelf) continue;
-                line.anchoredPosition = (point + dangerPoints[i]) * .5f;
-                line.sizeDelta = new Vector2(delta.magnitude, 1);
-                line.localRotation = Quaternion.Euler(0, 0, Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg);
-            }
-        }
-        private Vector2 PlaceCountdown(int index, Rect knightBounds)
-        {
-            Vector2 origin = dangerPoints[index], best = origin;
-            float bestDistance = float.MaxValue;
-            // Keep every countdown readable: move only badges crossing the knight, with a line back to the cell.
-            for (int y = -6; y <= 6; y++) for (int x = -6; x <= 6; x++)
-            {
-                Vector2 offset = new Vector2(x * 48, y * 24);
-                if (offset.sqrMagnitude >= bestDistance) continue;
-                Vector2 point = origin + offset;
-                var candidate = new Rect(point - new Vector2(20,10), new Vector2(40,20));
-                Vector2 half = BoardSize * .5f - new Vector2(10, 10);
-                if (candidate.xMin < -half.x || candidate.xMax > half.x || candidate.yMin < -half.y || candidate.yMax > half.y || candidate.Overlaps(knightBounds)) continue;
-                bool free = true;
-                for (int i = 0; i < 64; i++)
-                    if (badgePlaced[i] && candidate.Overlaps(badgeBounds[i])) { free = false; break; }
-                if (!free) continue;
-                best = point; bestDistance = offset.sqrMagnitude;
-            }
-            Debug.Assert(bestDistance < float.MaxValue, "Danger countdown needs a free label position.");
-            badgeBounds[index] = new Rect(best - new Vector2(20,10), new Vector2(40,20));
-            badgePlaced[index] = true; return best;
         }
         public static RectTransform MakeRect(Transform parent,string name,Vector2 position,Vector2 size)
         {

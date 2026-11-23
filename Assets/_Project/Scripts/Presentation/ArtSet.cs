@@ -45,8 +45,8 @@ namespace StringAsASword.Presentation
         [Tooltip("Cracks drawn over the whole board (Board Crack shader: _Crack, _Light, _Hole). " +
             "String As a Sword > Art > Set Up Board Cracks builds it.")]
         public Material boardCrack;
-        [Tooltip("Ending picture (Art/UI/Ending/Ending_Title.png): after the knight touches the noise it fades in a little enlarged " +
-            "and slowly zooms out to fit the screen. Empty = endingCutscene between letterbox bars instead.")]
+        [Tooltip("Ending picture (Art/UI/Ending/Ending_Title.png): black 易聲 lettering on a transparent background, drawn over the game's " +
+            "own white at 80% of the screen height. It cuts in after the noise fades and a short white. Empty = endingCutscene instead.")]
         public Sprite endingImage;
         [Tooltip("Ending cutscene, played between the letterbox bars after the knight touches the noise. Empty = a short black placeholder.")]
         public UnityEngine.Video.VideoClip endingCutscene;
@@ -135,10 +135,15 @@ namespace StringAsASword.Presentation
         [UnityEngine.Serialization.FormerlySerializedAs("prologueSkipKeyIcon")]
         [Tooltip("ESC key image on the prologue and tutorial skip hints.")]
         public Sprite skipKeyIcon;
-        [Tooltip("J key image on the prologue's '줄을 끊는다' prompt. Empty = a plain keycap.")]
+        [Tooltip("J key image on the prologue's '현을 뜯는다' prompt. Empty = a plain keycap.")]
         public Sprite promptJKeyIcon;
         [Tooltip("Key guide under the board in battle (Figma 'Game Play' / 키 가이드, exported at 2x). Empty = no guide.")]
         public Sprite keyGuide;
+        [Tooltip("The key guide's 'J 공격' while resonance is on (Figma, exported at 3x: 417 x 150 = 139 x 50). While it is " +
+            "off the guide's own J 공격 shows at half opacity. Empty = the guide as drawn, always.")]
+        public Sprite jAttackOn;
+        [Tooltip("Not shown: resonance off uses the guide's own J 공격. Kept for reference.")]
+        public Sprite jAttackOff;
         [Tooltip("Pause and game-over menu items (Figma: Orbit Regular). Empty = menuFont.")]
         public TMP_FontAsset screenFont;
         [Tooltip("PAUSED / FALLEN titles (Figma: Media Sans Extended Black). Empty = screenFont.")]
@@ -182,6 +187,11 @@ namespace StringAsASword.Presentation
         public AudioClip uiConfirmSound;
         [Tooltip("Level of the UI confirm sound at full volume. 0.12 = as loud as in the prologue.")]
         [Range(0, 1)] public float uiConfirmVolume = .12f;
+        [Tooltip("Played once when the ending picture (endingImage) cuts in: a cinematic boom (Audio/Ending/ending_boom.wav, " +
+            "cut to 5.6 s with a fade so it ends with the exit white). Empty = silent.")]
+        public AudioClip endingSound;
+        [Tooltip("Level of the ending boom at full volume. 0.11 puts its hit a little above the ending's noise at its loudest.")]
+        [Range(0, 1)] public float endingSoundVolume = .11f;
 
         public bool HasCrown => crown != null && crownRegions != null && crownSpent != null && crownMaterial != null;
         public bool HasBackground => background != null || (backgroundLayers != null && backgroundLayers.Length > 0);

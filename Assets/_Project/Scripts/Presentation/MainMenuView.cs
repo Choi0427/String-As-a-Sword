@@ -104,9 +104,30 @@ namespace StringAsASword.Presentation
             settings.TutorialRequested += () => Leave(prologue: false, tutorial: true);
             ApplyTheme();
             Select(-1);
+            if (GameFlow.ArrivingFromEnding)
+            {
+                // The ending left the screen white: the menu starts under the same white and clears into view.
+                GameFlow.ConsumeArrival();
+                arrivalCover = Image(Stretch(Rect(root, "Arrival White")), Color.white);
+                arrivalCover.raycastTarget = true; // no hover or click until the menu is visible
+            }
         }
+        /// <summary>Hold, then fade, of the white the menu starts under when it is opened from the ending.</summary>
+        public const float ArrivalHoldSeconds = .2f, ArrivalFadeSeconds = 1.4f;
+        private UnityEngine.UI.Image arrivalCover;
+        private float arrivalAge;
+        /// <summary>0..1: how much of the ending's white still covers the menu (0 once it has cleared).</summary>
+        public float ArrivalCover => arrivalCover != null ? arrivalCover.color.a : 0;
         private void Update()
         {
+            if (arrivalCover != null)
+            {
+                arrivalAge += Time.unscaledDeltaTime;
+                float clear = Mathf.SmoothStep(0, 1, (arrivalAge - ArrivalHoldSeconds) / ArrivalFadeSeconds);
+                arrivalCover.color = new Color(1, 1, 1, 1 - clear);
+                if (clear >= 1) { Destroy(arrivalCover.gameObject); arrivalCover = null; }
+                else return; // keys wait until the menu is in view
+            }
             var keyboard = Keyboard.current;
             if (keyboard == null || leaving) return;
             if (SettingsOpen) { if (keyboard.escapeKey.wasPressedThisFrame) settings.Close(); return; }

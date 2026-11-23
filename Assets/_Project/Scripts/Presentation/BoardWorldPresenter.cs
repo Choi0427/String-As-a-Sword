@@ -690,7 +690,7 @@ namespace StringAsASword.Presentation
         public void EnterWhiteWorld(Vector3 noiseAt)
         {
             if (whiteWorld) return;
-            whiteWorld = true;
+            whiteWorld = true; EndingNoiseFade = 1;
             foreach (Transform child in world.transform)
             {
                 if (child == player || child.GetComponent<Camera>() != null || child.GetComponent<Light>() != null || !child.gameObject.activeSelf) continue;
@@ -703,7 +703,7 @@ namespace StringAsASword.Presentation
         private void LeaveWhiteWorld()
         {
             if (!whiteWorld) return;
-            whiteWorld = false;
+            whiteWorld = false; EndingNoiseFade = 1;
             foreach (var item in hiddenForWhite) if (item != null) item.SetActive(true);
             hiddenForWhite.Clear();
             endingNoise.gameObject.SetActive(false);
@@ -918,7 +918,11 @@ namespace StringAsASword.Presentation
             if (FreeRoam)
             {
                 ShowOutline(false);
-                if (whiteWorld && endingNoise != null && noiseSprites != null) RenderNoiseSprite(EndingNoiseSlot, false);
+                if (whiteWorld && endingNoise != null)
+                {
+                    if (noiseSprites != null) RenderNoiseSprite(EndingNoiseSlot, false, EndingNoiseFade);
+                    else endingNoise.gameObject.SetActive(EndingNoiseFade > 0);
+                }
                 return;
             }
             RenderTelegraphs(dt);
@@ -984,10 +988,19 @@ namespace StringAsASword.Presentation
             if (art.impactMark != null) { impact = quad ?? (quad = MarkQuad()); materials = new[] { art.impactMark }; }
             for (int i = 0; i < 64; i++) impacts[i] = TelegraphCell("Impact", i, impact, materials);
         }
+        // A mark covers its whole cell, edge to edge, like a tile of the board.
+        private const float MarkHalf = .5f;
+        // The delivered board model's playing surface sits at y ≈ -0.033 (measured on ChessBoard.fbx through its Fit
+        // transform), not at 0 like the fallback tiles. Marks drawn at their fallback height would float ~0.055 above
+        // it, and the tilted camera would show them shifted off their cell. They are lowered onto the stone instead,
+        // the lowest layer (underlay, y .015) just clear of its highest points (about -0.032).
+        private const float ModelMarkDrop = -.044f;
+        private float MarkDrop => art.boardPrefab != null ? ModelMarkDrop : 0;
         private Mesh MarkQuad()
         {
+            const float h = MarkHalf;
             var mesh = new Mesh { name = "Telegraph Mark",
-                vertices = new[] { new Vector3(-.46f,.024f,-.46f), new Vector3(-.46f,.024f,.46f), new Vector3(.46f,.024f,.46f), new Vector3(.46f,.024f,-.46f) },
+                vertices = new[] { new Vector3(-h,.024f,-h), new Vector3(-h,.024f,h), new Vector3(h,.024f,h), new Vector3(h,.024f,-h) },
                 uv = new[] { new Vector2(0,0), new Vector2(0,1), new Vector2(1,1), new Vector2(1,0) }, triangles = new[] { 0,1,2,0,2,3 } };
             mesh.RecalculateNormals(); mesh.RecalculateBounds(); resources.Add(mesh); return mesh;
         }
@@ -995,7 +1008,7 @@ namespace StringAsASword.Presentation
         {
             var item = new GameObject($"{name}_{index % 8}_{index / 8}", typeof(MeshFilter), typeof(MeshRenderer));
             item.transform.SetParent(world.transform, false);
-            item.transform.localPosition = CellPosition(new GridPosition(index % 8, index / 8));
+            item.transform.localPosition = CellPosition(new GridPosition(index % 8, index / 8)) + Vector3.up * MarkDrop;
             item.GetComponent<MeshFilter>().sharedMesh = mesh;
             item.GetComponent<MeshRenderer>().sharedMaterials = materials;
             item.SetActive(false); return item;
@@ -1066,26 +1079,28 @@ namespace StringAsASword.Presentation
                 vertices.Add(new Vector3(x2, height, z2)); vertices.Add(new Vector3(x2, height, z1));
                 triangles.AddRange(new[] { start, start + 1, start + 2, start, start + 2, start + 3 });
             }
+            // Whole cell: underlay to the cell's edge, frame just inside it, stripes inside the frame.
+            const float edge = MarkHalf, frame = MarkHalf - .012f, inner = MarkHalf - .024f;
             void Stripe(float intercept, float slope, float width)
             {
-                float low = Mathf.Max(-.43f, slope > 0 ? -.43f - intercept : intercept - .43f);
-                float high = Mathf.Min(.43f, slope > 0 ? .43f - intercept : intercept + .43f);
+                float low = Mathf.Max(-inner, slope > 0 ? -inner - intercept : intercept - inner);
+                float high = Mathf.Min(inner, slope > 0 ? inner - intercept : intercept + inner);
                 if (high <= low) return;
                 int start = vertices.Count;
                 vertices.Add(new Vector3(low, .023f, slope * low + intercept));
-                vertices.Add(new Vector3(low, .023f, Mathf.Min(.43f, slope * low + intercept + width)));
-                vertices.Add(new Vector3(high, .023f, Mathf.Min(.43f, slope * high + intercept + width)));
+                vertices.Add(new Vector3(low, .023f, Mathf.Min(inner, slope * low + intercept + width)));
+                vertices.Add(new Vector3(high, .023f, Mathf.Min(inner, slope * high + intercept + width)));
                 vertices.Add(new Vector3(high, .023f, slope * high + intercept));
                 markings.AddRange(new[] { start, start + 1, start + 2, start, start + 2, start + 3 });
             }
-            Quad(-.46f, -.46f, .46f, .46f, .015f, underlay);
-            foreach (float side in new[] { -.45f, .45f })
+            Quad(-edge, -edge, edge, edge, .015f, underlay);
+            foreach (float side in new[] { -frame, frame })
             {
-                Quad(-.46f, side - .012f, .46f, side + .012f, .024f, markings);
-                Quad(side - .012f, -.46f, side + .012f, .46f, .024f, markings);
+                Quad(-edge, side - .012f, edge, side + .012f, .024f, markings);
+                Quad(side - .012f, -edge, side + .012f, edge, .024f, markings);
             }
             if (impact) { Stripe(-.035f, 1, .07f); Stripe(-.035f, -1, .07f); }
-            else if (striped) for (int stripe = -3; stripe <= 3; stripe++) Stripe(stripe * .22f, 1, .035f);
+            else if (striped) for (int stripe = -3; stripe <= 3; stripe++) Stripe(stripe * .24f, 1, .035f);
             var mesh = new Mesh { name = impact ? "Impact Cross" : striped ? "Warning Hatching" : "Warning Frame", subMeshCount = 2 };
             mesh.SetVertices(vertices); mesh.SetTriangles(underlay, 0); mesh.SetTriangles(markings, 1);
             mesh.RecalculateNormals(); mesh.RecalculateBounds(); return mesh;
@@ -1525,8 +1540,9 @@ namespace StringAsASword.Presentation
                 // One slot per pickup, plus the ending's noise in the white world.
                 int slots = pickups.Length + 1;
                 noiseSprites = new SpriteRenderer[slots]; noiseShadows = new SpriteRenderer[slots]; noiseFloats = new Transform[slots];
-                noiseBackings = new SpriteRenderer[slots];
+                noiseBackings = new SpriteRenderer[slots]; noiseGlows = new SpriteRenderer[slots];
                 spriteMaterial = BoardSpriteMaterial();
+                noiseGlowSprite = GlowSprite(art.noiseSprite);
             }
             var item = new GameObject($"Noise_{index}").transform; item.SetParent(world.transform, false);
             var shadow = new GameObject("Noise Shadow", typeof(SpriteRenderer)).GetComponent<SpriteRenderer>();
@@ -1546,6 +1562,15 @@ namespace StringAsASword.Presentation
             backing.transform.SetParent(hover, false);
             backing.transform.localPosition = Vector3.forward * .02f; backing.transform.localScale = Vector3.one * scale * 1.1f;
             backing.sprite = art.noiseSprite; backing.sharedMaterial = spriteMaterial; backing.sortingOrder = 0;
+            // A soft white outer glow that follows the picture's shape, behind the dark backing.
+            if (noiseGlowSprite != null)
+            {
+                var glow = new GameObject("Noise Glow", typeof(SpriteRenderer)).GetComponent<SpriteRenderer>();
+                glow.transform.SetParent(hover, false);
+                glow.transform.localPosition = Vector3.forward * .04f; glow.transform.localScale = Vector3.one * scale;
+                glow.sprite = noiseGlowSprite; glow.sharedMaterial = spriteMaterial; glow.sortingOrder = -1;
+                noiseGlows[index] = glow;
+            }
             noiseSprites[index] = picture; noiseShadows[index] = shadow; noiseFloats[index] = hover; noiseBackings[index] = backing;
             return item;
         }
@@ -1554,9 +1579,11 @@ namespace StringAsASword.Presentation
         private const float NoiseWidth = .85f, NoiseHover = .26f, NoiseBob = .04f;
         public const string NoiseShader = "Universal Render Pipeline/2D/Sprite-Unlit-Default";
         /// <summary>Height above its cell at which a noise pickup is drawn (where collected noise starts its flight).</summary>
+        /// <summary>1 = the ending's noise fully shown, 0 = gone. The finale fades it out when the knight touches it.</summary>
+        public float EndingNoiseFade { get; set; } = 1;
         public float NoiseHeight => noiseSprites != null ? NoiseHover : .12f;
         public bool NoiseUsesSprite => noiseSprites != null;
-        private void RenderNoiseSprite(int index, bool dormant)
+        private void RenderNoiseSprite(int index, bool dormant, float fade = 1)
         {
             float time = Time.unscaledTime, wave = Mathf.Sin(time * 2.2f + index * 1.7f);
             float height = NoiseHover + NoiseBob * wave;
@@ -1568,12 +1595,68 @@ namespace StringAsASword.Presentation
             float lift = Mathf.InverseLerp(NoiseHover - NoiseBob, NoiseHover + NoiseBob, height);
             // Most of the cell, so it reads on dark tiles as well as light ones.
             noiseShadows[index].transform.localScale = new Vector3(.9f, .62f, 1) * Mathf.Lerp(.9f, 1.05f, lift) / ShadowSpriteSize;
-            noiseShadows[index].color = new Color(0, 0, 0, Mathf.Lerp(.85f, .65f, lift) * (dormant ? .55f : 1));
-            noiseSprites[index].color = dormant ? new Color(.42f, .42f, .42f, .7f) : Color.white;
-            noiseBackings[index].color = new Color(.03f, .03f, .035f, dormant ? .45f : .85f);
+            noiseShadows[index].color = new Color(0, 0, 0, Mathf.Lerp(.85f, .65f, lift) * (dormant ? .55f : 1) * fade);
+            noiseSprites[index].color = dormant ? new Color(.42f, .42f, .42f, .7f * fade) : new Color(1, 1, 1, fade);
+            noiseBackings[index].color = new Color(.03f, .03f, .035f, (dormant ? .45f : .85f) * fade);
+            if (noiseGlows[index] != null) noiseGlows[index].color = new Color(1, 1, 1, (dormant ? NoiseGlowDormant : NoiseGlowAlpha) * fade);
         }
-        private SpriteRenderer[] noiseSprites, noiseShadows, noiseBackings;
+        private SpriteRenderer[] noiseSprites, noiseShadows, noiseBackings, noiseGlows;
         private int EndingNoiseSlot => pickups.Length;
+        private Sprite noiseGlowSprite;
+        // Outer glow: spread as a share of the picture's width, and its strength (dimmer while the noise is dormant).
+        private const float NoiseGlowSpread = .14f, NoiseGlowAlpha = .9f, NoiseGlowDormant = .25f;
+        /// <summary>
+        /// A white glow in the shape of <paramref name="source"/>: its alpha, widened and blurred, on a canvas padded so the
+        /// glow is not cut off. Same pixels-per-unit and pivot as the source, so it lines up at the same scale. The texture is
+        /// read through a render texture, so it works even when the source is not marked readable.
+        /// </summary>
+        private Sprite GlowSprite(Sprite source)
+        {
+            if (source == null) return null;
+            var texture = source.texture; var rect = source.textureRect;
+            int w = Mathf.RoundToInt(rect.width), h = Mathf.RoundToInt(rect.height);
+            if (w <= 0 || h <= 0) return null;
+            var target = RenderTexture.GetTemporary(texture.width, texture.height, 0, RenderTextureFormat.ARGB32);
+            var previous = RenderTexture.active;
+            Graphics.Blit(texture, target);
+            RenderTexture.active = target;
+            var read = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            read.ReadPixels(new Rect(rect.x, rect.y, w, h), 0, 0); read.Apply();
+            RenderTexture.active = previous; RenderTexture.ReleaseTemporary(target);
+            var source32 = read.GetPixels32(); Destroy(read);
+
+            int radius = Mathf.Max(2, Mathf.RoundToInt(w * NoiseGlowSpread)), pad = radius * 2;
+            int W = w + 2 * pad, H = h + 2 * pad;
+            var alpha = new float[W * H];
+            for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) alpha[(y + pad) * W + x + pad] = source32[y * w + x].a / 255f;
+            // Three box blurs each way approximate a gaussian; the result is lifted so the glow is bright near the edge.
+            var scratch = new float[W * H];
+            for (int pass = 0; pass < 3; pass++) { BoxBlur(alpha, scratch, W, H, radius / 2 + 1, true); BoxBlur(scratch, alpha, W, H, radius / 2 + 1, false); }
+            var pixels = new Color32[W * H];
+            for (int i = 0; i < pixels.Length; i++) pixels[i] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(255 * Mathf.Clamp01(alpha[i] * 2.2f)));
+            var glow = new Texture2D(W, H, TextureFormat.RGBA32, false) { name = "Noise Glow", wrapMode = TextureWrapMode.Clamp };
+            glow.SetPixels32(pixels); glow.Apply(); resources.Add(glow);
+            var pivot = (source.pivot - source.textureRectOffset + new Vector2(pad, pad)) / new Vector2(W, H);
+            var sprite = Sprite.Create(glow, new Rect(0, 0, W, H), pivot, source.pixelsPerUnit, 0, SpriteMeshType.FullRect);
+            sprite.name = "Noise Glow"; resources.Add(sprite);
+            return sprite;
+        }
+        private static void BoxBlur(float[] from, float[] to, int width, int height, int radius, bool horizontal)
+        {
+            int lines = horizontal ? height : width, length = horizontal ? width : height;
+            float scale = 1f / (2 * radius + 1);
+            for (int line = 0; line < lines; line++)
+            {
+                int start = horizontal ? line * width : line, step = horizontal ? 1 : width;
+                float sum = 0;
+                for (int k = -radius; k <= radius; k++) sum += from[start + Mathf.Clamp(k, 0, length - 1) * step];
+                for (int i = 0; i < length; i++)
+                {
+                    to[start + i * step] = sum * scale;
+                    sum += from[start + Mathf.Min(i + radius + 1, length - 1) * step] - from[start + Mathf.Max(i - radius, 0) * step];
+                }
+            }
+        }
         private Transform[] noiseFloats;
         private Material spriteMaterial;
         private static Sprite shadowSprite;
