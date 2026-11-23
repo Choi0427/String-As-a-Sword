@@ -52,7 +52,7 @@ namespace StringAsASword.Tests
             yield return null;
         }
 
-        [UnityTest] public IEnumerator ComposedPiecesPlayOnTheirOwnSourcesInPlaceOfThePlaceholderMusic()
+        [UnityTest] public IEnumerator ComposedPiecesPlayOnTheirOwnSourcesUnderTheSounds()
         {
             // Silent stand-ins for Cue_A, Cue_Wait and Cue_B (S1-B), each with a short tail, in the asset's memory only.
             var data = Resources.Load<PrologueDefinition>(PrologueDefinition.ResourceName);
@@ -68,14 +68,6 @@ namespace StringAsASword.Tests
                 Assert.That(intro.StemASource, Is.Not.Null);
                 Assert.That(intro.StemASource.clip, Is.SameAs(a));
                 Assert.That(intro.StemASource.isPlaying, "Cue_A is scheduled on the prologue's first beat.");
-                // Around the king's first order (beat 8) only the sound effects are scheduled; the order itself is in Cue_A.
-                intro.JumpForTests(7.8);
-                for (int f = 0; f < 20; f++)
-                {
-                    yield return null;
-                    foreach (var source in intro.PoolSources)
-                        Assert.That(source.isPlaying && source.clip != null && PrologueDefinition.IsMusic(source.clip.name), Is.False, source.clip != null ? source.clip.name : "");
-                }
                 // The waiting bar: two sources take turns, so a bar's tail is not cut by the next bar.
                 intro.JumpForTests(IntroTimeline.LoopStart - .1);
                 yield return null; yield return null;

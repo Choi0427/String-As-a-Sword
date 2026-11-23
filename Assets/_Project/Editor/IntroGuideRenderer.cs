@@ -75,7 +75,8 @@ namespace StringAsASword.Editor
             {
                 foreach (var cue in cues)
                 {
-                    if (stem != null && PrologueDefinition.IsMusic(cue.Clip)) continue;
+                    // A stand-in plays only while the recording it stands in for is missing, as in the game.
+                    if (cue.Unless != null && Data.Clip(cue.Unless) != null) continue;
                     bool clock = PrologueDefinition.IsClock(cue.Clip), accent = clock && cue.Volume >= .45f;
                     var clip = clock ? Data.Tick(accent) : Data.Clip(cue.Clip);
                     if (clip == null) continue;

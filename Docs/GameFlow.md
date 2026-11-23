@@ -7,7 +7,7 @@
 | 단계 | 씬 | 담당 | 내용 |
 | --- | --- | --- | --- |
 | 메인화면 | `MainMenu` | `MainMenuView` | 피그마 `Main Menu`(node 2:3) 그대로. 시작 / 설정 / 종료 |
-| 프롤로그 | `RhythmPrototype` | `IntroDirector` | 시작을 누를 때마다. 레터박스 컷씬, 5a에서 J로 줄을 끊는다. 마지막 다운비트에 튜토리얼로 이어진다. Esc로 건너뛰면 바로 튜토리얼로 간다 |
+| 프롤로그 | `RhythmPrototype` | `IntroDirector` | 시작을 누를 때마다. 레터박스 컷씬, 자막 없음. 샷 하나에 의미 하나(프롤로그 개편 R1~R7-A): 규칙(0~12박, 모든 말이 왕의 줄에 매달려 4~11박에 한 박 한 수) → 엇박(12~16, 나이트는 제 박에 움직이지 않고 13.5박에 판 밖으로 뛴다, 잡음이 태어난다) → 속박(16~32, 왕의 줄 여섯 가닥이 나이트를 제 칸에 박고 잡음은 떼어 어둠에 버린다, 28박부터 맨 아래 줄만 밝다) → J 대기(32~36 반복, J로 그 줄을 끊는다) → 현(36~40, 줄이 검이 된다) → 레인(40~48, 남은 다섯 줄이 판을 가로질러 레인이 되고 왕이 말들을 거둬 간다) → 대치(48~54, 버려진 잡음이 판 위로 내려앉는다) → 이양(54~56). 마지막 다운비트에 튜토리얼로 이어진다. Esc로 건너뛰면 바로 튜토리얼로 간다 |
 | 튜토리얼 | `RhythmPrototype` | `TutorialDirector` | 시작을 누를 때마다 프롤로그 다음에. 설정의 '튜토리얼' 버튼으로 따로 볼 수도 있다. 곡과 분리된 연습 판(87 BPM 체스 클록, 레터박스). 이동 3번 → 일반 공격 막기·회피 → 빗금 회피 → 잡음 수집 → 맨 윗줄 J 공명 8번. 각 단계는 해내야 넘어가고, 맞으면 같은 공격이 다시 온다. 끝나면 체스 클록이 남은 박(6~9박) 동안 한 박씩 잦아들어(마지막 박은 약 −34 dB) 사라지고, 레터박스가 걷히며 그 다운비트에 곡의 도입이 시작된다. Esc로 건너뛰면 곧바로 곡으로 |
 | 전투 | `RhythmPrototype` | `PrototypeGame` | 카운트인 없이 곡이 바로 시작된다. 첫 노트 앞 곡의 도입 4박이 카운트인 대신이다(튜토리얼 끝의 다운비트, 건너뛰기, 시작 버튼, 재시작 모두 같다) |
 | 무력화 | 〃 | `BattleSession` + `FinaleDirector` | 보스 HP를 다 깎으면 킹이 흔들리고 공격·예고가 멈춘다 |
@@ -63,4 +63,5 @@
 - EditMode `FinaleTests`: 무력화·결정 노트·실패·이전 규칙.
 - PlayMode `PrototypeIntegrationTests.ReadyCardThenPauseAndGameOverScreens`: Esc 일시정지 → 설정 열고 Esc로 닫기 → S로 고르기 → 판으로 복귀(되감기) → 시간 초과 → FALLEN → 첫 수부터.
 - PlayMode `GameFlowTests`: 피그마 위치·호버·흰 버전 / 시작 → 프롤로그 → 튜토리얼(Esc로 각각 건너뜀) → 카운트인 없이 곡 / 자유 이동(대각선 정규화) → 잡음에 닿기 전에는 머무름 → 닿으면 흰 화면 → 엔딩 그림 등장 → Space로 건너뛰기 → 흰 메인화면 복귀.
+- 프롤로그 스틸(필요할 때만): `-testFilter StringAsASword.Tests.PrologueCaptureTests -prologueCaptureDir <폴더>` → 샷마다 인트로 카메라 그림 PNG(레터박스·J 카드 제외).
 - 화면 캡처(필요할 때만): `-testFilter StringAsASword.Tests.MenuCaptureTests -menuCaptureDir <폴더>` → 메뉴(어두운/호버/흰/설정), 전투 화면(키 가이드, Pause, Game Over와 호버), 체스판 균열 1~3단계, 가운데가 갈라지는 과정과 터짐, 엔딩 단계별 PNG. 배치 모드에서는 `WaitForEndOfFrame`이 오지 않으므로 캔버스를 카메라로 직접 렌더한다.
