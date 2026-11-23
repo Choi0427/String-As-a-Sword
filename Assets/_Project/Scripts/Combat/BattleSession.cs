@@ -159,6 +159,20 @@ namespace StringAsASword.Combat
                 Patterns.BeginPhase(Phases.PhaseId, LastClosedNote + 1);
             }
         }
+#if UNITY_EDITOR
+        // DEV-ENDING-SKIP (editor only, compiled out of builds; remove before release).
+        /// <summary>
+        /// Editor test: the boss is left on its last segment with 1 HP and the string holds a charge, as if a noise had
+        /// just been collected on the next note. The first top-row strike then ignites resonance and staggers the king.
+        /// </summary>
+        public void DevPrimeFinishingBlow()
+        {
+            SkipToPhase(4);
+            if (Health.CurrentHp > 1) Health.ApplyDamage(Health.CurrentHp - 1, Health.ActiveSegment);
+            Resonance.TryCharge(LastClosedNote + 1);
+            AddEvent("dev-ending", Health.CurrentHp.ToString(), Session.Position);
+        }
+#endif
         public ActionResult Request(PlayerActionKind kind, MoveDirection direction, double songTime)
         {
             Inputs.Add(new BattleInput { action = kind, direction = direction, time = songTime });

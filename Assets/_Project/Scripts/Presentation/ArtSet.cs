@@ -139,6 +139,11 @@ namespace StringAsASword.Presentation
         public Sprite promptJKeyIcon;
         [Tooltip("Key guide under the board in battle (Figma 'Game Play' / 키 가이드, exported at 2x). Empty = no guide.")]
         public Sprite keyGuide;
+        [Tooltip("The key guide's 'J 공격' while resonance is on (Figma, exported at 3x: 417 x 150 = 139 x 50). While it is " +
+            "off the guide's own J 공격 shows at half opacity. Empty = the guide as drawn, always.")]
+        public Sprite jAttackOn;
+        [Tooltip("Not shown: resonance off uses the guide's own J 공격. Kept for reference.")]
+        public Sprite jAttackOff;
         [Tooltip("Pause and game-over menu items (Figma: Orbit Regular). Empty = menuFont.")]
         public TMP_FontAsset screenFont;
         [Tooltip("PAUSED / FALLEN titles (Figma: Media Sans Extended Black). Empty = screenFont.")]

@@ -24,13 +24,26 @@ namespace StringAsASword.Presentation
             return image;
         }
 
+        private float stretch = 1;
+        /// <summary>
+        /// Length along the board's rim, 1 = as built. The near (bottom) and far (top) ends move apart along the rim's own
+        /// axis, so the strip grows in line with the board edge and each end keeps its width.
+        /// </summary>
+        public float Stretch
+        {
+            get => stretch;
+            set { if (Mathf.Approximately(stretch, value)) return; stretch = value; SetVerticesDirty(); }
+        }
+
         protected override void OnPopulateMesh(VertexHelper mesh)
         {
             mesh.Clear();
-            mesh.AddVert(bottomLeft, color, Vector2.zero);
-            mesh.AddVert(topLeft, color, Vector2.up);
-            mesh.AddVert(topRight, color, Vector2.one);
-            mesh.AddVert(bottomRight, color, Vector2.right);
+            Vector2 near = (bottomLeft + bottomRight) * .5f, far = (topLeft + topRight) * .5f, middle = (near + far) * .5f;
+            Vector2 nearShift = (near - middle) * (stretch - 1), farShift = (far - middle) * (stretch - 1);
+            mesh.AddVert(bottomLeft + nearShift, color, Vector2.zero);
+            mesh.AddVert(topLeft + farShift, color, Vector2.up);
+            mesh.AddVert(topRight + farShift, color, Vector2.one);
+            mesh.AddVert(bottomRight + nearShift, color, Vector2.right);
             mesh.AddTriangle(0, 1, 2);
             mesh.AddTriangle(0, 2, 3);
         }

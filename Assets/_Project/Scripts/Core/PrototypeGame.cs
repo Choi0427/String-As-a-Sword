@@ -74,6 +74,11 @@ namespace StringAsASword.Core
         public double SongClockOrigin => clock.Origin;
         /// <summary>After a resume the song rewinds a count-in; actions count again from here (song time). -inf otherwise.</summary>
         public double ResumeAt { get; private set; } = double.NegativeInfinity;
+        /// <summary>
+        /// After a resume: the song's beat at or before <see cref="ResumeAt"/>, where the 4-3-2-1 count lands. The count runs
+        /// on the music's own beats from here, not from the moment of the pause. -inf otherwise.
+        /// </summary>
+        public double CountdownEnd { get; private set; } = double.NegativeInfinity;
 
         private void Awake()
         {
@@ -160,7 +165,7 @@ namespace StringAsASword.Core
             StopTutorial(); Bind(mainBattle, mainTimeline);
             input.Clear(); audioPlayer.Stop(); clock.Stop();
             CurrentBeat = -1; SessionId++;
-            runSaved = false; ResumeAt = double.NegativeInfinity;
+            runSaved = false; ResumeAt = CountdownEnd = double.NegativeInfinity;
             Battle.Reset(SessionId, stage.NoiseSeed);
             ApplySwitches();
             State = PrototypeState.Prologue; view.ResetFeedback();
@@ -215,7 +220,7 @@ namespace StringAsASword.Core
             input.Clear(); audioPlayer.Stop();
             if (tutorialBattle == null) (tutorialBattle, tutorialTimeline) = CreateTutorialBattle();
             Bind(tutorialBattle, tutorialTimeline);
-            CurrentBeat = -1; SessionId++; runSaved = true; ResumeAt = double.NegativeInfinity; tutorialHandover = -1;
+            CurrentBeat = -1; SessionId++; runSaved = true; ResumeAt = CountdownEnd = double.NegativeInfinity; tutorialHandover = -1;
             Battle.Reset(SessionId, stage.NoiseSeed);
             Battle.Invincible = true;
             clock.StartAt(startDsp + TutorialDirector.LeadBeats * Timeline.SecondsPerBeat);
@@ -243,7 +248,7 @@ namespace StringAsASword.Core
         {
             if (State != PrototypeState.Tutorial || !InTutorialBattle) return;
             Bind(mainBattle, mainTimeline);
-            CurrentBeat = -1; runSaved = false; ResumeAt = double.NegativeInfinity;
+            CurrentBeat = -1; runSaved = false; ResumeAt = CountdownEnd = double.NegativeInfinity;
             Battle.Reset(SessionId, stage.NoiseSeed);
             ApplySwitches();
             clock.StartAt(downbeatDsp - IntroTimeline.HandoverSongTime(Timeline));
@@ -269,7 +274,7 @@ namespace StringAsASword.Core
             if (intro != null && intro.Playing) intro.Stop();
             input.Clear(); audioPlayer.Stop();
             CurrentBeat = -1; SessionId++;
-            runSaved = false; ResumeAt = double.NegativeInfinity;
+            runSaved = false; ResumeAt = CountdownEnd = double.NegativeInfinity;
             Battle.Reset(SessionId, stage.NoiseSeed);
             Battle.SkipToPhase(GameFlow.StartPhase);
             // No count-in: the song starts at once and its own intro (four beats before the first note) leads in, as after
@@ -288,6 +293,35 @@ namespace StringAsASword.Core
             State = PrototypeState.Playing; view.ResetFeedback();
             audioPlayer.Begin(song, clock, Timeline, countInClicks: false);
         }
+#if UNITY_EDITOR
+        // DEV-ENDING-SKIP (editor only, compiled out of builds; remove before release).
+        private const double DevEndingLeadSeconds = 10;
+        /// <summary>
+        /// Editor test (F9): restarts the song's battle 10 s before the finishing run. The skipped notes pass unplayed and
+        /// unhurt; then the boss has 1 HP left and the string is charged, as if a noise was just collected on this beat.
+        /// </summary>
+        public void DevSkipToEnding()
+        {
+            var settings = mainBattle.Settings;
+            if (!settings.HasFinale) return;
+            SaveRun("Restarted");
+            StopTutorial(); Bind(mainBattle, mainTimeline);
+            if (intro != null && intro.Playing) intro.Stop();
+            input.Clear(); audioPlayer.Stop();
+            CurrentBeat = -1; SessionId++;
+            runSaved = false; ResumeAt = CountdownEnd = double.NegativeInfinity;
+            Battle.Reset(SessionId, stage.NoiseSeed);
+            Battle.SkipToPhase(4);
+            double from = System.Math.Max(0, Timeline.TimeOf(settings.FinishNote) - DevEndingLeadSeconds);
+            Battle.Invincible = true; Battle.Advance(from);
+            Battle.DevPrimeFinishingBlow();
+            clock.Start(.30 - from);
+            ApplySwitches();
+            previousTime = SongTime;
+            State = PrototypeState.Playing; view.ResetFeedback();
+            audioPlayer.Begin(song, clock, Timeline, countInClicks: false);
+        }
+#endif
         /// <summary>Tests only: skip the battle and the finale and start the epilogue now.</summary>
         internal void JumpToEpilogueForTests()
         {
@@ -312,12 +346,18 @@ namespace StringAsASword.Core
         public void ResumeSession()
         {
             if (State != PrototypeState.Paused) return;
-            double at = clock.SongTime, rewind = song.CountInBeats * Timeline.SecondsPerBeat;
+            double at = clock.SongTime, beat = Timeline.SecondsPerBeat, rewind = song.CountInBeats * beat;
             ResumeAt = at;
-            clock.Start(.30 + rewind - at);
+            // Snap back to the music's beat grid (the chart's first note is on a beat). The pause can fall anywhere in a
+            // beat; counting from there would put each number between the song's beats instead of on them.
+            double anchor = Timeline.TimeOf(0);
+            CountdownEnd = anchor + System.Math.Floor((at - anchor) / beat + 1e-6) * beat;
+            clock.Start(.30 + rewind - CountdownEnd);
             previousTime = SongTime; input.Clear();
             State = at < 0 ? PrototypeState.CountIn : PrototypeState.Playing;
-            audioPlayer.Begin(song, clock, Timeline);
+            // Its own click on every number of the count, on the beats the numbers change; no count-in clicks besides.
+            audioPlayer.Begin(song, clock, Timeline, countInClicks: false);
+            audioPlayer.ScheduleCountdown(CountdownEnd - rewind, song.CountInBeats, beat);
         }
         /// <summary>Game over "첫 수부터": a fresh battle, in a fresh scene when the input sync changed since this one was built.</summary>
         public void RestartFromMenu()
@@ -332,7 +372,25 @@ namespace StringAsASword.Core
         {
             Battle.Invincible = GameFlow.Invincible; Battle.IgnoreBossHp = GameFlow.BossHpOff;
             Battle.HealOnNoise = GameFlow.Difficulty == GameDifficulty.Easy;
+#if UNITY_EDITOR
+            // DEV-F8-INVINCIBLE (editor only, compiled out of builds; remove before release).
+            if (devF8Invincible) Battle.Invincible = true;
+#endif
         }
+#if UNITY_EDITOR
+        // DEV-F8-INVINCIBLE (editor only, compiled out of builds; remove before release).
+        // Kept across restarts until F8 is pressed again or play mode ends; no developer mode needed.
+        private static bool devF8Invincible;
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetDevF8Invincible() => devF8Invincible = false;
+        public void DevToggleF8Invincible()
+        {
+            devF8Invincible = !devF8Invincible;
+            // Off: back to what the run would have without F8 (the developer switch, or the always-safe tutorial).
+            Battle.Invincible = devF8Invincible || GameFlow.Invincible || InTutorialBattle;
+            Debug.Log($"[DEV] F8 invincible: {(devF8Invincible ? "ON" : "OFF")}");
+        }
+#endif
         public void QuitGame()
         {
             PauseSession();
@@ -383,6 +441,12 @@ namespace StringAsASword.Core
         private void OnCommand(string command)
         {
             if (State == PrototypeState.Finale || State == PrototypeState.Epilogue) return; // The ending plays through.
+#if UNITY_EDITOR
+            // DEV-ENDING-SKIP (editor only, compiled out of builds; remove before release).
+            if (command == "dev-ending") { DevSkipToEnding(); return; }
+            // DEV-F8-INVINCIBLE (editor only, compiled out of builds; remove before release).
+            if (command == "dev-f8-invincible") { DevToggleF8Invincible(); return; }
+#endif
             // The prologue and the tutorial have no pause menu: Esc, Space or Enter skip on. Nothing else applies yet.
             if (State == PrototypeState.Prologue || State == PrototypeState.Tutorial)
             {

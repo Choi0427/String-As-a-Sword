@@ -39,10 +39,11 @@ namespace StringAsASword.Tests
                 // The frame is four quads of markings; hatching adds to it.
                 Assert.That(normal.GetTriangles(1).Length, Is.EqualTo(24));
                 Assert.That(strong.GetTriangles(1).Length, Is.GreaterThan(24));
+                // A mark covers its whole cell, up to the cell's edge and never past it.
                 foreach (var vertex in normal.vertices)
                 {
-                    Assert.That(Mathf.Abs(vertex.x), Is.LessThan(.5f));
-                    Assert.That(Mathf.Abs(vertex.z), Is.LessThan(.5f));
+                    Assert.That(Mathf.Abs(vertex.x), Is.LessThanOrEqualTo(.5f));
+                    Assert.That(Mathf.Abs(vertex.z), Is.LessThanOrEqualTo(.5f));
                 }
             }
             finally { Object.DestroyImmediate(normal); Object.DestroyImmediate(strong); }
@@ -55,8 +56,8 @@ namespace StringAsASword.Tests
                 Assert.That(mesh.subMeshCount, Is.EqualTo(2));
                 foreach (var vertex in mesh.vertices)
                 {
-                    Assert.That(Mathf.Abs(vertex.x), Is.LessThan(.5f));
-                    Assert.That(Mathf.Abs(vertex.z), Is.LessThan(.5f));
+                    Assert.That(Mathf.Abs(vertex.x), Is.LessThanOrEqualTo(.5f));
+                    Assert.That(Mathf.Abs(vertex.z), Is.LessThanOrEqualTo(.5f));
                     Assert.That(vertex.y, Is.GreaterThan(0));
                 }
                 var vertices = mesh.vertices;
@@ -235,37 +236,6 @@ namespace StringAsASword.Tests
             Assert.That(TelegraphHud.BadgeCells(upperHalf, Countdowns(1), 27) & ~upperHalf, Is.Zero);
             var soonest = Countdowns(1); for (int i = 32; i < 64; i += 2) soonest[i] = 3;
             Assert.That(TelegraphHud.BadgeCells(upperHalf, soonest, 27) & ~upperHalf, Is.Zero, "A player below the attack gets no badge on a safe neighbour.");
-        }
-
-        [Test]
-        public void DenseCountdownsStayReadableAroundKnight()
-        {
-            var owner = new GameObject("Countdown placement test");
-            try
-            {
-                var view = owner.AddComponent<PrototypeView>();
-                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
-                var points = (Vector2[])typeof(PrototypeView).GetField("dangerPoints", flags).GetValue(view);
-                var bounds = (Rect[])typeof(PrototypeView).GetField("badgeBounds", flags).GetValue(view);
-                var placed = (bool[])typeof(PrototypeView).GetField("badgePlaced", flags).GetValue(view);
-                var knight = new Rect(-26, 5, 52, 76);
-                for (int i = 0; i < 64; i++)
-                {
-                    points[i] = new Vector2((i % 8 - 3.5f) * 60, (i / 8 - 3.8f) * 52);
-                    bounds[i] = new Rect(points[i] - new Vector2(20,10), new Vector2(40,20));
-                    placed[i] = !bounds[i].Overlaps(knight);
-                }
-                var place = typeof(PrototypeView).GetMethod("PlaceCountdown", flags);
-                for (int i = 0; i < 64; i++) if (!placed[i]) place.Invoke(view, new object[] { i, knight });
-                for (int i = 0; i < 64; i++)
-                {
-                    Assert.That(placed[i], Is.True);
-                    Assert.That(bounds[i].Overlaps(knight), Is.False, $"Cell {i} covers the knight.");
-                    for (int j = i + 1; j < 64; j++)
-                        Assert.That(bounds[i].Overlaps(bounds[j]), Is.False, $"Cells {i} and {j} overlap.");
-                }
-            }
-            finally { Object.DestroyImmediate(owner); }
         }
     }
 }

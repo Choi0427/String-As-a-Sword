@@ -39,6 +39,12 @@ namespace StringAsASword.Player
             // Developer mode only; the game ignores them otherwise.
             for (int phase = 1; phase <= 4; phase++) BindCommand("f" + phase, "dev-phase" + phase);
             BindCommand("f5", "dev-invincible"); BindCommand("f6", "dev-bosshp");
+#if UNITY_EDITOR
+            // DEV-ENDING-SKIP (editor only, compiled out of builds; remove before release).
+            BindCommand("f9", "dev-ending");
+            // DEV-F8-INVINCIBLE (editor only, compiled out of builds; remove before release).
+            BindCommand("f8", "dev-f8-invincible");
+#endif
         }
         private InputAction AddAction(string key)
         {

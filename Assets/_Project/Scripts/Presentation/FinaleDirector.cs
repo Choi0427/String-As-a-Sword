@@ -38,7 +38,6 @@ namespace StringAsASword.Presentation
         private UnityEngine.UI.Image flash, whiteCover, white, exitWhite;
         private UnityEngine.UI.RawImage epilogueView, bloom;
         private Texture2D bloomTexture;
-        private TMP_Text banner;
         private CutscenePlayer cutscene;
         private UnityEngine.UI.Image endingImage;
         private float endingAge = -1;
@@ -109,7 +108,6 @@ namespace StringAsASword.Presentation
             bloom.texture = bloomTexture; bloom.raycastTarget = false;
             white = FullScreen("White", Color.white);
             var font = UiFonts.Korean(view.Art.menuFont, view.LatinFont);
-            banner = Text("Banner", font, 34, new Vector2(0, 330));
             cutscene = layer.gameObject.AddComponent<CutscenePlayer>();
             cutscene.Initialize(layer, font, view.Art.endingCutscene);
             if (view.Art.endingImage != null)
@@ -140,7 +138,7 @@ namespace StringAsASword.Presentation
         private void ResetVisuals()
         {
             SetAlpha(flash, 0); SetAlpha(whiteCover, 0); SetAlpha(white, 0); SetAlpha(exitWhite, 0);
-            epilogueView.gameObject.SetActive(false); bloom.gameObject.SetActive(false); banner.text = "";
+            epilogueView.gameObject.SetActive(false); bloom.gameObject.SetActive(false);
             flashAge = 10; epilogueAge = 0; exitAge = -1; endingAge = -1; lastFinishHit = -1;
             if (endingImage != null) endingImage.gameObject.SetActive(false);
             placed = entered = touched = returned = false;
@@ -164,13 +162,8 @@ namespace StringAsASword.Presentation
             flashAge += Time.unscaledDeltaTime;
             SetAlpha(flash, .55f * Mathf.Exp(-12 * flashAge));
 
-            if (game.State == PrototypeState.Playing && game.Battle.KingStunned)
+            if (game.State == PrototypeState.Finale)
             {
-                banner.text = "KING STAGGERED"; banner.color = new Color(.94f, .93f, .88f, .55f + .45f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 3)));
-            }
-            else if (game.State == PrototypeState.Finale)
-            {
-                banner.text = "";
                 // One strike per note of the finishing triplet, then the king goes down.
                 for (int hit = 0; hit < 3; hit++)
                     if (hit > lastFinishHit && time >= game.Timeline.TimeOf(settings.FinishNote + hit))
@@ -187,7 +180,6 @@ namespace StringAsASword.Presentation
             float dt = Time.unscaledDeltaTime;
             epilogueAge += dt;
             float a = epilogueAge;
-            banner.text = "";
             board.FreeRoam = true; board.BreakOverride = 3;
             if (!placed)
             {
@@ -308,14 +300,6 @@ namespace StringAsASword.Presentation
             var rect = PrototypeView.MakeRect(layer, name, Vector2.zero, Vector2.zero); Stretch(rect);
             var image = rect.gameObject.AddComponent<UnityEngine.UI.Image>(); image.color = color; image.raycastTarget = false;
             return image;
-        }
-        private TMP_Text Text(string name, TMP_FontAsset font, int size, Vector2 position)
-        {
-            var label = PrototypeView.MakeRect(layer, name, position, new Vector2(1400, 80)).gameObject.AddComponent<TextMeshProUGUI>();
-            if (font != null) label.font = font;
-            label.fontSize = size; label.alignment = TextAlignmentOptions.Center; label.raycastTarget = false;
-            label.textWrappingMode = TextWrappingModes.NoWrap; label.color = PrototypeView.InkWhite;
-            return label;
         }
         private void OnDestroy() { if (noiseClip != null) Destroy(noiseClip); if (bloomTexture != null) Destroy(bloomTexture); }
         private static void Stretch(RectTransform rect) { rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one; rect.sizeDelta = Vector2.zero; }
