@@ -40,21 +40,25 @@ namespace StringAsASword.Presentation
         public static double HandoverSongTime(IBeatTimeline timeline)
             => timeline.TimeOf(0) - HandoverBeatsBeforeFirstNote * timeline.SecondsPerBeat;
 
-        /// <summary>Which shot a story beat belongs to (names follow the storyboard).</summary>
+        /// <summary>
+        /// Which shot a story beat belongs to (prologue revision: one meaning per shot). rule: every piece hangs on the king's
+        /// strings and moves one square a beat to the square he lights. offbeat: three times the knight jumps an L to the
+        /// left instead of the right, on the beat, then off it, then off it again, and is put back by its string. bind: six
+        /// strings catch it by the legs and pin it low to its square; the lowest one lights up and it takes it in its hand.
+        /// wait: the bar repeated until J (현을 뜯는다). string: the string comes away and becomes the sword. lanes: the
+        /// five left become the lanes, the king takes the pieces away. face: the knight and the king alone, the discarded
+        /// noise settling on the board. handover: the battle camera.
+        /// </summary>
         public static string Shot(double story)
         {
-            if (story < 8) return "1";
-            if (story < 14) return "1.5";
-            if (story < 20) return "2";
-            if (story < 26) return "3";
-            if (story < 30) return "4";
-            if (story < Tear) return "5a";
-            if (story < 38) return "5a-tear";
-            if (story < 42) return "5b";
-            if (story < 46) return "6a";
-            if (story < 50) return "6b";
-            if (story < 54) return "6c";
-            return "7";
+            if (story < 10) return "rule";
+            if (story < 16) return "offbeat";
+            if (story < LoopStart) return "bind";
+            if (story < Tear) return "wait";
+            if (story < 40) return "string";
+            if (story < 48) return "lanes";
+            if (story < 54) return "face";
+            return "handover";
         }
         private static double Mod(double a, double m) => a - m * Math.Floor(a / m);
     }
