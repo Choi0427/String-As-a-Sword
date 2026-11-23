@@ -45,8 +45,8 @@ namespace StringAsASword.Presentation
         [Tooltip("Cracks drawn over the whole board (Board Crack shader: _Crack, _Light, _Hole). " +
             "String As a Sword > Art > Set Up Board Cracks builds it.")]
         public Material boardCrack;
-        [Tooltip("Ending picture (Art/UI/Ending/Ending_Title.png): after the knight touches the noise it fades in a little enlarged " +
-            "and slowly zooms out to fit the screen. Empty = endingCutscene between letterbox bars instead.")]
+        [Tooltip("Ending picture (Art/UI/Ending/Ending_Title.png): black 易聲 lettering on a transparent background, drawn over the game's " +
+            "own white at 80% of the screen height. It cuts in after the noise fades and a short white. Empty = endingCutscene instead.")]
         public Sprite endingImage;
         [Tooltip("Ending cutscene, played between the letterbox bars after the knight touches the noise. Empty = a short black placeholder.")]
         public UnityEngine.Video.VideoClip endingCutscene;
@@ -182,6 +182,11 @@ namespace StringAsASword.Presentation
         public AudioClip uiConfirmSound;
         [Tooltip("Level of the UI confirm sound at full volume. 0.12 = as loud as in the prologue.")]
         [Range(0, 1)] public float uiConfirmVolume = .12f;
+        [Tooltip("Played once when the ending picture (endingImage) cuts in: a cinematic boom (Audio/Ending/ending_boom.wav, " +
+            "cut to 5.6 s with a fade so it ends with the exit white). Empty = silent.")]
+        public AudioClip endingSound;
+        [Tooltip("Level of the ending boom at full volume. 0.11 puts its hit a little above the ending's noise at its loudest.")]
+        [Range(0, 1)] public float endingSoundVolume = .11f;
 
         public bool HasCrown => crown != null && crownRegions != null && crownSpent != null && crownMaterial != null;
         public bool HasBackground => background != null || (backgroundLayers != null && backgroundLayers.Length > 0);
