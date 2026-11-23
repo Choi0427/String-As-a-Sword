@@ -299,9 +299,11 @@ namespace StringAsASword.Tests
             Assert.That(director.EndingShown, Is.False, "Plain white before the picture.");
             yield return new WaitForSecondsRealtime(1);
             Assert.That(director.EndingShown, "Then the picture cuts in.");
+            Assert.That(director.WhiteWorldVisible, Is.False, "The knight is gone behind the white before the picture.");
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Space)); yield return null;
             InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
             Assert.That(director.EndingPlaying, Is.False, "Space skips the ending.");
+            for (int frame = 0; frame < 10; frame++) { yield return null; Assert.That(director.WhiteWorldVisible, Is.False, "Nothing of the knight shows through while the picture goes white."); }
             yield return UntilScene(GameFlow.MenuScene, 10);
             Assert.That(GameFlow.Cleared);
             var menu = Object.FindAnyObjectByType<MainMenuView>();
