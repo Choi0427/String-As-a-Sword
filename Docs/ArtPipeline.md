@@ -24,10 +24,11 @@
 | `kingPrefab` | `kingAnchor` 위치에 `kingScale`로 배치. 비어 있으면 킹 모델을 만들지 않고 `bossImage`를 쓴다 | Trigger `Telegraph` `Attack` `Hurt` `PhaseUp` (`Stunned`는 피날레용으로 예약) |
 | `bossImage` | 임시 보스 그림(2D). 보드 뒤, 배경 위에 그린다. `bossImageHeight`(캔버스 px)로 크기를, `bossImageSink`(x 좌우, y 보드 먼 변 아래로 내리는 양)로 위치를 맞춘다. 피격 시 흔들리고, 스턴되면 어두워지며 기울고, 피날레에서 가라앉는다. `kingPrefab`이 있으면 쓰지 않는다 | — |
 | `noisePrefab` | 잡음 대체. `noiseDormantMaterial`이 있으면 목표 달성 후 머티리얼을 그것으로 바꾼다 | Bool `Dormant` |
-| `noiseSprite` | `noisePrefab`이 비어 있을 때 플레이어가 모으는 잡음을 이 그림(`Art/UI/Noise/Noise.png`)으로 그린다. 칸 1.4배 너비로 칸 위 0.5칸 높이에 떠서 카메라를 보며 위아래로 흔들리고, 칸 대부분을 덮는 어두운 타원 그림자가 진다(내려올수록 작고 진해짐). 페이즈 목표를 채우면 회색으로 흐려진다 | String As a Sword > Art > Set Up Noise Sprite로 연결한다 |
+| `noiseSprite` | `noisePrefab`이 비어 있을 때 플레이어가 모으는 잡음을 이 그림(`Art/UI/Noise/Noise.png`)으로 그린다. 칸 1.4배 너비로 칸 위 0.5칸 높이에 떠서 카메라를 보며 위아래로 흔들리고, 칸 대부분을 덮는 어두운 타원 그림자가 진다(내려올수록 작고 진해짐). 페이즈 목표를 채우면 회색으로 흐려진다. 엔딩의 흰 세계에 남는 잡음도 같은 그림·같은 움직임으로 그린다 | String As a Sword > Art > Set Up Noise Sprite로 연결한다 |
 | `boardPrefab` | 절차적 받침·테두리·덱·64칸을 통째로 대체. 8×8 칸이 1유닛 칸에 맞고 윗면이 y = 0이어야 한다. 싸비2가 끝난 뒤부터 칸 단위 64조각으로 나뉘어 몇 칸이 내려앉고, 곡이 끝나면 가운데 4×4 조각이 튕겨 나간다. 모델의 Read/Write가 켜져 있어야 하며(`ChessBoard.fbx`는 켜 둠), 꺼져 있으면 금만 가고 조각나지 않는다 | — |
 | `boardCrack` | 보드 전체에 덮는 금·가운데 빛·구멍 머티리얼(`Board Crack` 셰이더의 `_Crack`, `_Light`, `_Hole`을 코드가 움직인다). `String As a Sword > Art > Set Up Board Cracks`가 만든다 | — |
-| `endingCutscene` | 엔딩 컷신 영상(`VideoClip`). 잡음에 닿으면 레터박스 사이에서 재생된다. 비어 있으면 검정 화면 2초 | — |
+| `endingImage` | 엔딩 그림(`Art/UI/Ending/Ending_Title.png`). 잡음에 닿으면 약간 확대된 채 떠올라 6초 동안 줌아웃된다 | `Ending_Title.png` |
+| `endingCutscene` | 엔딩 컷신 영상(`VideoClip`). `endingImage`가 비어 있을 때만, 잡음에 닿으면 레터박스 사이에서 재생된다. 비어 있으면 검정 화면 2초 | — |
 | `lightTile` / `darkTile` / `boardEdge` | 칸 윗면(칸마다 UV 0~1) / 받침·옆면 | — |
 | `normalMark` / `strongMark` | 공격 장판 (0.92칸). 그림 없이 `Telegraph Tile` 셰이더가 그린다. 일반은 반투명 흰색에 테두리 안쪽 글로우, 강화(가드 불가)는 더 투명하고 대각선 빗금이 있다. 보드 전체 공격(가드 필수)은 일반 장판으로 보인다 | `String As a Sword > Art > Set Up Telegraph Tiles`가 `TelegraphNormal.mat` / `TelegraphStrong.mat`을 만들어 넣는다. 투명도·글로우·빗금 값은 머티리얼에서 고친다 |
 | `impactMark` | 공격이 떨어진 칸에 0.3초 보이는 표시. 비어 있으면 X 모양 메시를 쓴다 | — |

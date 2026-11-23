@@ -712,6 +712,8 @@ namespace StringAsASword.Presentation
         private Transform BuildEndingNoise()
         {
             if (art.noisePrefab != null) { var made = Instantiate(art.noisePrefab, world.transform, false).transform; made.name = "Ending Noise"; return made; }
+            // The same picture the knight picks up in battle, floating and swaying the same way (the slot after the pickups).
+            if (noiseSprites != null) { var made = BuildNoiseSprite(EndingNoiseSlot); made.name = "Ending Noise"; return made; }
             // The battle's wave silhouette in near-black: the one thing left on the white.
             var ink = Material(new Color(.07f, .07f, .08f));
             var item = new GameObject("Ending Noise").transform; item.SetParent(world.transform, false);
@@ -913,7 +915,12 @@ namespace StringAsASword.Presentation
             // While the centre comes apart the view keeps trembling, more as the light grows.
             float jolt = Mathf.Clamp01(1 - shakeAge / .25f) * 7 + Mathf.Clamp01(BreakStage - 2) * 2;
             ((RectTransform)transform).anchoredPosition = viewHome + new Vector2(Mathf.Sin(shakeAge * 95), Mathf.Cos(shakeAge * 71)) * jolt;
-            if (FreeRoam) { ShowOutline(false); return; }
+            if (FreeRoam)
+            {
+                ShowOutline(false);
+                if (whiteWorld && endingNoise != null && noiseSprites != null) RenderNoiseSprite(EndingNoiseSlot, false);
+                return;
+            }
             RenderTelegraphs(dt);
             Vector3 target = CellPosition(game.Session.Position);
             if (target != moveTarget)
@@ -1515,8 +1522,10 @@ namespace StringAsASword.Presentation
         {
             if (noiseSprites == null)
             {
-                noiseSprites = new SpriteRenderer[pickups.Length]; noiseShadows = new SpriteRenderer[pickups.Length]; noiseFloats = new Transform[pickups.Length];
-                noiseBackings = new SpriteRenderer[pickups.Length];
+                // One slot per pickup, plus the ending's noise in the white world.
+                int slots = pickups.Length + 1;
+                noiseSprites = new SpriteRenderer[slots]; noiseShadows = new SpriteRenderer[slots]; noiseFloats = new Transform[slots];
+                noiseBackings = new SpriteRenderer[slots];
                 spriteMaterial = BoardSpriteMaterial();
             }
             var item = new GameObject($"Noise_{index}").transform; item.SetParent(world.transform, false);
@@ -1564,6 +1573,7 @@ namespace StringAsASword.Presentation
             noiseBackings[index].color = new Color(.03f, .03f, .035f, dormant ? .45f : .85f);
         }
         private SpriteRenderer[] noiseSprites, noiseShadows, noiseBackings;
+        private int EndingNoiseSlot => pickups.Length;
         private Transform[] noiseFloats;
         private Material spriteMaterial;
         private static Sprite shadowSprite;

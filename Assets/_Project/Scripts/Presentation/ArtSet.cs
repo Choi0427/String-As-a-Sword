@@ -45,6 +45,9 @@ namespace StringAsASword.Presentation
         [Tooltip("Cracks drawn over the whole board (Board Crack shader: _Crack, _Light, _Hole). " +
             "String As a Sword > Art > Set Up Board Cracks builds it.")]
         public Material boardCrack;
+        [Tooltip("Ending picture (Art/UI/Ending/Ending_Title.png): after the knight touches the noise it fades in a little enlarged " +
+            "and slowly zooms out to fit the screen. Empty = endingCutscene between letterbox bars instead.")]
+        public Sprite endingImage;
         [Tooltip("Ending cutscene, played between the letterbox bars after the knight touches the noise. Empty = a short black placeholder.")]
         public UnityEngine.Video.VideoClip endingCutscene;
 

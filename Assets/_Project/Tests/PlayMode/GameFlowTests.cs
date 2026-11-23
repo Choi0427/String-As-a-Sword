@@ -251,7 +251,7 @@ namespace StringAsASword.Tests
             Assert.That(director.EpilogueAge, Is.Zero);
             LogAssert.NoUnexpectedReceived();
         }
-        [UnityTest] public IEnumerator EpilogueLetsTheKnightRoamToTheNoiseThenTheCutsceneReturnsToAWhiteMenu()
+        [UnityTest] public IEnumerator EpilogueLetsTheKnightRoamToTheNoiseThenTheEndingPictureReturnsToAWhiteMenu()
         {
             yield return LoadAndWait(GameFlow.MenuScene);
             GameFlow.StartBattle();
@@ -276,11 +276,11 @@ namespace StringAsASword.Tests
             Assert.That(director.InWhiteWorld, "The burst gives way to the white world.");
             yield return new WaitForSecondsRealtime(2.5f);
             Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo(GameFlow.BattleScene));
-            Assert.That(director.CutscenePlaying, Is.False);
+            Assert.That(director.EndingPlaying, Is.False);
             float far = director.NoiseVolume, loudest = far;
             var keys = new List<Key>();
             deadline = Time.realtimeSinceStartup + 20;
-            while (!director.CutscenePlaying && Time.realtimeSinceStartup < deadline)
+            while (!director.EndingPlaying && Time.realtimeSinceStartup < deadline)
             {
                 Vector3 gap = director.NoisePosition - knight.localPosition;
                 keys.Clear();
@@ -291,12 +291,14 @@ namespace StringAsASword.Tests
                 yield return null;
             }
             InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
-            Assert.That(director.CutscenePlaying, "Touching the noise starts the cutscene.");
+            Assert.That(director.EndingPlaying, "Touching the noise brings in the ending picture.");
             if (GameFlow.MusicVolume > 0) Assert.That(loudest, Is.GreaterThan(far * 3), "The noise grows louder as the knight comes near.");
             Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo(GameFlow.BattleScene));
+            yield return new WaitForSecondsRealtime(1);
+            Assert.That(director.EndingScale, Is.LessThan(FinaleDirector.EndingZoom).And.GreaterThan(1), "The picture starts enlarged and is zooming out.");
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Space)); yield return null;
             InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
-            Assert.That(director.CutscenePlaying, Is.False, "Space skips the cutscene.");
+            Assert.That(director.EndingPlaying, Is.False, "Space skips the ending.");
             yield return UntilScene(GameFlow.MenuScene, 10);
             Assert.That(GameFlow.Cleared);
             Assert.That(Object.FindAnyObjectByType<MainMenuView>().White);
