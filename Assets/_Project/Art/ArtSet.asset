@@ -28,6 +28,7 @@ MonoBehaviour:
   noiseMaterial: {fileID: 2100000, guid: 2046f6a485f00fa4cb59bed7da61a787, type: 2}
   boardPrefab: {fileID: 8618644286574060529, guid: 5fc99c1874e6d4449951e424dbe9d844, type: 3}
   boardCrack: {fileID: 2100000, guid: 7f6570593389c064aa8474d4594b4f56, type: 2}
+  endingImage: {fileID: 21300000, guid: 5a6d63d7f92c435da8d78c2c495492e1, type: 3}
   endingCutscene: {fileID: 0}
   lightTile: {fileID: 0}
   darkTile: {fileID: 0}
