@@ -1,0 +1,27 @@
+p5 iter 1: scale 1.9000 hp 84/61/19/27 median 276.0
+p5 iter 2: scale 1.1000 hp 48/35/11/15 median 145.0
+p5 iter 3: scale 1.5000 hp 66/48/15/21 median 199.0
+p5 iter 4: scale 1.7000 hp 75/54/17/24 median 227.0
+p5 iter 5: scale 1.8000 hp 79/58/18/25 median 245.0
+p5 iter 6: scale 1.8500 hp 81/59/18/26 median 269.0
+p5 iter 7: scale 1.8250 hp 80/58/18/26 median 257.0
+p5 iter 8: scale 1.8125 hp 80/58/18/25 median 257.0
+p5 fit -> 79/58/18/25 (180)
+p6 iter 1: scale 1.9000 hp 84/61/19/27 median 276.0
+p6 iter 2: scale 1.1000 hp 48/35/11/15 median 145.0
+p6 iter 3: scale 1.5000 hp 66/48/15/21 median 199.0
+p6 iter 4: scale 1.7000 hp 75/54/17/24 median 227.0
+p6 iter 5: scale 1.8000 hp 79/58/18/25 median 245.0
+p6 iter 6: scale 1.8500 hp 81/59/18/26 median 269.0
+p6 iter 7: scale 1.8250 hp 80/58/18/26 median 257.0
+p6 iter 8: scale 1.8125 hp 80/58/18/25 median 257.0
+p6 fit -> 79/58/18/25 (180)
+p7 iter 1: scale 1.9000 hp 84/61/19/27 median 276.0
+p7 iter 2: scale 1.1000 hp 48/35/11/15 median 145.0
+p7 iter 3: scale 1.5000 hp 66/48/15/21 median 199.0
+p7 iter 4: scale 1.7000 hp 75/54/17/24 median 227.0
+p7 iter 5: scale 1.8000 hp 79/58/18/25 median 245.0
+p7 iter 6: scale 1.8500 hp 81/59/18/26 median 269.0
+p7 iter 7: scale 1.8250 hp 80/58/18/26 median 257.0
+p7 iter 8: scale 1.8125 hp 80/58/18/25 median 257.0
+p7 fit -> 79/58/18/25 (180)
