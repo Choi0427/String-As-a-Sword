@@ -294,8 +294,11 @@ namespace StringAsASword.Tests
             Assert.That(director.EndingPlaying, "Touching the noise brings in the ending picture.");
             if (GameFlow.MusicVolume > 0) Assert.That(loudest, Is.GreaterThan(far * 3), "The noise grows louder as the knight comes near.");
             Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo(GameFlow.BattleScene));
+            Assert.That(director.EndingShown, Is.False, "First the noise fades away and the screen goes white.");
+            yield return new WaitForSecondsRealtime(FinaleDirector.EndingStart - .5f);
+            Assert.That(director.EndingShown, Is.False, "Plain white before the picture.");
             yield return new WaitForSecondsRealtime(1);
-            Assert.That(director.EndingScale, Is.LessThan(FinaleDirector.EndingZoom).And.GreaterThan(1), "The picture starts enlarged and is zooming out.");
+            Assert.That(director.EndingShown, "Then the picture cuts in.");
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Space)); yield return null;
             InputSystem.QueueStateEvent(keyboard, new KeyboardState()); yield return null;
             Assert.That(director.EndingPlaying, Is.False, "Space skips the ending.");

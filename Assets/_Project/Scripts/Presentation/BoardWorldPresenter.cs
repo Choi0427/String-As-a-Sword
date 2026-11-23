@@ -690,7 +690,7 @@ namespace StringAsASword.Presentation
         public void EnterWhiteWorld(Vector3 noiseAt)
         {
             if (whiteWorld) return;
-            whiteWorld = true;
+            whiteWorld = true; EndingNoiseFade = 1;
             foreach (Transform child in world.transform)
             {
                 if (child == player || child.GetComponent<Camera>() != null || child.GetComponent<Light>() != null || !child.gameObject.activeSelf) continue;
@@ -703,7 +703,7 @@ namespace StringAsASword.Presentation
         private void LeaveWhiteWorld()
         {
             if (!whiteWorld) return;
-            whiteWorld = false;
+            whiteWorld = false; EndingNoiseFade = 1;
             foreach (var item in hiddenForWhite) if (item != null) item.SetActive(true);
             hiddenForWhite.Clear();
             endingNoise.gameObject.SetActive(false);
@@ -918,7 +918,11 @@ namespace StringAsASword.Presentation
             if (FreeRoam)
             {
                 ShowOutline(false);
-                if (whiteWorld && endingNoise != null && noiseSprites != null) RenderNoiseSprite(EndingNoiseSlot, false);
+                if (whiteWorld && endingNoise != null)
+                {
+                    if (noiseSprites != null) RenderNoiseSprite(EndingNoiseSlot, false, EndingNoiseFade);
+                    else endingNoise.gameObject.SetActive(EndingNoiseFade > 0);
+                }
                 return;
             }
             RenderTelegraphs(dt);
@@ -1554,9 +1558,11 @@ namespace StringAsASword.Presentation
         private const float NoiseWidth = .85f, NoiseHover = .26f, NoiseBob = .04f;
         public const string NoiseShader = "Universal Render Pipeline/2D/Sprite-Unlit-Default";
         /// <summary>Height above its cell at which a noise pickup is drawn (where collected noise starts its flight).</summary>
+        /// <summary>1 = the ending's noise fully shown, 0 = gone. The finale fades it out when the knight touches it.</summary>
+        public float EndingNoiseFade { get; set; } = 1;
         public float NoiseHeight => noiseSprites != null ? NoiseHover : .12f;
         public bool NoiseUsesSprite => noiseSprites != null;
-        private void RenderNoiseSprite(int index, bool dormant)
+        private void RenderNoiseSprite(int index, bool dormant, float fade = 1)
         {
             float time = Time.unscaledTime, wave = Mathf.Sin(time * 2.2f + index * 1.7f);
             float height = NoiseHover + NoiseBob * wave;
@@ -1568,9 +1574,9 @@ namespace StringAsASword.Presentation
             float lift = Mathf.InverseLerp(NoiseHover - NoiseBob, NoiseHover + NoiseBob, height);
             // Most of the cell, so it reads on dark tiles as well as light ones.
             noiseShadows[index].transform.localScale = new Vector3(.9f, .62f, 1) * Mathf.Lerp(.9f, 1.05f, lift) / ShadowSpriteSize;
-            noiseShadows[index].color = new Color(0, 0, 0, Mathf.Lerp(.85f, .65f, lift) * (dormant ? .55f : 1));
-            noiseSprites[index].color = dormant ? new Color(.42f, .42f, .42f, .7f) : Color.white;
-            noiseBackings[index].color = new Color(.03f, .03f, .035f, dormant ? .45f : .85f);
+            noiseShadows[index].color = new Color(0, 0, 0, Mathf.Lerp(.85f, .65f, lift) * (dormant ? .55f : 1) * fade);
+            noiseSprites[index].color = dormant ? new Color(.42f, .42f, .42f, .7f * fade) : new Color(1, 1, 1, fade);
+            noiseBackings[index].color = new Color(.03f, .03f, .035f, (dormant ? .45f : .85f) * fade);
         }
         private SpriteRenderer[] noiseSprites, noiseShadows, noiseBackings;
         private int EndingNoiseSlot => pickups.Length;

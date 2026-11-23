@@ -15,7 +15,7 @@
 | 격파 | 〃 | `BattleSession` + `FinaleDirector` | 곡 끝 16분 3연노트(304~306번)가 시작될 때 승리 확정. 3연타마다 섬광, 이후 킹이 쓰러지고 곡이 끝날 때까지 체스판 가운데가 갈라진다. 가운데 6×6칸은 크기가 제각각인 각진 파편(얇은 판)으로 잘려 있다. 파편 사이 틈으로 아래의 하얀 빛이 보이고, 균열마다 빛의 막이 가운데부터 차례로 솟아 바깥으로 기울어 뻗으며(곡 끝으로 갈수록 높아진다), 빛나는 금이 가운데에서 보드 끝까지 뻗는다. 가운데 파편은 들리고 기울며, 가장 안쪽 4개는 빠져 작은 구멍이 열린다 |
 | 마무리 | 〃 | 〃 | 남은 14노트는 계속 흐르지만 판정·Miss·페널티 없음 |
 | 하얀 세계 | 〃 | `FinaleDirector` | 곡이 끝나면 가운데가 터진다(2초). 파편이 회전하며 바깥과 카메라 쪽으로 날아오고, 구멍에서 빛줄기가 뻗고, 흰 빛이 구멍 위치에서 원형으로 퍼져 화면을 덮는다. 이후 전부 하얀 화면에 나이트와 잡음 하나만 남는다. WASD·방향키로 격자 없이 이동(대각선도 같은 속도), 시간 제한 없음. 잡음은 나이트가 서 있던 곳에서 가장 먼 모서리에 있고, 가까울수록 지직거리는 소리만 커진다 |
-| 엔딩 그림 | 〃 | `FinaleDirector` | 잡음에 닿으면 `ArtSet.endingImage`(`Art/UI/Ending/Ending_Title.png`, 易聲 타이틀)가 1.12배로 확대된 채 흰 화면에서 1.2초 동안 떠오르며, 6초 동안 부드럽게(ease-out) 줌아웃되어 화면을 채운다. 1초 머문 뒤 흰색으로 덮고 클리어 저장 → 메인화면. Space·Enter·Esc로 건너뛴다. `endingImage`가 비어 있으면 예전처럼 `CutscenePlayer`가 레터박스 사이에서 `endingCutscene`을 재생 |
+| 엔딩 그림 | 〃 | `FinaleDirector` | 잡음에 닿으면 잡음 그림과 소리가 0.8초 동안 사라지고, 흰색이 0.5초 동안 화면 전체(나이트 포함)를 덮은 뒤 2초 동안 흰 화면만 남는다. 이어서 `ArtSet.endingImage`(`Art/UI/Ending/Ending_Title.png`, 易聲 타이틀)가 페이드·줌 없이 한 번에 나타나 5초 머문다. 그다음 흰색으로 덮고 클리어 저장 → 메인화면. Space·Enter·Esc로 건너뛴다. `endingImage`가 비어 있으면 예전처럼 `CutscenePlayer`가 레터박스 사이에서 `endingCutscene`을 재생 |
 | 흰 메인화면 | `MainMenu` | `MainMenuView` | 체스판·나이트는 그대로, 왼쪽(여백·로고·메뉴)만 반전되어 흰색 |
 
 3연노트까지 HP를 다 깎지 못하면 실패(시간 초과)다. 실패하면 Game Over 화면, Esc는 Pause 화면이다(아래 "전투 화면").
@@ -62,5 +62,5 @@
 
 - EditMode `FinaleTests`: 무력화·결정 노트·실패·이전 규칙.
 - PlayMode `PrototypeIntegrationTests.ReadyCardThenPauseAndGameOverScreens`: Esc 일시정지 → 설정 열고 Esc로 닫기 → S로 고르기 → 판으로 복귀(되감기) → 시간 초과 → FALLEN → 첫 수부터.
-- PlayMode `GameFlowTests`: 피그마 위치·호버·흰 버전 / 시작 → 프롤로그 → 튜토리얼(Esc로 각각 건너뜀) → 카운트인 없이 곡 / 자유 이동(대각선 정규화) → 잡음에 닿기 전에는 머무름 → 닿으면 엔딩 그림(확대 상태에서 줌아웃 중) → Space로 건너뛰기 → 흰 메인화면 복귀.
+- PlayMode `GameFlowTests`: 피그마 위치·호버·흰 버전 / 시작 → 프롤로그 → 튜토리얼(Esc로 각각 건너뜀) → 카운트인 없이 곡 / 자유 이동(대각선 정규화) → 잡음에 닿기 전에는 머무름 → 닿으면 흰 화면 → 엔딩 그림 등장 → Space로 건너뛰기 → 흰 메인화면 복귀.
 - 화면 캡처(필요할 때만): `-testFilter StringAsASword.Tests.MenuCaptureTests -menuCaptureDir <폴더>` → 메뉴(어두운/호버/흰/설정), 전투 화면(키 가이드, Pause, Game Over와 호버), 체스판 균열 1~3단계, 가운데가 갈라지는 과정과 터짐, 엔딩 단계별 PNG. 배치 모드에서는 `WaitForEndOfFrame`이 오지 않으므로 캔버스를 카메라로 직접 렌더한다.
