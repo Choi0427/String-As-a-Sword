@@ -56,6 +56,8 @@ namespace StringAsASword.Presentation
         /// <summary>The ending picture (or, without one, the cutscene) is on screen and has not been skipped or finished.</summary>
         public bool EndingPlaying => (endingAge >= 0 && exitAge < 0) || cutscene.Playing;
         /// <summary>The ending picture is on screen (from EndingStart after the touch).</summary>
+        /// <summary>The white world (knight and board view) can be seen: on screen and not fully covered by the white.</summary>
+        public bool WhiteWorldVisible => epilogueView.gameObject.activeSelf && white.color.a < 1 && exitWhite.color.a < 1;
         public bool EndingShown => endingImage != null && endingImage.gameObject.activeSelf;
 
         public void Initialize(PrototypeGame owner, PrototypeView prototypeView)
@@ -223,7 +225,9 @@ namespace StringAsASword.Presentation
                     game.Audio.SetMusicFade(0);
                     noiseSource.Play();
                 }
-                SetAlpha(white, 1 - Mathf.Clamp01((a - BurstSeconds) / RevealSeconds));
+                // Once the knight has touched the noise the ending owns this white (ShowEnding): it must stay up through
+                // the picture and the exit, or the white world (the knight) shows through the transparent lettering.
+                if (endingAge < 0) SetAlpha(white, 1 - Mathf.Clamp01((a - BurstSeconds) / RevealSeconds));
             }
             if (!touched)
             {
@@ -286,6 +290,9 @@ namespace StringAsASword.Presentation
         {
             board.EndingNoiseFade = 1 - Mathf.Clamp01(endingAge / NoiseVanishSeconds);
             SetAlpha(white, Mathf.SmoothStep(0, 1, (endingAge - NoiseVanishSeconds) / WhiteInSeconds));
+            // Fully white: the white world (knight and board view) is no longer needed, so it goes away for good.
+            bool covered = endingAge >= NoiseVanishSeconds + WhiteInSeconds;
+            if (epilogueView.gameObject.activeSelf == covered) epilogueView.gameObject.SetActive(!covered);
             bool shown = endingAge >= EndingStart;
             if (endingImage.gameObject.activeSelf == shown) return;
             endingImage.gameObject.SetActive(shown);
