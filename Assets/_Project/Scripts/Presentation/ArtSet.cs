@@ -10,6 +10,12 @@ namespace StringAsASword.Presentation
         [Header("3D models (1 unit = 1 cell, pivot at bottom centre, front faces -Z)")]
         [Tooltip("Replaces the procedural knight. Animator triggers: Move, Attack, Guard, Hit, Block.")]
         public GameObject knightPrefab;
+        [Tooltip("Soft outer glow around the knight in the board view, like the one painted around the boss picture. " +
+            "RGB = colour; A = strength at the knight's edge, as it would look in Photoshop or Figma (0 = no glow). Can be tuned in Play mode.")]
+        public Color knightGlowColor = new Color(1, 1, 1, .65f);
+        [Tooltip("How far the knight's glow spreads: its blur radius (sigma) as a share of the board view's height. " +
+            "It fades out at about twice this. Can be tuned in Play mode.")]
+        public float knightGlowSize = .008f;
         [Tooltip("The knight's sword in the prologue (the torn string). Pivot at the grip, blade along +Y. Empty = a white line.")]
         public GameObject swordPrefab;
         [Tooltip("Placed only when assigned. Animator triggers: Telegraph, Attack, Hurt, PhaseUp.")]
@@ -92,8 +98,9 @@ namespace StringAsASword.Presentation
         public Vector2 laneNoteSpace = new Vector2(184, 260);
         [Tooltip("Board rows the strings span: x = nearest row, y = farthest row. The top string sits on the far side of y, the bottom string on the near side of x.")]
         public Vector2 laneRows = new Vector2(3, 6);
-        [Tooltip("Board-local x of the board's outer side edge, where the strings end. The stone board's rim is at 4.38.")]
-        public float laneBoardEdge = 4.38f;
+        [Tooltip("Board-local x of the board's outer side edge, where the strings end; the judge strip fills from the squares (4) " +
+            "to here. The stone rim's visible top ends at about 4.19 (measured in game: 0.19 of a square), though the model's bounds reach 4.38.")]
+        public float laneBoardEdge = 4.19f;
         [Tooltip("Note with its stem up and the head at the bottom. Runs of two and three fast notes are joined by one and two beams; " +
             "a hold note gets a double rail to its tail.")]
         public Sprite noteSprite;
@@ -118,22 +125,38 @@ namespace StringAsASword.Presentation
         [Tooltip("Main menu background (Figma 'Main Menu' / MainMenu_Logo_BG). After a clear mainMenuWhite (Figma 'Main Menu_White') " +
             "replaces it; with mainMenuWhite empty the left side of the dark art is inverted to white in code.")]
         public Sprite mainMenuDark, mainMenuWhite;
+        [Tooltip("Inspired by credit shown in the bottom-left corner of the main menu.")]
+        public Sprite mainMenuCredit;
         [Tooltip("Main menu and story text (Figma: Hakgyoansim Godeunjemok B). Empty = the OS Korean font at runtime.")]
         public TMP_FontAsset menuFont;
+        [UnityEngine.Serialization.FormerlySerializedAs("prologueSkipKeyIcon")]
+        [Tooltip("ESC key image on the prologue and tutorial skip hints.")]
+        public Sprite skipKeyIcon;
+        [Tooltip("J key image on the prologue's '줄을 끊는다' prompt. Empty = a plain keycap.")]
+        public Sprite promptJKeyIcon;
         [Tooltip("Key guide under the board in battle (Figma 'Game Play' / 키 가이드, exported at 2x). Empty = no guide.")]
         public Sprite keyGuide;
         [Tooltip("Pause and game-over menu items (Figma: Orbit Regular). Empty = menuFont.")]
         public TMP_FontAsset screenFont;
         [Tooltip("PAUSED / FALLEN titles (Figma: Media Sans Extended Black). Empty = screenFont.")]
         public TMP_FontAsset screenTitleFont;
-        [Tooltip("Settings card art (Figma 'Game Play' / Settings, exported at 2x): the row titles with their captions, the key hints " +
+        [Tooltip("HIT / BLOCK beside the knight (Chakra Petch Regular). Empty = the battle's Latin font.")]
+        public TMP_FontAsset outcomeFont;        [Tooltip("Settings card art (Figma 'Game Play' / Settings, exported at 2x): the row titles with their captions, the key hints " +
             "at the bottom and the left-pointing arrow of the step buttons (flipped for the right one). Empty = plain text.")]
         public Sprite settingsVolume, settingsInputOffset, settingsMusicOffset, settingsDifficulty, settingsKeyHints, settingsArrow;
+        [Tooltip("Captions under the selected difficulty button on the settings card.")]
+        public Sprite settingsDifficultyEasyNote, settingsDifficultyHardNote;
+        [Tooltip("Nine-sliced rounded fill and outlines for menu cards and buttons.")]
+        public Sprite settingsRoundedFill, settingsRoundedPanelBorder, settingsRoundedButtonBorder;
         [Tooltip("Telegraph countdown badges move away from this box around the knight, in board-view pixels.")]
         public Rect knightBadgeBox = new Rect(-26, 5, 52, 76);
         [Tooltip("Player HP under the knight, one sprite per HP: a bar segment or a knight icon, on = left, off = lost. " +
             "The style is picked in the menu settings. An empty slot draws a plain white/grey box.")]
         public Sprite playerHpBarOn, playerHpBarOff, playerHpKnightOn, playerHpKnightOff;
+
+        [Header("Knight sword swing")]
+        [Tooltip("Camera-facing slash frames in playback order, at 24 fps. Leave empty to use the procedural arc.")]
+        public Sprite[] attackSlashFrames;
 
         [Header("VFX prefabs (destroyed after 2 seconds)")]
         public GameObject attackVfx;

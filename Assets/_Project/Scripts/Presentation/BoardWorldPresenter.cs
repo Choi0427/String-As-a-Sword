@@ -13,7 +13,12 @@ namespace StringAsASword.Presentation
     {
         private PrototypeGame game;
         private GameObject world;
-        private Transform player, knightBody, selection, sword, shield;
+        private Transform player, knightBody, selection, sword;
+        private Renderer[] knightRenderers; // the knight's own (not the sword swing or the glow quad)
+        // How white the knight turns at the start of a guard (1 = solid white); it fades back over the guard's .34 s.
+        private const float GuardWhite = .5f;
+        private KnightGlow knightGlow;
+        private SpriteRenderer slashRenderer;
         private Transform[] pickups;
         private Renderer[][] pickupRenderers;
         private Material noiseMaterial;
@@ -29,6 +34,8 @@ namespace StringAsASword.Presentation
         private Material materialTemplate;
         private Material outlineMaterial;
         private Color outlineAccent, outlineColor;
+        private Renderer[] outlineEdges = new Renderer[0];
+        private bool outlineShown = true;
         // Two tile kinds: normal (guard or leave) and strong (a guard does not protect: AttackResponse.DodgeOnly).
         // A full-board GuardOnly attack is a normal attack with nowhere to go, so it shows the normal tile.
         private const int NormalTile = 0, StrongTile = 1;
@@ -91,7 +98,10 @@ namespace StringAsASword.Presentation
         public Camera BoardCamera { get; private set; }
         public RenderTexture Texture { get; private set; }
         public Transform PlayerTransform => player;
-        /// <summary>The mint outline of the knight's cell. The prologue hides it until it hands over to the battle.</summary>
+        /// <summary>
+        /// The outline of the knight's cell. It only shows (orange) while a move-away attack is aimed at that cell; there is no
+        /// plain mint outline. The prologue hides it until it hands over to the battle.
+        /// </summary>
         public Transform CellOutline => selection;
         /// <summary>The root every board object hangs under (cells are its local space).</summary>
         public Transform WorldRoot => world.transform;
@@ -174,7 +184,12 @@ namespace StringAsASword.Presentation
             }
             selection = new GameObject("Player Cell Outline").transform; selection.SetParent(world.transform, false);
             Frame(selection, .91f, .026f, .042f, accent);
+            outlineEdges = selection.GetComponentsInChildren<Renderer>(true);
+            ShowOutline(false);
             BuildPlayer();
+            // Built before the sword swing is added, so only the knight itself glows.
+            knightRenderers = player.GetComponentsInChildren<Renderer>(true);
+            knightGlow = new KnightGlow(BoardCamera, player, knightRenderers, art);
             if (art.kingPrefab != null)
             {
                 king = Instantiate(art.kingPrefab, world.transform, false); king.name = "King";
@@ -182,20 +197,54 @@ namespace StringAsASword.Presentation
             }
             BuildNoise();
             BuildTelegraphs();
-            sword = new GameObject("Sword Swing").transform; sword.SetParent(player, false);
-            var arc = sword.gameObject.AddComponent<LineRenderer>();
-            arc.useWorldSpace = false; arc.sharedMaterial = gold; arc.startWidth = .10f; arc.endWidth = .018f;
-            arc.positionCount = 18; arc.numCapVertices = 3;
-            for (int i = 0; i < 18; i++)
-            {
-                float angle = Mathf.Lerp(-100, 95, i / 17f) * Mathf.Deg2Rad;
-                arc.SetPosition(i, new Vector3(Mathf.Sin(angle) * .72f, .52f + i * .022f, Mathf.Cos(angle) * .68f));
-            }
-            sword.gameObject.SetActive(false);
-            BuildShield();
+            BuildSwordSwing(gold);
             BuildBreak();
             ResetVisuals();
         }
+        private const float SlashFps = 24f;
+
+        private void BuildSwordSwing(Material fallbackMaterial)
+        {
+            sword = new GameObject("Sword Swing").transform;
+            sword.SetParent(player, false);
+            if (art.attackSlashFrames != null && art.attackSlashFrames.Length > 0)
+            {
+                slashRenderer = sword.gameObject.AddComponent<SpriteRenderer>();
+                slashRenderer.sharedMaterial = BoardSpriteMaterial();
+                slashRenderer.sortingOrder = 2;
+                sword.localPosition = Vector3.up * .96f + BoardCamera.transform.localRotation * Vector3.back * .2f;
+                sword.localRotation = BoardCamera.transform.localRotation;
+            }
+            else
+            {
+                var arc = sword.gameObject.AddComponent<LineRenderer>();
+                arc.useWorldSpace = false; arc.sharedMaterial = fallbackMaterial; arc.startWidth = .10f; arc.endWidth = .018f;
+                arc.positionCount = 18; arc.numCapVertices = 3;
+                for (int i = 0; i < 18; i++)
+                {
+                    float angle = Mathf.Lerp(-100, 95, i / 17f) * Mathf.Deg2Rad;
+                    arc.SetPosition(i, new Vector3(Mathf.Sin(angle) * .72f, .52f + i * .022f, Mathf.Cos(angle) * .68f));
+                }
+            }
+            sword.gameObject.SetActive(false);
+        }
+
+        private void RenderSwordSwing()
+        {
+            if (!sword.gameObject.activeSelf) return;
+            if (slashRenderer != null)
+            {
+                int frame = (int)(attackAge * SlashFps);
+                bool visible = frame < art.attackSlashFrames.Length;
+                sword.gameObject.SetActive(visible);
+                if (visible) slashRenderer.sprite = art.attackSlashFrames[frame];
+                return;
+            }
+
+            sword.gameObject.SetActive(attackAge < .23f);
+            sword.localRotation = Quaternion.Euler(0, -80 + attackAge / .23f * 125, 0);
+        }
+
         private void BuildBreak()
         {
             viewHome = ((RectTransform)transform).anchoredPosition;
@@ -717,7 +766,8 @@ namespace StringAsASword.Presentation
             player.localRotation = tilt;
             player.localPosition = basePosition + rim - tilt * rim;
             player.localScale = Vector3.one;
-            sword.gameObject.SetActive(false); shield.gameObject.SetActive(false);
+            sword.gameObject.SetActive(false);
+            if (knightGlow != null) knightGlow.Whiten = 0;
         }
         /// <summary>Jolts the board view for a quarter second, as a break of the board does.</summary>
         public void Jolt() => shakeAge = 0;
@@ -759,6 +809,21 @@ namespace StringAsASword.Presentation
         /// <summary>Back to the battle's clear colour (transparent when background art is assigned).</summary>
         public void ResetVoid() => BoardCamera.backgroundColor = clearColor;
         public static Vector3 CellPosition(GridPosition cell) => new Vector3(cell.X - 3.5f, 0, cell.Y - 3.5f);
+        /// <summary>The top of the knight's head (the highest point of its own renderers) in board-view coordinates.</summary>
+        public Vector2 ProjectKnightHead(Vector2 rectSize)
+        {
+            var bounds = new Bounds(); bool any = false;
+            if (knightRenderers != null)
+                foreach (var part in knightRenderers)
+                {
+                    if (part == null || !part.enabled || !part.gameObject.activeInHierarchy) continue;
+                    if (any) bounds.Encapsulate(part.bounds); else { bounds = part.bounds; any = true; }
+                }
+            // Without renderers: a knight-sized guess above its cell.
+            Vector3 head = any ? world.transform.InverseTransformPoint(new Vector3(bounds.center.x, bounds.max.y, bounds.center.z))
+                : player.localPosition + Vector3.up * 1.2f;
+            return ProjectToBoard(head, rectSize);
+        }
         public Vector2 ProjectToBoard(Vector3 local, Vector2 rectSize)
         {
             Vector3 point = BoardCamera.WorldToViewportPoint(world.transform.TransformPoint(local));
@@ -772,7 +837,8 @@ namespace StringAsASword.Presentation
             moveFrom = moveTarget = CellPosition(game.Session.Position);
             player.localPosition = moveTarget; selection.localPosition = moveTarget;
             player.localScale = Vector3.one; player.localRotation = Quaternion.identity;
-            sword.gameObject.SetActive(false); shield.gameObject.SetActive(false);
+            sword.gameObject.SetActive(false);
+            if (knightGlow != null) knightGlow.Whiten = 0;
             if (cameraFocused) { BoardCamera.transform.localPosition = cameraHome; cameraFocused = false; }
             ReleaseKnight();
             impactAge = 1; impactCells = 0; lastClosedNote = -1;
@@ -782,6 +848,7 @@ namespace StringAsASword.Presentation
                 impacts[i].SetActive(false);
                 foreach (var pool in warnings) pool[i].SetActive(false);
             }
+            ShowOutline(false);
             lastSession = game.SessionId;
             HideSummons();
             FreeRoam = false; SetKingDown(0);
@@ -793,7 +860,13 @@ namespace StringAsASword.Presentation
         public void ShowAction(ActionResult result)
         {
             if (!result.Accepted) return;
-            if (result.Kind == PlayerActionKind.Attack) { attackAge = 0; Cue("Attack", art.attackVfx); }
+            if (result.Kind == PlayerActionKind.Attack)
+            {
+                attackAge = 0;
+                sword.gameObject.SetActive(true);
+                RenderSwordSwing();
+                Cue("Attack", art.attackVfx);
+            }
             if (result.Kind == PlayerActionKind.Guard) { guardAge = 0; guardNote = result.Timing.BeatId; Cue("Guard", art.guardVfx); }
         }
         public void ShowOutcome(string text)
@@ -840,7 +913,7 @@ namespace StringAsASword.Presentation
             // While the centre comes apart the view keeps trembling, more as the light grows.
             float jolt = Mathf.Clamp01(1 - shakeAge / .25f) * 7 + Mathf.Clamp01(BreakStage - 2) * 2;
             ((RectTransform)transform).anchoredPosition = viewHome + new Vector2(Mathf.Sin(shakeAge * 95), Mathf.Cos(shakeAge * 71)) * jolt;
-            if (FreeRoam) return;
+            if (FreeRoam) { ShowOutline(false); return; }
             RenderTelegraphs(dt);
             Vector3 target = CellPosition(game.Session.Position);
             if (target != moveTarget)
@@ -853,15 +926,15 @@ namespace StringAsASword.Presentation
             }
             if (game.Noise.Collected > lastCollected) ArtCue.Spawn(art.pickupVfx, world.transform, target);
             lastCollected = game.Noise.Collected;
-            moveAge += dt; attackAge += dt; guardAge += dt;
+            moveAge += dt; guardAge += dt;
             float t = Mathf.Clamp01(moveAge / moveSeconds);
             player.localPosition = Vector3.Lerp(moveFrom, moveTarget, Mathf.SmoothStep(0, 1, t)) + Vector3.up * (Mathf.Sin(t * Mathf.PI) * moveHeight);
             selection.localPosition = target;
-            sword.gameObject.SetActive(attackAge < .23f);
-            sword.localRotation = Quaternion.Euler(0, -80 + attackAge / .23f * 125, 0);
+            RenderSwordSwing();
+            attackAge += dt;
             bool guarding = guardAge < .34f && game.Battle.LastClosedNote < guardNote;
-            shield.gameObject.SetActive(guarding);
-            shield.localScale = Vector3.one * (.85f + .15f * Mathf.Sin(Mathf.Clamp01(guardAge / .34f) * Mathf.PI));
+            // A guard shows as the knight turning white for a moment (fading back) and bracing; no shield icon pops out.
+            if (knightGlow != null) knightGlow.Whiten = guarding ? GuardWhite * (1 - Mathf.Clamp01(guardAge / .34f)) : 0;
             player.localScale = new Vector3(1, guarding && guardAge < .18f ? .9f : 1, 1);
             for (int i = 0; i < pickups.Length; i++)
             {
@@ -953,15 +1026,25 @@ namespace StringAsASword.Presentation
                     warnings[kind][i].SetActive(warning && kind == tile);
                 impacts[i].SetActive(fired);
             }
-            // The knight's pedestal covers its own cell's mark, so the outline carries that cell's response.
+            // The knight's pedestal covers its own cell's mark, so a move-away attack on that cell shows as an orange outline.
+            // Any other time the cell has no outline (the plain mint one is gone).
             var position = game.Session.Position;
             int cell = position.Y * 8 + position.X;
-            Color outline = cellCounts[cell] > 0 ? TelegraphHud.ResponseColor(cellResponses[cell], outlineAccent) : outlineAccent;
+            bool dodge = cellCounts[cell] > 0 && cellResponses[cell] == AttackResponse.DodgeOnly;
+            Color outline = dodge ? TelegraphHud.ResponseColor(AttackResponse.DodgeOnly, outlineAccent) : outlineAccent;
             if (outlineColor != outline)
             {
                 outlineMaterial.color = outlineColor = outline;
                 if (outlineMaterial.HasProperty("_BaseColor")) outlineMaterial.SetColor("_BaseColor", outline);
             }
+            ShowOutline(dodge);
+        }
+        /// <summary>Turns the cell outline's edges on or off. The prologue's SetActive on <see cref="CellOutline"/> still applies on top.</summary>
+        private void ShowOutline(bool show)
+        {
+            if (outlineShown == show) return;
+            outlineShown = show;
+            foreach (var edge in outlineEdges) if (edge != null) edge.enabled = show;
         }
         private static Mesh TelegraphMesh(bool impact) => TelegraphMesh(impact, true);
         // The fallback marks: a dark underlay and a frame, plus an X (impact) or diagonal hatching (strong) when striped.
@@ -1416,18 +1499,25 @@ namespace StringAsASword.Presentation
                 item.gameObject.SetActive(false);
             }
         }
-        // The delivered noise picture: a camera-facing sprite that hovers well above its cell, with a soft shadow
-        // on the cell that tightens and darkens as the sprite dips, so it reads as floating rather than lying on the board.
+        private Material BoardSpriteMaterial()
+        {
+            if (art.noiseMaterial != null) return art.noiseMaterial;
+            if (spriteMaterial == null)
+            {
+                spriteMaterial = new Material(Shader.Find(NoiseShader)) { name = "Board Sprite" };
+                resources.Add(spriteMaterial);
+            }
+            return spriteMaterial;
+        }
+
+        // The picture hovers above the cell while its shadow stays on the board.
         private Transform BuildNoiseSprite(int index)
         {
             if (noiseSprites == null)
             {
                 noiseSprites = new SpriteRenderer[pickups.Length]; noiseShadows = new SpriteRenderer[pickups.Length]; noiseFloats = new Transform[pickups.Length];
                 noiseBackings = new SpriteRenderer[pickups.Length];
-                // URP's own sprite shader: the legacy Sprites/Default ignores the colours in this pipeline and draws the
-                // picture, its black glow and the shadow all white, which hides the white line on light tiles.
-                spriteMaterial = art.noiseMaterial;
-                if (spriteMaterial == null) { spriteMaterial = new Material(Shader.Find(NoiseShader)) { name = "Noise Sprite" }; resources.Add(spriteMaterial); }
+                spriteMaterial = BoardSpriteMaterial();
             }
             var item = new GameObject($"Noise_{index}").transform; item.SetParent(world.transform, false);
             var shadow = new GameObject("Noise Shadow", typeof(SpriteRenderer)).GetComponent<SpriteRenderer>();
@@ -1438,7 +1528,7 @@ namespace StringAsASword.Presentation
             var picture = new GameObject("Noise Sprite", typeof(SpriteRenderer)).GetComponent<SpriteRenderer>();
             picture.transform.SetParent(hover, false);
             picture.sprite = art.noiseSprite; picture.sharedMaterial = spriteMaterial; picture.sortingOrder = 1;
-            // About a cell wide, whatever the picture's pixels-per-unit.
+            // Within one cell, dark backing included (1.1x the picture), whatever the picture's pixels-per-unit.
             float scale = NoiseWidth / Mathf.Max(.0001f, art.noiseSprite.bounds.size.x);
             picture.transform.localScale = Vector3.one * scale;
             // The picture is white and the tiles are light: a dark, slightly larger copy right behind it gives the line
@@ -1450,7 +1540,9 @@ namespace StringAsASword.Presentation
             noiseSprites[index] = picture; noiseShadows[index] = shadow; noiseFloats[index] = hover; noiseBackings[index] = backing;
             return item;
         }
-        private const float NoiseWidth = 1.4f, NoiseHover = .5f, NoiseBob = .08f;
+        // The picture is about .41 cells tall (pivot at its centre): at .26 it floats just clear of its own cell, low
+        // enough that it reads as on that cell rather than on the one behind it. The bob stays clear of the tile too.
+        private const float NoiseWidth = .85f, NoiseHover = .26f, NoiseBob = .04f;
         public const string NoiseShader = "Universal Render Pipeline/2D/Sprite-Unlit-Default";
         /// <summary>Height above its cell at which a noise pickup is drawn (where collected noise starts its flight).</summary>
         public float NoiseHeight => noiseSprites != null ? NoiseHover : .12f;
@@ -1493,20 +1585,6 @@ namespace StringAsASword.Presentation
             shadowSprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(.5f, .5f), size);
             shadowSprite.hideFlags = HideFlags.HideAndDontSave;
             return shadowSprite;
-        }
-        private void BuildShield()
-        {
-            // The domain resolves note-based guarding; this shield only presents the accepted guard action.
-            shield = new GameObject("Guard Pose").transform; shield.SetParent(player, false);
-            shield.localPosition = new Vector3(.13f, .22f, -.32f);
-            shield.localRotation = Quaternion.Euler(Elevation, 0, 0);
-            var outline = shield.gameObject.AddComponent<LineRenderer>();
-            outline.useWorldSpace = false; outline.loop = true; outline.positionCount = 5;
-            outline.sharedMaterial = Material(new Color(.45f, .85f, 1f));
-            outline.startWidth = outline.endWidth = .045f; outline.numCornerVertices = 3;
-            outline.SetPositions(new[] { new Vector3(-.34f,.64f,0),new Vector3(.34f,.64f,0),new Vector3(.29f,.22f,0),new Vector3(0,0,0),new Vector3(-.29f,.22f,0) });
-            Box("Shield Center", shield, new Vector3(0,.33f,0),new Vector3(.055f,.30f,.035f),outline.sharedMaterial);
-            shield.gameObject.SetActive(false);
         }
         private void Frame(Transform parent, float width, float height, float thickness, Material material)
         {
@@ -1564,6 +1642,7 @@ namespace StringAsASword.Presentation
         }
         private void OnDestroy()
         {
+            knightGlow?.Dispose();
             if (BoardCamera != null) BoardCamera.targetTexture = null;
             if (Texture != null) Texture.Release();
             if (world != null) Destroy(world);

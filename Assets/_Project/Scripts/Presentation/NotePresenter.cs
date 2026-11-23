@@ -14,18 +14,36 @@ namespace StringAsASword.Presentation
     /// </summary>
     public sealed class NotePresenter
     {
+        private static readonly Color NoteColor = UiKit.Hex(0xD9D9D9);
         private const int Slots = 9;
         private const float HeadRise = 7; // the string runs through the note head, not the stem
         private const float StringThickness = 3, PegWidth = 6, PegHeight = 22, SnapGap = 12;
         private const double FadeSeconds = .30, FlashSeconds = .15, VibrationHz = 14;
         // Note sprite: stem up, hollow head at the bottom. HeadPivot is the head's centre and HeadShare its tip-to-tip
         // height, both as a share of the sprite's height (measured on Note.png: head rows 343-493 of 495).
-        private const float DefaultSpriteHeight = 100, HeadPivot = .152f, HeadShare = .30f, SpriteTone = .85f;
-        // Resonance: a soft dot behind each head. Charged notes (a preview of the window) glow faintly, resonating notes
-        // clearly, flaring on ignition; the last two blink like the gauge. GlowStrength scales all three (0.6x on request).
-        private const float GlowScale = 2.4f, GlowStrength = .6f, ChargedGlow = .22f * GlowStrength, ResonantGlow = .55f * GlowStrength,
-            IgniteGlow = .35f * GlowStrength;
-        private const int WarningNotes = 2;
+        private const float DefaultSpriteHeight = 100, HeadPivot = .152f, HeadShare = .30f;
+        // While resonance is on (charged, or running after an attack) the window's notes glow, head and stem alike,
+        // at one steady strength: an attack adds no flare of its own.
+        private const float GlowScale = 1.5f, GlowStrength = .6f, ResonantGlow = .2f * GlowStrength;
+        // Notes in the window turn pure white (#FFFFFF): the sprite itself is #D9D9D9, so a tint cannot lift it and a
+        // material paints it white instead (the boss portrait's flash shader at full strength).
+        private static readonly Color ResonantNoteColor = Color.white;
+        // Outside the window notes are #6D6D6D. The sprite is #D9D9D9, so it is tinted by 6D / D9.
+        private static readonly Color RestNoteColor = UiKit.Hex(0x6D6D6D);
+        private static readonly Color RestSpriteTint = new Color(RestNoteColor.r / NoteColor.r, RestNoteColor.g / NoteColor.g, RestNoteColor.b / NoteColor.b);
+        private static Material whiteNoteMaterial;
+        private static Material WhiteNoteMaterial
+        {
+            get
+            {
+                if (whiteNoteMaterial != null) return whiteNoteMaterial;
+                var shader = Resources.Load<Shader>("BossPortraitFlash");
+                if (shader == null) return null;
+                whiteNoteMaterial = new Material(shader) { name = "Resonant Note", hideFlags = HideFlags.HideAndDontSave };
+                whiteNoteMaterial.SetFloat("_FlashAmount", 1);
+                return whiteNoteMaterial;
+            }
+        }
         private const float BeamThickness = 8, BeamGap = 5, BeamStub = 16, RailOffset = 5, RailPegHeight = 30;
         /// <summary>Notes closer together than this share of a beat are beamed into one run.</summary>
         private const double RunGapBeats = .75;
@@ -35,9 +53,12 @@ namespace StringAsASword.Presentation
         private readonly Image[,,] beams = new Image[2, Slots, 2];
         private readonly Image[] sparks = new Image[2];
         private readonly Image[,] glows = new Image[2, Slots];
+        private static Sprite artResonanceGlow, prototypeResonanceGlow;
+        private readonly Sprite resonanceGlow;
+        private readonly Vector2 resonanceGlowSize;
         private readonly bool art;
         private readonly float headHalf, stemHalf, spriteHeight, glowSize;
-        /// <summary>Note heads glowing for resonance on one side this frame.</summary>
+        /// <summary>Notes glowing for resonance on one side this frame.</summary>
         public int GlowingNotes { get; private set; }
         // Stems lean toward the board by this angle (radians), parallel to the tilted judge lines.
         private readonly float tilt;
@@ -62,7 +83,13 @@ namespace StringAsASword.Presentation
             spriteHeight = headHeight > 0 ? headHeight / HeadShare : DefaultSpriteHeight;
             var noteSize = art ? new Vector2(spriteHeight * sprite.rect.width / sprite.rect.height, spriteHeight) : new Vector2(23, 31);
             headHalf = noteSize.x * .5f; stemHalf = noteSize.x * .06f;
-            glowSize = GlowScale * (art ? spriteHeight * HeadShare : 23);
+            glowSize = GlowScale * (art ? spriteHeight * HeadShare : noteSize.x);
+            float stemLength = art ? noteSize.y * (1 - HeadPivot) : noteSize.y * .45f;
+            float extension = stemLength / glowSize;
+            resonanceGlow = art
+                ? StemGlowSprite(ref artResonanceGlow, extension)
+                : StemGlowSprite(ref prototypeResonanceGlow, extension);
+            resonanceGlowSize = new Vector2(glowSize, glowSize + stemLength);
             // A bar line per beat scrolls with the notes across all the lane's strings; drawn first, under everything.
             if (barHeight > 0)
                 for (int side = 0; side < 2; side++)
@@ -79,12 +106,15 @@ namespace StringAsASword.Presentation
                     rails[side, i] = MakeImage(root, $"HoldRail_{side}_{i}", holdBody);
                     for (int n = 0; n < 2; n++) beams[side, i, n] = MakeImage(root, $"Beam_{side}_{i}_{n}", null);
                 }
-            // Glows over the strings, under the heads.
+            // Glows over the strings, under the note sprites.
             for (int side = 0; side < 2; side++)
                 for (int i = 0; i < Slots; i++)
                 {
-                    glows[side, i] = MakeImage(root, $"NoteGlow_{side}_{i}", PrototypeView.SoftDotSprite());
-                    glows[side, i].rectTransform.sizeDelta = Vector2.one * glowSize;
+                    var glow = MakeImage(root, $"NoteGlow_{side}_{i}", resonanceGlow);
+                    glow.rectTransform.pivot = resonanceGlow.pivot / resonanceGlow.rect.size;
+                    glow.rectTransform.sizeDelta = resonanceGlowSize;
+                    if (art) glow.rectTransform.localRotation = Lean(side);
+                    glows[side, i] = glow;
                 }
             for (int side = 0; side < 2; side++)
                 for (int i = 0; i < Slots; i++)
@@ -94,11 +124,12 @@ namespace StringAsASword.Presentation
                     {
                         rect.pivot = new Vector2(.5f, HeadPivot); rect.localRotation = Lean(side);
                         var image = rect.gameObject.AddComponent<Image>(); image.sprite = sprite;
+                        image.color = Color.white; // Note.png already supplies #D9D9D9.
                         image.preserveAspect = true; image.raycastTarget = false; notes[side, i] = image;
                         continue;
                     }
                     var glyph = rect.gameObject.AddComponent<PrototypeGlyph>();
-                    glyph.SetShape(PrototypeGlyph.Shape.Note); notes[side, i] = glyph;
+                    glyph.SetShape(PrototypeGlyph.Shape.Note); glyph.color = NoteColor; notes[side, i] = glyph;
                 }
             for (int side = 0; side < 2; side++)
             {
@@ -113,8 +144,38 @@ namespace StringAsASword.Presentation
             image.sprite = sprite; image.raycastTarget = false; image.gameObject.SetActive(false);
             return image;
         }
-        /// <param name="ignite">The ignition's flare, 1 at ignition falling to 0 (ResonanceHud.Ignite01).</param>
-        public void Render(PrototypeGame game, float ignite = 0)
+        // Extend the soft dot along the stem, using the same distance falloff all the way to the tip.
+        private static Sprite StemGlowSprite(ref Sprite cached, float extension)
+        {
+            if (cached != null) return cached;
+            const int width = 32;
+            int height = Mathf.CeilToInt(width * (1 + extension));
+            var texture = new Texture2D(width, height, TextureFormat.RGBA32, false)
+            {
+                wrapMode = TextureWrapMode.Clamp,
+                hideFlags = HideFlags.HideAndDontSave
+            };
+            var pixels = new Color32[width * height];
+            for (int y = 0; y < height; y++)
+            {
+                float along = (y + .5f) / height * (1 + extension) - .5f;
+                float pastEnd = along - Mathf.Clamp(along, 0, extension);
+                for (int x = 0; x < width; x++)
+                {
+                    float across = (x + .5f) / width - .5f;
+                    float fade = Mathf.Clamp01(1 - 2 * Mathf.Sqrt(across * across + pastEnd * pastEnd));
+                    pixels[y * width + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(255 * fade * fade));
+                }
+            }
+            texture.SetPixels32(pixels);
+            texture.Apply(false, true);
+            var pivot = new Vector2(.5f, .5f / (1 + extension)); // Anchor at the note head.
+            cached = Sprite.Create(texture, new Rect(0, 0, width, height), pivot, 100, 0, SpriteMeshType.FullRect);
+            cached.hideFlags = HideFlags.HideAndDontSave;
+            return cached;
+        }
+
+        public void Render(PrototypeGame game)
         {
             bool active = game.State == PrototypeState.Playing || game.State == PrototypeState.CountIn || game.State == PrototypeState.Finale ||
                 game.State == PrototypeState.Tutorial;
@@ -138,8 +199,6 @@ namespace StringAsASword.Presentation
             var resonance = game.Battle.Resonance;
             int nextNote = game.Battle.LastClosedNote + 1, resonating = resonance.Remaining(nextNote);
             int windowEnd = resonating > 0 ? resonance.EndNote : resonance.Charged ? nextNote + resonance.Length - 1 : -1;
-            float glowAlpha = resonating > 0 ? ResonantGlow + IgniteGlow * Mathf.Clamp01(ignite) : ChargedGlow;
-            if (resonating > 0 && resonating <= WarningNotes && Mathf.Repeat(Time.unscaledTime * 5, 1) < .5f) glowAlpha *= .45f;
             GlowingNotes = 0;
 
             // One slot before the nearest note keeps a just-passed note (or a held string) on screen.
@@ -153,12 +212,10 @@ namespace StringAsASword.Presentation
                 bool holding = isHold && held.HasValue && held.Value.Beat == beat;
                 bool consumed = beat == session.Gate.LastConsumedBeat;
                 bool headVisible = inChart && remaining <= approach &&
-                    (holding || !consumed && remaining >= -.14);
+                    (holding || !consumed && remaining >= 0); // gone the moment it reaches the judge line, hit or not
                 float headX = holding ? targetX : X(remaining, approach);
                 bool glowing = headVisible && beat >= nextNote && beat <= windowEnd;
                 if (glowing) GlowingNotes++;
-                // A glowing note is white whatever its beat.
-                Color headColor = beat % 4 == 0 || glowing ? PrototypeView.InkWhite : new Color(.60f, .65f, .69f);
                 for (int side = 0; side < 2; side++)
                 {
                     var glyph = notes[side, i];
@@ -168,30 +225,37 @@ namespace StringAsASword.Presentation
                     if (!headVisible) continue;
                     var at = new Vector2(Side(side, headX), noteY);
                     glyph.rectTransform.anchoredPosition = at;
-                    glyph.color = holding ? PrototypeView.Accent : headColor;
+                    if (art)
+                    {
+                        var white = glowing ? WhiteNoteMaterial : null;
+                        if (glyph.material != (white != null ? white : glyph.defaultMaterial)) glyph.material = white;
+                        glyph.color = glowing ? Color.white : RestSpriteTint;
+                    }
+                    else glyph.color = glowing ? ResonantNoteColor : RestNoteColor;
                     if (!glowing) continue;
                     glow.rectTransform.anchoredPosition = at;
-                    glow.color = new Color(1, 1, 1, glowAlpha);
+                    glow.color = NoteWithAlpha(ResonantGlow);
                 }
                 if (art)
                 {
                     // The next note is only ever a tap here: hold notes are never beamed.
                     double nextRemaining = game.Timeline.TimeOf(beat + 1) - time;
                     bool nextVisible = active && beat + 1 < count && nextRemaining <= approach &&
-                        beat + 1 != session.Gate.LastConsumedBeat && nextRemaining >= -.14;
-                    RenderBeams(i, inChart ? beamLinks[beat] : 0, headVisible, nextVisible, headX, X(nextRemaining, approach), headColor);
+                        beat + 1 != session.Gate.LastConsumedBeat && nextRemaining >= 0;
+                    RenderBeams(i, inChart ? beamLinks[beat] : 0, headVisible, nextVisible, headX, X(nextRemaining, approach),
+                        inChart && beat >= nextNote && beat <= windowEnd);
                 }
-                RenderBarLine(i, inChart && remaining <= approach && remaining >= 0, beat, X(remaining, approach));
+                RenderBarLine(i, inChart && remaining <= approach && remaining >= 0, X(remaining, approach));
                 RenderString(i, isHold && remaining <= approach, beat, session.HoldEnd(beat) - time, approach,
-                    holding, consumed, beat < session.ClosedNotes, sinceResolve, headX, time);
+                    holding, consumed, beat < session.ClosedNotes, sinceResolve, headX, time, inChart && beat >= nextNote && beat <= windowEnd);
             }
             RenderSparks(held.HasValue && active, resolvedBeat >= 0 && resolvedHit && sinceResolve < FlashSeconds, time, sinceResolve);
         }
-        // Every beat's bar line arrives with its note and ends at the judge line; the first beat of each bar is brighter.
-        private void RenderBarLine(int slot, bool visible, int beat, float x)
+        // Every beat's bar line arrives with its note and ends at the judge line, all at the same brightness.
+        private void RenderBarLine(int slot, bool visible, float x)
         {
             if (barHeight <= 0) return;
-            Color color = new Color(PrototypeView.InkWhite.r, PrototypeView.InkWhite.g, PrototypeView.InkWhite.b, beat % 4 == 0 ? .45f : .18f);
+            Color color = NoteWithAlpha(.18f);
             for (int side = 0; side < 2; side++)
             {
                 var line = barLines[side, slot];
@@ -226,11 +290,10 @@ namespace StringAsASword.Presentation
         }
         // Beams run along the stem tops from this note to the next one in its run. Once the earlier note is gone,
         // a short stub stays on the later note so it still reads as part of a run.
-        private void RenderBeams(int slot, int links, bool fromVisible, bool toVisible, float fromX, float toX, Color headColor)
+        private void RenderBeams(int slot, int links, bool fromVisible, bool toVisible, float fromX, float toX, bool resonant)
         {
             bool visible = links > 0 && (fromVisible || toVisible);
             float end = Mathf.Min(toX, spawnX), start = fromVisible ? fromX : end - BeamStub;
-            var color = new Color(headColor.r * SpriteTone, headColor.g * SpriteTone, headColor.b * SpriteTone, headColor.a);
             float stem = spriteHeight * (1 - HeadPivot), sin = Mathf.Sin(tilt), cos = Mathf.Cos(tilt);
             for (int side = 0; side < 2; side++)
                 for (int n = 0; n < 2; n++)
@@ -238,7 +301,7 @@ namespace StringAsASword.Presentation
                     var beam = beams[side, slot, n];
                     beam.gameObject.SetActive(visible && n < links);
                     if (!visible || n >= links) continue;
-                    beam.color = color;
+                    beam.color = resonant ? ResonantNoteColor : RestNoteColor;
                     beam.rectTransform.sizeDelta = new Vector2(end - start + 2 * stemHalf, BeamThickness);
                     // Each beam sits on the leaning stems: further up the stem is also further toward the board.
                     float along = stem - BeamThickness * .5f - n * (BeamThickness + BeamGap);
@@ -246,28 +309,32 @@ namespace StringAsASword.Presentation
                 }
         }
         private void RenderString(int slot, bool candidate, int beat, double endRemaining, double approach,
-            bool holding, bool consumed, bool headClosed, double sinceResolve, float headX, double time)
+            bool holding, bool consumed, bool headClosed, double sinceResolve, float headX, double time, bool resonant)
         {
+            // Same colours as the note heads: white in the resonance window, #6D6D6D outside it.
+            Color tone = resonant ? ResonantNoteColor : RestNoteColor;
             bool resolvedHere = beat == resolvedBeat;
             bool fading = resolvedHere && !resolvedHit && sinceResolve < FadeSeconds;
             // A cleanly released string disappears; a broken one fades out where it snapped.
-            bool visible = candidate && (holding || fading || !resolvedHere && endRemaining >= -.14);
+            bool visible = candidate && (holding || fading || !resolvedHere && endRemaining >= 0);
             Color color; float thickness = StringThickness, startX = headX;
             if (holding)
             {
-                color = PrototypeView.Accent;
+                color = tone;
                 thickness += 2f * (float)(.5 + .5 * Math.Sin(time * 2 * Math.PI * VibrationHz));
             }
             else if (fading || consumed || headClosed)
             {
                 // Released early, held too long, or the head was missed: a dead, snapped string.
                 float alpha = fading ? .45f * (float)(1 - sinceResolve / FadeSeconds) : .45f;
-                color = new Color(PrototypeView.Muted.r, PrototypeView.Muted.g, PrototypeView.Muted.b, alpha);
+                color = new Color(tone.r, tone.g, tone.b, alpha);
                 startX = Mathf.Max(headX, targetX) + SnapGap;
             }
-            else color = new Color(PrototypeView.InkWhite.r, PrototypeView.InkWhite.g, PrototypeView.InkWhite.b, .75f);
+            else color = new Color(tone.r, tone.g, tone.b, .75f);
             // The rails leave from the head's outer tip, not from inside the hollow head.
             if (art && startX == headX) startX += headHalf;
+            // Nothing of a note crosses the judge line onto the board: a string whose head has passed it starts there.
+            startX = Mathf.Max(startX, targetX);
             float endX = Mathf.Min(X(endRemaining, approach), spawnX);
             if (endX <= startX) visible = false;
             for (int side = 0; side < 2; side++)
@@ -301,16 +368,17 @@ namespace StringAsASword.Presentation
                 {
                     float pulse = (float)(.5 + .5 * Math.Sin(time * 2 * Math.PI * VibrationHz));
                     spark.rectTransform.sizeDelta = Vector2.one * (8 + 3 * pulse);
-                    spark.color = new Color(PrototypeView.Accent.r, PrototypeView.Accent.g, PrototypeView.Accent.b, .6f + .4f * pulse);
+                    spark.color = NoteWithAlpha(.6f + .4f * pulse);
                 }
                 else if (flashing)
                 {
                     float t = (float)(sinceResolve / FlashSeconds);
                     spark.rectTransform.sizeDelta = Vector2.one * Mathf.Lerp(12, 26, t);
-                    spark.color = new Color(PrototypeView.InkWhite.r, PrototypeView.InkWhite.g, PrototypeView.InkWhite.b, 1 - t);
+                    spark.color = NoteWithAlpha(1 - t);
                 }
             }
         }
+        private static Color NoteWithAlpha(float alpha) => new Color(NoteColor.r, NoteColor.g, NoteColor.b, alpha);
         private float X(double remaining, double approach) => Mathf.LerpUnclamped(targetX, spawnX, (float)(remaining / approach));
         private static float Side(int side, float distance) => side == 0 ? -distance : distance;
         private Quaternion Lean(int side) => Quaternion.Euler(0, 0, (side == 0 ? -tilt : tilt) * Mathf.Rad2Deg);

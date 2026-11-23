@@ -92,7 +92,7 @@ namespace StringAsASword.Presentation
             built = true;
             var art = view.Art;
             var text = UiFonts.Korean(art.screenFont != null ? art.screenFont : art.menuFont, view.LatinFont);
-            letterbox = new Letterbox(view.CanvasRect, "Tutorial Letterbox", text, UiFonts.Korean(art.menuFont, view.LatinFont), "ESC  튜토리얼 건너뛰기");
+            letterbox = new Letterbox(view.CanvasRect, "Tutorial Letterbox", text, art.skipKeyIcon);
             // The keys are cut from the HUD's key guide (WASD as its ㅗ cluster), so the cards teach the guide the song shows.
             card = new KeyPromptCard(view.BoardViewRect, "Tutorial Card", art, view.LatinFont, 72, 34, 30, art.keyGuide);
             for (int i = 0; i < 8; i++)

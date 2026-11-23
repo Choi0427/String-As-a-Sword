@@ -79,6 +79,9 @@ sysinfo.txt
 mono_crash.*
 
 # Builds
+# Player builds made into a folder of their own (the Windows player for the video). Build into /Builds/ or here.
+/FOR_VIDEO/
+*_BurstDebugInformation_DoNotShip/
 *.apk
 *.aab
 *.unitypackage
