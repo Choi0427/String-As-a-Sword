@@ -15,7 +15,10 @@ namespace StringAsASword.Presentation
     /// </summary>
     public sealed class FinaleDirector : MonoBehaviour
     {
-        public const float BurstSeconds = 2, RevealSeconds = .8f, ExitSeconds = .6f, TouchDistance = .6f;
+        public const float BurstSeconds = 2, RevealSeconds = .8f, TouchDistance = .6f;
+        // The end: the picture (and its boom) eases into white, the white holds a moment, then the menu opens under the
+        // same white and clears into view (MainMenuView.ArrivalFadeSeconds), so there is no cut anywhere.
+        public const float ExitSeconds = 1.4f, ExitHoldSeconds = .3f;
         // The part of the burst light's radius that is solid white.
         // The solid part of the burst light, as a share of its picture's half size. The rest is halo and rays.
         private const float BloomCore = .2f;
@@ -263,17 +266,17 @@ namespace StringAsASword.Presentation
             }
             if (exitAge >= 0)
             {
-                // Cutscene over or skipped: white again, then the white menu.
+                // Ending over or skipped: white again, then the white menu.
                 exitAge += dt;
-                SetAlpha(exitWhite, Mathf.Clamp01(exitAge / ExitSeconds));
+                SetAlpha(exitWhite, Mathf.SmoothStep(0, 1, exitAge / ExitSeconds));
                 // A skipped ending takes the boom down with the white instead of cutting it at the scene change.
                 boomSource.volume = Mathf.MoveTowards(boomSource.volume, 0, dt * view.Art.endingSoundVolume * GameFlow.MusicVolume / ExitSeconds);
-                if (!returned && exitAge >= ExitSeconds)
+                if (!returned && exitAge >= ExitSeconds + ExitHoldSeconds)
                 {
                     returned = true;
                     GameFlow.MarkCleared();
                     noiseSource.Stop(); game.Audio.Stop();
-                    if (GameFlow.HasMenu) GameFlow.ReturnToMenu();
+                    if (GameFlow.HasMenu) GameFlow.ReturnToMenuFromEnding();
                 }
             }
         }
