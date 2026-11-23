@@ -57,11 +57,12 @@ namespace StringAsASword.Presentation
         public int SelectedRow { get; private set; } = -1;
         public bool DevStripVisible => devStrip.activeSelf;
 
-        public static SettingsPanel Create(RectTransform parent, ArtSet art)
+        /// <param name="dim">Darken whatever is behind the card. Off over the pause screen, which is already blurred.</param>
+        public static SettingsPanel Create(RectTransform parent, ArtSet art, bool dim = true)
         {
             var shade = Stretch(Rect(parent, "Settings"));
             var panel = shade.gameObject.AddComponent<SettingsPanel>();
-            panel.Build(shade, art);
+            panel.Build(shade, art, dim);
             shade.gameObject.SetActive(false);
             return panel;
         }
@@ -156,11 +157,12 @@ namespace StringAsASword.Presentation
         }
 
         // --- Building ------------------------------------------------------------------------------------------
-        private void Build(RectTransform shade, ArtSet art)
+        private void Build(RectTransform shade, ArtSet art, bool dim)
         {
             font = UiFonts.Korean(art.screenFont != null ? art.screenFont : art.menuFont);
             titleFont = art.screenTitleFont != null ? art.screenTitleFont : font;
-            Image(shade, new Color(0, 0, 0, .72f)).raycastTarget = true;
+            // Undimmed, the shade is clear but still catches clicks, so nothing behind the card can be pressed.
+            Image(shade, new Color(0, 0, 0, dim ? .72f : 0)).raycastTarget = true;
             var frame = Rect(shade, "Frame", Vector2.zero, new Vector2(1920, 1080));
             card = TopLeft(Rect(frame, "Card"), CardLeft, CardTop, CardWidth, CardHeight);
             DrawMenuCard(card, Ink, art);

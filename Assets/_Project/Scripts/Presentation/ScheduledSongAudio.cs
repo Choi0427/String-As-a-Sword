@@ -7,6 +7,7 @@ namespace StringAsASword.Presentation
     public sealed class ScheduledSongAudio : MonoBehaviour
     {
         private readonly AudioSource[] clicks = new AudioSource[8];
+        private readonly AudioSource[] countdownClicks = new AudioSource[8];
         private AudioSource musicSource;
         private AudioClip clickClip;
         private SongClock clock;
@@ -29,6 +30,7 @@ namespace StringAsASword.Presentation
             clickClip.SetData(samples, 0);
             musicSource = AddSource();
             for (int i = 0; i < clicks.Length; i++) { clicks[i] = AddSource(); clicks[i].clip = clickClip; }
+            for (int i = 0; i < countdownClicks.Length; i++) { countdownClicks[i] = AddSource(); countdownClicks[i].clip = clickClip; }
         }
         private AudioSource AddSource()
         {
@@ -62,6 +64,24 @@ namespace StringAsASword.Presentation
             }
             Schedule();
         }
+        /// <summary>
+        /// The resume count: one click on each of <paramref name="beats"/> beats from song time <paramref name="from"/>,
+        /// with the song playing or not, so every number of the 4-3-2-1 sounds as it shows. Call after <see cref="Begin"/>.
+        /// </summary>
+        public void ScheduleCountdown(double from, int beats, double secondsPerBeat)
+        {
+            if (clock == null || !clock.Running) return;
+            double now = AudioSettings.dspTime;
+            for (int k = 0; k < beats; k++)
+            {
+                double target = clock.Origin + from + k * secondsPerBeat;
+                if (target < now + .005) continue;
+                // Sources of its own, so the metronome (songs without music) never takes over a scheduled count click.
+                var source = countdownClicks[k % countdownClicks.Length];
+                source.volume = 1f;
+                source.PlayScheduled(target);
+            }
+        }
         /// <summary>Ending fade: 1 = the song's configured volume, 0 = silent.</summary>
         public void SetMusicFade(float scale)
         {
@@ -71,6 +91,7 @@ namespace StringAsASword.Presentation
         {
             Muted = !Muted;
             foreach (var source in clicks) source.mute = Muted;
+            foreach (var source in countdownClicks) source.mute = Muted;
         }
         public void Schedule()
         {
@@ -92,6 +113,7 @@ namespace StringAsASword.Presentation
         {
             if (musicSource != null) musicSource.Stop();
             foreach (var source in clicks) if (source != null) source.Stop();
+            foreach (var source in countdownClicks) if (source != null) source.Stop();
             clock = null;
         }
         private void OnDestroy() { Stop(); if (clickClip != null) Destroy(clickClip); }

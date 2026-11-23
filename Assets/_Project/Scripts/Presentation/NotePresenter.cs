@@ -24,12 +24,12 @@ namespace StringAsASword.Presentation
         private const float DefaultSpriteHeight = 100, HeadPivot = .152f, HeadShare = .30f;
         // While resonance is on (charged, or running after an attack) the window's notes glow, head and stem alike,
         // at one steady strength: an attack adds no flare of its own.
-        private const float GlowScale = 1.5f, GlowStrength = .6f, ResonantGlow = .2f * GlowStrength;
+        private const float GlowScale = 1.25f, GlowStrength = .35f, ResonantGlow = .2f * GlowStrength;
         // Notes in the window turn pure white (#FFFFFF): the sprite itself is #D9D9D9, so a tint cannot lift it and a
         // material paints it white instead (the boss portrait's flash shader at full strength).
         private static readonly Color ResonantNoteColor = Color.white;
-        // Outside the window notes are #6D6D6D. The sprite is #D9D9D9, so it is tinted by 6D / D9.
-        private static readonly Color RestNoteColor = UiKit.Hex(0x6D6D6D);
+        // Scale the sprite tint by its source colour so it matches the resting note heads.
+        private static readonly Color RestNoteColor = UiKit.Hex(0x797979);
         private static readonly Color RestSpriteTint = new Color(RestNoteColor.r / NoteColor.r, RestNoteColor.g / NoteColor.g, RestNoteColor.b / NoteColor.b);
         private static Material whiteNoteMaterial;
         private static Material WhiteNoteMaterial
@@ -44,13 +44,17 @@ namespace StringAsASword.Presentation
                 return whiteNoteMaterial;
             }
         }
-        private const float BeamThickness = 8, BeamGap = 5, BeamStub = 16, RailOffset = 5, RailPegHeight = 30;
+        private const float BeamStub = 16;
+        // Relative to the reference head (64 px): beam 22, gap 16, rail 13, rail spacing 28 centre-to-centre.
+        private const float BeamShare = 22f / 64, BeamGapShare = 16f / 64, RailShare = 13f / 64,
+            RailOffsetShare = 14f / 64, RailPegShare = 1, RailPegWidthShare = 5f / 64;
+        private readonly float beamThickness, beamGap, railThickness, railOffset, railPegHeight, railPegWidth;
         /// <summary>Notes closer together than this share of a beat are beamed into one run.</summary>
         private const double RunGapBeats = .75;
         private readonly Graphic[,] notes = new Graphic[2, Slots];
-        private readonly Image[,] strings = new Image[2, Slots], pegs = new Image[2, Slots], barLines = new Image[2, Slots];
-        private readonly Image[,] rails = new Image[2, Slots];
-        private readonly Image[,,] beams = new Image[2, Slots, 2];
+        private readonly Image[,] pegs = new Image[2, Slots], barLines = new Image[2, Slots];
+        private readonly SlantedBar[,] strings = new SlantedBar[2, Slots], rails = new SlantedBar[2, Slots];
+        private readonly SlantedBar[,,] beams = new SlantedBar[2, Slots, 2];
         private readonly Image[] sparks = new Image[2];
         private readonly Image[,] glows = new Image[2, Slots];
         private static Sprite artResonanceGlow, prototypeResonanceGlow;
@@ -61,7 +65,8 @@ namespace StringAsASword.Presentation
         /// <summary>Notes glowing for resonance on one side this frame.</summary>
         public int GlowingNotes { get; private set; }
         // Stems lean toward the board by this angle (radians), parallel to the tilted judge lines.
-        private readonly float tilt;
+        private readonly float tilt, leanSlope, beamTop;
+        private readonly Vector2 headTop, headCorner, headBottom;
         private int[] beamLinks;
         private IBeatTimeline beamTimeline;
         private readonly float targetX;
@@ -83,6 +88,18 @@ namespace StringAsASword.Presentation
             spriteHeight = headHeight > 0 ? headHeight / HeadShare : DefaultSpriteHeight;
             var noteSize = art ? new Vector2(spriteHeight * sprite.rect.width / sprite.rect.height, spriteHeight) : new Vector2(23, 31);
             headHalf = noteSize.x * .5f; stemHalf = noteSize.x * .06f;
+            float head = spriteHeight * HeadShare;
+            float sin = Mathf.Sin(tilt), cos = Mathf.Cos(tilt);
+            leanSlope = Mathf.Tan(tilt);
+            beamTop = spriteHeight * (1 - HeadPivot) * cos - stemHalf * Mathf.Abs(sin);
+            // In lane coordinates x increases away from the board. Attach just inside the
+            // outer diamond outline so texture filtering cannot open a seam at the join.
+            headTop = new Vector2(-sin, cos) * (head * .5f * .92f);
+            headCorner = new Vector2(cos, sin) * (headHalf * .92f);
+            headBottom = -headTop;
+            beamThickness = head * BeamShare; beamGap = head * BeamGapShare;
+            railThickness = head * RailShare; railOffset = head * RailOffsetShare;
+            railPegHeight = head * RailPegShare; railPegWidth = Mathf.Max(2, head * RailPegWidthShare);
             glowSize = GlowScale * (art ? spriteHeight * HeadShare : noteSize.x);
             float stemLength = art ? noteSize.y * (1 - HeadPivot) : noteSize.y * .45f;
             float extension = stemLength / glowSize;
@@ -94,23 +111,24 @@ namespace StringAsASword.Presentation
             if (barHeight > 0)
                 for (int side = 0; side < 2; side++)
                     for (int i = 0; i < Slots; i++)
-                        barLines[side, i] = MakeImage(root, $"BarLine_{side}_{i}", null);
+                        barLines[side, i] = MakeImage<Image>(root, $"BarLine_{side}_{i}", null);
             // Strings first so heads draw on top of them.
             for (int side = 0; side < 2; side++)
                 for (int i = 0; i < Slots; i++)
                 {
-                    strings[side, i] = MakeImage(root, $"HoldString_{side}_{i}", holdBody);
-                    pegs[side, i] = MakeImage(root, $"HoldPeg_{side}_{i}", holdTail);
+                    strings[side, i] = MakeImage<SlantedBar>(root, $"HoldString_{side}_{i}", holdBody);
+                    if (art) rails[side, i] = MakeImage<SlantedBar>(root, $"HoldRail_{side}_{i}", holdBody);
+                    pegs[side, i] = MakeImage<Image>(root, $"HoldPeg_{side}_{i}", holdTail);
                     if (!art) continue;
                     pegs[side, i].rectTransform.localRotation = Lean(side);
-                    rails[side, i] = MakeImage(root, $"HoldRail_{side}_{i}", holdBody);
-                    for (int n = 0; n < 2; n++) beams[side, i, n] = MakeImage(root, $"Beam_{side}_{i}_{n}", null);
+                    for (int n = 0; n < 2; n++)
+                        beams[side, i, n] = MakeImage<SlantedBar>(root, $"Beam_{side}_{i}_{n}", null);
                 }
             // Glows over the strings, under the note sprites.
             for (int side = 0; side < 2; side++)
                 for (int i = 0; i < Slots; i++)
                 {
-                    var glow = MakeImage(root, $"NoteGlow_{side}_{i}", resonanceGlow);
+                    var glow = MakeImage<Image>(root, $"NoteGlow_{side}_{i}", resonanceGlow);
                     glow.rectTransform.pivot = resonanceGlow.pivot / resonanceGlow.rect.size;
                     glow.rectTransform.sizeDelta = resonanceGlowSize;
                     if (art) glow.rectTransform.localRotation = Lean(side);
@@ -133,14 +151,14 @@ namespace StringAsASword.Presentation
                 }
             for (int side = 0; side < 2; side++)
             {
-                sparks[side] = MakeImage(root, $"HoldSpark_{side}", null);
+                sparks[side] = MakeImage<Image>(root, $"HoldSpark_{side}", null);
                 sparks[side].rectTransform.anchoredPosition = new Vector2(side == 0 ? -targetX : targetX, stringY);
                 sparks[side].rectTransform.localRotation = Quaternion.Euler(0, 0, 45);
             }
         }
-        private static Image MakeImage(RectTransform root, string name, Sprite sprite)
+        private static T MakeImage<T>(RectTransform root, string name, Sprite sprite) where T : Image
         {
-            var image = PrototypeView.MakeRect(root, name, Vector2.zero, Vector2.one).gameObject.AddComponent<Image>();
+            var image = PrototypeView.MakeRect(root, name, Vector2.zero, Vector2.one).gameObject.AddComponent<T>();
             image.sprite = sprite; image.raycastTarget = false; image.gameObject.SetActive(false);
             return image;
         }
@@ -294,7 +312,6 @@ namespace StringAsASword.Presentation
         {
             bool visible = links > 0 && (fromVisible || toVisible);
             float end = Mathf.Min(toX, spawnX), start = fromVisible ? fromX : end - BeamStub;
-            float stem = spriteHeight * (1 - HeadPivot), sin = Mathf.Sin(tilt), cos = Mathf.Cos(tilt);
             for (int side = 0; side < 2; side++)
                 for (int n = 0; n < 2; n++)
                 {
@@ -302,26 +319,28 @@ namespace StringAsASword.Presentation
                     beam.gameObject.SetActive(visible && n < links);
                     if (!visible || n >= links) continue;
                     beam.color = resonant ? ResonantNoteColor : RestNoteColor;
-                    beam.rectTransform.sizeDelta = new Vector2(end - start + 2 * stemHalf, BeamThickness);
-                    // Each beam sits on the leaning stems: further up the stem is also further toward the board.
-                    float along = stem - BeamThickness * .5f - n * (BeamThickness + BeamGap);
-                    beam.rectTransform.anchoredPosition = new Vector2(Side(side, (start + end) * .5f - along * sin), stringY + along * cos);
+                    float top = beamTop - n * (beamThickness + beamGap), bottom = top - beamThickness;
+                    beam.SetSpan(Side(side, start - bottom * leanSlope), Side(side, start - top * leanSlope),
+                        Side(side, end - bottom * leanSlope), Side(side, end - top * leanSlope),
+                        stringY + (top + bottom) * .5f, beamThickness);
                 }
         }
         private void RenderString(int slot, bool candidate, int beat, double endRemaining, double approach,
             bool holding, bool consumed, bool headClosed, double sinceResolve, float headX, double time, bool resonant)
         {
-            // Same colours as the note heads: white in the resonance window, #6D6D6D outside it.
+            // Use the same colours as the note heads.
             Color tone = resonant ? ResonantNoteColor : RestNoteColor;
             bool resolvedHere = beat == resolvedBeat;
             bool fading = resolvedHere && !resolvedHit && sinceResolve < FadeSeconds;
             // A cleanly released string disappears; a broken one fades out where it snapped.
             bool visible = candidate && (holding || fading || !resolvedHere && endRemaining >= 0);
-            Color color; float thickness = StringThickness, startX = headX;
+            float baseThickness = art ? railThickness : StringThickness;
+            Color color; float thickness = baseThickness, startX = headX;
             if (holding)
             {
                 color = tone;
-                thickness += 2f * (float)(.5 + .5 * Math.Sin(time * 2 * Math.PI * VibrationHz));
+                // A held string trembles by up to two-thirds of its own thickness.
+                thickness += baseThickness * .67f * (float)(.5 + .5 * Math.Sin(time * 2 * Math.PI * VibrationHz));
             }
             else if (fading || consumed || headClosed)
             {
@@ -330,34 +349,49 @@ namespace StringAsASword.Presentation
                 color = new Color(tone.r, tone.g, tone.b, alpha);
                 startX = Mathf.Max(headX, targetX) + SnapGap;
             }
-            else color = new Color(tone.r, tone.g, tone.b, .75f);
-            // The rails leave from the head's outer tip, not from inside the hollow head.
-            if (art && startX == headX) startX += headHalf;
-            // Nothing of a note crosses the judge line onto the board: a string whose head has passed it starts there.
+            else color = art ? tone : new Color(tone.r, tone.g, tone.b, .75f);
+            bool attached = art && (holding || !fading && !consumed && !headClosed && headX >= targetX);
             startX = Mathf.Max(startX, targetX);
             float endX = Mathf.Min(X(endRemaining, approach), spawnX);
-            if (endX <= startX) visible = false;
+            if (endX <= startX + (attached ? headHalf : 0)) visible = false;
             for (int side = 0; side < 2; side++)
             {
                 var body = strings[side, slot]; var peg = pegs[side, slot];
                 body.gameObject.SetActive(visible); peg.gameObject.SetActive(visible);
-                if (art)
-                {
-                    // The second rail of the hold note's double line.
-                    var rail = rails[side, slot];
-                    rail.gameObject.SetActive(visible);
-                    rail.color = color;
-                    rail.rectTransform.sizeDelta = new Vector2(endX - startX, thickness);
-                    rail.rectTransform.anchoredPosition = new Vector2(Side(side, (startX + endX) * .5f), stringY - RailOffset);
-                }
+                if (art) rails[side, slot].gameObject.SetActive(visible);
                 if (!visible) continue;
                 body.color = peg.color = color;
-                body.rectTransform.sizeDelta = new Vector2(endX - startX, thickness);
-                body.rectTransform.anchoredPosition = new Vector2(Side(side, (startX + endX) * .5f), art ? stringY + RailOffset : stringY);
-                peg.rectTransform.sizeDelta = new Vector2(PegWidth, art ? RailPegHeight : PegHeight);
+                if (art)
+                {
+                    var rail = rails[side, slot];
+                    rail.color = color;
+                    FitHoldRail(body, side, railOffset, thickness, startX, endX, attached);
+                    FitHoldRail(rail, side, -railOffset, thickness, startX, endX, attached);
+                }
+                else
+                {
+                    body.rectTransform.sizeDelta = new Vector2(endX - startX, thickness);
+                    body.rectTransform.anchoredPosition = new Vector2(Side(side, (startX + endX) * .5f), stringY);
+                }
+                peg.rectTransform.sizeDelta = art ? new Vector2(railPegWidth, railPegHeight) : new Vector2(PegWidth, PegHeight);
                 peg.rectTransform.anchoredPosition = new Vector2(Side(side, endX), stringY);
             }
         }
+        private void FitHoldRail(SlantedBar rail, int side, float offset, float thickness, float start, float end, bool attached)
+        {
+            float bottom = offset - thickness * .5f, top = offset + thickness * .5f;
+            float startBottom = attached ? HeadEdgeAt(bottom) : -bottom * leanSlope;
+            float startTop = attached ? HeadEdgeAt(top) : -top * leanSlope;
+            rail.SetSpan(Side(side, start + startBottom), Side(side, start + startTop),
+                Side(side, end - bottom * leanSlope), Side(side, end - top * leanSlope), stringY + offset, thickness);
+        }
+
+        private float HeadEdgeAt(float y)
+        {
+            var tip = y > headCorner.y ? headTop : headBottom;
+            return Mathf.Lerp(headCorner.x, tip.x, Mathf.InverseLerp(headCorner.y, tip.y, y));
+        }
+
         private void RenderSparks(bool holding, bool flashing, double time, double sinceResolve)
         {
             for (int side = 0; side < 2; side++)

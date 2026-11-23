@@ -87,6 +87,8 @@ MonoBehaviour:
   skipKeyIcon: {fileID: 21300000, guid: 5383798c0dc8a734f80ff292291ce4bc, type: 3}
   promptJKeyIcon: {fileID: 21300000, guid: 60e62fc4a2d047399fbe135d98b5917d, type: 3}
   keyGuide: {fileID: 21300000, guid: 53027492787f48944b8aa2b5dee06f0c, type: 3}
+  jAttackOff: {fileID: 21300000, guid: 918e779d15014eb093d4670000d29576, type: 3}
+  jAttackOn: {fileID: 21300000, guid: af97812505d444f5954c15c8820ee269, type: 3}
   screenFont: {fileID: 11400000, guid: cddfb65d7ebf8724d8854d7fb095a58e, type: 2}
   screenTitleFont: {fileID: 11400000, guid: 463bb0403a855ea49ae21e168c3b27c5, type: 2}
   outcomeFont: {fileID: 11400000, guid: f11cdb3b0dd6fd645aef4c90eafe389a, type: 2}

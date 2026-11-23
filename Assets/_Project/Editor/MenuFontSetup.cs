@@ -14,6 +14,7 @@ namespace StringAsASword.Editor
     {
         private const string Fonts = "Assets/_Project/Art/Fonts/";
         private const string KeyGuide = "Assets/_Project/Art/UI/HUD/KeyGuide.png";
+        private const string JAttackOff = "Assets/_Project/Art/UI/HUD/J_Attack_Off.png", JAttackOn = "Assets/_Project/Art/UI/HUD/J_Attack_On.png";
 
         [MenuItem("String As a Sword/Art/Set Up Menu Font")]
         public static void Run()
@@ -31,6 +32,8 @@ namespace StringAsASword.Editor
             art.screenTitleFont = Build("MediaSansExtended-Black.otf", "MediaSansExtended-Black SDF");
             art.keyGuide = AssetDatabase.LoadAssetAtPath<Sprite>(KeyGuide);
             if (art.keyGuide == null) Debug.LogError($"Missing {KeyGuide} (import it as a Sprite).");
+            art.jAttackOff = AssetDatabase.LoadAssetAtPath<Sprite>(JAttackOff);
+            art.jAttackOn = AssetDatabase.LoadAssetAtPath<Sprite>(JAttackOn);
             Save(art);
         }
 
