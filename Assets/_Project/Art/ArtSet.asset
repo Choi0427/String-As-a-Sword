@@ -126,3 +126,7 @@ MonoBehaviour:
   bossFireVfx: {fileID: 0}
   phaseVfx: {fileID: 0}
   knightFallSound: {fileID: 0}
+  uiMoveSound: {fileID: 8300000, guid: 1275806269c3f5e41b3e4f913723ed2a, type: 3}
+  uiMoveVolume: 0.036
+  uiConfirmSound: {fileID: 8300000, guid: d04499712ebfee94eb7e32039d21a59d, type: 3}
+  uiConfirmVolume: 0.12
