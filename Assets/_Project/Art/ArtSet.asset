@@ -131,3 +131,5 @@ MonoBehaviour:
   uiMoveVolume: 0.036
   uiConfirmSound: {fileID: 8300000, guid: d04499712ebfee94eb7e32039d21a59d, type: 3}
   uiConfirmVolume: 0.12
+  endingSound: {fileID: 8300000, guid: dbd18f32c85c47e7b860bd9038171519, type: 3}
+  endingSoundVolume: 0.11

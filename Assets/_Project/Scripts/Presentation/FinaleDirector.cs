@@ -39,7 +39,7 @@ namespace StringAsASword.Presentation
         private CutscenePlayer cutscene;
         private UnityEngine.UI.Image endingImage;
         private float endingAge = -1;
-        private AudioSource noiseSource;
+        private AudioSource noiseSource, boomSource;
         private AudioClip noiseClip;
         private float flashAge = 10, epilogueAge, exitAge = -1;
         private int lastFinishHit = -1, checkedSession = -1;
@@ -109,12 +109,15 @@ namespace StringAsASword.Presentation
             cutscene.Initialize(layer, font, view.Art.endingCutscene);
             if (view.Art.endingImage != null)
             {
-                // Covers the whole screen whatever its shape (cropping the picture's light margins rather than leaving bars).
+                // Lettering on a transparent background, so the white under it is the game's own white. Centred, 80% of the
+                // screen height, its width following the picture's shape.
                 var rect = PrototypeView.MakeRect(layer, "Ending Image", Vector2.zero, Vector2.zero);
+                rect.anchorMin = new Vector2(.5f, .1f); rect.anchorMax = new Vector2(.5f, .9f);
+                rect.anchoredPosition = Vector2.zero; rect.sizeDelta = Vector2.zero;
                 endingImage = rect.gameObject.AddComponent<UnityEngine.UI.Image>();
                 endingImage.sprite = view.Art.endingImage; endingImage.raycastTarget = false;
                 var fitter = rect.gameObject.AddComponent<UnityEngine.UI.AspectRatioFitter>();
-                fitter.aspectMode = UnityEngine.UI.AspectRatioFitter.AspectMode.EnvelopeParent;
+                fitter.aspectMode = UnityEngine.UI.AspectRatioFitter.AspectMode.HeightControlsWidth;
                 fitter.aspectRatio = view.Art.endingImage.rect.width / view.Art.endingImage.rect.height;
             }
             exitWhite = FullScreen("Exit White", Color.white);
@@ -124,6 +127,8 @@ namespace StringAsASword.Presentation
             noiseClip = AudioClip.Create("Ending Noise", samples.Length, 1, 44100, false); noiseClip.SetData(samples, 0);
             noiseSource = gameObject.AddComponent<AudioSource>();
             noiseSource.clip = noiseClip; noiseSource.loop = true; noiseSource.playOnAwake = false; noiseSource.volume = 0;
+            boomSource = gameObject.AddComponent<AudioSource>();
+            boomSource.playOnAwake = false; boomSource.loop = false; boomSource.spatialBlend = 0;
             game.FinaleTap += _ => view.Pulse();
             ResetVisuals();
         }
@@ -134,7 +139,7 @@ namespace StringAsASword.Presentation
             flashAge = 10; epilogueAge = 0; exitAge = -1; endingAge = -1; lastFinishHit = -1;
             if (endingImage != null) endingImage.gameObject.SetActive(false);
             placed = entered = touched = returned = false;
-            cutscene.Hide(); noiseSource.Stop(); noiseSource.volume = 0;
+            cutscene.Hide(); noiseSource.Stop(); noiseSource.volume = 0; boomSource.Stop();
             // The board puts itself back (pieces, white world) when the next session starts.
             board.FreeRoam = false; board.BreakOverride = -1; board.SetKingDown(0);
             game.Audio.SetMusicFade(1);
@@ -261,6 +266,8 @@ namespace StringAsASword.Presentation
                 // Cutscene over or skipped: white again, then the white menu.
                 exitAge += dt;
                 SetAlpha(exitWhite, Mathf.Clamp01(exitAge / ExitSeconds));
+                // A skipped ending takes the boom down with the white instead of cutting it at the scene change.
+                boomSource.volume = Mathf.MoveTowards(boomSource.volume, 0, dt * view.Art.endingSoundVolume * GameFlow.MusicVolume / ExitSeconds);
                 if (!returned && exitAge >= ExitSeconds)
                 {
                     returned = true;
@@ -277,7 +284,14 @@ namespace StringAsASword.Presentation
             board.EndingNoiseFade = 1 - Mathf.Clamp01(endingAge / NoiseVanishSeconds);
             SetAlpha(white, Mathf.SmoothStep(0, 1, (endingAge - NoiseVanishSeconds) / WhiteInSeconds));
             bool shown = endingAge >= EndingStart;
-            if (endingImage.gameObject.activeSelf != shown) endingImage.gameObject.SetActive(shown);
+            if (endingImage.gameObject.activeSelf == shown) return;
+            endingImage.gameObject.SetActive(shown);
+            // The boom lands with the picture.
+            if (shown && view.Art.endingSound != null)
+            {
+                boomSource.volume = view.Art.endingSoundVolume * GameFlow.MusicVolume;
+                boomSource.clip = view.Art.endingSound; boomSource.Play();
+            }
         }
         private UnityEngine.UI.Image FullScreen(string name, Color color)
         {
