@@ -1,4 +1,3 @@
-using StringAsASword.Board;
 using StringAsASword.Player;
 using StringAsASword.Presentation;
 using StringAsASword.Rhythm;
@@ -42,7 +41,6 @@ namespace StringAsASword.Core
         public double SongTime => clock?.SongTime ?? 0;
         public int CurrentBeat { get; private set; } = -1;
         public int SessionId { get; private set; }
-        public bool MetronomeMuted => audioPlayer.Muted;
         public double VisualOffset => song.VisualOffset + GameFlow.VisualOffsetMs / 1000.0;
         /// <summary>Song time at which the finale hands over to the epilogue: just after the last note (or its hold) ends.</summary>
         public double FinaleEndTime { get; private set; }
@@ -118,20 +116,18 @@ namespace StringAsASword.Core
         {
             Battle.MusicBeat += OnMusicBeat;
             Session.HoldResolved += view.ShowHold;
-            Session.ActionEvaluated += OnActionEvaluated; Session.NoteMissed += view.ShowMiss;
+            Session.ActionEvaluated += view.ShowAction; Session.NoteMissed += view.ShowMiss;
             Combat.DamageResolved += view.ShowDamage;
             Phases.PhaseUnlocked += view.ShowPhase;
-            Noise.CollectedPickup += view.ShowNoiseCollected;
             Battle.Resonance.Ignited += view.ShowIgnition; Battle.Resonance.GhostStrike += view.ShowGhostStrike;
         }
         private void Detach()
         {
             Battle.MusicBeat -= OnMusicBeat;
             Session.HoldResolved -= view.ShowHold;
-            Session.ActionEvaluated -= OnActionEvaluated; Session.NoteMissed -= view.ShowMiss;
+            Session.ActionEvaluated -= view.ShowAction; Session.NoteMissed -= view.ShowMiss;
             Combat.DamageResolved -= view.ShowDamage;
             Phases.PhaseUnlocked -= view.ShowPhase;
-            Noise.CollectedPickup -= view.ShowNoiseCollected;
             Battle.Resonance.Ignited -= view.ShowIgnition; Battle.Resonance.GhostStrike -= view.ShowGhostStrike;
         }
         /// <summary>Puts <paramref name="battle"/> on the board: the presenters follow it from the next frame.</summary>
@@ -178,7 +174,7 @@ namespace StringAsASword.Core
             if (State != PrototypeState.Prologue) return;
             clock.StartAt(dsp - songTime);
             previousTime = SongTime;
-            audioPlayer.Begin(song, clock, Timeline, countInClicks: false);
+            audioPlayer.Begin(song, clock, Timeline);
         }
         /// <summary>The prologue's last downbeat: the battle is live (the first note is still the song's intro away).</summary>
         public void FinishPrologue()
@@ -253,7 +249,7 @@ namespace StringAsASword.Core
             ApplySwitches();
             clock.StartAt(downbeatDsp - IntroTimeline.HandoverSongTime(Timeline));
             previousTime = SongTime; input.Clear();
-            audioPlayer.Begin(song, clock, Timeline, countInClicks: false);
+            audioPlayer.Begin(song, clock, Timeline);
             tutorialHandover = downbeatDsp;
         }
         /// <summary>Esc in the tutorial: straight into the song.</summary>
@@ -291,7 +287,7 @@ namespace StringAsASword.Core
             ApplySwitches();
             previousTime = SongTime;
             State = PrototypeState.Playing; view.ResetFeedback();
-            audioPlayer.Begin(song, clock, Timeline, countInClicks: false);
+            audioPlayer.Begin(song, clock, Timeline);
         }
 #if UNITY_EDITOR
         // DEV-ENDING-SKIP (editor only, compiled out of builds; remove before release).
@@ -319,7 +315,7 @@ namespace StringAsASword.Core
             ApplySwitches();
             previousTime = SongTime;
             State = PrototypeState.Playing; view.ResetFeedback();
-            audioPlayer.Begin(song, clock, Timeline, countInClicks: false);
+            audioPlayer.Begin(song, clock, Timeline);
         }
 #endif
         /// <summary>Tests only: skip the battle and the finale and start the epilogue now.</summary>
@@ -356,7 +352,7 @@ namespace StringAsASword.Core
             previousTime = SongTime; input.Clear();
             State = at < 0 ? PrototypeState.CountIn : PrototypeState.Playing;
             // Its own click on every number of the count, on the beats the numbers change; no count-in clicks besides.
-            audioPlayer.Begin(song, clock, Timeline, countInClicks: false);
+            audioPlayer.Begin(song, clock, Timeline);
             audioPlayer.ScheduleCountdown(CountdownEnd - rewind, song.CountInBeats, beat);
         }
         /// <summary>Game over "첫 수부터": a fresh battle, in a fresh scene when the input sync changed since this one was built.</summary>
@@ -500,14 +496,6 @@ namespace StringAsASword.Core
             if (!clock.Running || State == PrototypeState.Finale || State == PrototypeState.Epilogue || State == PrototypeState.Prologue) return;
             Battle.Release(request.Kind, request.Direction, clock.ToSongTime(request.DspTime));
         }
-        private void OnActionEvaluated(ActionResult result)
-        {
-            view.ShowAction(result);
-        }
-        private void AdvanceWorld(double time)
-        {
-            Battle.Advance(time);
-        }
         private void Update()
         {
             if (clock == null) return;
@@ -524,7 +512,7 @@ namespace StringAsASword.Core
                     StopTutorial(); input.Clear(); previousTime = SongTime; State = PrototypeState.Playing;
                 }
                 audioPlayer.Schedule();
-                AdvanceWorld(time);
+                Battle.Advance(time);
                 if (State == PrototypeState.Finale && time >= FinaleEndTime)
                 { State = PrototypeState.Epilogue; EpilogueStarted?.Invoke(); }
                 else if (Battle.Outcome == BattleOutcome.Won && Battle.Settings.HasFinale && (State == PrototypeState.Playing || State == PrototypeState.CountIn))

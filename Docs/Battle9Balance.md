@@ -98,7 +98,7 @@
 
 ## 재현
 
-에디터를 닫은 상태(또는 다른 프로젝트 경로)에서:
+출시 정리(2026-11-25)에서 이 도구를 지웠다. 다시 돌리려면 커밋 `0b5a650`에서 가져온다. 에디터를 닫은 상태(또는 다른 프로젝트 경로)에서:
 
 ```
 Unity.exe -batchmode -nographics -quit -projectPath <프로젝트> -executeMethod StringAsASword.Editor.BattleSkillReport.RunFromCommandLine -skillOutput Docs/Balance/battle-9 -skillSeeds 300 -skillHpScales 0.8,1.2,1.5,1.8,2.0
@@ -107,5 +107,5 @@ Unity.exe -batchmode -nographics -quit -projectPath <프로젝트> -executeMetho
 추가된 코드:
 - `Scripts/Simulation/SkilledSimulation.cs`: `SkillProfile`와 `SkilledSimulator.RunSkilled`. 완벽 프로필은 기존 `BattleSimulator.RunOne`과 기록이 같다.
 - `BattleStrategies`: Tank, Patient 전략. 기존 보고서는 `BattleStrategies.Legacy`(기존 3종)만 돌려 예전 수치가 유지된다.
-- `Editor/BattleSkillReport.cs`
+- `Editor/BattleSkillReport.cs`(출시 정리에서 삭제)
 - `Tests/EditMode/SkillSimulationTests.cs`: 6개 테스트 모두 통과

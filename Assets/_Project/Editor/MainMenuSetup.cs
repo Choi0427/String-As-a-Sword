@@ -1,6 +1,5 @@
 using System.IO;
 using System.Linq;
-using StringAsASword.Core;
 using StringAsASword.Presentation;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -8,11 +7,10 @@ using UnityEngine;
 
 namespace StringAsASword.Editor
 {
-    /// <summary>Builds the MainMenu scene and puts it first in the build: menu → story → battle → ending → menu.</summary>
+    /// <summary>Builds the MainMenu scene and puts it first in the build: menu → battle → ending → menu.</summary>
     public static class MainMenuSetup
     {
         public const string ScenePath = "Assets/_Project/Scenes/MainMenu.unity";
-        public const string StoryPath = "Assets/_Project/Data/Story/IntroStory.asset";
         public const string InvertMaterialPath = "Assets/_Project/Art/Materials/MenuInvertLeft.mat";
         public const string BackgroundPath = "Assets/_Project/Art/UI/Menu/MainMenu_Logo_BG.png";
 
@@ -22,11 +20,6 @@ namespace StringAsASword.Editor
             var art = PrototypeSceneSetup.EnsureArtSet();
             var background = AssetDatabase.LoadAssetAtPath<Sprite>(BackgroundPath);
             if (art.mainMenuDark == null && background != null) { art.mainMenuDark = background; EditorUtility.SetDirty(art); }
-
-            Directory.CreateDirectory(Path.GetDirectoryName(StoryPath));
-            AssetDatabase.Refresh();
-            var story = AssetDatabase.LoadAssetAtPath<StoryDefinition>(StoryPath);
-            if (story == null) { story = ScriptableObject.CreateInstance<StoryDefinition>(); AssetDatabase.CreateAsset(story, StoryPath); }
 
             var material = AssetDatabase.LoadAssetAtPath<Material>(InvertMaterialPath);
             if (material == null)
@@ -44,7 +37,6 @@ namespace StringAsASword.Editor
             var menu = new GameObject("Main Menu", typeof(RectTransform)).AddComponent<MainMenuView>();
             var serialized = new SerializedObject(menu);
             serialized.FindProperty("art").objectReferenceValue = art;
-            serialized.FindProperty("story").objectReferenceValue = story;
             serialized.FindProperty("invertMaterial").objectReferenceValue = material;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorSceneManager.SaveScene(scene, ScenePath);

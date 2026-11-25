@@ -9,7 +9,7 @@ namespace StringAsASword.Presentation
     /// </summary>
     public sealed class ResonanceHud : MonoBehaviour
     {
-        private const float IgniteSeconds = .4f, FlashSeconds = .18f;
+        private const float FlashSeconds = .18f;
         private PrototypeGame game;
         private Image flash;
         private float igniteAge = 10;
@@ -17,8 +17,6 @@ namespace StringAsASword.Presentation
         /// <summary>Resonance notes left; 0 when no resonance runs.</summary>
         public int ShownRemaining { get; private set; }
         public bool ShownCharged { get; private set; }
-        /// <summary>The ignition's flare: 1 at ignition, 0 after <see cref="IgniteSeconds"/>.</summary>
-        public float Ignite01 => Mathf.Clamp01(1 - igniteAge / IgniteSeconds);
 
         public void Initialize(PrototypeGame owner)
         {

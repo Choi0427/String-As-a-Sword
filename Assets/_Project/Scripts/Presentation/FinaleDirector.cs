@@ -1,6 +1,4 @@
 using StringAsASword.Core;
-using StringAsASword.Player;
-using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 

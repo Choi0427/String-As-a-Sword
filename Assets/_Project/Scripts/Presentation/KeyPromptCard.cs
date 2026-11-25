@@ -44,15 +44,10 @@ namespace StringAsASword.Presentation
         private PromptPart[] shown = new PromptPart[0];
         public RectTransform Rect { get; }
         public Vector2 Size => Rect.sizeDelta;
-        public IReadOnlyList<PromptPart> Parts => shown;
         /// <summary>Keys drawn with the key guide's art (the ㅗ cluster counts as one).</summary>
         public int GuideKeysShown { get; private set; }
         /// <summary>The key guide sprite these keys are cut from (null: plain keycaps only).</summary>
         public Sprite Guide => guide;
-        /// <summary>The first key shown ("" when none).</summary>
-        public string Key { get { foreach (var p in shown) if (p.Type == PromptPart.Kind.Key) return p.Value; return ""; } }
-        /// <summary>All the parts as one line, keys in brackets: "[K] 막기 or [WASD] 회피".</summary>
-        public string Text => string.Join(" ", System.Array.ConvertAll(shown, p => p.ToString()));
         public bool Visible => Rect.gameObject.activeSelf;
 
         /// <param name="height">Card height; keycaps are <paramref name="height"/> - 30 tall (wider for long keys). The card grows

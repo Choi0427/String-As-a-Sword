@@ -35,7 +35,7 @@
 
 거부/연기 이유는 `no-dodge-within-warning`, `disclosed-route`, `pickup-route`, `noise-wait`이며 `chart-end` 또는 `retry-limit:이유`로 생략할 수 있다. 전투의 공용 Observation에는 미래 예약·seed·RNG가 없다.
 
-비교 도구 실행 및 원자료 구조는 [BattlePacingComparison.md](BattlePacingComparison.md)를 참조한다. 기본 실행은 세 구성 × 세 전략 × 개발/독립/5% 누락 집합 × 1,000개 시드 = 27,000회이다. HP·패턴을 결과에 맞춰 자동 수정하지 않는다. 완료한 [27,000회 비교 결과와 평가](BattlePacing/Results.md)에 행동량·실패 사례·실제 간격·화면 검증을 기록했다.
+비교 도구(`BattlePacingComparison`)와 실행 안내, 원자료는 출시 정리(2026-11-25)에서 지웠다(커밋 `0b5a650`에 있음). 기본 실행은 세 구성 × 세 전략 × 개발/독립/5% 누락 집합 × 1,000개 시드 = 27,000회이다. HP·패턴을 결과에 맞춰 자동 수정하지 않는다. 완료한 [27,000회 비교 결과와 평가](BattlePacing/Results.md)에 행동량·실패 사례·실제 간격·화면 검증을 기록했다.
 
 ## 검토와 사람 플레이
 

@@ -88,7 +88,6 @@ MonoBehaviour:
   skipKeyIcon: {fileID: 21300000, guid: 5383798c0dc8a734f80ff292291ce4bc, type: 3}
   promptJKeyIcon: {fileID: 21300000, guid: 60e62fc4a2d047399fbe135d98b5917d, type: 3}
   keyGuide: {fileID: 21300000, guid: 53027492787f48944b8aa2b5dee06f0c, type: 3}
-  jAttackOff: {fileID: 21300000, guid: 918e779d15014eb093d4670000d29576, type: 3}
   jAttackOn: {fileID: 21300000, guid: af97812505d444f5954c15c8820ee269, type: 3}
   screenFont: {fileID: 11400000, guid: cddfb65d7ebf8724d8854d7fb095a58e, type: 2}
   screenTitleFont: {fileID: 11400000, guid: 463bb0403a855ea49ae21e168c3b27c5, type: 2}
@@ -104,12 +103,6 @@ MonoBehaviour:
   settingsRoundedFill: {fileID: 21300000, guid: 94d7b009fd9691b44a2d084686d2e0af, type: 3}
   settingsRoundedPanelBorder: {fileID: 21300000, guid: 4c2b3ea422933f04a854a3aaed0bae56, type: 3}
   settingsRoundedButtonBorder: {fileID: 21300000, guid: 606828aec28b88c4889342d0d7e11f41, type: 3}
-  knightBadgeBox:
-    serializedVersion: 2
-    x: -26
-    y: 5
-    width: 52
-    height: 76
   playerHpBarOn: {fileID: 21300000, guid: 8100d0f6468c4e04b43bb825ba59e404, type: 3}
   playerHpBarOff: {fileID: 21300000, guid: 105bb1444b2d4547a66e4af635c93f64, type: 3}
   playerHpKnightOn: {fileID: 21300000, guid: 73982b22091846d38a027b39e8b7f7ff, type: 3}

@@ -1,9 +1,0 @@
-final iter 1: scale 1.9000 hp 93/57/17/21 median 271.0
-final iter 2: scale 1.1000 hp 54/33/10/12 median 145.0
-final iter 3: scale 1.5000 hp 74/45/14/16 median 199.0
-final iter 4: scale 1.7000 hp 83/51/15/19 median 221.0
-final iter 5: scale 1.8000 hp 88/54/16/20 median 242.0
-final iter 6: scale 1.8500 hp 91/55/17/20 median 269.0
-final iter 7: scale 1.8250 hp 89/55/16/20 median 245.0
-final iter 8: scale 1.8125 hp 89/54/16/20 median 245.0
-final fit -> 89/54/16/20 (179)

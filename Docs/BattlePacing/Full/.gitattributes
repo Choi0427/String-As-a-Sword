@@ -1,2 +1,0 @@
-# Preserve measured file bytes so manifest hashes survive checkout on Windows.
-* -text

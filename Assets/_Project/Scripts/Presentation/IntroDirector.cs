@@ -32,6 +32,9 @@ namespace StringAsASword.Presentation
         // When the king lights the square he wants for the knight (h3): from each order to just after the try against it.
         private static readonly (float from, float to)[] KnightOrders = { (10, 11.3f), (12.1f, 13.7f), (14.1f, 15.7f) };
         private static readonly float[] Struggles = { 22, 26 };
+        // Beat lists read every frame.
+        private static readonly float[] Backs = { Back1, Back2 }, TryGathers = { Try1 - .5f, Try2 - .45f, Try3 },
+            OrderEchoes = { Back1 - .45f, Back2 - .4f, Caught, Withdraw };
         private const float BossDepth = 7f, PieceScale = .75f;
         // One ply on each beat 4-9, white and black in turn: the king plays both sides.
         private static readonly (string from, string to)[] PlyMoves =
@@ -94,8 +97,8 @@ namespace StringAsASword.Presentation
             rimLight.type = LightType.Directional; rimLight.color = Color.white;
             rimLight.transform.localRotation = Quaternion.Euler(28, 180, 0); rimLight.enabled = false;
             // The noise sprite's material: unlit, alpha-blended and tinted by colour, which every flat prologue shape needs.
-            flatTemplate = view.Art.noiseMaterial != null ? view.Art.noiseMaterial
-                : new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default"));
+            flatTemplate = view.Art.noiseMaterial;
+            if (flatTemplate == null) { flatTemplate = new Material(Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")); resources.Add(flatTemplate); }
             whiteMarble = Marble(new Color(.86f, .85f, .82f), new Color(.55f, .55f, .56f), 7);
             blackMarble = Marble(new Color(.075f, .075f, .085f), new Color(.30f, .30f, .32f), 11);
             BuildLayer(); BuildPieces(); BuildOrder(); BuildStrings(); BuildBossAndCrown(); BuildNoise();
@@ -111,6 +114,8 @@ namespace StringAsASword.Presentation
             nextEvent = 0; nextBar = 0; nextAfter = 0; handoverTick = false;
             root.gameObject.SetActive(true); layer.gameObject.SetActive(true);
             cam.enabled = true; rimLight.enabled = true;
+            // The battle's picture is hidden until the handover (SetGroups), so its camera rests until then.
+            board.BoardCamera.enabled = false;
             board.FreeRoam = true;
             PlayStem(stemA, data.cueA, origin, 0);
             Render(0);
@@ -128,6 +133,7 @@ namespace StringAsASword.Presentation
             foreach (var stem in Stems()) if (stem != null && (!atHandover || stem != stemB)) stem.Stop();
             layer.gameObject.SetActive(false);
             cam.enabled = false; rimLight.enabled = false;
+            board.BoardCamera.enabled = true;
             root.gameObject.SetActive(false);
             SetGroups(1);
             board.CellOutline.gameObject.SetActive(true);
@@ -255,9 +261,10 @@ namespace StringAsASword.Presentation
             cam.projectionMatrix = projection;
         }
         /// <summary>The board camera's projection seen through the board view's rect on a full-screen target.</summary>
+        private readonly Vector3[] corners = new Vector3[4];
         private Matrix4x4 BattleProjection()
         {
-            var corners = new Vector3[4]; view.BoardViewRect.GetWorldCorners(corners);
+            view.BoardViewRect.GetWorldCorners(corners);
             float W = target.width, H = target.height, x0 = corners[0].x, y0 = corners[0].y, w = corners[2].x - x0, h = corners[2].y - y0;
             var map = Matrix4x4.identity;
             map.m00 = w / W; map.m03 = (2 * x0 + w) / W - 1;
@@ -335,7 +342,7 @@ namespace StringAsASword.Presentation
             Vector3 top = knight + Vector3.up * 1.05f, hand = Hand(knight.x);
             float pull = 0;
             foreach (var (from, _) in KnightOrders) pull = Mathf.Max(pull, Smooth(s, from + .1f, from + .3f) * (1 - Smooth(s, from + .5f, from + .9f)));
-            foreach (float back in new[] { Back1, Back2 }) pull = Mathf.Max(pull, Smooth(s, back - .5f, back - .4f) * (1 - Smooth(s, back, back + .3f)));
+            foreach (float back in Backs) pull = Mathf.Max(pull, Smooth(s, back - .5f, back - .4f) * (1 - Smooth(s, back, back + .3f)));
             float free = Smooth(s, Try3, Try3 + .6f);
             float knightAlpha = Mathf.Lerp(.3f, .95f, pull) * (1 - free);
             SetSegment(knightString, Vector3.Lerp(top, hand, free * .85f), hand, Mathf.Lerp(.014f, .03f, pull), knightAlpha);
@@ -343,15 +350,19 @@ namespace StringAsASword.Presentation
 
         // ---------------------------------------------------------------- the king's order: the square he wants a piece on
         private Transform order;
+        // Under, fill and frame, each with its share of the square's alpha.
+        private (Material material, float share)[] orderParts;
         private void BuildOrder()
         {
             // A soft lit square on the board: a white frame on a dark one (so it reads on either square) round a faint fill.
             order = new GameObject("King's Order").transform; order.SetParent(root, false);
             var under = SquareMesh(.98f, .74f); var frame = SquareMesh(.9f, .82f); var fill = SquareMesh(.82f, 0);
             resources.Add(under); resources.Add(frame); resources.Add(fill);
-            var u = MakeMesh(order, "Under", under, Flat(Color.black));
-            var f = MakeMesh(order, "Fill", fill, Flat(Color.white)); f.transform.localPosition = Vector3.up * .002f;
-            var l = MakeMesh(order, "Frame", frame, Flat(Color.white)); l.transform.localPosition = Vector3.up * .004f;
+            Material underMaterial = Flat(Color.black), fillMaterial = Flat(Color.white), frameMaterial = Flat(Color.white);
+            orderParts = new[] { (underMaterial, .5f), (fillMaterial, .16f), (frameMaterial, .85f) };
+            var u = MakeMesh(order, "Under", under, underMaterial);
+            var f = MakeMesh(order, "Fill", fill, fillMaterial); f.transform.localPosition = Vector3.up * .002f;
+            var l = MakeMesh(order, "Frame", frame, frameMaterial); l.transform.localPosition = Vector3.up * .004f;
             u.GetComponent<MeshRenderer>().sortingOrder = 2; f.GetComponent<MeshRenderer>().sortingOrder = 3; l.GetComponent<MeshRenderer>().sortingOrder = 3;
             order.gameObject.SetActive(false);
         }
@@ -374,11 +385,7 @@ namespace StringAsASword.Presentation
             }
             order.gameObject.SetActive(a > .01f); if (a <= .01f) return;
             order.localPosition = at + Vector3.up * .014f;
-            foreach (var r in order.GetComponentsInChildren<MeshRenderer>(true))
-            {
-                float k = r.name == "Under" ? .5f : r.name == "Fill" ? .16f : .85f;
-                var c = r.sharedMaterial.color; c.a = a * k; r.sharedMaterial.color = c;
-            }
+            foreach (var (material, share) in orderParts) SetAlpha(material, a * share);
         }
 
         // ---------------------------------------------------------------- the knight
@@ -413,7 +420,7 @@ namespace StringAsASword.Presentation
                 else home = true;
                 // On its square between tries, the king's order lit to its right: it gathers itself to go left.
                 if (home)
-                    foreach (float next in new[] { Try1 - .5f, Try2 - .45f, Try3 })
+                    foreach (float next in TryGathers)
                         if (s < next) squash = Mathf.Min(squash, 1 - .1f * Smooth(s, next - .2f, next));
             }
             else if (s < Pinned)
@@ -454,6 +461,10 @@ namespace StringAsASword.Presentation
         // ---------------------------------------------------------------- the binding strings, the sword and the lanes
         private LineRenderer[] strings, stringUnders, lanes;
         private Transform[] pins;
+        // Each pin's dark ring and white head, faded together (the ring at .6).
+        private Material[] pinUnders, pinHeads;
+        // One string's points, shared by the string and its dark under-line.
+        private readonly Vector3[] stringPoints = new Vector3[Segments + 1];
         private LineRenderer blade;
         private Transform sword;
         private Vector3[] kingBase, anchors;
@@ -465,13 +476,14 @@ namespace StringAsASword.Presentation
         {
             var parent = new GameObject("Strings").transform; parent.SetParent(root, false);
             strings = new LineRenderer[6]; stringUnders = new LineRenderer[6]; pins = new Transform[6];
+            pinUnders = new Material[6]; pinHeads = new Material[6];
             for (int i = 0; i < 6; i++)
             {
                 // A dark line under each string, so it reads on the white squares as on the black.
                 stringUnders[i] = MakeLine(parent, "String Under " + (i + 1), Segments + 1, .08f);
                 strings[i] = MakeLine(parent, "String " + (i + 1), Segments + 1, .045f);
                 stringUnders[i].sortingOrder = 3; strings[i].sortingOrder = 4;
-                pins[i] = MakePin(parent, "Pin " + (i + 1));
+                pins[i] = MakePin(parent, "Pin " + (i + 1), out pinUnders[i], out pinHeads[i]);
             }
             // Where the six strings come from (under the king) and where they pin the knight to the board around g1. #6 (index
             // 5) is the lowest, by the knight's hand: the one it tears.
@@ -479,6 +491,7 @@ namespace StringAsASword.Presentation
             // Close round g1 and low, so the strings press the knight down by its legs.
             anchors = new[] { new Vector3(1.3f, .02f, -3.3f), new Vector3(1.6f, .02f, -2.4f), new Vector3(2.4f, .02f, -2.2f),
                 new Vector3(3.3f, .02f, -2.5f), new Vector3(1.9f, .02f, -3.95f), new Vector3(3.6f, .02f, -3.4f) };
+            for (int i = 0; i < 6; i++) pins[i].localPosition = anchors[i];
             lanes = new LineRenderer[10];
             for (int i = 0; i < 10; i++) lanes[i] = MakeLine(parent, "Lane " + i, 2, i % 5 == 2 ? .05f : .035f);
             blade = MakeLine(parent, "String Blade", 2, .035f);
@@ -500,7 +513,7 @@ namespace StringAsASword.Presentation
                 bool torn = i == 5, hidden = s < Caught || (torn && s >= TearStory + 1.5f) || (!torn && s >= LaneStart(i) + .6f);
                 line.gameObject.SetActive(!hidden); stringUnders[i].gameObject.SetActive(!hidden);
                 if (hidden) { pins[i].gameObject.SetActive(false); continue; }
-                Vector3 a, b; float amp = .02f;
+                Vector3 a, b; float amp;
                 if (s < Caught + .4f)
                 {
                     // Shot from the king at the knight in the air.
@@ -509,7 +522,7 @@ namespace StringAsASword.Presentation
                 }
                 else { a = attach; b = Vector3.Lerp(kingBase[i], anchors[i], Smooth(s, Pinned + .1f, Pinned + 1.1f)); amp = .015f; }
                 amp += .06f * jerk;
-                float alpha = .95f, width = .045f, pin = Smooth(s, Pinned + .9f, Pinned + 1.1f);
+                float alpha = .95f, width, pin = Smooth(s, Pinned + .9f, Pinned + 1.1f);
                 if (torn)
                 {
                     width = Mathf.Lerp(.045f, .075f, glow);
@@ -540,11 +553,12 @@ namespace StringAsASword.Presentation
                 }
                 // Four shivers a beat, so the waiting bar repeats without a jump.
                 float time = s * Mathf.PI * 8;
-                SetString(line, a, b, amp, i * 1.7f, time, alpha, Color.white);
+                StringCurve(stringPoints, a, b, amp, i * 1.7f, time);
+                line.SetPositions(stringPoints); SetLineColor(line, new Color(1, 1, 1, alpha));
                 line.widthMultiplier = width;
-                SetString(stringUnders[i], a, b, amp, i * 1.7f, time, alpha * .55f, Color.black);
+                stringUnders[i].SetPositions(stringPoints); SetLineColor(stringUnders[i], new Color(0, 0, 0, alpha * .55f));
                 stringUnders[i].widthMultiplier = width + .035f;
-                SetFlat(pins[i], anchors[i], pin);
+                SetPin(i, pin);
             }
             // The lanes start out from the board's edges, lowest first; they fade into the lane art at the handover.
             float fadeOut = 1 - Smooth(s, Handover + .6f, End - .2f);
@@ -651,7 +665,7 @@ namespace StringAsASword.Presentation
             float v = 0;
             for (int k = 0; k < Plies; k++) { float t = FirstPly + k - .5f; if (s >= t) v = Mathf.Max(v, Mathf.Exp(-(s - t) * 4)); }
             foreach (var (from, _) in KnightOrders) if (s >= from) v = Mathf.Max(v, Mathf.Exp(-(s - from) * 4));
-            foreach (float t in new[] { Back1 - .45f, Back2 - .4f, Caught, Withdraw }) if (s >= t) v = Mathf.Max(v, Mathf.Exp(-(s - t) * 4));
+            foreach (float t in OrderEchoes) if (s >= t) v = Mathf.Max(v, Mathf.Exp(-(s - t) * 4));
             return v;
         }
 
@@ -768,6 +782,7 @@ namespace StringAsASword.Presentation
             skipHintGroup.alpha = Letterbox.SkipHintOpacity * bars;
             // The handover: the battle's own picture comes up over one beat while the prologue's goes.
             float handover = Smooth(s, Handover + 1, End - .15f);
+            board.BoardCamera.enabled = handover > 0;
             SetGroups(handover);
             introView.color = new Color(1, 1, 1, 1 - handover);
             board.CellOutline.gameObject.SetActive(handover > .5f);
@@ -776,7 +791,7 @@ namespace StringAsASword.Presentation
             if (!waiting) prompt.Hide();
             else
             {
-                prompt.Show("J", "현을 뜯는다");
+                if (!prompt.Visible) prompt.Show("J", "현을 뜯는다");
                 // The keycap kicks on every beat of the waiting bar.
                 prompt.Pulse(s % 1);
                 // Beside the knight's hand on the lowest string; the intro camera renders at screen size, so its screen point is a screen point.
@@ -852,7 +867,7 @@ namespace StringAsASword.Presentation
             cues.Sort((a, b) => a.Beat.CompareTo(b.Beat));
             return cues;
         }
-        private readonly List<Cue> before = new List<Cue>(), after = new List<Cue>();
+        private readonly List<Cue> before = new List<Cue>(), after = new List<Cue>(), waitBar = new List<Cue>();
         private readonly List<AudioSource> sources = new List<AudioSource>(), loopSources = new List<AudioSource>();
         private int nextEvent, nextBar, nextAfter, nextSource;
         private bool handoverTick;
@@ -871,6 +886,7 @@ namespace StringAsASword.Presentation
             foreach (var clip in new[] { data.Tick(false), data.Tick(true) }) if (clip != null) clip.LoadAudioData();
             before.AddRange(SectionACues());
             after.AddRange(SectionBCues());
+            waitBar.AddRange(WaitBarCues());
         }
         private AudioSource stemA, stemB;
         private AudioSource[] waitSources;
@@ -929,9 +945,9 @@ namespace StringAsASword.Presentation
                     {
                         var wait = waitSources[nextWait++ % waitSources.Length];
                         PlayStem(wait, data.cueWait, bar, now);
-                        loopSources.Add(wait);
+                        if (!loopSources.Contains(wait)) loopSources.Add(wait);
                     }
-                    foreach (var cue in WaitBarCues()) Play(cue, bar + cue.Beat * spb, now, loopSources);
+                    foreach (var cue in waitBar) Play(cue, bar + cue.Beat * spb, now, loopSources);
                     nextBar++;
                 }
             }
@@ -957,7 +973,7 @@ namespace StringAsASword.Presentation
             source.Stop(); source.clip = clip;
             source.volume = data.volume * GameFlow.MusicVolume * (clock ? data.TickVolume(accent) : cue.Volume);
             source.PlayScheduled(System.Math.Max(at, now + .01));
-            track?.Add(source);
+            if (track != null && !track.Contains(source)) track.Add(source);
         }
 
         // ---------------------------------------------------------------- building blocks
@@ -1019,13 +1035,12 @@ namespace StringAsASword.Presentation
             var material = quad.GetComponent<MeshRenderer>().sharedMaterial;
             var c = material.color; c.a = alpha; material.color = c;
         }
-        private static void SetFlat(Transform item, Vector3 at, float alpha)
+        private void SetPin(int i, float alpha)
         {
-            item.gameObject.SetActive(alpha > .01f); if (alpha <= .01f) return;
-            item.localPosition = at;
-            foreach (var renderer in item.GetComponentsInChildren<MeshRenderer>())
-            { var c = renderer.sharedMaterial.color; c.a = alpha * (renderer.name.StartsWith("Under") ? .6f : 1); renderer.sharedMaterial.color = c; }
+            pins[i].gameObject.SetActive(alpha > .01f); if (alpha <= .01f) return;
+            SetAlpha(pinUnders[i], alpha * .6f); SetAlpha(pinHeads[i], alpha);
         }
+        private static void SetAlpha(Material material, float alpha) { var c = material.color; c.a = alpha; material.color = c; }
         // Flat shapes lie on the board (y up). Built in the XZ plane.
         private static Mesh FlatMesh(string name, Vector3[] vertices, int[] triangles)
         {
@@ -1056,13 +1071,13 @@ namespace StringAsASword.Presentation
                 new[] { 0, 1, 5, 0, 5, 4, 1, 2, 6, 1, 6, 5, 2, 3, 7, 2, 7, 6, 3, 0, 4, 3, 4, 7 });
         }
         /// <summary>Where a string is nailed into the board: a white head on a dark ring, so it reads on either square.</summary>
-        private Transform MakePin(Transform parent, string name)
+        private Transform MakePin(Transform parent, string name, out Material underMaterial, out Material headMaterial)
         {
             var pin = new GameObject(name).transform; pin.SetParent(parent, false);
             var under = DiscMesh(.12f); var head = DiscMesh(.07f);
             resources.Add(under); resources.Add(head);
-            var u = MakeMesh(pin, "Under", under, Flat(Color.black)); u.transform.localPosition = Vector3.up * .012f;
-            var h = MakeMesh(pin, "Head", head, Flat(Color.white)); h.transform.localPosition = Vector3.up * .016f;
+            var u = MakeMesh(pin, "Under", under, underMaterial = Flat(Color.black)); u.transform.localPosition = Vector3.up * .012f;
+            var h = MakeMesh(pin, "Head", head, headMaterial = Flat(Color.white)); h.transform.localPosition = Vector3.up * .016f;
             u.GetComponent<MeshRenderer>().sortingOrder = 2; h.GetComponent<MeshRenderer>().sortingOrder = 3;
             pin.gameObject.SetActive(false);
             return pin;
@@ -1086,24 +1101,24 @@ namespace StringAsASword.Presentation
             line.widthMultiplier = width;
             SetLineColor(line, new Color(1, 1, 1, alpha));
         }
-        private static void SetString(LineRenderer line, Vector3 a, Vector3 b, float amp, float phase, float time, float alpha, Color color)
+        private static void StringCurve(Vector3[] points, Vector3 a, Vector3 b, float amp, float phase, float time)
         {
             var across = Vector3.Cross((b - a).normalized, Vector3.up).normalized;
             for (int i = 0; i <= Segments; i++)
             {
                 float u = i / (float)Segments, w = Mathf.Sin(Mathf.PI * u) * amp * Mathf.Sin(time + phase + u * 9);
-                line.SetPosition(i, Vector3.Lerp(a, b, u) + across * w + Vector3.up * (w * .7f));
+                points[i] = Vector3.Lerp(a, b, u) + across * w + Vector3.up * (w * .7f);
             }
-            color.a = alpha;
-            SetLineColor(line, color);
         }
 
         // Chess pieces: the previz silhouettes, turned on a lathe, in marble (A3-A), three quarters the size (A2-C).
+        private Mesh pieceBall, pieceBox;
         private Transform MakePiece(string type, Material material, Transform parent)
         {
             var item = new GameObject(type).transform; item.SetParent(parent, false);
             void Add(Mesh mesh, Vector3 at, Vector3 scale) { if (!resources.Contains(mesh)) resources.Add(mesh); var g = MakeMesh(item, type, mesh, material); g.transform.localPosition = at; g.transform.localScale = scale; g.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On; }
-            Mesh ball = Lathe(Semicircle(1));
+            if (pieceBall == null) { pieceBall = Lathe(Semicircle(1)); pieceBox = Box(); resources.Add(pieceBall); resources.Add(pieceBox); }
+            Mesh ball = pieceBall;
             switch (type)
             {
                 case "pawn":
@@ -1114,7 +1129,7 @@ namespace StringAsASword.Presentation
                     Add(ball, new Vector3(0, .88f, 0), new Vector3(.15f, .22f, .15f)); Add(ball, new Vector3(0, 1.12f, 0), Vector3.one * .05f); break;
                 case "rook":
                     Add(Lathe(new[] { V(0,0),V(.33f,0),V(.33f,.07f),V(.27f,.12f),V(.22f,.17f),V(.2f,.6f),V(.27f,.64f),V(.27f,.82f),V(0,.82f) }), Vector3.zero, Vector3.one);
-                    for (int i = 0; i < 4; i++) { float a = (i * 90 + 45) * Mathf.Deg2Rad; Add(Box(), new Vector3(Mathf.Cos(a) * .2f, .87f, Mathf.Sin(a) * .2f), Vector3.one * .11f); }
+                    for (int i = 0; i < 4; i++) { float a = (i * 90 + 45) * Mathf.Deg2Rad; Add(pieceBox, new Vector3(Mathf.Cos(a) * .2f, .87f, Mathf.Sin(a) * .2f), Vector3.one * .11f); }
                     break;
                 default:
                     Add(Lathe(new[] { V(0,0),V(.35f,0),V(.35f,.07f),V(.28f,.12f),V(.22f,.18f),V(.12f,.72f),V(.1f,.86f),V(.22f,.9f),V(.18f,.96f),V(.2f,1.08f),V(0,1.08f) }), Vector3.zero, Vector3.one);

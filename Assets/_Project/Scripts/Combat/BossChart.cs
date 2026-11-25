@@ -78,7 +78,8 @@ namespace StringAsASword.Combat
         public int ChorusEnd(int chorus)
         {
             int end = -1;
-            foreach (var s in sections) if (s.Name.StartsWith("싸비" + chorus, System.StringComparison.Ordinal)) end = System.Math.Max(end, s.To);
+            string prefix = "싸비" + chorus;
+            foreach (var s in sections) if (s.Name.StartsWith(prefix, System.StringComparison.Ordinal)) end = System.Math.Max(end, s.To);
             return end;
         }
 

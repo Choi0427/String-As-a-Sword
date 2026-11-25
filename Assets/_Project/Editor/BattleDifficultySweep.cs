@@ -21,7 +21,6 @@ namespace StringAsASword.Editor
     //   label damage=3/1/2 hp=65/15/26/100 playerHp=5 [fit=Expert:hard:255] [sens=1] [attacks=1]
     public static class BattleDifficultySweep
     {
-        private const int LogEvery = 1000;
         private const int BattleSeed = 87;
         private const int FitSeeds = 40;
         private const int FitIterations = 8;

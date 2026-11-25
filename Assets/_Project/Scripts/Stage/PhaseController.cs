@@ -10,7 +10,6 @@ namespace StringAsASword.Stage
         private readonly NoisePickupSystem noise;
         private int lastResolvedBeat = -1, reportedPhase = 1;
         public int PhaseId => health.ActiveSegment + 1;
-        public int Steals => health.ActiveSegment;
         public bool Completed => health.Defeated;
         public event Action<int> PhaseUnlocked;
         public PhaseController(BossHealthGate health, NoisePickupSystem noise)

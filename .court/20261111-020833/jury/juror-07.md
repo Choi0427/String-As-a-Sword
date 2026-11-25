@@ -1,4 +1,0 @@
-VOTE: NOT GUILTY
-REASON: In my shop you don't buy the fancy machine before you know what you'll make with it, and this plan does the same: it starts with a text file and checks the game already has, and it puts off the expensive editor window until real patterns show it's needed, which is the cheapest way to get the designer working on Monday.
-DECIDING FACT: The clickable Unity editor window is deferred until "after some patterns have been written this way," while the fairness checks and bot simulation already exist, so the first spend is small and reuses tools the project already paid for.
-WOULD FLIP IF: The record showed the existing fairness code only works on the 9 enum shapes and has to be rewritten to handle hand-drawn masks, so the "cheap first step" is actually a big build before the first pattern gets checked.
