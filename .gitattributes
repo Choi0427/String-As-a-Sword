@@ -169,3 +169,6 @@ Packages/packages-lock.json linguist-generated
 
 # Exceptions for .asset files such as lightning pre-baking
 LightingData.asset     binary
+
+# README images stay in plain git: small, and shown on the repository page without spending LFS bandwidth
+.github/readme/*.jpg    !filter !diff !merge -text
