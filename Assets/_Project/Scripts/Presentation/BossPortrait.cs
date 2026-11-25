@@ -29,8 +29,6 @@ namespace StringAsASword.Presentation
         private static readonly Color MissColor = new Color(.92f, .92f, .92f);
         private TMPro.TextMeshProUGUI missLabel;
         private float missAge = MissSeconds;
-        public bool MissVisible => missLabel != null && missLabel.gameObject.activeSelf;
-        public string MissText => missLabel != null ? missLabel.text : null;
 
         public void Initialize(PrototypeGame owner, Sprite sprite, Vector2 bottomCentre, float height, TMPro.TMP_FontAsset missFont = null)
         {

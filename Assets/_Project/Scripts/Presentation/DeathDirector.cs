@@ -41,8 +41,6 @@ namespace StringAsASword.Presentation
         public bool Covering => active;
         /// <summary>Seconds since the last hit.</summary>
         public float Age => age;
-        /// <summary>+1: the knight falls toward the right of the board, -1: toward the left (away from the king above the middle).</summary>
-        public float Side => side;
 
         public void Initialize(PrototypeGame owner, PrototypeView prototypeView)
         {

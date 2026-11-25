@@ -4,7 +4,6 @@ using StringAsASword.Board;
 using StringAsASword.Combat;
 using StringAsASword.Player;
 using StringAsASword.Presentation;
-using StringAsASword.Stage;
 
 namespace StringAsASword.Tests
 {

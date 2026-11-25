@@ -21,7 +21,7 @@ namespace StringAsASword.Tests
         public static OutputRecorder Attach(float seconds)
         {
             AudioListener listener = null;
-            foreach (var candidate in Object.FindObjectsByType<AudioListener>(FindObjectsSortMode.None)) if (candidate.isActiveAndEnabled) listener = candidate;
+            foreach (var candidate in Object.FindObjectsByType<AudioListener>()) if (candidate.isActiveAndEnabled) listener = candidate;
             Assert.That(listener, Is.Not.Null, "An active AudioListener to record from.");
             var recorder = listener.gameObject.AddComponent<OutputRecorder>();
             recorder.Rate = AudioSettings.outputSampleRate;

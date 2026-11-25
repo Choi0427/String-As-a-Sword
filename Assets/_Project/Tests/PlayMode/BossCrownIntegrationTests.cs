@@ -1,9 +1,7 @@
 using System.Collections;
 using NUnit.Framework;
-using StringAsASword.Board;
 using StringAsASword.Core;
 using StringAsASword.Presentation;
-using StringAsASword.Stage;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -75,10 +73,6 @@ namespace StringAsASword.Tests
             for (int blade = 0; blade < 3; blade++) Assert.That(crown.Blade(blade), Is.Zero);
             Assert.That(crown.BladeGlow(3), Is.EqualTo(1), "A blade keeps its glow until its segment is spent.");
 
-            var noise = game.Noise;
-            view.ShowNoiseCollected(new NoisePickup(99, noise.SessionId, 1, 0, new GridPosition(3, 3)));
-            Assert.That(crown.Flying, Is.Zero, "The crown is boss HP only; noise charges the string instead.");
-            Assert.That(GameObject.Find("Noise Mote"), Is.Null);
             Assert.That(crown.Seam(0), Is.Zero, "A seam stays clean until the blade before it is spent.");
             game.Health.ApplyDamage(game.Health.CurrentHp, 0);
             yield return new WaitForSecondsRealtime(.8f);

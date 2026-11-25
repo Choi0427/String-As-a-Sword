@@ -147,7 +147,7 @@ namespace StringAsASword.Presentation
                         continue;
                     }
                     var glyph = rect.gameObject.AddComponent<PrototypeGlyph>();
-                    glyph.SetShape(PrototypeGlyph.Shape.Note); glyph.color = NoteColor; notes[side, i] = glyph;
+                    glyph.color = NoteColor; notes[side, i] = glyph;
                 }
             for (int side = 0; side < 2; side++)
             {

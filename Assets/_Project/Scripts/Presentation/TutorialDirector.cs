@@ -266,12 +266,22 @@ namespace StringAsASword.Presentation
             if (handoverBeat >= 0) amount *= 1 - Smooth((float)beat, (float)liftBeat, (float)(liftBeat + LiftBeats));
             letterbox.Layout(bar, amount);
         }
+        // What the lesson card shows now.
+        private TutorialStep cardStep;
+        private bool cardLit;
+        private int cardLeft, cardLength;
         private void RenderCard(double beat)
         {
             if (!LessonActive || battle == null) { card.Hide(); return; }
             var resonance = battle.Resonance;
             int left = resonance.Remaining(battle.LastClosedNote + 1);
-            card.Show(TutorialSteps.Card(steps.Step, steps.Ignited && left > 0, left, resonance.Length));
+            bool lit = steps.Ignited && left > 0;
+            // Built again only when the card's text changes (or it was hidden): the parts are new arrays and strings.
+            if (!card.Visible || cardStep != steps.Step || cardLit != lit || cardLeft != left || cardLength != resonance.Length)
+            {
+                cardStep = steps.Step; cardLit = lit; cardLeft = left; cardLength = resonance.Length;
+                card.Show(TutorialSteps.Card(steps.Step, lit, left, resonance.Length));
+            }
             var board = view.BoardWorld;
             var anchor = steps.Step == TutorialStep.Noise ? BoardWorldPresenter.CellPosition(noiseCell) : board.PlayerTransform.localPosition;
             Place(board.ProjectToBoard(anchor, PrototypeView.BoardSize));
@@ -302,8 +312,10 @@ namespace StringAsASword.Presentation
         {
             min = float.MaxValue; max = float.MinValue; judge = float.MaxValue;
             if (view.JudgeLines == null) return false;
-            foreach (var judgeLine in view.JudgeLines)
+            var judgeLines = view.JudgeLines;
+            for (int i = 0; i < judgeLines.Count; i++)
             {
+                var judgeLine = judgeLines[i];
                 if (judgeLine == null) continue;
                 judgeLine.rectTransform.GetWorldCorners(corners);
                 foreach (var corner in corners)

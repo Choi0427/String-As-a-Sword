@@ -101,7 +101,7 @@ StringAsASword.Editor.BattleActionMixReport.Run("Docs/BossPatternVariety/Full", 
 
 개발 시드, 독립 시드, 입력 5% 누락 × 전략 3종 × 시드 1000개, 총 9000판이며 약 17분 걸린다. 에디터 메인 스레드를 점유한다. 도구는 측정만 하고 설정을 바꾸지 않는다.
 
-`BattlePacingComparison`은 HP 31/6/12/47에 고정된 battle-3 비교 도구이므로 현재 asset으로는 실행을 거부한다. 해당 커밋의 결과를 재현하려면 그 시점의 코드를 쓴다. 리플레이도 같은 이유로 이전 버전 로그를 거부한다.
+`BattlePacingComparison`은 HP 31/6/12/47에 고정된 battle-3 비교 도구였고, 저장소 정리(2026-11-25)에서 지웠다. 해당 커밋의 결과를 재현하려면 그 시점의 코드를 쓴다. 리플레이도 같은 이유로 이전 버전 로그를 거부한다.
 
 ## 테스트
 

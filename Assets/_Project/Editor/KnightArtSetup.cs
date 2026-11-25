@@ -12,7 +12,7 @@ namespace StringAsASword.Editor
     {
         private const string Knight = "Assets/_Project/Art/Models/Knight/";
         private const string PrefabPath = Knight + "Knight.prefab", MaterialPath = Knight + "Knight_Lit.mat", TexturePath = Knight + "Knight_BaseColor.jpg";
-        // Knight_Template is 0.6 x 1.2 units; the model is scaled uniformly to this height.
+        // The knight stands in a 0.6 x 1.2 unit box; the model is scaled uniformly to this height.
         private const float Height = 1.2f;
         // Turn applied to the delivered model so it faces the far row (the boss).
         private const float Yaw = 0;

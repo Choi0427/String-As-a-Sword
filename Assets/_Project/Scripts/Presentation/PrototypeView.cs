@@ -1,10 +1,8 @@
 using System;
-using System.Text;
 using StringAsASword.Combat;
 using StringAsASword.Core;
 using StringAsASword.Player;
 using StringAsASword.Rhythm;
-using StringAsASword.Stage;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -16,19 +14,14 @@ namespace StringAsASword.Presentation
     {
         public static readonly Color InkWhite = new Color(.94f, .93f, .88f);
         public static readonly Color Muted = new Color(.58f, .62f, .66f);
-        public static readonly Color Accent = new Color(.78f, .91f, .86f);
         [SerializeField] private TMP_FontAsset font;
         [SerializeField] private Material boardMaterial;
         [SerializeField] private ArtSet art;
-        [Tooltip("Shows the prototype's full text HUD (tempo, controls, stats, telegraph list) for balancing work.")]
-        [SerializeField] private bool detailedHud;
         /// <summary>Board view size on the 1600x900 canvas; the board render texture follows its size on screen.</summary>
         public static readonly Vector2 BoardSize = new Vector2(800, 733);
         // With ArtSet's camera (43°, FOV 31, size 4.9) this puts the board where the gameplay design has it.
         private static readonly Vector2 BoardCenter = new Vector2(0, -19);
         private const float StringGap = 34, ScreenEdge = 820;
-        // Label and Bar build into this layer: the root, or the detail layer that is hidden by default.
-        private RectTransform layer;
         private UnityEngine.UI.Image[] judgeLines;
         private RectTransform judgeRims;
         public Material BoardMaterial => boardMaterial;
@@ -69,7 +62,8 @@ namespace StringAsASword.Presentation
         public TMP_FontAsset LatinFont => art.font != null ? art.font : font;
         private PrototypeGame game;
         private RectTransform root;
-        private TMP_Text stats, beatLabel, position, mode, countIn, devLabel;
+        private TMP_Text countIn, devLabel;
+        private int countInShown = -1;
         private GameObject overlay;
         private NotePresenter notes;
         /// <summary>The scrolling notes on both lanes.</summary>
@@ -85,28 +79,21 @@ namespace StringAsASword.Presentation
         /// <summary>The crown over the boss picture that shows boss HP; null without crown art or a boss picture.</summary>
         public BossCrownView BossCrown => bossCrown;
         private RectTransform boardRect;
-        private TMP_Text attackHint;
-        private TMP_Text patternList;
         private readonly TMP_Text[] dangerLabels = new TMP_Text[64];
+        // The number each badge shows, so its text is only rebuilt when it changes (-1 = not set yet).
+        private readonly int[] dangerShown = new int[64];
         private readonly GameObject[] dangerBadges = new GameObject[64];
         private readonly UnityEngine.UI.Image[] dangerBackgrounds = new UnityEngine.UI.Image[64];
         private static readonly Color BadgeDark = new Color(.025f,.035f,.045f,.97f);
-        private readonly Vector2[] dangerPoints = new Vector2[64];
         private readonly int[] dangerCounts = new int[64];
         private readonly int[] dangerRemaining = new int[64];
         private readonly AttackResponse[] dangerResponses = new AttackResponse[64];
-        private readonly StringBuilder patternText = new StringBuilder(256);
-        private int lastClosedNote = -1;
-        private float impactAge = 1;
-        private ulong impactCells;
-        private TMP_Text playerHp;
         // Player HP under the knight, one image per HP. Sizes are cell widths, measured from the HUD mockup.
         private UnityEngine.UI.Image[] hpIcons;
         // The HP row's width as a share of the knight's cell width.
         private const float HpRowShareOfCell = .855f;
         private RectTransform hpRow;
         private PlayerHpStyle hpStyle;
-        public PlayerHpStyle HpStyle => hpStyle;
         public int HpIconsOn { get { int on = 0; foreach (var icon in hpIcons) if (icon.sprite == OnSprite && icon.color == Color.white) on++; return on; } }
         public int HpIconCount => hpIcons.Length;
         private Sprite OnSprite => hpStyle == PlayerHpStyle.Knights ? art.playerHpKnightOn : art.playerHpBarOn;
@@ -153,9 +140,6 @@ namespace StringAsASword.Presentation
             if (art.background != null) { backgroundImage.sprite = art.background; backgroundImage.color = Color.white; }
             BuildBackgroundLayers((RectTransform)transform, art.backgroundLayers, "Background Layer");
             root = MakeRect((RectTransform)transform, "Content", Vector2.zero, new Vector2(1600,900));
-            // The full prototype readout lives on a detail layer, hidden unless detailedHud is on.
-            var detail = MakeRect(root, "Detail HUD", Vector2.zero, new Vector2(1600,900));
-            layer = root;
             BuildBoard();
             BuildLanes();
             // No text HUD in play: the crown over the boss carries boss HP and noise. Only the count-in is written out,
@@ -163,38 +147,8 @@ namespace StringAsASword.Presentation
             countIn = Text(root, "Resume Countdown", "", Vector2.zero, new Vector2(320, 180), 112, InkWhite);
             if (art.outcomeFont != null) countIn.font = art.outcomeFont;
             countIn.alignment = TextAlignmentOptions.MidlineGeoAligned;
-            devLabel = Label("", new Vector2(-560,-428), new Vector2(460,30), 15, Muted);
+            devLabel = Text(root, "Label", "", new Vector2(-560,-428), new Vector2(460,30), 15, Muted);
             devLabel.alignment = TextAlignmentOptions.Left;
-            // Collected noise flies over the board and the strings to the crown; the menu overlay, built later, covers it.
-            if (bossCrown != null) bossCrown.MoteLayer = MakeRect(root, "Noise Motes", Vector2.zero, new Vector2(1600,900));
-
-            layer = detail;
-            detail.gameObject.SetActive(detailedHud);
-            playerHp = Label("", new Vector2(-600,355), new Vector2(330,36), 24, InkWhite);
-            Label("PROJECT  /  01", new Vector2(-660,394), new Vector2(200,30), 16, Muted);
-            Label("RHYTHM PROTOTYPE", new Vector2(655,394), new Vector2(220,30), 14, Muted);
-            Label("TEMPO", new Vector2(-573,235), new Vector2(250,30), 14, Muted);
-            Label($"{game.Song.Bpm:0} <size=18>BPM</size>", new Vector2(-573,187), new Vector2(250,65), 52, InkWhite);
-            Label($"ONE NOTE / {(60f / game.Song.Bpm):0.000} SEC", new Vector2(-573,139), new Vector2(300,26), 13, Muted);
-            mode = Label("", new Vector2(-573,105), new Vector2(300,30), 13, Muted);
-            Label("MOVE ON THE BEAT", new Vector2(-573,-132), new Vector2(300,30), 17, InkWhite);
-            Label("W", new Vector2(-573,-190), new Vector2(44,44), 22, InkWhite, true);
-            Label("A", new Vector2(-625,-240), new Vector2(44,44), 22, InkWhite, true);
-            Label("S", new Vector2(-573,-240), new Vector2(44,44), 22, InkWhite, true);
-            Label("D", new Vector2(-521,-240), new Vector2(44,44), 22, InkWhite, true);
-            Label("WASD  MOVE    J  ATTACK    K  GUARD\nOne action per beat.", new Vector2(-573,-311), new Vector2(380,55), 14, Muted);
-            Label("BOSS TELEGRAPHS", new Vector2(573,-118), new Vector2(330,25), 13, Muted);
-            patternList = Label("", new Vector2(573,-198), new Vector2(330,130), 15, InkWhite);
-            patternList.alignment = TextAlignmentOptions.TopLeft;
-            stats = Label("", new Vector2(573,-318), new Vector2(330,85), 14, Muted);
-            Label("PERFECT +/-70 ms   /   GOOD +/-140 ms", new Vector2(573,-375), new Vector2(370,22), 12, Muted);
-            Label("GLOW NORMAL   /   /// STRONG, NO GUARD   /   X IMPACT\nNUMBER = NOTES LEFT   /   +N = EXTRA ATTACKS", new Vector2(-573,-365), new Vector2(400,45), 12, Muted);
-            beatLabel = Label("BEAT  --", new Vector2(0,-292), new Vector2(320,26), 13, Accent);
-            position = Label("D4", new Vector2(0,-367), new Vector2(400,30), 14, Muted);
-            attackHint = Label("", new Vector2(0,-342), new Vector2(600,25), 13, Accent);
-            Bar("FooterRule", 0,-397,1460,1,new Color(.23f,.26f,.29f));
-            Label("SPACE  START     R  RESTART     ESC  PAUSE     M  CLICK SOUND", new Vector2(0,-423), new Vector2(1200,30), 14, Muted);
-            layer = root;
             BuildOverlay();
             Screens = BattleScreens.Create(root, game, art);
         }
@@ -228,7 +182,7 @@ namespace StringAsASword.Presentation
             for (int i = 0; i < 64; i++)
             {
                 Vector2 point = boardWorld.ProjectToBoard(new Vector3(i % 8 - 3.5f, .035f, i / 8 - 3.80f), size);
-                dangerPoints[i] = point;
+                dangerShown[i] = -1;
                 var badge = MakeRect(board, $"DangerBadge_{i % 8}_{i / 8}", point, new Vector2(40,20));
                 dangerBackgrounds[i] = Image(badge, BadgeDark); dangerBadges[i] = badge.gameObject;
                 dangerLabels[i] = Text(badge, "Countdown", "", Vector2.zero, new Vector2(40,20), 17, InkWhite);
@@ -368,24 +322,6 @@ namespace StringAsASword.Presentation
             resonanceHud = MakeRect(root, "Resonance", Vector2.zero, new Vector2(1600, 900)).gameObject.AddComponent<ResonanceHud>();
             resonanceHud.Initialize(game);
         }
-        private static Sprite softDotSprite;
-        /// <summary>A soft white dot, opaque at its centre and fading out with a squared falloff. For a lit key and glowing notes.</summary>
-        public static Sprite SoftDotSprite()
-        {
-            if (softDotSprite != null) return softDotSprite;
-            const int size = 32;
-            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
-            for (int y = 0; y < size; y++)
-                for (int x = 0; x < size; x++)
-                {
-                    float r = Mathf.Clamp01(new Vector2((x + .5f) / size * 2 - 1, (y + .5f) / size * 2 - 1).magnitude);
-                    texture.SetPixel(x, y, new Color(1, 1, 1, Mathf.Pow(1 - r, 2)));
-                }
-            texture.Apply();
-            softDotSprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(.5f, .5f));
-            softDotSprite.hideFlags = HideFlags.HideAndDontSave;
-            return softDotSprite;
-        }
         private void BuildOverlay()
         {
             var dim=MakeRect(root,"MenuOverlay",Vector2.zero,new Vector2(1600,900)); overlay=dim.gameObject;
@@ -420,7 +356,7 @@ namespace StringAsASword.Presentation
         private readonly TMP_Text[] devLabels=new TMP_Text[6];
         public void ResetFeedback()
         {
-            judgeAge=10; judgePeak=0; JudgePulse=0; impactAge=1; impactCells=0; lastClosedNote=-1;
+            judgeAge=10; judgePeak=0; JudgePulse=0;
             outcomeAge=10; seenRecords=game.Battle.Records.Count; outcomeFlash.gameObject.SetActive(false);
             Array.Clear(dangerCounts, 0, dangerCounts.Length);
             for (int i = 0; i < dangerBadges.Length; i++)
@@ -457,8 +393,6 @@ namespace StringAsASword.Presentation
             boardWorld.ShowDamage(damage);
             if (bossPortrait != null) bossPortrait.Hurt();
         }
-        /// <summary>A noise pickup was collected. It charges the string (the J key lights, the next notes glow); nothing flies to the crown, which is boss HP only.</summary>
-        public void ShowNoiseCollected(NoisePickup pickup) { }
         public void ShowIgnition(int note) => resonanceHud.Ignite();
         /// <summary>Show the MISS label for an attack without resonance.</summary>
         public void ShowGhostStrike(int note)
@@ -507,19 +441,11 @@ namespace StringAsASword.Presentation
         public void Render()
         {
             judgeAge+=Time.unscaledDeltaTime;
-            var cell=game.Session.Position;
             boardWorld.Render();
             if (judgeRims != null) judgeRims.anchoredPosition = boardRect.anchoredPosition;
             RenderTelegraphs();
             RenderOutcome();
             RenderPlayerHp();
-            playerHp.text = $"PLAYER HP  {game.Battle.PlayerHp} / {game.Stage.PlayerMaxHp}";
-            attackHint.text = !game.Attacks.IsInRange(cell) ? "J / SWING ONLY - DAMAGE FROM ROW 8" : game.Health.Defeated ? "J / SWING - ALL HP CLEARED" : game.Battle.Resonance.Enabled && !game.Battle.Resonance.Busy(game.Battle.LastClosedNote + 1) ? "J / 0 DAMAGE - COLLECT NOISE" : "J / ATTACK - DAMAGE ENABLED";
-            stats.text=$"PERFECT     {game.Session.PerfectCount:000}\nGOOD            {game.Session.GoodCount:000}\nMISS              {game.Session.MissCount:000}\nBEST              {game.Session.BestCombo:000}";
-            int cellIndex = cell.Y * 8 + cell.X;
-            position.text=$"POSITION  {(char)('A'+cell.X)}{cell.Y+1}     /     " + (dangerCounts[cellIndex] > 0 ? TelegraphHud.ThreatText(dangerResponses[cellIndex], dangerRemaining[cellIndex], 1) : "SAFE");
-            beatLabel.text=game.CurrentBeat<0?"PREPARE":$"BEAT  {game.CurrentBeat+1:0000}   /   {game.CurrentBeat%4+1}:4";
-            mode.text=game.Song.Music!=null?"SONG AUDIO":game.MetronomeMuted?"METRONOME / MUTED":"METRONOME / ON";
             // No glow: each judgement lengthens the lines about their centre, further for a better judgement, and they
             // settle back. On the board's rim the strip grows along the rim's own axis; the prototype bars are upright.
             // Either way the lines keep their width.
@@ -540,12 +466,12 @@ namespace StringAsASword.Presentation
             double countFrom = readyAt - game.Song.CountInBeats * game.Timeline.SecondsPerBeat;
             bool countingIn = (game.State == PrototypeState.CountIn || game.State == PrototypeState.Playing) &&
                 songTime >= countFrom && songTime < readyAt;
-            if (countingIn)
+            int beatsLeft = countingIn ? Mathf.Clamp((int)Math.Ceiling((readyAt - songTime) / game.Timeline.SecondsPerBeat), 1, game.Song.CountInBeats) : 0;
+            if (beatsLeft != countInShown)
             {
-                int beatsLeft = Mathf.Clamp((int)Math.Ceiling((readyAt - songTime) / game.Timeline.SecondsPerBeat), 1, game.Song.CountInBeats);
-                countIn.SetText("{0}", beatsLeft);
+                countInShown = beatsLeft;
+                if (beatsLeft > 0) countIn.SetText("{0}", beatsLeft); else countIn.text = string.Empty;
             }
-            else countIn.text = string.Empty;
             devLabel.text=game.Battle.Invincible || game.Battle.IgnoreBossHp ? "DEV MODE" + (game.Battle.Invincible ? " / INVINCIBLE" : "") + (game.Battle.IgnoreBossHp ? " / BOSS HP OFF" : "") : "";
             // The ready card is only seen when the battle scene is played without the menu; pause and game over are BattleScreens.
             bool show=game.State==PrototypeState.Ready;
@@ -565,26 +491,8 @@ namespace StringAsASword.Presentation
         private void RenderTelegraphs()
         {
             var battle = game.Battle;
-            if (battle.LastClosedNote != lastClosedNote)
-            {
-                lastClosedNote = battle.LastClosedNote; impactCells = 0;
-                foreach (var fired in battle.Patterns.LastFired) impactCells |= fired.Cells;
-                impactAge = 0;
-            }
-            if (game.State != PrototypeState.Paused) impactAge += Time.unscaledDeltaTime;
             var active = battle.Patterns.Active;
             TelegraphHud.MapCells(active, battle.LastClosedNote, dangerCounts, dangerRemaining, dangerResponses);
-            patternText.Clear();
-            int shown = 0;
-            bool flashing = impactAge < .3f;
-            if (flashing)
-                foreach (var fired in battle.Patterns.LastFired)
-                {
-                    if (shown++ < 5) patternText.Append("X  ").Append(fired.Name).Append("  /  IMPACT\n");
-                }
-            shown = TelegraphHud.AppendPatternLines(patternText, active, battle.LastClosedNote, shown, 5);
-            if (shown > 5) patternText.Append('+').Append(shown - 5).Append(" patterns");
-            patternList.text = patternText.Length == 0 ? "CLEAR / NO ATTACK QUEUED" : patternText.ToString();
             ulong countdowns = TelegraphHud.CountdownCells(active, battle.LastClosedNote, dangerRemaining);
             var player = game.Session.Position;
             // Only countdowns get a badge: a cell whose attack just landed shows no separate X.
@@ -597,7 +505,11 @@ namespace StringAsASword.Presentation
                 // A badge always stays on its own cell, even where the knight covers it.
                 dangerBadges[i].SetActive(visible);
                 // Only the soonest impact: a later attack on the same cell gets its own badge once this one has landed.
-                if (hasCountdown) dangerLabels[i].text = dangerRemaining[i].ToString();
+                if (hasCountdown && dangerShown[i] != dangerRemaining[i])
+                {
+                    dangerShown[i] = dangerRemaining[i];
+                    dangerLabels[i].SetText("{0}", dangerRemaining[i]);
+                }
                 if (!visible) continue;
                 var response = dangerResponses[i];
                 dangerBackgrounds[i].color = TelegraphHud.ResponseColor(response, BadgeDark);
@@ -612,12 +524,7 @@ namespace StringAsASword.Presentation
         }
         private static UnityEngine.UI.Image Image(RectTransform rect,Color color)
         { var image=rect.gameObject.AddComponent<UnityEngine.UI.Image>(); image.color=color; image.raycastTarget=false; return image; }
-        private UnityEngine.UI.Image Bar(string name,float x,float y,float width,float height,Color color)=>Image(MakeRect(layer,name,new Vector2(x,y),new Vector2(width,height)),color);
-        private TMP_Text Label(string content,Vector2 point,Vector2 size,int fontSize,Color tint,bool box=false)
-        {
-            if(box) Image(MakeRect(layer,"KeyBackground",point,size),new Color(.12f,.15f,.18f));
-            return Text(layer,"Label",content,point,size,fontSize,tint);
-        }
+        private UnityEngine.UI.Image Bar(string name,float x,float y,float width,float height,Color color)=>Image(MakeRect(root,name,new Vector2(x,y),new Vector2(width,height)),color);
         private TMP_Text Text(Transform parent,string name,string content,Vector2 point,Vector2 size,int fontSize,Color tint)
         {
             var rect=MakeRect(parent,name,point,size); var label=rect.gameObject.AddComponent<TextMeshProUGUI>();

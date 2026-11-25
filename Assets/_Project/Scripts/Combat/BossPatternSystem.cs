@@ -40,8 +40,10 @@ namespace StringAsASword.Combat
         private int phase, nextId;
         private PatternDefinition pending, previous;
         private int targetImpact, warning, selectedInterval, deferrals, lastImpact = -1;
-        public IReadOnlyList<BossTelegraph> Active => active.AsReadOnly();
-        public IReadOnlyList<BossTelegraph> LastFired => fired.AsReadOnly();
+        // Read every frame by the presenters: one live read-only view per list, not a new wrapper per read.
+        private IReadOnlyList<BossTelegraph> activeView, firedView;
+        public IReadOnlyList<BossTelegraph> Active => activeView ??= active.AsReadOnly();
+        public IReadOnlyList<BossTelegraph> LastFired => firedView ??= fired.AsReadOnly();
         public ulong LastFiredUnblockable { get; private set; }
         public Func<IReadOnlyList<BossTelegraph>, bool> CanPublish;
         public event Action<string, BossTelegraph> Changed;

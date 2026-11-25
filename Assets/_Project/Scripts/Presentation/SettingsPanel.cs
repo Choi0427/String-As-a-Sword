@@ -56,7 +56,6 @@ namespace StringAsASword.Presentation
         public bool IsOpen => gameObject.activeSelf;
         /// <summary>The row W/S or hovering picked (0 = 음량, -1 = none).</summary>
         public int SelectedRow { get; private set; } = -1;
-        public bool DevStripVisible => devStrip.activeSelf;
 
         /// <param name="dim">Darken whatever is behind the card. Off over the pause screen, which is already blurred.</param>
         public static SettingsPanel Create(RectTransform parent, ArtSet art, bool dim = true)

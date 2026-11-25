@@ -53,7 +53,7 @@
 
 - 공격 장판 2종은 `Art/Shaders/TelegraphTile.shader`가 칸의 UV로 그린다. 텍스처가 없다. `Set Up Telegraph Tiles` 메뉴를 다시 실행하면 두 머티리얼이 기본값으로 돌아간다.
 - 보드는 렌더 텍스처에 그려 UI에 올린다. 그래서 이 셰이더는 알파 채널을 `One OneMinusSrcAlpha`로 섞는다. 일반 알파 블렌드를 쓰면 장판 자리의 보드가 배경으로 비쳐 보인다.
-- 착탄 표시(`impactMark`)를 그림으로 바꾸려면 `Art/Materials/ArtCutout.mat`(URP Unlit, 알파 클리핑 0.5)을 복제해 Base Map에 PNG를 넣고 슬롯에 넣는다.
+- 착탄 표시(`impactMark`)를 그림으로 바꾸려면 URP Unlit 머티리얼을 만들어 알파 클리핑(0.5)을 켜고, Base Map에 PNG를 넣어 슬롯에 넣는다.
 - 머티리얼로 받는 이유가 있다. 빌드할 때 Unity는 실제로 참조된 셰이더 변형만 남기는데, 런타임에 투명 설정을 켜면 빌드에서 그 변형이 빠질 수 있다.
 - 이미지의 아래쪽 띠에는 남은 노트 숫자 배지가 겹친다. 핵심 모양은 위쪽 2/3 안에 둔다.
 
@@ -67,7 +67,7 @@
 
 ![그레이박스 스케일 확인](ArtPipeline/greybox-board.png)
 
-`Art/Templates/`의 `Knight_Template`(0.6×1.2), `King_Template`(7×4×1), `Noise_Template`(0.6)은 바닥 중앙 피벗의 크기 기준 프리팹이다. 아티스트에게 크기 기준으로 주거나, 슬롯에 넣어 배치를 먼저 확인할 수 있다.
+크기 기준은 나이트 0.6×1.2, 왕 7×4×1, 잡음 0.6(단위, 바닥 중앙 피벗)이다. 기준 프리팹(`Art/Templates/`)은 저장소 정리(2026-11-25)에서 지웠고 커밋 `0b5a650`에 있다.
 
 ## 셰이더와 조명
 

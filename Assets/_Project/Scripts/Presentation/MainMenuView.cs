@@ -1,4 +1,3 @@
-using System;
 using StringAsASword.Core;
 using TMPro;
 using UnityEngine;
@@ -42,7 +41,6 @@ namespace StringAsASword.Presentation
         public bool White { get; private set; }
         public int ItemCount => MenuLabels.Length;
         public bool SettingsOpen => settings != null && settings.IsOpen;
-        public int Selected => selected;
         /// <summary>Developer mode: picks an option of a settings row as if it were clicked (0 = first).</summary>
         public void ChooseSetting(string row, int option) => settings.Choose(row, option);
         public string LabelColorHex(int index) => ColorUtility.ToHtmlStringRGB(labels[index].color);
