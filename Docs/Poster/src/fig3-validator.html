@@ -1,0 +1,58 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<script src="board.js"></script><script src="chart.js"></script>
+<style>
+#fig { width: 1280px; }
+.row { display: flex; align-items: flex-start; justify-content: space-between; }
+.panel h4 { font-size: 22px; font-weight: 700; margin-bottom: 12px; }
+.panel h4 span { color: var(--accent); margin-right: 8px; }
+pre { background: #141414; color: #EDEDED; border-radius: 12px; padding: 20px 22px; font-size: 20px; line-height: 1.38; width: 300px; }
+pre .c { color: #8A8A8A; } pre .k { color: #F39AC8; } pre .h { color: #fff; font-weight: 700; background: rgba(192,28,117,.45); }
+.arr { align-self: center; font-size: 46px; color: var(--accent); font-weight: 700; margin-top: 30px; }
+.cap { font-size: 18px; color: #555; margin-top: 10px; line-height: 1.45; }
+.bottom { display: flex; gap: 30px; align-items: center; margin-top: 30px; padding-top: 24px; border-top: 2px solid var(--line); }
+.bottom .txt { flex: 1; font-size: 21px; line-height: 1.55; }
+.bottom .txt b { color: var(--accent); }
+.verdict { display: inline-block; font-weight: 700; padding: 6px 14px 3px; border-radius: 8px; font-size: 20px; margin-bottom: 8px; }
+.ok { background: #111; color: #fff; } .ng { background: var(--accent); color: #fff; }
+</style></head><body>
+<div id="fig">
+  <div class="row">
+    <div class="panel"><h4><span>①</span>텍스트로 쓴 채보</h4><pre id="code"></pre>
+      <div class="cap">0 빈 칸 · 1 일반 · 2 강공격(빗금)<br>마지막 줄: 노트 · 모양 · 예고 노트 수</div></div>
+    <div class="arr">→</div>
+    <div class="panel"><h4><span>②</span>판 위의 공격</h4><div id="atk"></div>
+      <div class="cap">노트 236, 예고 2노트.<br>빗금은 막을 수 없어 피해야 한다.</div></div>
+    <div class="arr">→</div>
+    <div class="panel"><h4><span>③</span>64칸 자동 검사</h4><div id="heat"></div>
+      <div class="cap">숫자 = 그 칸에서 안전 칸(·)까지 걸음 수.<br>모두 예고(2노트) 안 → <b>통과</b></div></div>
+  </div>
+  <div class="bottom">
+    <div id="fail"></div>
+    <div class="txt"><span class="verdict ng" id="failTitle"></span><br>
+      같은 모양을 예고 1노트로 쓰면, 검증기가 <b>피할 길이 없는 출발 칸</b>을 찾아 실패로 표시한다.<br>
+      <span class="muted">모든 공격마다 플레이어가 설 수 있는 64칸을 전부 검사한다. 채보를 쓸 때는 플레이어 위치를 알 수 없기 때문이다.</span></div>
+  </div>
+</div>
+<script>
+const C = window.CHART, sh = C.shapes['이중고리'], atk = C.attacks.find(a => a.shape === '이중고리');
+document.getElementById('code').innerHTML =
+  `<span class="k">shape</span> 이중고리\n` + sh.grid.join('\n') + `\n\n<span class="c"># 노트 모양 예고</span>\n<span class="h">${atk.note}  이중고리 ${atk.warning}</span>`;
+document.getElementById('atk').innerHTML = board({ size: 336, grid: sh.grid, id: 'a' });
+// Steps to the nearest safe (0) cell, moving one orthogonal cell per note (BossPatternSystem.DodgeActions, single attack).
+const dist = [];
+for (let r = 0; r < 8; r++) { dist.push([]); for (let c = 0; c < 8; c++) {
+  let best = 99; for (let rr = 0; rr < 8; rr++) for (let cc = 0; cc < 8; cc++) if (sh.grid[rr][cc] === '0') best = Math.min(best, Math.abs(r - rr) + Math.abs(c - cc));
+  dist[r].push(best); } }
+const heat = (W, size, id) => {
+  const text = [], out = [];
+  for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+    const d = dist[r][c];
+    text.push({ r, c, t: d > W ? '✗' : (d === 0 ? '·' : d), fill: d > W ? '#fff' : (d === 0 ? '#999' : '#111'), size: size / 8 * .42 });
+  }
+  return board({ size, id, text, cellFill: (r, c) => dist[r][c] > W ? ACCENT : (dist[r][c] === 0 ? '#FFFFFF' : (dist[r][c] === 1 ? '#F7E3EE' : '#EBC0D6')) });
+};
+document.getElementById('heat').innerHTML = heat(atk.warning, 336, 'h2');
+document.getElementById('fail').innerHTML = heat(1, 230, 'h1');
+const fails = dist.flat().filter(d => d > 1).length;
+document.getElementById('failTitle').textContent = `예고 1노트였다면: ${fails}칸 실패`;
+</script></body></html>

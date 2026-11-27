@@ -1,0 +1,60 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<style>
+#fig { width: 1280px; }
+h4 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.note { font-size: 17px; color: #666; }
+</style></head><body>
+<div id="fig"><div id="c"></div></div>
+<script>
+// battle-11 final (Docs/Battle11Balance.md): 300 seeds x 5 strategies per cell.
+const data = [
+  { diff: '어려움', sub: '회복 없음 · 고수·중수 대상', rows: [['고수', 100, [95, 100]], ['중수', 81, [60, 80]], ['초보', 3, null]] },
+  { diff: '쉬움', sub: '잡음 줍기마다 HP 1 회복 · 초보 대상', rows: [['고수', 100, null], ['중수', 99, [90, 100]], ['초보', 77, [50, 70]]] },
+];
+const A = '#C01C75', W = 1192, PW = 560, PH = 330, topY = 70, bot = 50, left = 56;
+const y = v => topY + PH - v / 100 * PH;
+let s = `<svg width="${W}" height="${topY + PH + bot + 310}" font-family="G">
+<defs><pattern id="band" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+<rect width="10" height="10" fill="#fff"/><rect width="3" height="10" fill="#C9C9C9"/></pattern></defs>`;
+data.forEach((d, i) => {
+  const ox = i * (PW + 72);
+  s += `<text x="${ox}" y="26" font-size="24" font-weight="700" fill="#111">${d.diff}</text>
+        <text x="${ox + 82}" y="26" font-size="17" fill="#666">${d.sub}</text>`;
+  for (const g of [0, 25, 50, 75, 100]) {
+    s += `<line x1="${ox + left}" x2="${ox + PW}" y1="${y(g)}" y2="${y(g)}" stroke="${g ? '#E6E6E6' : '#222'}" stroke-width="${g ? 1.5 : 2}"/>
+          <text x="${ox + left - 10}" y="${y(g) + 6}" font-size="16" fill="#888" text-anchor="end">${g}%</text>`;
+  }
+  const bw = 96, gap = (PW - left - 3 * bw) / 3;
+  d.rows.forEach(([name, v, band], j) => {
+    const bx = ox + left + gap / 2 + j * (bw + gap);
+    if (band) {
+      s += `<rect x="${bx - 14}" y="${y(band[1])}" width="${bw + 28}" height="${y(band[0]) - y(band[1])}" fill="url(#band)" stroke="#9A9A9A" stroke-width="1.5" stroke-dasharray="5 4"/>
+`;
+    }
+    const h = Math.max(PH * v / 100, 4);
+    s += `<path d="M${bx},${y(0)} V${y(0) - h + 4} q0,-4 4,-4 H${bx + bw - 4} q4,0 4,4 V${y(0)} Z" fill="${A}"/>
+          <text x="${bx + bw / 2}" y="${y(0) - h - 12}" font-size="26" font-weight="700" fill="#111" text-anchor="middle">${v}%</text>
+          <text x="${bx + bw / 2}" y="${y(0) + 30}" font-size="20" font-weight="700" fill="#333" text-anchor="middle">${name}</text>
+          <text x="${bx + bw / 2}" y="${y(0) + 54}" font-size="16" fill="#777" text-anchor="middle">${band ? '목표 ' + band[0] + (band[1] === 100 ? '% 이상' : '–' + band[1] + '%') : '목표 없음'}</text>`;
+  });
+});
+// Stun timing on the song: median note where the king is stunned, per skill (battle-11).
+const ty = topY + PH + bot + 100, tx = n => 20 + n / 306 * (W - 40);
+s += `<text x="0" y="${ty - 34}" font-size="22" font-weight="700" fill="#111">왕을 무력화하는 시점 (중앙값)</text>
+      <text x="350" y="${ty - 34}" font-size="17" fill="#666">실력과 상관없이 모두 3단계를 보고, 곡 끝 3연타 전에 쓰러뜨린다</text>`;
+for (const [a, b, name, fill] of [[0, 123, '1단계', '#EFEFEF'], [124, 233, '2단계', '#F3C9DE'], [234, 303, '3단계', '#E39BC2'], [304, 306, '', '#111']]) {
+  s += `<rect x="${tx(a)}" y="${ty}" width="${tx(b + 1) - tx(a)}" height="46" fill="${fill}"/>`;
+  if (name) s += `<text x="${tx(a) + 10}" y="${ty + 29}" font-size="17" font-weight="700" fill="#444">${name}</text>`;
+}
+s += `<line x1="${tx(303)}" x2="${tx(303)}" y1="${ty - 30}" y2="${ty + 46}" stroke="#111" stroke-width="2.5" stroke-dasharray="6 5"/>
+      <text x="${tx(303) - 10}" y="${ty - 10}" font-size="16" fill="#111" font-weight="700" text-anchor="end">결정 노트 303 · 이때 무력화돼 있어야 승리</text>`;
+const marks = [['고수', 227, 0], ['중수', 235, 1], ['초보', 270, 0]];
+for (const [name, n, lane] of marks) {
+  const yy = ty + 66 + lane * 34;
+  s += `<line x1="${tx(n)}" x2="${tx(n)}" y1="${ty + 46}" y2="${yy - 9}" stroke="${A}" stroke-width="2"/>
+        <circle cx="${tx(n)}" cy="${yy}" r="9" fill="${A}" stroke="#fff" stroke-width="2"/>
+        <text x="${tx(n) + 16}" y="${yy + 6}" font-size="18" font-weight="700" fill="#111" >${name} ${name === '초보' ? '269–272' : n}</text>`;
+}
+s += `<text x="0" y="${ty + 196}" font-size="16" fill="#777">battle-11 최종 설정 · 칸마다 300시드 × 전략 5종 · 봇은 화면에 보이는 정보만 사용 · 실력 프리셋은 가정값(사람 플레이로 보정 예정)</text></svg>`;
+document.getElementById('c').innerHTML = s;
+</script></body></html>

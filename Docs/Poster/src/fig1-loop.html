@@ -1,0 +1,70 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<script src="board.js"></script>
+<style>
+#fig { width: 1280px; }
+.wrap { display: flex; gap: 30px; align-items: center; }
+.steps { flex: 1; display: flex; flex-direction: column; gap: 22px; }
+.step { display: flex; gap: 18px; align-items: flex-start; }
+.num { flex: none; width: 54px; height: 54px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; font-size: 28px; display: flex; align-items: center; justify-content: center; padding-top: 4px; }
+.step h3 { font-size: 30px; font-weight: 700; margin: 4px 0 8px; }
+.step p { font-size: 20px; line-height: 1.45; color: #333; font-weight: 500; }
+.key { display: inline-block; border: 2px solid #222; border-bottom-width: 4px; border-radius: 7px; padding: 3px 9px 0; font-weight: 700; font-size: 19px; margin: 0 2px; background: #fff; }
+.strip { margin-top: 30px; border-top: 2px solid var(--line); padding-top: 22px; display: flex; align-items: center; gap: 26px; font-size: 22px; }
+.strip b { font-weight: 700; }
+.choice { display: flex; gap: 14px; }
+.choice span { background: #111; color: #fff; border-radius: 10px; padding: 10px 16px 7px; font-size: 21px; font-weight: 700; }
+.choice span em { font-style: normal; color: #F3C9DE; font-weight: 500; margin-left: 6px; }
+</style></head><body>
+<div id="fig">
+  <div class="wrap">
+    <div id="b"></div>
+    <div class="steps">
+      <div class="step"><div class="num">1</div><div><h3>내려가서 줍는다</h3>
+        <p>잡음은 <b>아래 5줄</b>에만 생긴다.<br>박마다 한 칸씩<br> <span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span></p></div></div>
+      <div class="step"><div class="num">2</div><div><h3>올라간다</h3>
+        <p>잡음을 주우면 현이 충전된다.<br>내려오는 공격을 막거나(<span class="key">K</span>) 피하며 위로</p></div></div>
+      <div class="step"><div class="num">3</div><div><h3>맨 윗줄에서 친다</h3>
+        <p>맨 윗줄에서 <span class="key">J</span> → <b>공명 8노트</b>.<br>노트마다 <span class="key">J</span> → <b>왕에게 피해</b><br><span class="muted">잡음이 없으면 공격은 통하지 않는다.</span></p></div></div>
+    </div>
+  </div>
+  <div class="strip"><b>노트 321개 = 선택 321번</b><span class="muted">노트마다 하나만</span>
+    <div class="choice"><span>이동<em>WASD</em></span><span>공격<em>J</em></span><span>방어<em>K</em></span></div></div>
+</div>
+<script>
+const S = 520, s = S / 8, pad = 30, topY = 150;
+const g = Array.from({ length: 8 }, () => '00000000');
+const ctr = (r, c) => [c * s + s / 2, r * s + s / 2];
+// Path: knight on topY row (r0,c3) -> down to noise at (r5,c3)... orthogonal, one cell per beat.
+const down = [[0, 3], [5, 3], [5, 1]], up = [[5, 1], [0, 1]];
+const pl = pts => pts.map(p => ctr(p[0], p[1]).join(',')).join(' ');
+const marker = `<defs><marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+  <path d="M0,0 L10,5 L0,10 z" fill="${ACCENT}"/></marker></defs>`;
+const badge = (x, y, t) => `<circle cx="${x}" cy="${y}" r="21" fill="${ACCENT}" stroke="#fff" stroke-width="3"/>
+  <text x="${x}" y="${y + 8}" text-anchor="middle" font-size="22" font-weight="700" fill="#fff" font-family="G">${t}</text>`;
+const extra = marker +
+  `<polyline points="${pl(down)}" fill="none" stroke="${ACCENT}" stroke-width="7" stroke-dasharray="16 10" stroke-linejoin="round" marker-end="url(#ah)"/>` +
+  `<polyline points="${pl(up)}" fill="none" stroke="${ACCENT}" stroke-width="7" stroke-linejoin="round" marker-end="url(#ah)"/>` +
+  `<rect x="2" y="${3 * s + 2}" width="${S - 4}" height="${5 * s - 4}" fill="none" stroke="${ACCENT}" stroke-width="4" stroke-dasharray="10 8"/>` +
+  `<rect x="2" y="2" width="${S - 4}" height="${s - 4}" fill="none" stroke="#111" stroke-width="5"/>` +
+  badge(ctr(3, 3)[0] + 30, ctr(3, 3)[1], '1') + badge(ctr(2, 1)[0] - 32, ctr(2, 1)[1], '2');
+const inner = board({ size: S, grid: g, labels: true, id: 'lp',
+  rowTint: [{ rows: [3, 4, 5, 6, 7], fill: 'rgba(192,28,117,0.13)' }, { rows: [0], fill: 'rgba(20,20,20,0.16)' }],
+  noise: [{ r: 5, c: 1 }, { r: 7, c: 6 }],
+  pieces: [{ r: 0, c: 1, glyph: '♞', color: '#111', scale: .8 }, { r: 0, c: 3, glyph: '♞', color: '#9a9a9a', stroke: '#fff', scale: .8, ghost: true }],
+  extra }).replace('<svg ', `<svg x="0" y="${topY}" `);
+const kx = ctr(0, 1)[0] + pad;
+document.getElementById('b').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="${S + pad + 168}" height="${S + topY + 34}">
+  ${marker}
+  <text x="${pad + S / 2}" y="${topY - 40}" text-anchor="middle" font-size="104" class="chess" fill="#111">♚</text>
+  <text x="${pad + S / 2 + 70}" y="${topY - 72}" font-size="22" font-weight="700" font-family="G" fill="#111">왕</text>
+  <line x1="${kx}" y1="${topY + 8}" x2="${pad + S / 2 - 46}" y2="${topY - 58}" stroke="${ACCENT}" stroke-width="7" marker-end="url(#ah)"/>
+  <circle cx="${kx + 8}" cy="${topY - 40}" r="21" fill="${ACCENT}" stroke="#fff" stroke-width="3"/>
+  <text x="${kx + 8}" y="${topY - 32}" text-anchor="middle" font-size="22" font-weight="700" fill="#fff" font-family="G">3</text>
+  ${inner.replace('<svg ', '<svg ').replace(/viewBox="([^"]*)"/, (m, v) => `viewBox="${v}"`)}
+  <g font-family="G" font-weight="700" font-size="20">
+    <text x="${pad + S + 16}" y="${topY + s / 2 + 2}" fill="#111">검이 닿는 곳</text>
+    <text x="${pad + S + 16}" y="${topY + s / 2 + 28}" fill="#555" font-weight="500" font-size="18">맨 윗줄</text>
+    <text x="${pad + S + 16}" y="${topY + 5.5 * s}" fill="${ACCENT}">잡음이 생기는 곳</text>
+    <text x="${pad + S + 16}" y="${topY + 5.5 * s + 26}" fill="#555" font-weight="500" font-size="18">아래 5줄</text>
+  </g></svg>`;
+</script></body></html>

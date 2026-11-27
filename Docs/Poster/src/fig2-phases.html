@@ -1,0 +1,64 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<script src="board.js"></script><script src="chart.js"></script>
+<style>
+#fig { width: 1280px; }
+.cols { display: flex; justify-content: space-between; }
+.col { width: 372px; }
+.col h3 { font-size: 27px; font-weight: 700; margin: 14px 0 6px; }
+.col .sub { font-size: 19px; color: #555; margin-bottom: 14px; }
+.col p { font-size: 19px; line-height: 1.45; color: #333; margin-top: 12px; }
+.col p b { color: var(--accent); }
+.arrow { align-self: center; font-size: 44px; color: var(--accent); margin-top: -40px; font-weight: 700; }
+.legend { margin: 28px 0 8px; }
+#tl { margin-top: 18px; }
+</style></head><body>
+<div id="fig">
+  <div class="cols" id="cols"></div>
+  <div class="legend">
+    <span><i style="background:#C01C75;opacity:.88"></i>일반 공격 — 막기(K) 또는 피하기</span>
+    <span><i style="background:repeating-linear-gradient(45deg,#9B1E60 0 5px,#F3C9DE 5px 10px)"></i>강공격 — 피하기만 가능</span>
+    <span><span class="chess" style="font-size:28px;vertical-align:-4px">♝</span> 플레이어가 선 칸에서 뻗는 기물의 길</span>
+  </div>
+  <div id="tl"></div>
+</div>
+<script>
+const C = window.CHART;
+const picks = [
+  { phase: '1단계', title: '정통 체스', note: 104, shape: '비숍X추적', range: '노트 0–123 · 간주1 ~ 싸비1',
+    desc: '<b>비숍</b>의 대각선. 룩·비숍·킹·나이트·퀸 등 실제 체스 기물의 공격 경로만 쓴다.' },
+  { phase: '2단계', title: '페어리 체스', note: 226, shape: '아마존', range: '노트 124–233 · 간주2 ~ 싸비2',
+    desc: '<b>아마존 = 퀸 + 나이트</b>. 두 기물의 규칙이 섞인다. 나이트가 뛰는 칸은 강공격.' },
+  { phase: '3단계', title: '존재하지 않는 규칙', note: 243, shape: '나선', range: '노트 234–303 · Interlude ~ 싸비3',
+    desc: '<b>나선</b>. 어떤 기물로도 설명되지 않는 모양. 판 자체가 규칙을 잃는다.' },
+];
+let html = '';
+picks.forEach((p, i) => {
+  const sh = C.shapes[p.shape], a = anchorCell(sh), atk = C.attacks.find(x => x.note === p.note && x.shape === p.shape);
+  const glyph = piecesOf(sh);
+  const pieces = a ? [{ r: a.r, c: a.c, glyph, color: '#fff', stroke: '#111', scale: glyph.length > 1 ? .5 : .8 }] : [];
+  html += `<div class="col"><span class="tag">${p.phase}</span><h3>${p.title}</h3><div class="sub">${p.range}</div>
+    ${board({ size: 372, grid: sh.grid, pieces, id: 'p' + i })}
+    <p>${p.desc}<br><span class="muted">노트 ${p.note} · 예고 ${atk.warning}노트</span></p></div>`;
+});
+document.getElementById('cols').innerHTML = html;
+
+// Timeline: the whole song (notes 0–306) with all 80 chart attacks fixed to it.
+const W = 1192, H = 128, x = n => 10 + n / 306 * (W - 20);
+const phases = [[0, 123, '1단계', '#E9E9E9'], [124, 233, '2단계', '#F3C9DE'], [234, 303, '3단계', '#E39BC2'], [304, 306, '', '#111']];
+let t = `<svg width="${W}" height="${H}" font-family="G">`;
+for (const [a, b, name, fill] of phases) {
+  t += `<rect x="${x(a)}" y="40" width="${x(b + 1) - x(a)}" height="54" fill="${fill}"/>`;
+  if (name) t += `<text x="${x(a) + 10}" y="62" font-size="17" font-weight="700" fill="#333">${name}</text>`;
+}
+for (const atk of C.attacks) {
+  const big = atk.hits > 1 || atk.shape === '전체';
+  t += `<line x1="${x(atk.note)}" x2="${x(atk.note)}" y1="${big ? 66 : 74}" y2="94" stroke="#111" stroke-width="${big ? 4 : 2.5}"/>`;
+}
+for (const p of picks) t += `<circle cx="${x(p.note)}" cy="30" r="8" fill="${ACCENT}"/><line x1="${x(p.note)}" x2="${x(p.note)}" y1="30" y2="40" stroke="${ACCENT}" stroke-width="3"/>`;
+for (const s of C.sections.filter(s => /싸비\d$/.test(s.name))) t += `<text x="${x(s.from)}" y="116" font-size="16" fill="#555">${s.name}</text>`;
+t += `<text x="${x(306) + 10}" y="116" font-size="16" fill="#111" font-weight="700" text-anchor="end">3연타 격파</text>`;
+t += `<text x="10" y="20" font-size="18" font-weight="700" fill="#111">곡 전체 (노트 0–306) · 고정된 공격 ${C.attacks.length}회</text>`;
+t += `<text x="${W - 10}" y="20" font-size="16" fill="#555" text-anchor="end">● 위 세 장면의 위치 · 굵은 선 = 판 전체·연타 공격</text>`;
+t += `</svg>`;
+document.getElementById('tl').innerHTML = t;
+</script></body></html>

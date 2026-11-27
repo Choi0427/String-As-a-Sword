@@ -1,0 +1,18 @@
+@font-face { font-family: G; src: url(GmarketSansTTFLight.woff); font-weight: 300; }
+@font-face { font-family: G; src: url(GmarketSansTTFMedium.woff); font-weight: 500; }
+@font-face { font-family: G; src: url(GmarketSansTTFBold.woff); font-weight: 700; }
+:root {
+  --accent: #C01C75; --accent-dark: #9B1E60; --accent-soft: #F7E3EE;
+  --ink: #161616; --muted: #6E6E6E; --line: #D6D6D6;
+  --sq-light: #F1F1F1; --sq-dark: #C9C9C9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #fff; }
+body { font-family: G, 'DejaVu Sans', sans-serif; font-weight: 500; color: var(--ink); }
+#fig { background: #fff; padding: 40px 44px; display: inline-block; }
+.chess { font-family: 'DejaVu Sans', sans-serif; }
+.mono { font-family: 'DejaVu Sans Mono', monospace; }
+.tag { display: inline-block; background: var(--accent); color: #fff; font-weight: 700; border-radius: 999px; padding: 6px 16px 4px; font-size: 20px; }
+.muted { color: var(--muted); }
+.legend { display: flex; gap: 28px; align-items: center; font-size: 19px; color: #333; }
+.legend i { display: inline-block; width: 26px; height: 26px; border-radius: 3px; vertical-align: -6px; margin-right: 8px; }
