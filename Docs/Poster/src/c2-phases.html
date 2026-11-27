@@ -1,0 +1,54 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<script src="board.js"></script><script src="chart.js"></script>
+<style>
+#fig { padding: 0; width: 1320px; }
+.cols { display: flex; justify-content: space-between; }
+.col { width: 400px; } .col svg { display: block; margin: 0 auto; }
+.col h3 { font-size: 30px; font-weight: 700; margin: 0 0 10px; white-space: nowrap; text-align: center; }
+.col h3 span { color: var(--accent); margin-right: 10px; }
+.col p { font-size: 26px; color: #333; margin-top: 8px; white-space: nowrap; text-align: center; }
+.col p b { color: var(--accent); }
+.legend { font-size: 26px; gap: 30px; margin: 14px 0 0; }
+.legend i { width: 30px; height: 30px; vertical-align: -6px; }
+</style></head><body>
+<!-- Poster box: 33 x 14 cm at 40 px/cm -->
+<div id="fig">
+  <div class="cols" id="cols"></div>
+  <div class="legend">
+    <span><i style="background:#C01C75;opacity:.88"></i>일반 — 막기(K)·피하기</span>
+    <span><i style="background:repeating-linear-gradient(45deg,#9B1E60 0 6px,#F3C9DE 6px 12px)"></i>강공격 — 피하기만</span>
+    <span><span class="chess" style="font-size:32px;vertical-align:-4px">♝</span> 플레이어 칸 기준</span>
+    <span style="margin-left:auto;font-weight:700">▼ 위 장면 · 곡에 고정된 공격 80회</span>
+  </div>
+  <div id="tl"></div>
+</div>
+<script>
+const C = window.CHART;
+const picks = [
+  { phase: '1단계', title: '정통 체스', note: 104, shape: '비숍X추적', name: '비숍' },
+  { phase: '2단계', title: '페어리 체스', note: 226, shape: '아마존', name: '아마존(퀸+나이트)' },
+  { phase: '3단계', title: '존재하지 않는 규칙', note: 243, shape: '나선', name: '나선' },
+];
+let html = '';
+picks.forEach((p, i) => {
+  const sh = C.shapes[p.shape], a = anchorCell(sh), glyph = piecesOf(sh);
+  const pieces = a ? [{ r: a.r, c: a.c, glyph, color: '#fff', stroke: '#111', scale: glyph.length > 1 ? .52 : .82 }] : [];
+  html += `<div class="col"><h3><span>${p.phase}</span>${p.title}</h3>${board({ size: 340, grid: sh.grid, pieces, id: 'p' + i })}
+    <p><b>${p.name}</b> <span class="muted">· 노트 ${p.note}</span></p></div>`;
+});
+document.getElementById('cols').innerHTML = html;
+const W = 1320, x = n => 4 + n / 306 * (W - 8);
+let t = `<svg width="${W}" height="84" font-family="G">`;
+for (const [a, b, name, fill] of [[0, 123, '1단계', '#E6E6E6'], [124, 233, '2단계', '#F3C9DE'], [234, 303, '3단계', '#E39BC2'], [304, 306, '', '#111']]) {
+  t += `<rect x="${x(a)}" y="20" width="${x(b + 1) - x(a)}" height="34" fill="${fill}"/>`;
+}
+for (const atk of C.attacks) {
+  const big = atk.hits > 1 || atk.shape === '전체';
+  t += `<line x1="${x(atk.note)}" x2="${x(atk.note)}" y1="${big ? 26 : 34}" y2="54" stroke="#111" stroke-width="${big ? 4 : 2.5}"/>`;
+}
+for (const p of picks) t += `<path d="M${x(p.note) - 10},2 L${x(p.note) + 10},2 L${x(p.note)},16 z" fill="${ACCENT}"/>`;
+
+for (const s of C.sections.filter(s => /싸비\d$/.test(s.name))) t += `<text x="${x(s.from)}" y="80" font-size="24" fill="#555">${s.name.replace('싸비', '후렴')}</text>`;
+t += `<text x="${W - 4}" y="80" font-size="24" fill="#111" font-weight="700" text-anchor="end">3연타</text></svg>`;
+document.getElementById('tl').innerHTML = t;
+</script></body></html>

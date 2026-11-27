@@ -1,0 +1,44 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<style>#fig { padding: 0; width: 1320px; }</style></head><body>
+<!-- Poster box: 33 x 11 cm at 40 px/cm -->
+<div id="fig"><div id="c"></div></div>
+<script>
+// battle-11 final (Docs/Battle11Balance.md): 300 seeds x 5 strategies per cell.
+const data = [
+  { diff: '어려움', sub: '회복 없음', rows: [['고수', 100, [95, 100]], ['중수', 81, [60, 80]], ['초보', 3, null]] },
+  { diff: '쉬움', sub: '잡음마다 HP+1', rows: [['고수', 100, null], ['중수', 99, [90, 100]], ['초보', 77, [50, 70]]] },
+];
+const A = '#C01C75', W = 1320, PW = 620, PH = 190, topY = 84, left = 70;
+const y = v => topY + PH - v / 100 * PH;
+let s = `<svg width="${W}" height="440" font-family="G">
+<defs><pattern id="band" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+<rect width="10" height="10" fill="#fff"/><rect width="3.5" height="10" fill="#BDBDBD"/></pattern></defs>`;
+data.forEach((d, i) => {
+  const ox = i * (PW + 80);
+  s += `<text x="${ox}" y="30" font-size="30" font-weight="700" fill="#111">${d.diff}</text><text x="${ox + (i ? 74 : 98)}" y="30" font-size="24" fill="#666">${d.sub}</text>`;
+  for (const g of [0, 50, 100]) s += `<line x1="${ox + left}" x2="${ox + PW}" y1="${y(g)}" y2="${y(g)}" stroke="${g ? '#E2E2E2' : '#222'}" stroke-width="2"/>
+      <text x="${ox + left - 10}" y="${y(g) + 8}" font-size="22" fill="#888" text-anchor="end">${g}%</text>`;
+  const bw = 110, gap = (PW - left - 3 * bw) / 3;
+  d.rows.forEach(([name, v, band], j) => {
+    const bx = ox + left + gap / 2 + j * (bw + gap);
+    if (band) s += `<rect x="${bx - 14}" y="${y(band[1])}" width="${bw + 28}" height="${y(band[0]) - y(band[1])}" fill="url(#band)" stroke="#9A9A9A" stroke-width="2" stroke-dasharray="6 4"/>`;
+    const h = Math.max(PH * v / 100, 5);
+    s += `<path d="M${bx},${y(0)} V${y(0) - h + 5} q0,-5 5,-5 H${bx + bw - 5} q5,0 5,5 V${y(0)} Z" fill="${A}"/>
+      <text x="${bx + bw / 2}" y="${y(0) - h - 10}" font-size="32" font-weight="700" fill="#111" text-anchor="middle">${v}%</text>
+      <text x="${bx + bw / 2}" y="${y(0) + 34}" font-size="26" font-weight="700" fill="#333" text-anchor="middle">${name}</text>`;
+  });
+});
+s += `<text x="${W}" y="30" font-size="22" fill="#777" text-anchor="end"><tspan font-weight="700">▨</tspan> 목표 범위</text>`;
+const ty = 360, tx = n => 150 + n / 306 * (W - 154);
+s += `<text x="0" y="${ty + 30}" font-size="24" font-weight="700" fill="#111">무력화 시점</text>`;
+for (const [a, b, name, fill] of [[0, 123, '1단계', '#EFEFEF'], [124, 233, '2단계', '#F3C9DE'], [234, 303, '3단계', '#E39BC2'], [304, 306, '', '#111']]) {
+  s += `<rect x="${tx(a)}" y="${ty}" width="${tx(b + 1) - tx(a)}" height="42" fill="${fill}"/>`;
+  if (name) s += `<text x="${name === '3단계' ? tx(282) : tx(a) + 10}" y="${ty + 30}" font-size="22" font-weight="700" fill="#555">${name}</text>`;
+}
+for (const [name, n, dy] of [['고수', 227, -1], ['중수', 235, 1], ['초보', 270, -1]]) {
+  s += `<circle cx="${tx(n)}" cy="${ty + 21}" r="10" fill="${A}" stroke="#fff" stroke-width="3"/>
+        <text x="${tx(n)}" y="${dy < 0 ? ty - 10 : ty + 70}" font-size="22" font-weight="700" fill="#111" text-anchor="middle">${name}</text>`;
+}
+s += `<text x="${tx(303) - 14}" y="${ty + 70}" font-size="22" fill="#111" text-anchor="end">결정 노트 303 ▸</text></svg>`;
+document.getElementById('c').innerHTML = s;
+</script></body></html>
