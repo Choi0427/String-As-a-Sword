@@ -145,7 +145,7 @@ namespace StringAsASword.Presentation
         public TMP_FontAsset screenFont;
         [Tooltip("PAUSED / FALLEN titles (Figma: Media Sans Extended Black). Empty = screenFont.")]
         public TMP_FontAsset screenTitleFont;
-        [Tooltip("HIT / BLOCK beside the knight (Chakra Petch Regular). Empty = the battle's Latin font.")]
+        [Tooltip("HIT / BLOCK and FAST / SLOW beside the knight, PERFECT / GOOD / MISS over the right strings (Chakra Petch Regular). Empty = the battle's Latin font.")]
         public TMP_FontAsset outcomeFont;        [Tooltip("Settings card art (Figma 'Game Play' / Settings, exported at 2x): the row titles with their captions, the key hints " +
             "at the bottom and the left-pointing arrow of the step buttons (flipped for the right one). Empty = plain text.")]
         public Sprite settingsVolume, settingsInputOffset, settingsMusicOffset, settingsDifficulty, settingsKeyHints, settingsArrow;

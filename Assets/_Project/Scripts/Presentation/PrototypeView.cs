@@ -123,15 +123,21 @@ namespace StringAsASword.Presentation
         private CanvasGroup outcomeGroup;
         private TMP_Text outcomeLabel;
         private static readonly Color OutcomeBox = UiKit.Hex(0x202020), OutcomeInk = Color.white;
-        // HIT / BLOCK's font size and the gap between the knight's head and the word's bottom (board-view units).
-        private const int OutcomeSize = 18;
+        // HIT / BLOCK's font size (board-view units).
+        private const int OutcomeSize = 21;
         // Letter spacing (TMP counts it in hundredths of an em) and the box's margin around the capitals (x, y).
         private const float OutcomeTracking = -10;
         private static readonly Vector2 OutcomePadding = new Vector2(3, 1);
-        private const float OutcomeHeadGap = 4;
         private float outcomeAge = 10;
         private int seenRecords;
         public string ActiveOutcome => outcomeFlash.gameObject.activeSelf ? outcomeLabel.text : "";
+        // FAST / SLOW beside the knight after a Good.
+        private TimingHint timingHint;
+        /// <summary>The FAST / SLOW hint showing now, or "" when none is.</summary>
+        public string ActiveTimingHint => timingHint.Active;
+        private JudgementLabel judgementLabel;
+        /// <summary>The grade showing over the right strings ("PERFECT" / "GOOD" / "MISS"), or "".</summary>
+        public string ActiveJudgement => judgementLabel.Active;
 
         public void Initialize(PrototypeGame owner)
         {
@@ -248,6 +254,8 @@ namespace StringAsASword.Presentation
             // Centred on the letters' own outline, not the line box, so the tight box sits evenly around them.
             outcomeLabel.alignment = TextAlignmentOptions.CenterGeoAligned;
             outcomeFlash.gameObject.SetActive(false);
+            // In the same font as HIT / BLOCK (Chakra Petch).
+            timingHint = new TimingHint(board, game, boardWorld, BoardSize, art.outcomeFont != null ? art.outcomeFont : LatinFont);
         }
         private void BuildPlayerHp(RectTransform board)
         {
@@ -313,6 +321,7 @@ namespace StringAsASword.Presentation
             }
             BuildResonanceHud();
             notes = new NotePresenter(root, art.noteSprite, art.holdBodySprite, art.holdTailSprite, judgeX, ScreenEdge, laneY, span);
+            BuildJudgementLabel(judgeX, laneY + span * .5f);
         }
         // Delivered lane art: one sprite with strings on both sides and a gap for the board. Its height is fitted to the
         // board rows in ArtSet.laneRows and its width so the middle string ends on the board's side edges, so the two
@@ -361,7 +370,13 @@ namespace StringAsASword.Presentation
             BuildResonanceHud();
             // No scrolling bar lines here: the art has its own frets, and each note carries a stem.
             notes = new NotePresenter(root, art.noteSprite, art.holdBodySprite, art.holdTailSprite, noteX, ScreenEdge, noteY, 0, tilt, headHeight);
+            // The top string meets the board's edge at `far`.
+            BuildJudgementLabel(judgeX, BoardCenter.y + far.y);
         }
+        // Over the right-hand strings, built after the notes so it reads above them. Chakra Petch, like HIT / BLOCK.
+        private void BuildJudgementLabel(float judgeX, float staffTop)
+            => judgementLabel = new JudgementLabel(root, game, judgeX, Mathf.Min(ScreenEdge, 800), staffTop, 800,
+                art.outcomeFont != null ? art.outcomeFont : LatinFont);
         // Under the notes, over the lanes.
         private void BuildResonanceHud()
         {
@@ -404,7 +419,7 @@ namespace StringAsASword.Presentation
             Text(quitRect,"Label",Core.GameFlow.HasMenu?"MAIN MENU":"QUIT GAME",Vector2.zero,new Vector2(270,50),17,InkWhite);
             // Developer mode: restart in a phase, toggle invincibility. Shown under the card while the mode is on.
             devStrip=MakeRect(dim,"DevStrip",new Vector2(0,-240),new Vector2(660,90)).gameObject; Image((RectTransform)devStrip.transform,new Color(.07f,.085f,.10f));
-            Text(devStrip.transform,"Title","DEVELOPER MODE    F1-F4 PHASE / F5 INVINCIBLE / F6 BOSS HP",new Vector2(0,28),new Vector2(640,24),13,Muted);
+            Text(devStrip.transform,"Title","DEVELOPER MODE    F1-F4 PHASE / F5 INVINCIBLE / F6 BOSS HP / F7 AUTO",new Vector2(0,28),new Vector2(640,24),13,Muted);
             for(int i=0;i<6;i++)
             {
                 int index=i;
@@ -422,6 +437,8 @@ namespace StringAsASword.Presentation
         {
             judgeAge=10; judgePeak=0; JudgePulse=0; impactAge=1; impactCells=0; lastClosedNote=-1;
             outcomeAge=10; seenRecords=game.Battle.Records.Count; outcomeFlash.gameObject.SetActive(false);
+            timingHint.Hide();
+            judgementLabel.Hide();
             Array.Clear(dangerCounts, 0, dangerCounts.Length);
             for (int i = 0; i < dangerBadges.Length; i++)
                 dangerBadges[i].SetActive(false);
@@ -436,11 +453,24 @@ namespace StringAsASword.Presentation
         public void ShowAction(ActionResult result)
         {
             boardWorld.ShowAction(result);
-            if (result.Accepted) Judge(result.Timing.Grade);
+            if (!result.Accepted) return;
+            Judge(result.Timing.Grade);
+            judgementLabel.Show(result.Timing.Grade);
+            timingHint.Show(result.Timing.Grade, result.Timing.ErrorSeconds);
         }
-        // Hold releases and misses have no text readout in play; the judge lines, the notes and the board carry them.
-        public void ShowHold(TimingResult result) => Judge(result.Grade);
-        public void ShowMiss(int beat) => Judge(Judgement.Miss);
+        // Every judged note writes its grade over the right strings. A Good, pressed or released, also gets FAST / SLOW
+        // beside the knight. The finale's free strikes (Pulse) are not judged notes, so they write nothing.
+        public void ShowHold(TimingResult result)
+        {
+            Judge(result.Grade);
+            judgementLabel.Show(result.Grade);
+            timingHint.Show(result.Grade, result.ErrorSeconds);
+        }
+        public void ShowMiss(int beat)
+        {
+            Judge(Judgement.Miss);
+            judgementLabel.Show(Judgement.Miss);
+        }
         /// <summary>How strongly the judge lines pulse for a judgement: Perfect full, Good about half, Miss faint.</summary>
         public static float JudgeGlowPeak(Judgement grade) =>
             grade == Judgement.Perfect ? 1f : grade == Judgement.Good ? .55f : grade == Judgement.Miss ? .25f : 0f;
@@ -466,7 +496,7 @@ namespace StringAsASword.Presentation
             ghostStrikeNote = note;
             if (bossPortrait != null) bossPortrait.ShowMiss();
         }
-        // Beside the knight, because that is where the eye already is. Near the top it drops below instead.
+        // On the knight, because that is where the eye already is.
         private void ShowOutcome(string text)
         {
             outcomeAge = 0;
@@ -480,12 +510,17 @@ namespace StringAsASword.Presentation
             var face = outcomeLabel.font.faceInfo;
             if (face.pointSize > 0 && face.capLine > 0) ink.y = face.capLine / face.pointSize * outcomeLabel.fontSize;
             outcomeFlash.sizeDelta = ink + OutcomePadding * 2;
-            // Just above the knight's head: the box's bottom sits OutcomeHeadGap over the top of the model.
-            Vector2 head = boardWorld.ProjectKnightHead(BoardSize);
-            float y = head.y + OutcomeHeadGap + outcomeFlash.sizeDelta.y * .5f;
-            if (y > BoardSize.y * .5f - 20) y = BoardSize.y * .5f - 20; // the top row: kept inside the board view
-            outcomeFlash.anchoredPosition = new Vector2(Mathf.Clamp(head.x, 150 - BoardSize.x * .5f, BoardSize.x * .5f - 150), y);
+            PlaceOutcome();
             outcomeFlash.gameObject.SetActive(true);
+        }
+        // On the knight's exact middle: halfway between its feet and the top of its head. Placed again every frame it
+        // shows, so a HIT / BLOCK on a moving note travels with the knight's hop instead of staying where it started.
+        private void PlaceOutcome()
+        {
+            Vector2 head = boardWorld.ProjectKnightHead(BoardSize), feet = boardWorld.ProjectToBoard(boardWorld.PlayerTransform.localPosition, BoardSize);
+            float half = outcomeFlash.sizeDelta.x * .5f;
+            float x = Mathf.Clamp((head.x + feet.x) * .5f, half - BoardSize.x * .5f, BoardSize.x * .5f - half);
+            outcomeFlash.anchoredPosition = new Vector2(x, (head.y + feet.y) * .5f);
         }
         private void RenderOutcome()
         {
@@ -499,6 +534,7 @@ namespace StringAsASword.Presentation
             bool visible = outcomeAge < OutcomeSeconds;
             if (outcomeFlash.gameObject.activeSelf != visible) outcomeFlash.gameObject.SetActive(visible);
             if (!visible) return;
+            PlaceOutcome();
             // Hold, then fade. The pop restarts on every note so a run of BLOCK still reads as separate blocks.
             outcomeGroup.alpha = Mathf.Clamp01((OutcomeSeconds - outcomeAge) / .2f);
             outcomeFlash.localScale = Vector3.one * (1 + .18f * Mathf.Clamp01(1 - outcomeAge / .1f));
@@ -512,6 +548,8 @@ namespace StringAsASword.Presentation
             if (judgeRims != null) judgeRims.anchoredPosition = boardRect.anchoredPosition;
             RenderTelegraphs();
             RenderOutcome();
+            timingHint.Render();
+            judgementLabel.Render();
             RenderPlayerHp();
             playerHp.text = $"PLAYER HP  {game.Battle.PlayerHp} / {game.Stage.PlayerMaxHp}";
             attackHint.text = !game.Attacks.IsInRange(cell) ? "J / SWING ONLY - DAMAGE FROM ROW 8" : game.Health.Defeated ? "J / SWING - ALL HP CLEARED" : game.Battle.Resonance.Enabled && !game.Battle.Resonance.Busy(game.Battle.LastClosedNote + 1) ? "J / 0 DAMAGE - COLLECT NOISE" : "J / ATTACK - DAMAGE ENABLED";
@@ -546,7 +584,8 @@ namespace StringAsASword.Presentation
                 countIn.SetText("{0}", beatsLeft);
             }
             else countIn.text = string.Empty;
-            devLabel.text=game.Battle.Invincible || game.Battle.IgnoreBossHp ? "DEV MODE" + (game.Battle.Invincible ? " / INVINCIBLE" : "") + (game.Battle.IgnoreBossHp ? " / BOSS HP OFF" : "") : "";
+            bool autoPlay = Core.GameFlow.AutoPlay;
+            devLabel.text=game.Battle.Invincible || game.Battle.IgnoreBossHp || autoPlay ? "DEV MODE" + (autoPlay ? " / AUTO PLAY" : "") + (game.Battle.Invincible ? " / INVINCIBLE" : "") + (game.Battle.IgnoreBossHp ? " / BOSS HP OFF" : "") : "";
             // The ready card is only seen when the battle scene is played without the menu; pause and game over are BattleScreens.
             bool show=game.State==PrototypeState.Ready;
             overlay.SetActive(show);

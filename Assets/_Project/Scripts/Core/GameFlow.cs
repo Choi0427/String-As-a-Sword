@@ -50,11 +50,20 @@ namespace StringAsASword.Core
             set { PlayerPrefs.SetInt(VisualKey, Mathf.Clamp(value, -200, 200)); PlayerPrefs.Save(); }
         }
 
-        /// <summary>Developer mode (saved; Shift+D in the settings): shows the phase and invincibility switches under the settings card and turns on F1-F5 in battle.</summary>
+        /// <summary>
+        /// Developer mode (saved; Shift+D in the settings): shows the phase and invincibility switches under the settings card
+        /// and turns on F1-F6 in battle. Editor only: in a build it is always off and cannot be turned on, so a player can
+        /// never reach it (a value saved by an older build is ignored).
+        /// </summary>
         public static bool DevMode
         {
+#if UNITY_EDITOR
             get => PlayerPrefs.GetInt(DevKey, 0) == 1;
             set { PlayerPrefs.SetInt(DevKey, value ? 1 : 0); PlayerPrefs.Save(); }
+#else
+            get => false;
+            set { }
+#endif
         }
         // Not saved: a new run of the game starts from phase 1 and can be hurt. Both count only while DevMode is on.
         private static bool devInvincible, devBossHpOff; private static int devStartPhase = 1;
@@ -63,6 +72,10 @@ namespace StringAsASword.Core
         public static bool BossHpOff { get => DevMode && devBossHpOff; set => devBossHpOff = value; }
         /// <summary>The boss phase (1..4) a battle starts in.</summary>
         public static int StartPhase { get => DevMode ? devStartPhase : 1; set => devStartPhase = Mathf.Clamp(value, 1, 4); }
+        // DEV-AUTOPLAY: not saved, and like the rest of developer mode never on in a build.
+        private static bool devAutoPlay;
+        /// <summary>Auto play (DevAutoPlayer): the battle plays itself, about as well as a decent player.</summary>
+        public static bool AutoPlay { get => DevMode && devAutoPlay; set => devAutoPlay = value; }
 
         /// <summary>Saved; 어려움 (the plain rules) until the player picks 쉬움.</summary>
         public static GameDifficulty Difficulty

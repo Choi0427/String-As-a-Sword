@@ -44,6 +44,8 @@ namespace StringAsASword.Combat
         public void Reset() { Charged = false; EndNote = -1; Halted = false; }
         public void Halt() { Charged = false; EndNote = -1; Halted = true; }
         public bool ActiveAt(int note) => EndNote >= 0 && note <= EndNote;
+        /// <summary>The running (or last) resonance spans <paramref name="note"/>: from its ignition note to its last one.</summary>
+        public bool Covers(int note) => EndNote >= 0 && note <= EndNote && note > EndNote - Length;
         /// <summary>Resonance notes left counting <paramref name="note"/> itself.</summary>
         public int Remaining(int note) => ActiveAt(note) ? EndNote - note + 1 : 0;
         /// <summary>Charged or resonating at this note: no new noise is wanted, spawned or collected.</summary>

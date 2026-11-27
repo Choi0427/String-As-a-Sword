@@ -38,6 +38,20 @@ namespace StringAsASword.Tests
             Assert.That(resonance.Strike(18, true, 1), Is.Zero);
             Assert.That(ignitions, Is.EqualTo(1)); Assert.That(ghosts, Is.EqualTo(2));
         }
+        [Test] public void CoversTheWindowFromIgnitionToItsLastNote()
+        {
+            // A held note's head closes before its release, so the notes view asks whether the window spans it.
+            var resonance = new ResonanceState(8);
+            Assert.That(resonance.Covers(0), Is.False, "nothing ignited yet");
+            resonance.TryCharge(4);
+            resonance.Strike(10, true, 1);
+            Assert.That(resonance.Covers(9), Is.False, "before the ignition note");
+            Assert.That(resonance.Covers(10), Is.True, "the igniting note");
+            Assert.That(resonance.Covers(17), Is.True, "the last note");
+            Assert.That(resonance.Covers(18), Is.False, "after the window");
+            resonance.Halt();
+            Assert.That(resonance.Covers(12), Is.False, "a halted resonance spans nothing");
+        }
         [Test] public void PerfectOnTheLastNoteAddsTheCadence()
         {
             var resonance = new ResonanceState(8);

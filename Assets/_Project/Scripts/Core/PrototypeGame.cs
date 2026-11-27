@@ -391,6 +391,29 @@ namespace StringAsASword.Core
             Debug.Log($"[DEV] F8 invincible: {(devF8Invincible ? "ON" : "OFF")}");
         }
 #endif
+#if UNITY_EDITOR
+        // DEV-AUTOPLAY (editor only, compiled out of builds).
+        private DevAutoPlayer autoPlayer;
+        private int autoPlaySession = -1;
+        /// <summary>The auto player of the battle being played now, or null while auto play is off.</summary>
+        public DevAutoPlayer AutoPlayer => GameFlow.AutoPlay ? autoPlayer : null;
+        // Only the song's battle while it is judged: not the prologue, the tutorial (its lessons wait for the player),
+        // the finale, a pause or the fall. A fresh player per run, so a restart starts its notes over.
+        private void StepAutoPlay(double time)
+        {
+            // Off: dropped, so turning it back on (key or settings) picks up from the next note, not a stale plan.
+            if (!GameFlow.AutoPlay) { autoPlayer = null; return; }
+            if (State != PrototypeState.Playing || InTutorialBattle) return;
+            if (autoPlayer == null || autoPlaySession != SessionId) { autoPlayer = new DevAutoPlayer(SessionId); autoPlaySession = SessionId; }
+            autoPlayer.Step(Battle, Timeline, time);
+        }
+        public void DevSetAutoPlay(bool on)
+        {
+            if (!GameFlow.DevMode) return;
+            GameFlow.AutoPlay = on;
+            Debug.Log($"[DEV] Auto play: {(on ? "ON" : "OFF")}");
+        }
+#endif
         public void QuitGame()
         {
             PauseSession();
@@ -464,6 +487,9 @@ namespace StringAsASword.Core
             }
             if (command.StartsWith("dev-phase")) { DevGoToPhase(command[command.Length - 1] - '0'); return; }
             if (command == "dev-invincible") { DevSetInvincible(!GameFlow.Invincible); return; }
+#if UNITY_EDITOR
+            if (command == "dev-autoplay") { DevSetAutoPlay(!GameFlow.AutoPlay); return; }
+#endif
             if (command == "dev-bosshp") { DevSetBossHp(GameFlow.BossHpOff); return; }
             if (command == "restart") StartSession();
             // Pause and game over have their own menus (Enter/Space press the picked item); Space starts only from the ready card.
@@ -523,6 +549,9 @@ namespace StringAsASword.Core
                 {
                     StopTutorial(); input.Clear(); previousTime = SongTime; State = PrototypeState.Playing;
                 }
+#if UNITY_EDITOR
+                StepAutoPlay(time);
+#endif
                 audioPlayer.Schedule();
                 AdvanceWorld(time);
                 if (State == PrototypeState.Finale && time >= FinaleEndTime)

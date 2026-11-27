@@ -232,7 +232,10 @@ namespace StringAsASword.Presentation
                 bool headVisible = inChart && remaining <= approach &&
                     (holding || !consumed && remaining >= 0); // gone the moment it reaches the judge line, hit or not
                 float headX = holding ? targetX : X(remaining, approach);
-                bool glowing = headVisible && beat >= nextNote && beat <= windowEnd;
+                // A held note's head is already judged (it is behind nextNote), so it is kept resonant for as long as it
+                // is held if the resonance spans it; otherwise it would grey out partway through the hold.
+                bool resonant = inChart && (beat >= nextNote && beat <= windowEnd || holding && resonance.Covers(beat));
+                bool glowing = headVisible && resonant;
                 if (glowing) GlowingNotes++;
                 for (int side = 0; side < 2; side++)
                 {
@@ -265,7 +268,7 @@ namespace StringAsASword.Presentation
                 }
                 RenderBarLine(i, inChart && remaining <= approach && remaining >= 0, X(remaining, approach));
                 RenderString(i, isHold && remaining <= approach, beat, session.HoldEnd(beat) - time, approach,
-                    holding, consumed, beat < session.ClosedNotes, sinceResolve, headX, time, inChart && beat >= nextNote && beat <= windowEnd);
+                    holding, consumed, beat < session.ClosedNotes, sinceResolve, headX, time, resonant);
             }
             RenderSparks(held.HasValue && active, resolvedBeat >= 0 && resolvedHit && sinceResolve < FlashSeconds, time, sinceResolve);
         }

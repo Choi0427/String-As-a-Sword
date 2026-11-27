@@ -149,8 +149,8 @@ namespace StringAsASword.Simulation
             return skilled;
         }
 
-        // Copy of the observation without the attacks the player never read.
-        private static BattleObservation FilterUnread(BattleObservation view, int skillSeed, double missRate, HashSet<int> unread)
+        // Copy of the observation without the attacks the player never read. Also used by the editor's auto play.
+        internal static BattleObservation FilterUnread(BattleObservation view, int skillSeed, double missRate, HashSet<int> unread)
         {
             var kept = new List<BossTelegraph>(view.Telegraphs.Length);
             foreach (var t in view.Telegraphs)

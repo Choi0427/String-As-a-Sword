@@ -145,7 +145,10 @@ namespace StringAsASword.Presentation
             var keyboard = Keyboard.current;
             if (keyboard == null) return;
             bool shift = keyboard.shiftKey.isPressed;
+#if UNITY_EDITOR
+            // Developer mode is editor only (GameFlow.DevMode); in a build Shift+D does nothing.
             if (shift && keyboard.dKey.wasPressedThisFrame) { Choose("개발자 모드", GameFlow.DevMode ? 0 : 1); return; }
+#endif
             // With no row lit, W starts from the bottom and S from the top, as on the menus.
             if (keyboard.wKey.wasPressedThisFrame || keyboard.upArrowKey.wasPressedThisFrame) Select(SelectedRow <= 0 ? RowCount - 1 : SelectedRow - 1);
             if (keyboard.sKey.wasPressedThisFrame || keyboard.downArrowKey.wasPressedThisFrame) Select(SelectedRow < 0 || SelectedRow == RowCount - 1 ? 0 : SelectedRow + 1);
@@ -258,9 +261,12 @@ namespace StringAsASword.Presentation
             devStrip = strip.gameObject;
             var title = UiKit.Label(TopLeft(Rect(strip, "Label"), 0, 0, 80, 44), "DEV", 22, Caption, TextAlignmentOptions.Left, font);
             title.characterSpacing = -5;
+            // Packed to fit the card's width (1266): each row is its name plus 74 per option.
             DevRow(strip, 90, 80, "무적", new[] { "꺼짐", "켜짐" }, () => GameFlow.Invincible ? 1 : 0, i => GameFlow.Invincible = i == 1);
-            DevRow(strip, 360, 110, "보스 HP", new[] { "꺼짐", "켜짐" }, () => GameFlow.BossHpOff ? 0 : 1, i => GameFlow.BossHpOff = i == 0);
-            DevRow(strip, 660, 140, "시작 페이즈", new[] { "1", "2", "3", "4" }, () => GameFlow.StartPhase - 1, i => GameFlow.StartPhase = i + 1);
+            DevRow(strip, 340, 100, "보스 HP", new[] { "꺼짐", "켜짐" }, () => GameFlow.BossHpOff ? 0 : 1, i => GameFlow.BossHpOff = i == 0);
+            DevRow(strip, 610, 130, "시작 페이즈", new[] { "1", "2", "3", "4" }, () => GameFlow.StartPhase - 1, i => GameFlow.StartPhase = i + 1);
+            // DEV-AUTOPLAY (F7 in battle): the battle plays itself.
+            DevRow(strip, 1056, 60, "자동", new[] { "꺼짐", "켜짐" }, () => GameFlow.AutoPlay ? 1 : 0, i => GameFlow.AutoPlay = i == 1);
             choices["개발자 모드"] = i => { GameFlow.DevMode = i == 1; refresh(); };
             refresh += () => devStrip.SetActive(GameFlow.DevMode);
         }
