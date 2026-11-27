@@ -1,0 +1,29 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<script src="board.js"></script><script src="chart.js"></script>
+<style>
+#fig { padding: 0; width: 1320px; }
+.cols { display: flex; justify-content: space-between; }
+.col { width: 410px; text-align: center; }
+.col svg { display: block; margin: 0 auto; }
+.col h3 { font-size: 36px; font-weight: 700; margin: 0 0 4px; white-space: nowrap; }
+.col h3 span { color: var(--accent); margin-right: 10px; }
+.col p { font-size: 30px; color: #555; margin-bottom: 14px; white-space: nowrap; }
+</style></head><body>
+<!-- Poster box: 33 cm wide at 40 px/cm -->
+<div id="fig"><div class="cols" id="cols"></div><div class="legend" style="font-size:30px;gap:44px;margin-top:18px;justify-content:center">
+  <span><i style="width:34px;height:34px;background:#C01C75;opacity:.88"></i>일반 공격 — 막기(K) 또는 피하기</span>
+  <span><i style="width:34px;height:34px;background:repeating-linear-gradient(45deg,#9B1E60 0 6px,#F3C9DE 6px 12px)"></i>강공격 — 피하기만 가능</span>
+</div></div>
+<script>
+const C = window.CHART;
+const picks = [
+  { phase: '1단계', title: '정통 체스', shape: '비숍X추적', name: '비숍의 대각선' },
+  { phase: '2단계', title: '페어리 체스', shape: '아마존', name: '퀸 + 나이트' },
+  { phase: '3단계', title: '체스에 없는 규칙', shape: '나선', name: '나선' },
+];
+document.getElementById('cols').innerHTML = picks.map((p, i) => {
+  const sh = C.shapes[p.shape], a = anchorCell(sh), glyph = piecesOf(sh);
+  const pieces = a ? [{ r: a.r, c: a.c, glyph, color: '#fff', stroke: '#111', scale: glyph.length > 1 ? .52 : .82 }] : [];
+  return `<div class="col"><h3><span>${p.phase}</span>${p.title}</h3><p>${p.name}</p>${board({ size: 390, grid: sh.grid, pieces, id: 'p' + i })}</div>`;
+}).join('');
+</script></body></html>
