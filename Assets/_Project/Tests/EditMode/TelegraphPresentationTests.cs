@@ -114,25 +114,20 @@ namespace StringAsASword.Tests
         }
 
         [Test]
-        public void SingleNoteWarningHidesItsBadgeAndLongWarningKeepsTheFinalOne()
+        public void EachCellCountsDownToItsSoonestHit()
         {
             var counts = new int[64]; var soonest = new int[64]; var responses = new AttackResponse[64];
             var longWarning = new BossTelegraph(1, "Long", 0b0110UL, 6, warningNotes: 3);
-            var longWarnings = new[] { longWarning };
             var overlappingWarnings = new[] {
                 longWarning,
                 new BossTelegraph(2, "Short", 0b1011UL, 6, warningNotes: 1),
                 new BossTelegraph(3, "Later", 0b1000UL, 8, warningNotes: 3)
             };
-
             for (int lastClosed = 3; lastClosed <= 5; lastClosed++)
             {
-                var active = lastClosed == 5 ? overlappingWarnings : longWarnings;
-                TelegraphHud.MapCells(active, lastClosed, counts, soonest, responses);
-                Assert.That(TelegraphHud.CountdownCells(active, lastClosed, soonest), Is.EqualTo(0b0110UL));
+                TelegraphHud.MapCells(lastClosed == 5 ? overlappingWarnings : new[] { longWarning }, lastClosed, counts, soonest, responses);
                 Assert.That(soonest[1], Is.EqualTo(6 - lastClosed));
             }
-
             Assert.That(counts[0], Is.EqualTo(1), "The short warning still marks the cell as dangerous.");
             Assert.That(soonest[3], Is.EqualTo(1), "A later impact does not mask the immediate threat.");
         }
@@ -191,51 +186,5 @@ namespace StringAsASword.Tests
             Assert.That(TelegraphHud.OutcomeText(new NoteRecord { category = "EffectiveAttack" }), Is.Null);
         }
 
-        private static int[] Countdowns(int value)
-        { var soonest = new int[64]; for (int i = 0; i < 64; i++) soonest[i] = value; return soonest; }
-        private static int Count(ulong mask)
-        { int count = 0; for (; mask != 0; mask &= mask - 1) count++; return count; }
-
-        [Test]
-        public void NarrowAttacksKeepEveryBadge()
-        {
-            ulong cross = 0xFFUL << 24;
-            for (int y = 0; y < 8; y++) cross |= 1UL << (y * 8 + 3);
-            Assert.That(TelegraphHud.BadgeCells(cross, Countdowns(2), 27), Is.EqualTo(cross));
-        }
-
-        [Test]
-        public void FullBoardWithOneCountdownCollapsesToOneBadgePerBlock()
-        {
-            ulong badges = TelegraphHud.BadgeCells(ulong.MaxValue, Countdowns(2), 27);
-            Assert.That(Count(badges), Is.EqualTo(16));
-            Assert.That(badges & (1UL << 27 | 1UL << 35 | 1UL << 19 | 1UL << 26 | 1UL << 28), Is.Zero, "Cells around the knight add nothing when every cell reads the same.");
-        }
-
-        [Test]
-        public void CheckerKeepsBothCountdownsNearbyAndAroundThePlayer()
-        {
-            var soonest = new int[64];
-            for (int i = 0; i < 64; i++) soonest[i] = (i % 8 + i / 8) % 2 == 0 ? 1 : 2;
-            ulong badges = TelegraphHud.BadgeCells(ulong.MaxValue, soonest, 27);
-            Assert.That(Count(badges), Is.LessThan(40));
-            foreach (int beside in new[] { 27, 35, 19, 26, 28 }) Assert.That(badges & (1UL << beside), Is.Not.Zero, $"Cell {beside} is one move away.");
-            for (int y = 0; y < 8; y += 2) for (int x = 0; x < 8; x += 2)
-            {
-                bool one = false, two = false;
-                foreach (int cell in new[] { y * 8 + x, y * 8 + x + 1, (y + 1) * 8 + x, (y + 1) * 8 + x + 1 })
-                    if ((badges & (1UL << cell)) != 0) { one |= soonest[cell] == 1; two |= soonest[cell] == 2; }
-                Assert.That(one && two, Is.True, $"Block {x},{y} must show both countdowns.");
-            }
-        }
-
-        [Test]
-        public void BadgesNeverAppearOnUnmarkedCells()
-        {
-            ulong upperHalf = ulong.MaxValue << 32;
-            Assert.That(TelegraphHud.BadgeCells(upperHalf, Countdowns(1), 27) & ~upperHalf, Is.Zero);
-            var soonest = Countdowns(1); for (int i = 32; i < 64; i += 2) soonest[i] = 3;
-            Assert.That(TelegraphHud.BadgeCells(upperHalf, soonest, 27) & ~upperHalf, Is.Zero, "A player below the attack gets no badge on a safe neighbour.");
-        }
     }
 }

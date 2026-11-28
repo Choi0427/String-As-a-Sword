@@ -18,8 +18,11 @@ namespace StringAsASword.Combat
         public string Reason { get; }
         public AttackResponse Response { get; }
         public int Hit { get; }
-        /// <summary>Chess pieces summoned for this attack (boss chart `piece=`). Presentation only.</summary>
-        public IReadOnlyList<ChessPiece> Pieces { get; set; } = new ChessPiece[0];
+        /// <summary>
+        /// Chess pieces summoned for this hit, placed on the board (boss chart attacks; see PieceStrikePlanner). Presentation only.
+        /// A hit split into normal and strong telegraphs carries them on the first one.
+        /// </summary>
+        public IReadOnlyList<PieceStrike> Strikes { get; set; } = new PieceStrike[0];
         public BossTelegraph(int id, string name, ulong cells, int impactNote, PatternKind kind = PatternKind.Row,
             int warningNotes = 0, int requiredDodgeActions = 0, int selectedInterval = 0, int actualInterval = 0, string reason = "",
             AttackResponse response = AttackResponse.Either, int hit = 0)
@@ -151,13 +154,15 @@ namespace StringAsASword.Combat
         public List<BossTelegraph> AuthoredHits(BossChartAttack a, GridPosition player, string reason = "")
         {
             var (normal, strong) = BossChart.Cells(a.Shape, player);
+            var strikes = a.PlacedStrikes(player);
             var hits = new List<BossTelegraph>();
             for (int hit = 0; hit < a.Hits; hit++)
             {
-                int offset = hit * a.Every, impact = a.Note + offset;
+                int offset = hit * a.Every, impact = a.Note + offset, first = hits.Count;
                 int interval = hit > 0 ? a.Every : lastImpact < 0 ? 0 : a.Note - lastImpact;
                 void Add(ulong cells, AttackResponse response) => hits.Add(new BossTelegraph(nextId + 1 + hits.Count, a.Shape.Name, cells, impact,
-                    PatternKind.Drawn, a.Warning + offset, 0, hit == 0 ? 0 : a.Every, interval, reason, response, hit) { Pieces = a.Shape.Pieces });
+                    PatternKind.Drawn, a.Warning + offset, 0, hit == 0 ? 0 : a.Every, interval, reason, response, hit)
+                    { Strikes = hits.Count == first ? (IReadOnlyList<PieceStrike>)strikes : new PieceStrike[0] });
                 if (a.Shape.GuardOnly) { Add(normal, AttackResponse.GuardOnly); continue; }
                 if (normal != 0) Add(normal, AttackResponse.Either);
                 if (strong != 0) Add(strong, AttackResponse.DodgeOnly);

@@ -29,12 +29,24 @@ namespace StringAsASword.Combat
         public bool HasAnchor { get; }
         public GridPosition Anchor { get; }
         public int Line { get; }
-        /// <summary>`piece=룩+나이트`: one piece, or the two halves of a fairy piece. Empty = nothing is summoned.</summary>
-        public IReadOnlyList<ChessPiece> Pieces { get; }
+        /// <summary>`piece=룩` on the shape line: every attack with this shape summons that piece instead of the rules' choice.</summary>
+        public PieceChoice Piece { get; }
+        /// <summary>The pieces the rules pick for this drawing (PieceStrikePlanner), before any piece= override.</summary>
+        public IReadOnlyList<PieceStrike> PlannedStrikes => planned ?? (planned = PieceStrikePlanner.Plan(Normal | Strong));
+        private List<PieceStrike> planned;
         /// <summary>A board full of 1 has no safe cell: it is guarded, never dodged (the FullBoard rule).</summary>
         public bool GuardOnly => !HasAnchor && Normal == ulong.MaxValue;
-        public BossChartShape(string name, ulong normal, ulong strong, bool hasAnchor, GridPosition anchor, int line, ChessPiece[] pieces = null)
-        { Name = name; Normal = normal; Strong = strong; HasAnchor = hasAnchor; Anchor = anchor; Line = line; Pieces = pieces ?? new ChessPiece[0]; }
+        public BossChartShape(string name, ulong normal, ulong strong, bool hasAnchor, GridPosition anchor, int line, PieceChoice piece = default)
+        { Name = name; Normal = normal; Strong = strong; HasAnchor = hasAnchor; Anchor = anchor; Line = line; Piece = piece; }
+    }
+    /// <summary>A piece= option: automatic (the rules decide), one named piece, or none.</summary>
+    public readonly struct PieceChoice
+    {
+        public bool Set { get; }
+        /// <summary>Set and null: `piece=없음`, nothing is summoned.</summary>
+        public ChessPiece? Piece { get; }
+        public PieceChoice(ChessPiece? piece) { Set = true; Piece = piece; }
+        public override string ToString() => !Set ? "자동" : Piece.HasValue ? PieceStrikePlanner.Name(Piece.Value) : "없음";
     }
     public sealed class BossChartAttack
     {
@@ -45,11 +57,28 @@ namespace StringAsASword.Combat
         public int Every { get; }
         public int MinPhase { get; }
         public int Line { get; }
+        /// <summary>`piece=폰` on the attack line: this attack only. It wins over the shape's piece=.</summary>
+        public PieceChoice Piece { get; }
         /// <summary>The note whose close discloses the attack.</summary>
         public int Publish => Note - Warning;
         public int LastHit => Note + (Hits - 1) * Every;
-        public BossChartAttack(int note, BossChartShape shape, int warning, int hits, int every, int minPhase, int line)
-        { Note = note; Shape = shape; Warning = warning; Hits = hits; Every = every; MinPhase = minPhase; Line = line; }
+        /// <summary>The summoned pieces in drawing coordinates: the rules' choice, unless piece= names one (attack first, then shape).</summary>
+        public IReadOnlyList<PieceStrike> Strikes => strikes ?? (strikes = ResolveStrikes());
+        private List<PieceStrike> strikes;
+        /// <summary>Where the piece choice came from, for the report: 자동, 공격 piece= or 모양 piece=.</summary>
+        public string PieceSource => Piece.Set ? "공격 piece=" + Piece : Shape.Piece.Set ? "모양 piece=" + Shape.Piece : "자동";
+        public BossChartAttack(int note, BossChartShape shape, int warning, int hits, int every, int minPhase, int line, PieceChoice piece = default)
+        { Note = note; Shape = shape; Warning = warning; Hits = hits; Every = every; MinPhase = minPhase; Line = line; Piece = piece; }
+        private List<PieceStrike> ResolveStrikes()
+        {
+            var choice = Piece.Set ? Piece : Shape.Piece;
+            if (!choice.Set) return new List<PieceStrike>(Shape.PlannedStrikes);
+            if (!choice.Piece.HasValue) return new List<PieceStrike>();
+            return PieceStrikePlanner.Override(Shape.PlannedStrikes, Shape.Normal | Shape.Strong, choice.Piece.Value);
+        }
+        /// <summary>The strikes on the board for a player at <paramref name="player"/> (anchored shapes follow the player).</summary>
+        public List<PieceStrike> PlacedStrikes(GridPosition player)
+            => Shape.HasAnchor ? PieceStrikePlanner.Place(Strikes, player.X - Shape.Anchor.X, player.Y - Shape.Anchor.Y) : new List<PieceStrike>(Strikes);
     }
 
     /// <summary>
@@ -150,6 +179,16 @@ namespace StringAsASword.Combat
         }
         // In ChessPiece order.
         private static readonly string[] PieceNames = { "폰", "룩", "비숍", "나이트", "킹", "퀸" };
+        /// <summary>`piece=룩` or `piece=없음`. Combinations are planned by the rules, so `룩+나이트` is refused.</summary>
+        private static PieceChoice ParsePiece(string value, int line)
+        {
+            if (value == "없음") return new PieceChoice(null);
+            if (value.Contains("+"))
+                throw new BossChartException(line, $"piece에는 기물 하나만 써요: '{value}'. 조합(룩+나이트 등)은 모양을 보고 자동으로 정해져요 (Docs/BossChart.md 기물 규칙).");
+            int piece = Array.IndexOf(PieceNames, value);
+            if (piece < 0) throw new BossChartException(line, $"모르는 기물 '{value}'. {string.Join(", ", PieceNames)}, 없음 중에서 써요.");
+            return new PieceChoice((ChessPiece)piece);
+        }
         private int ParseShape(string[] tokens, string[] lines, int index)
         {
             int header = index + 1;
@@ -157,20 +196,12 @@ namespace StringAsASword.Combat
             string name = tokens[1];
             if (shapes.ContainsKey(name)) throw new BossChartException(header, $"모양 '{name}'이 이미 있어요.");
             bool hasAnchor = false; var anchor = new GridPosition(0, 0);
-            ChessPiece[] pieces = null;
+            var piece = default(PieceChoice);
             for (int option = 2; option < tokens.Length; option++)
             {
-                if (tokens[option].StartsWith("piece=", StringComparison.Ordinal) && pieces == null)
+                if (tokens[option].StartsWith("piece=", StringComparison.Ordinal) && !piece.Set)
                 {
-                    var names = tokens[option].Substring(6).Split('+');
-                    if (names.Length > 2) throw new BossChartException(header, "piece는 기물 하나 또는 '기물+기물' 둘까지예요.");
-                    pieces = new ChessPiece[names.Length];
-                    for (int n = 0; n < names.Length; n++)
-                    {
-                        int piece = Array.IndexOf(PieceNames, names[n]);
-                        if (piece < 0) throw new BossChartException(header, $"모르는 기물 '{names[n]}'. {string.Join(", ", PieceNames)} 중에서 써요.");
-                        pieces[n] = (ChessPiece)piece;
-                    }
+                    piece = ParsePiece(tokens[option].Substring(6), header);
                     continue;
                 }
                 if (!tokens[option].StartsWith("anchor=", StringComparison.Ordinal) || hasAnchor) throw new BossChartException(header, $"알 수 없는 옵션 '{tokens[option]}'");
@@ -199,12 +230,12 @@ namespace StringAsASword.Combat
             }
             if ((normal | strong) == 0) throw new BossChartException(header, $"모양 '{name}'에 공격 칸이 없어요.");
             if (strong == ulong.MaxValue) throw new BossChartException(header, $"모양 '{name}'은 판 전체가 2라서 막을 수도 피할 수도 없어요.");
-            shapes.Add(name, new BossChartShape(name, normal, strong, hasAnchor, anchor, header, pieces));
+            shapes.Add(name, new BossChartShape(name, normal, strong, hasAnchor, anchor, header, piece));
             return i;
         }
         private BossChartAttack ParseAttack(string[] tokens, int line)
         {
-            if (tokens.Length < 3) throw new BossChartException(line, "형식은 '노트 모양 경고 [hits=N every=N] [phase>=N]'이에요.");
+            if (tokens.Length < 3) throw new BossChartException(line, "형식은 '노트 모양 경고 [hits=N every=N] [phase>=N] [piece=기물]'이에요.");
             int note = Int(tokens[0], line, "노트");
             if (note < 0) throw new BossChartException(line, "노트는 0 이상이어야 해요.");
             if (!shapes.TryGetValue(tokens[1], out var shape)) throw new BossChartException(line, $"모르는 모양 '{tokens[1]}'");
@@ -212,18 +243,20 @@ namespace StringAsASword.Combat
             if (warning < 1 || warning > RandomAttackSchedule.WarningCeiling)
                 throw new BossChartException(line, $"경고는 1~{RandomAttackSchedule.WarningCeiling}노트예요: {warning}");
             int hits = 1, every = 1, minPhase = 1;
+            var piece = default(PieceChoice);
             for (int t = 3; t < tokens.Length; t++)
             {
                 string option = tokens[t];
                 if (option.StartsWith("hits=", StringComparison.Ordinal)) hits = Int(option.Substring(5), line, "hits");
                 else if (option.StartsWith("every=", StringComparison.Ordinal)) every = Int(option.Substring(6), line, "every");
                 else if (option.StartsWith("phase>=", StringComparison.Ordinal)) minPhase = Int(option.Substring(7), line, "phase");
+                else if (option.StartsWith("piece=", StringComparison.Ordinal)) piece = ParsePiece(option.Substring(6), line);
                 else throw new BossChartException(line, $"알 수 없는 옵션 '{option}'");
             }
             if (hits < 1 || hits > PatternDefinition.MaxHits) throw new BossChartException(line, $"hits는 1~{PatternDefinition.MaxHits}예요: {hits}");
             if (every < 1 || every > PatternDefinition.MaxHitSpacing) throw new BossChartException(line, $"every는 1~{PatternDefinition.MaxHitSpacing}예요: {every}");
             if (minPhase < 1 || minPhase > 4) throw new BossChartException(line, $"phase는 1~4예요: {minPhase}");
-            return new BossChartAttack(note, shape, warning, hits, every, minPhase, line);
+            return new BossChartAttack(note, shape, warning, hits, every, minPhase, line, piece);
         }
     }
 }

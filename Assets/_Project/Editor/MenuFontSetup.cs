@@ -45,6 +45,15 @@ namespace StringAsASword.Editor
             Save(art);
         }
 
+        [MenuItem("String As a Sword/Art/Set Up Countdown Font")]
+        public static void RunCountdownFont()
+        {
+            var art = PrototypeSceneSetup.EnsureArtSet();
+            // Wider SDF padding: the countdown thickens the glyphs and draws a heavy stroke, which needs room in the field.
+            art.countdownFont = Build("ChakraPetch-Bold.ttf", "ChakraPetch-Bold SDF", 14);
+            Save(art);
+        }
+
         // Builds the HIT / BLOCK font once, on the first editor load after the font file arrives.
         [InitializeOnLoadMethod]
         private static void SetUpOutcomeFontIfMissing()
@@ -53,12 +62,13 @@ namespace StringAsASword.Editor
             {
                 if (EditorApplication.isPlayingOrWillChangePlaymode) return;
                 var art = AssetDatabase.LoadAssetAtPath<StringAsASword.Presentation.ArtSet>("Assets/_Project/Art/ArtSet.asset");
-                if (art == null || art.outcomeFont != null || AssetDatabase.LoadAssetAtPath<Font>(Fonts + "ChakraPetch-Regular.ttf") == null) return;
-                RunOutcomeFont();
+                if (art == null) return;
+                if (art.outcomeFont == null && AssetDatabase.LoadAssetAtPath<Font>(Fonts + "ChakraPetch-Regular.ttf") != null) RunOutcomeFont();
+                if (art.countdownFont == null && AssetDatabase.LoadAssetAtPath<Font>(Fonts + "ChakraPetch-Bold.ttf") != null) RunCountdownFont();
             };
         }
 
-        private static TMP_FontAsset Build(string file, string name)
+        private static TMP_FontAsset Build(string file, string name, int padding = 6)
         {
             string source = Fonts + file, path = Fonts + name + ".asset";
             var font = AssetDatabase.LoadAssetAtPath<Font>(source);
@@ -66,7 +76,7 @@ namespace StringAsASword.Editor
             AssetDatabase.DeleteAsset(path);
             // Dynamic: Korean has too many glyphs to bake, so the atlas fills from the font file as text appears.
             // 1024 pages with multi-atlas: menu text uses a few hundred glyphs, and the asset stays small in git.
-            var asset = TMP_FontAsset.CreateFontAsset(font, 64, 6, GlyphRenderMode.SDFAA, 1024, 1024, AtlasPopulationMode.Dynamic, true);
+            var asset = TMP_FontAsset.CreateFontAsset(font, 64, padding, GlyphRenderMode.SDFAA, 1024, 1024, AtlasPopulationMode.Dynamic, true);
             asset.name = name;
             AssetDatabase.CreateAsset(asset, path);
             // The atlas and material must live inside the asset, or they are lost on reload and in builds.

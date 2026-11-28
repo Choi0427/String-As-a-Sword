@@ -2,6 +2,7 @@
 // DEV-AUTOPLAY (editor only, compiled out of builds).
 using System;
 using System.Collections.Generic;
+using StringAsASword.Board;
 using StringAsASword.Combat;
 using StringAsASword.Player;
 using StringAsASword.Rhythm;

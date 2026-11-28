@@ -87,12 +87,20 @@ namespace StringAsASword.Presentation
         private RectTransform boardRect;
         private TMP_Text attackHint;
         private TMP_Text patternList;
-        private readonly TMP_Text[] dangerLabels = new TMP_Text[64];
-        private readonly GameObject[] dangerBadges = new GameObject[64];
-        private readonly UnityEngine.UI.Image[] dangerBackgrounds = new UnityEngine.UI.Image[64];
-        private static readonly Color BadgeDark = new Color(.025f,.035f,.045f,.97f);
-        private readonly Vector2[] dangerPoints = new Vector2[64];
         private readonly int[] dangerCounts = new int[64];
+        // Countdown numbers: one per attacked cell, at the cell's centre, black Chakra Petch (decided 2026-11-29).
+        private readonly TMP_Text[] dangerLabels = new TMP_Text[64];
+        private readonly int[] dangerShown = new int[64];
+        private readonly int[] dangerLabelLeft = new int[64];
+        private const int DangerFontSize = 20;
+        private const float DangerOpticalDrop = 1f;
+        // White stroke around the countdown numbers, in TMP SDF units (0-1).
+        // TMP's outline straddles the glyph edge, so a wider stroke also thins the black face: these two are tuned together
+        // against the reference mock (2026-11-28): at 1080p the number is ~19 px tall with a ~1.5 px white stroke.
+        private const float DangerStroke = .14f;
+        // Extra thickness of the number itself, in TMP SDF units (0-1).
+        private const float DangerDilate = .05f;
+        private Material dangerMaterial;
         private readonly int[] dangerRemaining = new int[64];
         private readonly AttackResponse[] dangerResponses = new AttackResponse[64];
         private readonly StringBuilder patternText = new StringBuilder(256);
@@ -166,13 +174,16 @@ namespace StringAsASword.Presentation
             BuildLanes();
             // No text HUD in play: the crown over the boss carries boss HP and noise. Only the count-in is written out,
             // over the board's middle: the key guide holds the bottom edge.
-            countIn = Text(root, "Resume Countdown", "", Vector2.zero, new Vector2(320, 180), 112, InkWhite);
+            countIn = Text(root, "Resume Countdown", "", Vector2.zero, new Vector2(320, 180), 112, Color.white);
             if (art.outcomeFont != null) countIn.font = art.outcomeFont;
             countIn.alignment = TextAlignmentOptions.MidlineGeoAligned;
             devLabel = Label("", new Vector2(-560,-428), new Vector2(460,30), 15, Muted);
             devLabel.alignment = TextAlignmentOptions.Left;
             // Collected noise flies over the board and the strings to the crown; the menu overlay, built later, covers it.
             if (bossCrown != null) bossCrown.MoteLayer = MakeRect(root, "Noise Motes", Vector2.zero, new Vector2(1600,900));
+            // Noise on the board draws over all of the battle HUD built above (board, marks, countdown numbers, strings,
+            // crown); only the ready card and the pause / game-over screens, built below, cover it.
+            boardWorld.BuildNoiseOverlay(root);
 
             layer = detail;
             detail.gameObject.SetActive(detailedHud);
@@ -233,13 +244,24 @@ namespace StringAsASword.Presentation
             }
             for (int i = 0; i < 64; i++)
             {
-                Vector2 point = boardWorld.ProjectToBoard(new Vector3(i % 8 - 3.5f, .035f, i / 8 - 3.80f), size);
-                dangerPoints[i] = point;
-                var badge = MakeRect(board, $"DangerBadge_{i % 8}_{i / 8}", point, new Vector2(40,20));
-                dangerBackgrounds[i] = Image(badge, BadgeDark); dangerBadges[i] = badge.gameObject;
-                dangerLabels[i] = Text(badge, "Countdown", "", Vector2.zero, new Vector2(40,20), 17, InkWhite);
-                dangerLabels[i].fontStyle = FontStyles.Bold;
-                badge.gameObject.SetActive(false);
+                // Notes left until the cell's soonest hit, on every attacked cell. The numbers are part of the board, in the
+                // attack marks' layer: lying on the mark, drawn right after it, so the knight (and any piece) standing in
+                // front covers them like it covers the mark. See BoardWorldPresenter.BuildCountdownLabel.
+                // Chakra Petch Bold, the family's heaviest weight, with TMP's SDF bold on top to thicken it further.
+                var countdownFont = art.countdownFont != null ? art.countdownFont : art.outcomeFont != null ? art.outcomeFont : LatinFont;
+                // A white stroke keeps the black number readable on dark squares and over the attack mark.
+                // One shared material for all 64 labels (outlineWidth on each would make 64 instances).
+                if (dangerMaterial == null)
+                {
+                    dangerMaterial = new Material(countdownFont.material) { name = "Countdown Stroke" };
+                    dangerMaterial.EnableKeyword(ShaderUtilities.Keyword_Outline);
+                    dangerMaterial.SetColor(ShaderUtilities.ID_OutlineColor, Color.white);
+                    dangerMaterial.SetFloat(ShaderUtilities.ID_OutlineWidth, DangerStroke);
+                    // Swells the black face itself, on top of the Bold weight and TMP's bold style.
+                    dangerMaterial.SetFloat(ShaderUtilities.ID_FaceDilate, DangerDilate);
+                    dangerMaterial.renderQueue = boardWorld.MarkQueue + 1;
+                }
+                dangerLabels[i] = boardWorld.BuildCountdownLabel(i, countdownFont, dangerMaterial, DangerFontSize, DangerOpticalDrop, size);
             }
             BuildPlayerHp(board);
             // Built after the badges so it reads above them; the menu overlay is still built later and covers it.
@@ -440,8 +462,7 @@ namespace StringAsASword.Presentation
             timingHint.Hide();
             judgementLabel.Hide();
             Array.Clear(dangerCounts, 0, dangerCounts.Length);
-            for (int i = 0; i < dangerBadges.Length; i++)
-                dangerBadges[i].SetActive(false);
+            for (int i = 0; i < 64; i++) { dangerLabels[i].gameObject.SetActive(false); dangerShown[i] = 0; }
             boardWorld.ResetVisuals();
             ghostStrikeNote = -1;
             if (bossPortrait != null) bossPortrait.ResetHitFeedback();
@@ -624,24 +645,26 @@ namespace StringAsASword.Presentation
             shown = TelegraphHud.AppendPatternLines(patternText, active, battle.LastClosedNote, shown, 5);
             if (shown > 5) patternText.Append('+').Append(shown - 5).Append(" patterns");
             patternList.text = patternText.Length == 0 ? "CLEAR / NO ATTACK QUEUED" : patternText.ToString();
-            ulong countdowns = TelegraphHud.CountdownCells(active, battle.LastClosedNote, dangerRemaining);
-            var player = game.Session.Position;
-            // Only countdowns get a badge: a cell whose attack just landed shows no separate X.
-            ulong badges = TelegraphHud.BadgeCells(countdowns, dangerRemaining, player.Y * 8 + player.X);
+            // Every attacked cell shows its own number, the notes left until its soonest hit. Attacks warned only one note
+            // ahead (they show just "1" and land) get no number; a cell whose attack just landed shows none.
+            Array.Clear(dangerLabelLeft, 0, 64);
+            for (int t = 0; t < active.Count; t++)
+            {
+                var attack = active[t];
+                if (attack.WarningNotes <= 1) continue;
+                int remaining = attack.Remaining(battle.LastClosedNote);
+                if (remaining <= 0) continue;
+                for (int i = 0; i < 64; i++)
+                    if ((attack.Cells & (1UL << i)) != 0 && (dangerLabelLeft[i] == 0 || remaining < dangerLabelLeft[i]))
+                        dangerLabelLeft[i] = remaining;
+            }
             for (int i = 0; i < 64; i++)
             {
-                ulong cell = 1UL << i;
-                bool hasCountdown = (countdowns & cell) != 0;
-                bool visible = (badges & cell) != 0;
-                // A badge always stays on its own cell, even where the knight covers it.
-                dangerBadges[i].SetActive(visible);
-                // Only the soonest impact: a later attack on the same cell gets its own badge once this one has landed.
-                if (hasCountdown) dangerLabels[i].text = dangerRemaining[i].ToString();
-                if (!visible) continue;
-                var response = dangerResponses[i];
-                dangerBackgrounds[i].color = TelegraphHud.ResponseColor(response, BadgeDark);
-                // Only a strong attack's badge is tinted; every other badge is dark and needs the light number.
-                dangerLabels[i].color = response == AttackResponse.DodgeOnly ? BadgeDark : InkWhite;
+                int left = dangerLabelLeft[i];
+                if (left == dangerShown[i]) continue;
+                dangerShown[i] = left;
+                dangerLabels[i].gameObject.SetActive(left > 0);
+                if (left > 0) dangerLabels[i].text = left.ToString();
             }
         }
         public static RectTransform MakeRect(Transform parent,string name,Vector2 position,Vector2 size)
@@ -663,5 +686,6 @@ namespace StringAsASword.Presentation
             label.font=art.font!=null?art.font:font; label.text=content; label.fontSize=fontSize; label.color=tint; label.alignment=TextAlignmentOptions.Center;
             label.textWrappingMode=TextWrappingModes.NoWrap; label.raycastTarget=false; return label;
         }
+        private void OnDestroy() { if (dangerMaterial != null) Destroy(dangerMaterial); }
     }
 }

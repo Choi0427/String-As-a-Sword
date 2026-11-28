@@ -39,9 +39,7 @@ namespace StringAsASword.Presentation
         // Two tile kinds: normal (guard or leave) and strong (a guard does not protect: AttackResponse.DodgeOnly).
         // A full-board GuardOnly attack is a normal attack with nowhere to go, so it shows the normal tile.
         private const int NormalTile = 0, StrongTile = 1;
-        private readonly GameObject[][] warnings = { new GameObject[64], new GameObject[64] };
-        private readonly GameObject[] impacts = new GameObject[64];
-        private int lastClosedNote = -1;
+        private readonly GameObject[][] warnings = { new GameObject[64], new GameObject[64] };        private int lastClosedNote = -1;
         private float impactAge = 1;
         private ulong impactCells;
         private readonly int[] cellCounts = new int[64], cellSoonest = new int[64];
@@ -87,12 +85,42 @@ namespace StringAsASword.Presentation
         public float BreakStage { get; private set; }
         /// <summary>A value of 0 or more replaces the stage the song position gives: the ending (2..3), captures and tests.</summary>
         public float BreakOverride { get; set; } = -1;
-        // Chess pieces the boss summons for attacks drawn from a piece's moves, keyed by shape name.
-        private sealed class Summon { public Transform Root; public Vector3 Home, Target; public float Age, StrikeAge = 1; public bool Live, Seen; }
-        private readonly Dictionary<string, Summon> summons = new Dictionary<string, Summon>();
+        // Chess pieces the boss summons for chart attacks, one per strike (PieceStrikePlanner). Just before the hit a sweeping
+        // piece rises on its path's first cell and a slamming one comes to hover over its point; on the hit the sweeper runs
+        // the path and the slammer drops straight down. Then they hold a moment and sink into the board.
+        private sealed class StrikeActor
+        {
+            public Transform Body; public ChessPiece Piece; public PieceStrike Strike; public int TelegraphId;
+            /// <summary>Song time of the hit.</summary>
+            public double Impact;
+            /// <summary>A slammer's shadow on its cell while it is in the air. Null for sweepers.</summary>
+            public SpriteRenderer Shadow;
+            /// <summary>The hit has jolted the view.</summary>
+            public bool Struck;
+        }
+        // The board view's jolt when a piece hits (see PoseActor): pixels, and seconds since.
+        private float slamPower, slamAge = 1;
+        private readonly Stack<SpriteRenderer> shadowPool = new Stack<SpriteRenderer>();
+        private SpriteRenderer TakeShadow()
+        {
+            if (shadowPool.Count > 0) { var pooled = shadowPool.Pop(); pooled.gameObject.SetActive(true); return pooled; }
+            var shadow = new GameObject("Boss Piece Shadow", typeof(SpriteRenderer)).GetComponent<SpriteRenderer>();
+            shadow.transform.SetParent(world.transform, false);
+            shadow.transform.localRotation = Quaternion.Euler(90, 0, 0);
+            shadow.sprite = ShadowSprite(); shadow.sharedMaterial = BoardSpriteMaterial();
+            return shadow;
+        }
+        private readonly List<StrikeActor> strikeActors = new List<StrikeActor>();
+        private readonly Dictionary<ChessPiece, Stack<Transform>> piecePool = new Dictionary<ChessPiece, Stack<Transform>>();
+        private readonly HashSet<int> summonedTelegraphs = new HashSet<int>();
         private Material pieceFace, pieceSide;
-        public const float SummonRow = 4.75f, StrikeSeconds = .35f;
-        public int LiveSummons { get { int n = 0; foreach (var s in summons.Values) if (s.Live) n++; return n; } }
+        // Lead: how long before the hit a piece shows up. Enter: its rise or descent into place. Drop: the slam's fall, ending on the hit.
+        // WindUp: the draw-back before the hit (a sweeper pulls back, a slammer rises). Drop: the slam's fall, ending on the hit.
+        public const float LeadSeconds = .45f, EnterSeconds = .2f, WindUpSeconds = .2f, DropSeconds = .07f, HoldSeconds = .3f, SinkSeconds = .3f;
+        // Hover: a slammer's height over its cell. EnterDrop: how far above that it comes down from. SinkDepth: how far below the board it hides.
+        // WindUpHeight / PullBack: how far it draws back. Bounce / Overrun: how far it jolts up off a slam / runs past a sweep's end.
+        public const float HoverHeight = 1f, EnterDrop = 1.2f, SinkDepth = 2f, WindUpHeight = .4f, PullBack = .3f, Bounce = .07f, Overrun = .18f;
+        public int LiveSummons => strikeActors.Count;
         /// <summary>Ending: the knight is placed by the caller instead of following the grid.</summary>
         public bool FreeRoam { get; set; }
         public Camera BoardCamera { get; private set; }
@@ -109,6 +137,13 @@ namespace StringAsASword.Presentation
         /// <summary>Board camera angle above the board; upright silhouettes tilt by it to face the camera.</summary>
         public float Elevation { get; private set; }
         private Color clearColor;
+        // Noise always draws on top: its floating picture lives on its own layer, which the board camera skips. A second
+        // camera at the same view draws only that layer, with no depth from the board, into its own texture, and that
+        // texture is shown over the whole battle HUD (BuildNoiseOverlay). So no piece, mark, number or string covers it.
+        private const int NoiseLayer = 30;
+        private Camera noiseCamera;
+        private RenderTexture noiseTexture;
+        private UnityEngine.UI.RawImage boardOutput, noiseOverlay;
 
         public void Initialize(PrototypeGame owner, UnityEngine.UI.RawImage output, Material template, ArtSet artSet)
         {
@@ -141,6 +176,16 @@ namespace StringAsASword.Presentation
             clearColor = art.HasBackground ? new Color(0, 0, 0, 0) : new Color(.035f, .043f, .052f, 1);
             BoardCamera.backgroundColor = clearColor;
             BoardCamera.targetTexture = Texture; BoardCamera.allowHDR = false;
+            BoardCamera.cullingMask &= ~(1 << NoiseLayer);
+            boardOutput = output;
+            noiseTexture = new RenderTexture(Texture.width, Texture.height, 24) { name = "Noise View", antiAliasing = 4 };
+            noiseTexture.Create(); resources.Add(noiseTexture);
+            noiseCamera = new GameObject("Noise Camera", typeof(Camera)).GetComponent<Camera>();
+            noiseCamera.transform.SetParent(BoardCamera.transform, false);
+            noiseCamera.clearFlags = CameraClearFlags.SolidColor; noiseCamera.backgroundColor = Color.clear;
+            noiseCamera.cullingMask = 1 << NoiseLayer; noiseCamera.allowHDR = false;
+            noiseCamera.targetTexture = noiseTexture;
+            SyncNoiseCamera();
             box = BuildBox(); resources.Add(box);
             edgeMaterial = art.boardEdge != null ? art.boardEdge : Material(new Color(.075f, .095f, .105f));
             var ivory = art.lightTile != null ? art.lightTile : Material(new Color(.72f, .74f, .70f));
@@ -809,6 +854,18 @@ namespace StringAsASword.Presentation
         /// <summary>Back to the battle's clear colour (transparent when background art is assigned).</summary>
         public void ResetVoid() => BoardCamera.backgroundColor = clearColor;
         public static Vector3 CellPosition(GridPosition cell) => new Vector3(cell.X - 3.5f, 0, cell.Y - 3.5f);
+        // The delivered board's painted squares are not an exact 1-unit grid: each one is 0.98-1.04 wide. These are its
+        // square edges in board space (x for files A-H, z for ranks 1-8), measured 2026-11-28 by sampling
+        // ChessBoard_BaseColor through the prefab's mesh and fitting a line to each edge (the edges are straight and
+        // square to the axes within 0.02). Re-measure if the model, its texture or BoardArtSetup's fit changes.
+        private static readonly float[] ModelEdgesX = { -4.010f, -2.999f, -2.010f, -1.017f, -.022f, .964f, 1.964f, 2.977f, 4.005f };
+        private static readonly float[] ModelEdgesZ = { -4.005f, -2.970f, -1.956f, -.963f, .033f, 1.030f, 2.011f, 3.004f, 4.038f };
+        /// <summary>
+        /// The cell's painted square in board space (x, z): on the delivered board its measured square, otherwise the 1-unit cell.
+        /// </summary>
+        public Rect CellRect(int x, int y) => art.boardPrefab != null
+            ? Rect.MinMaxRect(ModelEdgesX[x], ModelEdgesZ[y], ModelEdgesX[x + 1], ModelEdgesZ[y + 1])
+            : new Rect(x - 4, y - 4, 1, 1);
         /// <summary>The top of the knight's head (the highest point of its own renderers) in board-view coordinates.</summary>
         public Vector2 ProjectKnightHead(Vector2 rectSize)
         {
@@ -843,9 +900,8 @@ namespace StringAsASword.Presentation
             ReleaseKnight();
             impactAge = 1; impactCells = 0; lastClosedNote = -1;
             lastTelegraphId = -1; lastCollected = game.Noise.Collected;
-            for (int i = 0; i < impacts.Length; i++)
+            for (int i = 0; i < 64; i++)
             {
-                impacts[i].SetActive(false);
                 foreach (var pool in warnings) pool[i].SetActive(false);
             }
             ShowOutline(false);
@@ -897,7 +953,62 @@ namespace StringAsASword.Presentation
             // The same object is resized, so every view showing it (the epilogue, the verification) keeps working.
             Texture.Release(); Texture.width = width; Texture.height = height; Texture.Create();
             BoardCamera.ResetAspect();
+            noiseTexture.Release(); noiseTexture.width = width; noiseTexture.height = height; noiseTexture.Create();
+            noiseCamera.ResetAspect();
         }
+        /// <summary>
+        /// The noise layer's view, drawn over everything in the battle HUD under <paramref name="parent"/>. Build it after the
+        /// HUD it must cover; it follows the board view's place, size, shake and tint every frame.
+        /// </summary>
+        public void BuildNoiseOverlay(RectTransform parent)
+        {
+            var rect = new GameObject("Noise Overlay", typeof(RectTransform)).GetComponent<RectTransform>();
+            rect.SetParent(parent, false);
+            noiseOverlay = rect.gameObject.AddComponent<UnityEngine.UI.RawImage>();
+            noiseOverlay.texture = noiseTexture; noiseOverlay.raycastTarget = false;
+            var shader = Shader.Find("StringAsASword/UI/NoiseOverlay");
+            if (shader != null) { var material = new Material(shader) { name = "Noise Overlay" }; resources.Add(material); noiseOverlay.material = material; }
+            SyncNoiseOverlay();
+        }
+        private void SyncNoiseCamera()
+        {
+            noiseCamera.orthographic = BoardCamera.orthographic; noiseCamera.orthographicSize = BoardCamera.orthographicSize;
+            noiseCamera.fieldOfView = BoardCamera.fieldOfView;
+            noiseCamera.nearClipPlane = BoardCamera.nearClipPlane; noiseCamera.farClipPlane = BoardCamera.farClipPlane;
+            // The death close-up draws the knight alone.
+            noiseCamera.enabled = BoardCamera.enabled && !KnightIsolated;
+        }
+        private void SyncNoiseOverlay()
+        {
+            if (noiseOverlay == null) return;
+            var board = (RectTransform)transform; var rect = noiseOverlay.rectTransform;
+            bool shown = isActiveAndEnabled && boardOutput.enabled && !KnightIsolated;
+            if (noiseOverlay.gameObject.activeSelf != shown) noiseOverlay.gameObject.SetActive(shown);
+            if (!shown) return;
+            // Same parent as the board view in the battle HUD; otherwise match it through world space.
+            if (rect.parent == board.parent)
+            {
+                rect.anchorMin = board.anchorMin; rect.anchorMax = board.anchorMax; rect.pivot = board.pivot;
+                rect.anchoredPosition = board.anchoredPosition; rect.sizeDelta = board.sizeDelta;
+                rect.localRotation = board.localRotation; rect.localScale = board.localScale;
+            }
+            else
+            {
+                rect.anchorMin = rect.anchorMax = rect.pivot = board.pivot;
+                rect.position = board.position; rect.rotation = board.rotation;
+                rect.sizeDelta = board.rect.size; rect.localScale = Vector3.one;
+                var scale = board.lossyScale; var parentScale = rect.parent.lossyScale;
+                rect.localScale = new Vector3(scale.x / parentScale.x, scale.y / parentScale.y, 1);
+            }
+            noiseOverlay.color = boardOutput.color;
+        }
+        private void LateUpdate()
+        {
+            if (noiseCamera == null) return;
+            SyncNoiseCamera();
+            SyncNoiseOverlay();
+        }
+        private void OnDisable() { if (noiseOverlay != null) noiseOverlay.gameObject.SetActive(false); }
         public void Render()
         {
             MatchTargetToScreen();
@@ -911,7 +1022,8 @@ namespace StringAsASword.Presentation
             // Each new break jolts the board view for a quarter second.
             shakeAge += dt;
             // While the centre comes apart the view keeps trembling, more as the light grows.
-            float jolt = Mathf.Clamp01(1 - shakeAge / .25f) * 7 + Mathf.Clamp01(BreakStage - 2) * 2;
+            slamAge += dt;
+            float jolt = Mathf.Clamp01(1 - shakeAge / .25f) * 7 + Mathf.Clamp01(BreakStage - 2) * 2 + Mathf.Clamp01(1 - slamAge / .18f) * slamPower;
             ((RectTransform)transform).anchoredPosition = viewHome + new Vector2(Mathf.Sin(shakeAge * 95), Mathf.Cos(shakeAge * 71)) * jolt;
             if (FreeRoam) { ShowOutline(false); return; }
             RenderTelegraphs(dt);
@@ -960,8 +1072,6 @@ namespace StringAsASword.Presentation
         {
             var dark = Material(new Color(.045f, .055f, .065f));
             var white = Material(new Color(.97f, .97f, .94f));
-            Mesh impact = TelegraphMesh(true);
-            resources.Add(impact);
             var materials = new[] { dark, white };
             Mesh quad = null;
             for (int kind = 0; kind < warnings.Length; kind++)
@@ -974,8 +1084,7 @@ namespace StringAsASword.Presentation
                 else { warning = TelegraphMesh(false, strong); resources.Add(warning); marks = materials; }
                 for (int i = 0; i < 64; i++) warnings[kind][i] = TelegraphCell(strong ? "StrongWarning" : "NormalWarning", i, warning, marks);
             }
-            if (art.impactMark != null) { impact = quad ?? (quad = MarkQuad()); materials = new[] { art.impactMark }; }
-            for (int i = 0; i < 64; i++) impacts[i] = TelegraphCell("Impact", i, impact, materials);
+            // No mark at the moment of impact: the summoned chess pieces show the hit (decided 2026-11-28).
         }
         // A mark covers its whole cell, edge to edge, like a tile of the board.
         private const float MarkHalf = .5f;
@@ -985,6 +1094,54 @@ namespace StringAsASword.Presentation
         // the lowest layer (underlay, y .015) just clear of its highest points (about -0.032).
         private const float ModelMarkDrop = -.044f;
         private float MarkDrop => art.boardPrefab != null ? ModelMarkDrop : 0;
+        /// <summary>The highest render queue among the attack marks; what is drawn on a mark goes right after it.</summary>
+        public int MarkQueue
+        {
+            get
+            {
+                int queue = 2000;
+                foreach (var kind in warnings) foreach (var mark in kind)
+                    if (mark != null) foreach (var material in mark.GetComponent<MeshRenderer>().sharedMaterials)
+                        if (material != null) queue = Mathf.Max(queue, material.renderQueue);
+                return queue;
+            }
+        }
+        // Just above the marks (y .024), still well under the knight's base.
+        private const float CountdownHeight = .03f;
+        /// <summary>
+        /// The countdown number for one cell, lying flat on its attack mark in the board world, so whatever stands in front
+        /// of the cell (the knight, a summoned piece) covers it. It is sized and placed per cell so that on screen it reads
+        /// like a flat label of <paramref name="fontSize"/> board-view units: centred halfway between the cell's projected
+        /// near and far edges, less <paramref name="drop"/>, and stretched along the board's depth to undo the tilt.
+        /// </summary>
+        public TMPro.TMP_Text BuildCountdownLabel(int index, TMPro.TMP_FontAsset font, Material material, float fontSize, float drop, Vector2 viewSize)
+        {
+            int x = index % 8, y = index / 8;
+            var label = new GameObject($"Countdown_{x}_{y}").AddComponent<TMPro.TextMeshPro>();
+            label.transform.SetParent(world.transform, false);
+            label.font = font; label.fontSharedMaterial = material;
+            label.fontSize = fontSize; label.color = Color.black; label.fontStyle = TMPro.FontStyles.Bold;
+            label.alignment = TMPro.TextAlignmentOptions.MidlineGeoAligned; label.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
+            label.rectTransform.sizeDelta = new Vector2(10, 5);
+            var square = CellRect(x, y);
+            float height = MarkDrop + CountdownHeight, cx = square.center.x;
+            Vector2 At(float px, float pz) => ProjectToBoard(new Vector3(px, height, pz), viewSize);
+            float nearY = At(cx, square.yMin).y, farY = At(cx, square.yMax).y, target = (nearY + farY) * .5f - drop;
+            // The depth on the board that projects to the target (screen height rises with depth).
+            float low = square.yMin, high = square.yMax;
+            for (int step = 0; step < 24; step++) { float mid = (low + high) * .5f; if (At(cx, mid).y < target) low = mid; else high = mid; }
+            float z = (low + high) * .5f;
+            // Board-view units per board unit at that spot, across and in depth.
+            float across = At(cx + .5f, z).x - At(cx - .5f, z).x;
+            float deep = (At(cx, z + .05f).y - At(cx, z - .05f).y) / .1f;
+            label.transform.localPosition = new Vector3(cx, height, z);
+            // Face up, text's up pointing away from the camera. A 3D TextMeshPro draws fontSize at 0.1 units per point,
+            // a board-view label at 1: scaling by 10 / units-per-board-unit gives the same size on screen.
+            label.transform.localRotation = Quaternion.Euler(90, 0, 0);
+            label.transform.localScale = new Vector3(10 / Mathf.Max(1, across), 10 / Mathf.Max(1, deep), 1);
+            label.gameObject.SetActive(false);
+            return label;
+        }
         private Mesh MarkQuad()
         {
             const float h = MarkHalf;
@@ -997,7 +1154,10 @@ namespace StringAsASword.Presentation
         {
             var item = new GameObject($"{name}_{index % 8}_{index / 8}", typeof(MeshFilter), typeof(MeshRenderer));
             item.transform.SetParent(world.transform, false);
-            item.transform.localPosition = CellPosition(new GridPosition(index % 8, index / 8)) + Vector3.up * MarkDrop;
+            // Stretched over the cell's own painted square, so every mark meets the square's edges.
+            var square = CellRect(index % 8, index / 8);
+            item.transform.localPosition = new Vector3(square.center.x, MarkDrop, square.center.y);
+            item.transform.localScale = new Vector3(square.width, 1, square.height);
             item.GetComponent<MeshFilter>().sharedMesh = mesh;
             item.GetComponent<MeshRenderer>().sharedMaterials = materials;
             item.SetActive(false); return item;
@@ -1019,21 +1179,22 @@ namespace StringAsASword.Presentation
                             if ((impactCells & (1UL << i)) != 0) ArtCue.Spawn(art.bossFireVfx, world.transform, CellPosition(new GridPosition(i % 8, i / 8)));
                 }
             }
-            RenderSummons(battle, game.State == PrototypeState.Paused ? 0 : dt, noteClosed);
+            RenderSummons(battle);
             bool published = false;
             foreach (var telegraph in battle.Patterns.Active)
                 if (telegraph.Id > lastTelegraphId) { lastTelegraphId = telegraph.Id; published = true; }
             if (published) ArtCue.Trigger(king, "Telegraph");
             if (game.State != PrototypeState.Paused) impactAge += dt;
             TelegraphHud.MapCells(battle.Patterns.Active, battle.LastClosedNote, cellCounts, cellSoonest, cellResponses);
+            // A cell shows its mark whenever an attack is still coming at it, even in the moment another one just landed
+            // there. (Cells used to blank for 0.3 s after an impact, from when an impact cross was drawn; with hits on the
+            // same cell less than ~0.3 s apart, the next attack's mark then never showed while its number did.)
             for (int i = 0; i < 64; i++)
             {
-                bool fired = impactAge < .3f && (impactCells & (1UL << i)) != 0;
-                bool warning = !fired && cellCounts[i] > 0;
+                bool warning = cellCounts[i] > 0;
                 int tile = cellResponses[i] == AttackResponse.DodgeOnly ? StrongTile : NormalTile;
                 for (int kind = 0; kind < warnings.Length; kind++)
                     warnings[kind][i].SetActive(warning && kind == tile);
-                impacts[i].SetActive(fired);
             }
             // The knight's pedestal covers its own cell's mark, so a move-away attack on that cell shows as an orange outline.
             // Any other time the cell has no outline (the plain mint one is gone).
@@ -1055,7 +1216,6 @@ namespace StringAsASword.Presentation
             outlineShown = show;
             foreach (var edge in outlineEdges) if (edge != null) edge.enabled = show;
         }
-        private static Mesh TelegraphMesh(bool impact) => TelegraphMesh(impact, true);
         // The fallback marks: a dark underlay and a frame, plus an X (impact) or diagonal hatching (strong) when striped.
         private static Mesh TelegraphMesh(bool impact, bool striped)
         {
@@ -1388,69 +1548,178 @@ namespace StringAsASword.Presentation
                     Outline(.47f,.8f, .53f,.8f, .53f,1.04f, .47f,1.04f), Outline(.4f,.9f, .6f,.9f, .6f,.96f, .4f,.96f) };
             }
         }
-        private Summon BuildSummon(string shape, IReadOnlyList<ChessPiece> pieces)
+        private GameObject PiecePrefab(ChessPiece piece)
         {
-            if (pieceFace == null) { pieceFace = Material(new Color(.78f, .79f, .84f)); pieceSide = Material(new Color(.10f, .11f, .13f)); }
-            var root = new GameObject("Summon " + shape).transform; root.SetParent(world.transform, false);
-            for (int i = 0; i < pieces.Count; i++)
+            switch (piece)
             {
-                var body = new GameObject(pieces[i].ToString()).transform; body.SetParent(root, false);
-                // A compound piece (chancellor = rook + knight) stands as its two halves side by side.
-                body.localPosition = new Vector3((i - (pieces.Count - 1) * .5f) * .62f, 0, 0);
-                body.localRotation = Quaternion.Euler(Elevation, 0, 0);
-                body.localScale = Vector3.one * (pieces.Count == 1 ? 1.5f : 1.25f);
-                foreach (var outline in PieceOutlines(pieces[i])) Extrude(body, pieces[i].ToString(), pieceFace, pieceSide, outline);
+                case ChessPiece.Pawn: return art.bossPawn;
+                case ChessPiece.Rook: return art.bossRook;
+                case ChessPiece.Bishop: return art.bossBishop;
+                case ChessPiece.Knight: return art.bossKnight;
+                case ChessPiece.King: return art.bossKing;
+                default: return art.bossQueen;
             }
-            root.gameObject.SetActive(false);
-            return new Summon { Root = root };
         }
-        private static Vector3 Centroid(ulong cells)
+        private Transform TakePiece(ChessPiece piece)
         {
-            Vector3 sum = Vector3.zero; int count = 0;
-            for (int i = 0; i < 64; i++) if ((cells & (1UL << i)) != 0) { sum += CellPosition(new GridPosition(i % 8, i / 8)); count++; }
-            return count == 0 ? Vector3.zero : sum / count;
+            if (piecePool.TryGetValue(piece, out var pool) && pool.Count > 0) { var pooled = pool.Pop(); pooled.gameObject.SetActive(true); return pooled; }
+            var root = new GameObject("Boss " + piece).transform; root.SetParent(world.transform, false);
+            var model = new GameObject("Model").transform; model.SetParent(root, false);
+            var prefab = PiecePrefab(piece);
+            if (prefab != null) { Instantiate(prefab, model, false); model.localScale = Vector3.one * art.bossPieceScale; }
+            else
+            {
+                // No model delivered: the flat silhouette, tilted to face the camera.
+                if (pieceFace == null) { pieceFace = Material(new Color(.78f, .79f, .84f)); pieceSide = Material(new Color(.10f, .11f, .13f)); }
+                var body = new GameObject("Silhouette").transform; body.SetParent(model, false);
+                body.localRotation = Quaternion.Euler(Elevation, 0, 0); body.localScale = Vector3.one * 1.5f;
+                foreach (var outline in PieceOutlines(piece)) Extrude(body, piece.ToString(), pieceFace, pieceSide, outline);
+            }
+            return root;
         }
-        // The piece rises behind row 8 in the attack's column while the warning counts down, then lunges onto the cells it hits.
-        private void RenderSummons(BattleSession battle, float dt, bool noteClosed)
+        private void ReleasePiece(StrikeActor actor)
         {
-            foreach (var summon in summons.Values) summon.Seen = false;
+            if (actor.Shadow != null) { actor.Shadow.gameObject.SetActive(false); shadowPool.Push(actor.Shadow); actor.Shadow = null; }
+            actor.Body.gameObject.SetActive(false);
+            if (!piecePool.TryGetValue(actor.Piece, out var pool)) piecePool.Add(actor.Piece, pool = new Stack<Transform>());
+            pool.Push(actor.Body);
+        }
+        private static Vector3 BoardLocal(BoardPoint p) => new Vector3(p.X - 3.5f, 0, p.Y - 3.5f);
+        private static float SweepSeconds(PieceStrike strike) => Mathf.Clamp(.07f * (strike.Path.Count - 1), .35f, .7f);
+        /// <summary>From the impact until the piece stops: a slam lands on the impact, a sweep starts on it.</summary>
+        private static float StrikeSeconds(PieceStrike strike) => strike.Motion == StrikeMotion.Slam ? 0 : SweepSeconds(strike);
+        /// <summary>A point along a sweep path, by share of its length (0..1), and the travel direction there.</summary>
+        private static (Vector3 at, Vector3 heading) AlongPath(IReadOnlyList<BoardPoint> path, float share)
+        {
+            float total = 0;
+            for (int i = 1; i < path.Count; i++) total += Vector3.Distance(BoardLocal(path[i - 1]), BoardLocal(path[i]));
+            float left = share * total;
+            for (int i = 1; i < path.Count; i++)
+            {
+                Vector3 a = BoardLocal(path[i - 1]), b = BoardLocal(path[i]);
+                float length = Vector3.Distance(a, b);
+                if (left <= length || i == path.Count - 1) return (Vector3.Lerp(a, b, length > 0 ? Mathf.Clamp01(left / length) : 1), b - a);
+                left -= length;
+            }
+            return (BoardLocal(path[0]), Vector3.back);
+        }
+        private void RenderSummons(BattleSession battle)
+        {
+            // Driven by the song clock, so the pieces keep time with the music (and stop when it is paused).
+            if (game.Timeline == null) return;
+            double now = game.SongTime;
+            // Summon a hit's pieces only just before it lands.
             foreach (var telegraph in battle.Patterns.Active)
             {
-                if (telegraph.Pieces.Count == 0) continue;
-                if (!summons.TryGetValue(telegraph.Name, out var summon)) summons.Add(telegraph.Name, summon = BuildSummon(telegraph.Name, telegraph.Pieces));
-                if (summon.Seen) continue;
-                summon.Seen = true;
-                if (summon.StrikeAge < StrikeSeconds) continue;
-                ulong cells = 0;
-                foreach (var other in battle.Patterns.Active) if (other.Name == telegraph.Name && other.ImpactNote == telegraph.ImpactNote) cells |= other.Cells;
-                summon.Target = Centroid(cells); summon.Home = new Vector3(summon.Target.x, 0, SummonRow);
-                if (!summon.Live) { summon.Live = true; summon.Age = 0; summon.Root.gameObject.SetActive(true); }
+                if (telegraph.Strikes.Count == 0 || summonedTelegraphs.Contains(telegraph.Id)) continue;
+                double impact = game.Timeline.TimeOf(telegraph.ImpactNote);
+                if (now < impact - LeadSeconds) continue;
+                summonedTelegraphs.Add(telegraph.Id);
+                foreach (var strike in telegraph.Strikes)
+                    strikeActors.Add(new StrikeActor { Body = TakePiece(strike.Piece), Piece = strike.Piece, Strike = strike, TelegraphId = telegraph.Id, Impact = impact,
+                        Shadow = strike.Motion == StrikeMotion.Slam ? TakeShadow() : null });
             }
-            if (noteClosed)
-                foreach (var fired in battle.Patterns.LastFired)
-                    if (fired.Pieces.Count > 0 && summons.TryGetValue(fired.Name, out var summon) && summon.Live && summon.StrikeAge >= StrikeSeconds)
-                    {
-                        ulong cells = 0;
-                        foreach (var other in battle.Patterns.LastFired) if (other.Name == fired.Name) cells |= other.Cells;
-                        summon.Target = Centroid(cells); summon.StrikeAge = 0;
-                    }
-            foreach (var summon in summons.Values)
+            for (int i = strikeActors.Count - 1; i >= 0; i--)
             {
-                if (!summon.Live) continue;
-                summon.Age += dt; summon.StrikeAge += dt;
-                bool striking = summon.StrikeAge < StrikeSeconds;
-                if (!summon.Seen && !striking) { summon.Live = false; summon.Root.gameObject.SetActive(false); continue; }
-                float rise = Mathf.SmoothStep(0, 1, summon.Age / .18f);
-                float lunge = striking ? Mathf.SmoothStep(0, 1, summon.StrikeAge / .12f) : 0;
-                summon.Root.localPosition = Vector3.Lerp(summon.Home, summon.Target, lunge)
-                    + Vector3.up * ((1 - rise) * 1.4f + Mathf.Sin(lunge * Mathf.PI) * .7f);
-                // After the hit the piece shrinks away instead of popping out.
-                summon.Root.localScale = Vector3.one * (rise * (striking ? Mathf.Clamp01((StrikeSeconds - summon.StrikeAge) / .12f) : 1));
+                var actor = strikeActors[i];
+                float t = (float)(now - actor.Impact);
+                // Cancelled before landing (the boss stunned, a phase change), or done.
+                bool cancelled = t < -.05f && !IsActive(battle, actor.TelegraphId);
+                if (cancelled || t > StrikeSeconds(actor.Strike) + HoldSeconds + SinkSeconds) { ReleasePiece(actor); strikeActors.RemoveAt(i); continue; }
+                PoseActor(actor, t);
             }
+            summonedTelegraphs.RemoveWhere(id => !IsActive(battle, id) && !strikeActors.Exists(a => a.TelegraphId == id));
+        }
+        private static bool IsActive(BattleSession battle, int id)
+        {
+            foreach (var telegraph in battle.Patterns.Active) if (telegraph.Id == id) return true;
+            return false;
+        }
+        /// <summary>
+        /// Rigid moves only (a chess piece does not stretch). <paramref name="t"/> is song seconds from the impact.
+        /// Sweep: rises out of the board on its first cell, runs the path from the impact, holds, sinks back in.
+        /// Slam: comes down from above to hover over its point, drops to land on the impact, holds, sinks into the board.
+        /// </summary>
+        // Easing: out-back overshoots the end a little and settles, out-cubic starts fast and eases in, in-quart starts slow and slams.
+        private static float OutBack(float x, float s = 1.7f) { x -= 1; return 1 + (s + 1) * x * x * x + s * x * x; }
+        private static float OutCubic(float x) { x = 1 - x; return 1 - x * x * x; }
+        /// <summary>A rigid wobble after a hit: degrees, fading out over a few tenths of a second.</summary>
+        private static float Wobble(float t, float degrees) => t < 0 ? 0 : degrees * Mathf.Sin(t * 38) * Mathf.Exp(-t * 11);
+        private void PoseActor(StrikeActor actor, float t)
+        {
+            var strike = actor.Strike;
+            Vector3 ground = BoardLocal(strike.Path[0]), position, heading = Vector3.back;
+            float enter = Mathf.Clamp01((t + LeadSeconds) / EnterSeconds), lean = 0, tilt = 0;
+            if (strike.Motion == StrikeMotion.Sweep)
+            {
+                // Pops up out of the board, a touch too far, and settles.
+                float rise = -SinkDepth * (1 - OutBack(enter, 1.2f));
+                var (start, firstDir) = AlongPath(strike.Path, 0);
+                var forward = firstDir.normalized;
+                if (t < 0)
+                {
+                    // Wind-up: draws back and leans back, ready to spring.
+                    float wind = OutCubic(Mathf.Clamp01((t + WindUpSeconds) / WindUpSeconds));
+                    position = start - forward * PullBack * wind + Vector3.up * rise; heading = firstDir; lean = -9 * wind;
+                }
+                else
+                {
+                    // Bursts off fast and eases to the end, leaning into the run, then runs a little past and comes back.
+                    float run = Mathf.Clamp01(t / SweepSeconds(strike));
+                    var (at, dir) = AlongPath(strike.Path, OutCubic(run));
+                    float past = Mathf.Clamp01((t - SweepSeconds(strike)) / .16f);
+                    position = at + dir.normalized * (Overrun * Mathf.Sin(past * Mathf.PI)); heading = dir;
+                    lean = 14 * (1 - run) - 6 * Mathf.Sin(past * Mathf.PI);
+                }
+            }
+            else
+            {
+                float height;
+                if (t < -DropSeconds)
+                {
+                    // Comes down to hover, dips a little below and settles; then winds up, rising before the strike.
+                    float arrive = HoverHeight + EnterDrop * (1 - OutBack(enter));
+                    float wind = OutCubic(Mathf.Clamp01((t + WindUpSeconds) / (WindUpSeconds - DropSeconds)));
+                    height = arrive + WindUpHeight * wind;
+                }
+                else if (t < 0)
+                {
+                    // The strike: from the top of the wind-up, gathering speed all the way down.
+                    float drop = (t + DropSeconds) / DropSeconds;
+                    height = (HoverHeight + WindUpHeight) * (1 - drop * drop * drop * drop);
+                }
+                else height = Bounce * Mathf.Sin(Mathf.Clamp01(t / .14f) * Mathf.PI); // a short jolt off the board
+                position = ground + Vector3.up * height;
+                tilt = Wobble(t, 6);
+                // The shadow sits on the cell while the piece is up: fainter and wider the higher it is, gone once it lands.
+                float lift = Mathf.Clamp01(height / (HoverHeight + EnterDrop));
+                actor.Shadow.gameObject.SetActive(t < 0);
+                actor.Shadow.transform.localPosition = ground + Vector3.up * .012f;
+                actor.Shadow.transform.localScale = Vector3.one * Mathf.Lerp(.7f, .95f, lift) / ShadowSpriteSize;
+                actor.Shadow.color = new Color(0, 0, 0, Mathf.Lerp(.75f, .35f, lift) * Mathf.Clamp01(enter * 2));
+            }
+            // The board view jolts once when the piece hits: hardest for a queen.
+            if (t >= 0 && !actor.Struck)
+            {
+                actor.Struck = true;
+                float power = strike.Motion == StrikeMotion.Sweep ? 2 : actor.Piece == ChessPiece.Queen ? 7 : actor.Piece == ChessPiece.King ? 5 : 3;
+                if (slamAge > .05f || power > slamPower) { slamPower = power; slamAge = 0; }
+            }
+            float sink = Mathf.SmoothStep(0, 1, Mathf.Clamp01((t - StrikeSeconds(strike) - HoldSeconds) / SinkSeconds));
+            actor.Body.localPosition = position + Vector3.down * sink * SinkDepth;
+            actor.Body.localScale = Vector3.one;
+            // Knights slam side-on so their profile reads; sweeping pieces face where they go; the rest face the camera.
+            // Leaning and wobbling turn the piece about its base, so it never changes shape.
+            Quaternion facing;
+            if (actor.Piece == ChessPiece.Knight && strike.Motion == StrikeMotion.Slam) facing = Quaternion.Euler(0, 90, 0);
+            else if (strike.Motion == StrikeMotion.Sweep && new Vector2(heading.x, heading.z).sqrMagnitude > 1e-6f) facing = Quaternion.LookRotation(new Vector3(heading.x, 0, heading.z));
+            else facing = Quaternion.identity;
+            actor.Body.localRotation = facing * Quaternion.Euler(lean, 0, tilt);
         }
         private void HideSummons()
         {
-            foreach (var summon in summons.Values) { summon.Live = false; summon.StrikeAge = 1; summon.Root.gameObject.SetActive(false); }
+            foreach (var actor in strikeActors) ReleasePiece(actor);
+            strikeActors.Clear(); summonedTelegraphs.Clear();
         }
         private void BuildPlayer()
         {
@@ -1500,6 +1769,7 @@ namespace StringAsASword.Presentation
                     foreach (var renderer in item.GetComponentsInChildren<Renderer>()) renderer.sharedMaterials = new[] { noiseMaterial, noiseMaterial };
                 }
                 pickups[i] = item;
+                SetLayer(item, NoiseLayer);
                 pickupRenderers[i] = item.GetComponentsInChildren<Renderer>();
                 pickupActive[i] = new Material[pickupRenderers[i].Length][]; pickupDormant[i] = new Material[pickupRenderers[i].Length][];
                 for (int r = 0; r < pickupRenderers[i].Length; r++)
@@ -1509,6 +1779,10 @@ namespace StringAsASword.Presentation
                 }
                 item.gameObject.SetActive(false);
             }
+        }
+        private static void SetLayer(Transform root, int layer)
+        {
+            foreach (var part in root.GetComponentsInChildren<Transform>(true)) part.gameObject.layer = layer;
         }
         private Material BoardSpriteMaterial()
         {
@@ -1559,6 +1833,8 @@ namespace StringAsASword.Presentation
                 noiseGlows[index] = glow;
             }
             noiseSprites[index] = picture; noiseShadows[index] = shadow; noiseFloats[index] = hover; noiseBackings[index] = backing;
+            // The floating picture draws over everything; its shadow stays a board decal, under the marks and numbers.
+            SetLayer(hover, NoiseLayer);
             return item;
         }
         // The picture is about .41 cells tall (pivot at its centre): at .26 it floats just clear of its own cell, low
@@ -1721,7 +1997,10 @@ namespace StringAsASword.Presentation
         {
             knightGlow?.Dispose();
             if (BoardCamera != null) BoardCamera.targetTexture = null;
+            if (noiseCamera != null) noiseCamera.targetTexture = null;
             if (Texture != null) Texture.Release();
+            if (noiseTexture != null) noiseTexture.Release();
+            if (noiseOverlay != null) Destroy(noiseOverlay.gameObject);
             if (world != null) Destroy(world);
             foreach (var resource in resources) if (resource != null) Destroy(resource);
         }

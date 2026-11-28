@@ -16,6 +16,13 @@ MonoBehaviour:
   knightGlowColor: {r: 1, g: 1, b: 1, a: 0.65}
   knightGlowSize: 0.008
   swordPrefab: {fileID: 3338993447774502876, guid: 45c2dc6f06e843c419c9f808cf20bd3a, type: 3}
+  bossPawn: {fileID: 6126736750704254033, guid: b7a20525579787249b6bf5399a591453, type: 3}
+  bossRook: {fileID: 7286373526124859781, guid: 57bff47cb6be4c4498095654166ec651, type: 3}
+  bossBishop: {fileID: 7740194208981087056, guid: 0c46ae4ab35d1d7469b0ac355f9c06a5, type: 3}
+  bossKnight: {fileID: 3653811193565801096, guid: c8c47bee66fa45a45b259eb317002661, type: 3}
+  bossKing: {fileID: 1878737677619300722, guid: 49cfd5c5d61271f4798c4cde82b66717, type: 3}
+  bossQueen: {fileID: 1077153850602658452, guid: 427791577c5ce264c984e37115f88646, type: 3}
+  bossPieceScale: 1
   kingPrefab: {fileID: 0}
   kingAnchor: {x: 0, y: 0, z: 5.5}
   kingScale: 1
@@ -87,11 +94,12 @@ MonoBehaviour:
   skipKeyIcon: {fileID: 21300000, guid: 5383798c0dc8a734f80ff292291ce4bc, type: 3}
   promptJKeyIcon: {fileID: 21300000, guid: 60e62fc4a2d047399fbe135d98b5917d, type: 3}
   keyGuide: {fileID: 21300000, guid: 53027492787f48944b8aa2b5dee06f0c, type: 3}
-  jAttackOff: {fileID: 21300000, guid: 918e779d15014eb093d4670000d29576, type: 3}
   jAttackOn: {fileID: 21300000, guid: af97812505d444f5954c15c8820ee269, type: 3}
+  jAttackOff: {fileID: 21300000, guid: 918e779d15014eb093d4670000d29576, type: 3}
   screenFont: {fileID: 11400000, guid: cddfb65d7ebf8724d8854d7fb095a58e, type: 2}
   screenTitleFont: {fileID: 11400000, guid: 463bb0403a855ea49ae21e168c3b27c5, type: 2}
   outcomeFont: {fileID: 11400000, guid: f11cdb3b0dd6fd645aef4c90eafe389a, type: 2}
+  countdownFont: {fileID: 11400000, guid: 2c5e1ab20963888439602c4b4eb9fd35, type: 2}
   settingsVolume: {fileID: 21300000, guid: 571fa3150c5e49bdb12e49a09660615d, type: 3}
   settingsInputOffset: {fileID: 21300000, guid: 3e28b22c18df4d48912f88ab9d0c7024, type: 3}
   settingsMusicOffset: {fileID: 21300000, guid: 2952d1ab947a42f2af3165878e7dac76, type: 3}

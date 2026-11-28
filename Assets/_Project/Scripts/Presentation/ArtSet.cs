@@ -18,6 +18,11 @@ namespace StringAsASword.Presentation
         public float knightGlowSize = .008f;
         [Tooltip("The knight's sword in the prologue (the torn string). Pivot at the grip, blade along +Y. Empty = a white line.")]
         public GameObject swordPrefab;
+        [Tooltip("Chess pieces the boss summons for chart attacks (which piece, where: Docs/BossChart.md 기물 규칙). Pivot at the bottom " +
+            "centre, heights in the real piece ratio. String As a Sword > Art > Set Up Boss Chess Pieces fills them. Empty = a flat silhouette.")]
+        public GameObject bossPawn, bossRook, bossBishop, bossKnight, bossKing, bossQueen;
+        [Tooltip("Scale for every boss piece.")]
+        public float bossPieceScale = 1;
         [Tooltip("Placed only when assigned. Animator triggers: Telegraph, Attack, Hurt, PhaseUp.")]
         public GameObject kingPrefab;
         [Tooltip("Board-local position of the king's pivot. Row 8's far edge is z = 4.")]
@@ -76,6 +81,7 @@ namespace StringAsASword.Presentation
         public Material normalMark;
         [Tooltip("Strong attack tile: a guard does not protect.")]
         public Material strongMark;
+        [Tooltip("Not used: nothing marks the cells when an attack lands, the boss's chess pieces show the hit.")]
         public Material impactMark;
 
         [Header("2D UI")]
@@ -146,14 +152,17 @@ namespace StringAsASword.Presentation
         [Tooltip("PAUSED / FALLEN titles (Figma: Media Sans Extended Black). Empty = screenFont.")]
         public TMP_FontAsset screenTitleFont;
         [Tooltip("HIT / BLOCK and FAST / SLOW beside the knight, PERFECT / GOOD / MISS over the right strings (Chakra Petch Regular). Empty = the battle's Latin font.")]
-        public TMP_FontAsset outcomeFont;        [Tooltip("Settings card art (Figma 'Game Play' / Settings, exported at 2x): the row titles with their captions, the key hints " +
+        public TMP_FontAsset outcomeFont;
+        [Tooltip("The attack countdown numbers on the board (Chakra Petch Bold). Empty = outcomeFont.")]
+        public TMP_FontAsset countdownFont;
+        [Tooltip("Settings card art (Figma 'Game Play' / Settings, exported at 2x): the row titles with their captions, the key hints " +
             "at the bottom and the left-pointing arrow of the step buttons (flipped for the right one). Empty = plain text.")]
         public Sprite settingsVolume, settingsInputOffset, settingsMusicOffset, settingsDifficulty, settingsKeyHints, settingsArrow;
         [Tooltip("Captions under the selected difficulty button on the settings card.")]
         public Sprite settingsDifficultyEasyNote, settingsDifficultyHardNote;
         [Tooltip("Nine-sliced rounded fill and outlines for menu cards and buttons.")]
         public Sprite settingsRoundedFill, settingsRoundedPanelBorder, settingsRoundedButtonBorder;
-        [Tooltip("Telegraph countdown badges move away from this box around the knight, in board-view pixels.")]
+        [Tooltip("Not used: countdown numbers now sit at the centre of every attacked cell, with no badge to move aside.")]
         public Rect knightBadgeBox = new Rect(-26, 5, 52, 76);
         [Tooltip("Player HP under the knight, one sprite per HP: a bar segment or a knight icon, on = left, off = lost. " +
             "The style is picked in the menu settings. An empty slot draws a plain white/grey box.")]

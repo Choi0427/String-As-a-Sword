@@ -52,18 +52,31 @@ namespace StringAsASword.Tests
             Fails("shape A\n" + string.Concat(Enumerable.Repeat("22222222\n", 8)), 1, "막을 수도 피할 수도");
             Fails("hello", 1, "알 수 없는 줄");
         }
-        [Test] public void PieceOptionNamesTheSummonedPiecesAndReachesTheTelegraph()
+        [Test] public void PieceOptionOverridesTheRulesOnTheShapeOrTheAttack()
         {
             const string rows = "\n00010000\n00010000\n00010000\n11111111\n00010000\n00010000\n00010000\n00010000\n";
-            var chart = BossChart.Parse("shape 챈슬러 piece=룩+나이트 anchor=4,4" + rows + "shape 룩 anchor=4,4 piece=룩" + rows + X + "10 챈슬러 2");
-            Assert.That(chart.Shapes["챈슬러"].Pieces, Is.EqualTo(new[] { ChessPiece.Rook, ChessPiece.Knight }));
-            Assert.That(chart.Shapes["챈슬러"].HasAnchor, Is.True, "options are read in either order");
-            Assert.That(chart.Shapes["룩"].Pieces, Is.EqualTo(new[] { ChessPiece.Rook }));
-            Assert.That(chart.Shapes["X"].Pieces, Is.Empty);
-            var hits = new BossPatternSystem(new PatternDefinition[0]).AuthoredHits(chart.Attacks[0], new GridPosition(3, 3));
-            Assert.That(hits[0].Pieces, Is.EqualTo(new[] { ChessPiece.Rook, ChessPiece.Knight }));
+            var chart = BossChart.Parse("shape 십자 piece=폰 anchor=4,4" + rows + "shape 자동 anchor=4,4" + rows + X +
+                "10 십자 2\n20 자동 2\n30 자동 2 piece=킹\n40 X 2 piece=없음\n50 십자 2 piece=퀸");
+            Assert.That(chart.Shapes["십자"].HasAnchor, Is.True, "options are read in either order");
+            var a = chart.Attacks;
+            Assert.That(a[0].Strikes.All(s => s.Piece == ChessPiece.Pawn && s.Motion == StrikeMotion.Slam), Is.True, "shape piece=폰: a pawn per cell");
+            Assert.That(a[0].Strikes.Count, Is.EqualTo(15));
+            Assert.That(a[1].Strikes.Select(s => (s.Piece, s.Motion)), Is.EqualTo(new[] { (ChessPiece.Rook, StrikeMotion.Sweep), (ChessPiece.Rook, StrikeMotion.Sweep) }),
+                "a row and a column through one cell: two rooks");
+            Assert.That(a[2].Strikes.Select(s => (s.Piece, s.Motion)), Is.EqualTo(new[] { (ChessPiece.King, StrikeMotion.Sweep), (ChessPiece.King, StrikeMotion.Sweep) }),
+                "piece=킹 keeps the rooks' paths");
+            Assert.That(a[3].Strikes, Is.Empty);
+            Assert.That(a[4].Strikes.Single().Piece, Is.EqualTo(ChessPiece.Queen), "the attack's piece= wins over the shape's");
+            Assert.That(a[4].PieceSource, Is.EqualTo("공격 piece=퀸"));
+            // Anchored: the strikes move with the player, and the telegraph carries them once per hit.
+            var hits = new BossPatternSystem(new PatternDefinition[0]).AuthoredHits(a[1], new GridPosition(0, 0));
+            Assert.That(hits[0].Strikes.Count, Is.EqualTo(2));
+            Assert.That(hits.Skip(1).All(h => h.Strikes.Count == 0), Is.True);
+            Assert.That(hits[0].Strikes.SelectMany(s => s.Path).All(p => p.X == 0 || p.Y == 0), Is.True);
             var e = Assert.Throws<BossChartException>(() => BossChart.Parse("shape A piece=용" + rows));
             StringAssert.Contains("모르는 기물", e.Message);
+            e = Assert.Throws<BossChartException>(() => BossChart.Parse("shape A piece=룩+나이트" + rows));
+            StringAssert.Contains("기물 하나만", e.Message);
         }
         [Test] public void AnchoredShapeMovesToThePlayerAndClips()
         {

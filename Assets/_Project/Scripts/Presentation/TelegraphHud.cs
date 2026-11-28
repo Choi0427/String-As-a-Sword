@@ -9,8 +9,6 @@ namespace StringAsASword.Presentation
     /// <summary>Pure telegraph reading rules shared by the HUD and the board marks.</summary>
     public static class TelegraphHud
     {
-        // A row, column or cross always keeps its per-cell numbers; wider attacks would bury the board marks.
-        public const int DenseBadgeLimit = 16;
         // A failed guard reads as a plain HIT, the same as any other hit.
         public const string Blocked = "BLOCK", Hit = "HIT";
 
@@ -52,22 +50,6 @@ namespace StringAsASword.Presentation
             }
         }
 
-        // A countdown describes the next impact on a cell. Single-note warnings rely on the board mark.
-        public static ulong CountdownCells(IReadOnlyList<BossTelegraph> active, int lastClosed, int[] soonest)
-        {
-            ulong cells = 0;
-            foreach (var attack in active)
-            {
-                if (attack.WarningNotes == 1) continue;
-                int remaining = attack.Remaining(lastClosed);
-                for (int i = 0; i < soonest.Length; i++)
-                {
-                    ulong cell = 1UL << i;
-                    if ((attack.Cells & cell) != 0 && soonest[i] == remaining) cells |= cell;
-                }
-            }
-            return cells;
-        }
 
         // Id - Hit is shared by every hit of a sequence, so one attack takes one line however many hits remain.
         // Returns the number of lines wanted, which can exceed the limit; only lines under it are written.
@@ -92,39 +74,5 @@ namespace StringAsASword.Presentation
             return shown;
         }
 
-        // Wide attacks keep one number per countdown in each 2x2 block. When cells fire at different times, the
-        // player's cell and its neighbours keep theirs too, because that is where the next move has to read them.
-        public static ulong BadgeCells(ulong marked, int[] soonest, int playerCell)
-        {
-            int count = 0, first = -1;
-            bool mixed = false;
-            for (int i = 0; i < 64; i++)
-            {
-                if ((marked & (1UL << i)) == 0) continue;
-                count++;
-                if (first < 0) first = i;
-                else if (soonest[i] != soonest[first]) mixed = true;
-            }
-            if (count <= DenseBadgeLimit) return marked;
-            ulong shown = 0;
-            for (int i = 0; i < 64; i++)
-            {
-                if ((marked & (1UL << i)) == 0) continue;
-                int block = (i / 8 & ~1) * 8 + (i % 8 & ~1);
-                bool repeated = SameCountdown(shown, block, i, soonest) || SameCountdown(shown, block + 1, i, soonest) ||
-                    SameCountdown(shown, block + 8, i, soonest) || SameCountdown(shown, block + 9, i, soonest);
-                if (!repeated) shown |= 1UL << i;
-            }
-            if (!mixed) return shown;
-            int x = playerCell % 8, y = playerCell / 8;
-            ulong beside = 1UL << playerCell;
-            if (y < 7) beside |= 1UL << (playerCell + 8);
-            if (y > 0) beside |= 1UL << (playerCell - 8);
-            if (x < 7) beside |= 1UL << (playerCell + 1);
-            if (x > 0) beside |= 1UL << (playerCell - 1);
-            return shown | (beside & marked);
-        }
-        private static bool SameCountdown(ulong shown, int other, int cell, int[] soonest)
-            => (shown & (1UL << other)) != 0 && soonest[other] == soonest[cell];
     }
 }

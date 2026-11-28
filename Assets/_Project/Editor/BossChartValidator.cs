@@ -135,6 +135,25 @@ namespace StringAsASword.Editor
             return text.ToString();
         }
 
+        /// <summary>
+        /// Which chess pieces each attack summons, numbered in note order: the automatic rules (PieceStrikePlanner) or a piece= override.
+        /// Change one with piece=기물 at the end of its attack line.
+        /// </summary>
+        public static string PieceReport(BossChart chart)
+        {
+            var text = new StringBuilder();
+            text.AppendLine("기물 배정 (번호는 노트 순서. 바꾸려면 공격 줄 끝에 piece=기물, 자세한 규칙은 Docs/BossChart.md 기물 규칙)");
+            var attacks = chart.Attacks.OrderBy(a => a.Note).ThenBy(a => a.Line).ToList();
+            for (int i = 0; i < attacks.Count; i++)
+            {
+                var a = attacks[i];
+                string rules = string.Join(", ", a.Strikes.Select(s => s.Rule).Distinct());
+                text.AppendLine($"#{i + 1} 노트 {a.Note} {a.Shape.Name} ({a.Line}번째 줄): {PieceStrikePlanner.Describe(a.Strikes)}" +
+                    (a.PieceSource == "자동" ? (rules.Length > 0 ? $" [규칙 {rules}]" : "") : $" [{a.PieceSource}]"));
+            }
+            return text.ToString();
+        }
+
         /// <summary>Validates, writes Docs/BossChart/validation.txt, and if it passes and seeds > 0, runs the bot simulation.</summary>
         public static (bool passed, string report) Run(string chartPath, int seeds, string outputDir = ReportDir)
         {
@@ -143,6 +162,7 @@ namespace StringAsASword.Editor
             settings.BossChartText = chartText;
             var result = Check(chartText, settings);
             string report = Format(result, chartPath, settings);
+            if (result.ParseError == null) report += Environment.NewLine + PieceReport(BossChart.Parse(chartText));
             Directory.CreateDirectory(outputDir);
             if (result.Passed && seeds > 0)
             {
