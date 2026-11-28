@@ -83,6 +83,8 @@
 
 ## 재현
 
+저장소 정리(2026-11-25)에서 이 도구를 지웠다. 다시 돌리려면 커밋 `0b5a650`에서 가져온다.
+
 ```
 Unity.exe -batchmode -nographics -quit -projectPath <프로젝트> -executeMethod StringAsASword.Editor.BattleTuningSweep.RunFromCommandLine -tuneStage <L|damage|ghost|hp|custom> -tuneL 8 -tuneDamage 3/1/2 -tuneGhost 0 -tuneTarget 215 -tuneSeeds 150
 ```
@@ -91,5 +93,5 @@ Unity.exe -batchmode -nographics -quit -projectPath <프로젝트> -executeMetho
 - 정규화 목표값은 "사망한 판을 무한대로 친 중수 무력화 노트 중앙값"이라서, 실제 무력화 노트 중앙값보다 크게 잡힌다.
 - 코드 변경:
   - 공명 피해와 공명 밖 피해가 스테이지 설정이 됐다(`StageDefinition`, `BattleSettings`, `ResonanceState`). 기본값은 battle-9와 같다.
-  - `Editor/BattleTuningSweep.cs`를 추가했다.
+  - `Editor/BattleTuningSweep.cs`를 추가했다(저장소 정리에서 삭제).
   - 회귀 테스트 `Tests/EditMode/BalanceTargetTests.cs`를 추가했다.

@@ -24,10 +24,11 @@
 | `kingPrefab` | `kingAnchor` 위치에 `kingScale`로 배치. 비어 있으면 킹 모델을 만들지 않고 `bossImage`를 쓴다 | Trigger `Telegraph` `Attack` `Hurt` `PhaseUp` (`Stunned`는 피날레용으로 예약) |
 | `bossImage` | 임시 보스 그림(2D). 보드 뒤, 배경 위에 그린다. `bossImageHeight`(캔버스 px)로 크기를, `bossImageSink`(x 좌우, y 보드 먼 변 아래로 내리는 양)로 위치를 맞춘다. 피격 시 흔들리고, 스턴되면 어두워지며 기울고, 피날레에서 가라앉는다. `kingPrefab`이 있으면 쓰지 않는다 | — |
 | `noisePrefab` | 잡음 대체. `noiseDormantMaterial`이 있으면 목표 달성 후 머티리얼을 그것으로 바꾼다 | Bool `Dormant` |
-| `noiseSprite` | `noisePrefab`이 비어 있을 때 플레이어가 모으는 잡음을 이 그림(`Art/UI/Noise/Noise.png`)으로 그린다. 칸 1.4배 너비로 칸 위 0.5칸 높이에 떠서 카메라를 보며 위아래로 흔들리고, 칸 대부분을 덮는 어두운 타원 그림자가 진다(내려올수록 작고 진해짐). 페이즈 목표를 채우면 회색으로 흐려진다 | String As a Sword > Art > Set Up Noise Sprite로 연결한다 |
+| `noiseSprite` | `noisePrefab`이 비어 있을 때 플레이어가 모으는 잡음을 이 그림(`Art/UI/Noise/Noise.png`)으로 그린다. 칸 1.4배 너비로 칸 위 0.5칸 높이에 떠서 카메라를 보며 위아래로 흔들리고, 칸 대부분을 덮는 어두운 타원 그림자가 진다(내려올수록 작고 진해짐). 페이즈 목표를 채우면 회색으로 흐려진다. 엔딩의 흰 세계에 남는 잡음도 같은 그림·같은 움직임으로 그린다 | String As a Sword > Art > Set Up Noise Sprite로 연결한다 |
 | `boardPrefab` | 절차적 받침·테두리·덱·64칸을 통째로 대체. 8×8 칸이 1유닛 칸에 맞고 윗면이 y = 0이어야 한다. 싸비2가 끝난 뒤부터 칸 단위 64조각으로 나뉘어 몇 칸이 내려앉고, 곡이 끝나면 가운데 4×4 조각이 튕겨 나간다. 모델의 Read/Write가 켜져 있어야 하며(`ChessBoard.fbx`는 켜 둠), 꺼져 있으면 금만 가고 조각나지 않는다 | — |
 | `boardCrack` | 보드 전체에 덮는 금·가운데 빛·구멍 머티리얼(`Board Crack` 셰이더의 `_Crack`, `_Light`, `_Hole`을 코드가 움직인다). `String As a Sword > Art > Set Up Board Cracks`가 만든다 | — |
-| `endingCutscene` | 엔딩 컷신 영상(`VideoClip`). 잡음에 닿으면 레터박스 사이에서 재생된다. 비어 있으면 검정 화면 2초 | — |
+| `endingImage` | 엔딩 그림(`Art/UI/Ending/Ending_Title.png`, 투명 배경에 검은 易聲 글씨, 화면 높이 80%). 잡음이 사라지고 2초간 흰 화면이 지난 뒤 한 번에 나타나 5초 머문다 | `Ending_Title.png` |
+| `endingCutscene` | 엔딩 컷신 영상(`VideoClip`). `endingImage`가 비어 있을 때만, 잡음에 닿으면 레터박스 사이에서 재생된다. 비어 있으면 검정 화면 2초 | — |
 | `lightTile` / `darkTile` / `boardEdge` | 칸 윗면(칸마다 UV 0~1) / 받침·옆면 | — |
 | `normalMark` / `strongMark` | 공격 장판 (0.92칸). 그림 없이 `Telegraph Tile` 셰이더가 그린다. 일반은 반투명 흰색에 테두리 안쪽 글로우, 강화(가드 불가)는 더 투명하고 대각선 빗금이 있다. 보드 전체 공격(가드 필수)은 일반 장판으로 보인다 | `String As a Sword > Art > Set Up Telegraph Tiles`가 `TelegraphNormal.mat` / `TelegraphStrong.mat`을 만들어 넣는다. 투명도·글로우·빗금 값은 머티리얼에서 고친다 |
 | `impactMark` | 공격이 떨어진 칸에 0.3초 보이는 표시. 비어 있으면 X 모양 메시를 쓴다 | — |
@@ -37,7 +38,7 @@
 | `laneSprite` | 좌우 현과 프렛을 한 장에 그린 판정선 그림. 가운데 빈 곳에 보드가 들어간다. 절차적 현을 대체한다. 높이는 `laneRows`의 보드 행(기본 3~6행)에, 너비는 가운데 현이 보드 옆 가장자리에서 끝나도록 따로 맞춘다. 판정선은 같은 행 범위에서 보드 가장자리를 따라 기울여 그리고, 노트 기둥도 같은 각도로 기운다 | `laneRows`(현이 걸치는 가장 가까운 행·먼 행), `laneNoteString`(노트가 타는 현의 y 픽셀. 기본 190은 넷째 현으로 4행과 3행의 경계다), `laneBoardGap`(가운데 현이 끊기는 좌·우 x 픽셀), `laneStrings`(맨 위·가운데·맨 아래 현의 y 픽셀), `laneBoardEdge`(보드 옆 가장자리의 보드 좌표 x)를 그림에 맞게 넣는다 |
 | `noteSprite` | 좌우 노트. 기둥이 위, 머리가 아래인 그림 한 장으로 네 종류를 그린다. 기본 노트는 그대로, 빠른 노트 2개 묶음은 빔 1줄, 3개 묶음은 빔 2줄로 잇고, 홀드 노트는 꼬리까지 두 줄 레일을 긋는다 | 간격이 0.75박보다 짧은 노트를 한 묶음으로 본다. 4개 이상은 3개와 2개로 나눈다. 빔과 레일은 코드가 그린다 |
 | `backgroundLayers` | `background` 위에 뒤→앞 순서로 쌓는 전체 화면 레이어. `sway`(캔버스 px)가 0이 아니면 `period`초 주기로 둥둥 떠다닌다. 배경이 있으면 보드 영역이 투명해져 배경 위에 보드가 놓인다 | — |
-| `prologueBackgroundLayers` | 프롤로그 앞부분의 "온전한 판" 세트(인트로 리뷰 A5-B). `backgroundLayers`와 번호끼리 짝을 이루고 같은 순서·흔들림으로 쌓인다. 줄을 끊는 박(story 36)에 앞 레이어부터 0.12박 간격으로 1.2박에 걸쳐 사라지며 같은 번호의 전투 레이어가 드러난다. 비어 있으면 검은 Void | `Art/UI/Background/BG_Whole_0..5.png`를 넣고 Set Up Chessboard and Background를 실행한다. 사양은 `Docs/IntroAssets.md`. 프롤로그의 소리 슬롯(작곡 큐·체스 클록)은 `Resources/Prologue.asset`에 있다 |
+| `prologueBackgroundLayers` | 프롤로그 앞부분의 "온전한 판" 세트(인트로 리뷰 A5-B). `backgroundLayers`와 번호끼리 짝을 이루고 같은 순서·흔들림으로 쌓인다. J로 현을 뜯는 박(story 36)에 앞 레이어부터 0.12박 간격으로 1.2박에 걸쳐 사라지며 같은 번호의 전투 레이어가 드러난다. 비어 있으면 검은 Void | `Art/UI/Background/BG_Whole_0..5.png`를 넣고 Set Up Chessboard and Background를 실행한다. 사양은 `Docs/IntroAssets.md`. 프롤로그의 소리 슬롯(작곡 큐·체스 클록·줄 녹음)은 `Resources/Prologue.asset`에 있다 |
 | `holdBodySprite` / `holdTailSprite` | 홀드 노트의 현(줄) 몸통 / 꼬리 말뚝 | 흰색으로 그린다. 가로로 늘어나며, 상태별 색(대기 흰색·유지 중 민트·끊김 회색)을 코드가 입힌다 |
 | `crown` / `crownSpent` / `crownRegions` / `crownMaterial` | 보스 그림 머리 위의 왕관. 보스 HP 표시를 대신한다. 아트는 HP 단계별 그림 5장(`Art/UI/Boss/CrownStates/0~4.png`)이다. 0은 온전한 왕관, 1~4는 오른쪽 날부터 하나씩 불투명한 짙은 회색 날(부드러운 가장자리, glow 없음)이 된 모습이다. `crown`은 0.png, `crownSpent`는 0.png 캔버스에 맞춰 옮긴 4.png다. 날 4개가 HP 4칸이고, 맞을 때마다 그 날이 위에서 아래로 깎이며 깎인 부분이 소진 그림으로 바뀐다(잠깐 흰 플래시). 날 사이 이음새 3개는 앞 날이 소진되면 흐려져 사라지고 지지직 노이즈가 붙는다. 고리와 양끝 갈고리는 아트의 마지막 상태(4.png)처럼 끝까지 빛난다. 네 슬롯이 모두 있어야 표시된다 | 그림을 바꾸면 `CrownStates/`의 0~4.png를 교체하고 String As a Sword > Art > Set Up Boss Crown을 다시 실행한다. 4.png를 양끝 갈고리 기준으로 0.png에 맞춰 `Crown_Spent.png`로 쓰고(내보낸 그림마다 잘린 위치가 달라서), 영역 맵(`Crown_Regions.png`)과 `Crown.mat`을 다시 굽고, 영역 확인 그림을 `Logs/CrownRegions.png`에 쓴다. 1~3.png는 결과 비교용이다. 날·이음새의 위치는 `CrownLayout.cs`의 UV 값이다. `crownWidth`(보스 그림 너비 대비), `crownSeamHeight`(가운데 이음새가 놓이는 보스 그림 높이, 위=0)로 크기와 위치를 맞춘다 |
 | `*Vfx` | 해당 순간에 보드 위에 생성하고 2초 뒤 삭제 | — |
@@ -52,7 +53,7 @@
 
 - 공격 장판 2종은 `Art/Shaders/TelegraphTile.shader`가 칸의 UV로 그린다. 텍스처가 없다. `Set Up Telegraph Tiles` 메뉴를 다시 실행하면 두 머티리얼이 기본값으로 돌아간다.
 - 보드는 렌더 텍스처에 그려 UI에 올린다. 그래서 이 셰이더는 알파 채널을 `One OneMinusSrcAlpha`로 섞는다. 일반 알파 블렌드를 쓰면 장판 자리의 보드가 배경으로 비쳐 보인다.
-- 착탄 표시(`impactMark`)를 그림으로 바꾸려면 `Art/Materials/ArtCutout.mat`(URP Unlit, 알파 클리핑 0.5)을 복제해 Base Map에 PNG를 넣고 슬롯에 넣는다.
+- 착탄 표시(`impactMark`)를 그림으로 바꾸려면 URP Unlit 머티리얼을 만들어 알파 클리핑(0.5)을 켜고, Base Map에 PNG를 넣어 슬롯에 넣는다.
 - 머티리얼로 받는 이유가 있다. 빌드할 때 Unity는 실제로 참조된 셰이더 변형만 남기는데, 런타임에 투명 설정을 켜면 빌드에서 그 변형이 빠질 수 있다.
 - 공격받는 칸의 정중앙에 검은 숫자(남은 노트)가 겹친다(2026-11-29). 예고 타일은 숫자가 읽히도록 밝은 톤을 유지한다.
 
@@ -66,7 +67,7 @@
 
 ![그레이박스 스케일 확인](ArtPipeline/greybox-board.png)
 
-`Art/Templates/`의 `Knight_Template`(0.6×1.2), `King_Template`(7×4×1), `Noise_Template`(0.6)은 바닥 중앙 피벗의 크기 기준 프리팹이다. 아티스트에게 크기 기준으로 주거나, 슬롯에 넣어 배치를 먼저 확인할 수 있다.
+크기 기준은 나이트 0.6×1.2, 왕 7×4×1, 잡음 0.6(단위, 바닥 중앙 피벗)이다. 기준 프리팹(`Art/Templates/`)은 저장소 정리(2026-11-25)에서 지웠고 커밋 `0b5a650`에 있다.
 
 ## 셰이더와 조명
 

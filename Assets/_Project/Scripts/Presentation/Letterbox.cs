@@ -18,7 +18,6 @@ namespace StringAsASword.Presentation
         private float subtitleSince = -1;
         /// <summary>The subtitle's usual size, in canvas pixels.</summary>
         public const float SubtitleSize = 22;
-        public RectTransform Layer => layer;
         public string Subtitle => subtitleText;
         public float SubtitleFontSize => subtitle.fontSize;
         /// <summary>The bar height last laid out, in canvas pixels.</summary>

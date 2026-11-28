@@ -21,7 +21,6 @@ namespace StringAsASword.Presentation
         private SpriteRenderer slashRenderer;
         private Transform[] pickups;
         private Renderer[][] pickupRenderers;
-        private Material noiseMaterial;
         // [pickup][renderer] material arrays, so a delivered prefab keeps its own materials while active.
         private Material[][][] pickupActive, pickupDormant;
         private bool lastNoiseDormant;
@@ -32,8 +31,6 @@ namespace StringAsASword.Presentation
         private Mesh box;
         private Material edgeMaterial;
         private Material materialTemplate;
-        private Material outlineMaterial;
-        private Color outlineAccent, outlineColor;
         private Renderer[] outlineEdges = new Renderer[0];
         private bool outlineShown = true;
         // Two tile kinds: normal (guard or leave) and strong (a guard does not protect: AttackResponse.DodgeOnly).
@@ -75,6 +72,15 @@ namespace StringAsASword.Presentation
         public bool LightBelow => lightFloor != null && lightFloor.gameObject.activeSelf;
         private Material tileLight, tileDark;
         private float breakEased, burst, shakeAge = 1;
+        // The break pose last laid out (-1: lay it out again).
+        private float shownBreak = -1, shownBurst = -1;
+        private static readonly int CrackId = Shader.PropertyToID("_Crack"), LightId = Shader.PropertyToID("_Light"),
+            HoleId = Shader.PropertyToID("_Hole"), HoleRadiusId = Shader.PropertyToID("_HoleRadius"),
+            ReachId = Shader.PropertyToID("_Reach"), LightColorId = Shader.PropertyToID("_LightColor");
+        // The chart's chorus ends, read once per chart (the lookup builds strings).
+        private BossChart breakChart;
+        private int chorusEnd1, chorusEnd2;
+        private Canvas canvas;
         private Vector2 viewHome;
         private bool whiteWorld;
         private readonly List<GameObject> hiddenForWhite = new List<GameObject>();
@@ -205,8 +211,8 @@ namespace StringAsASword.Presentation
                 RenderSettings.reflectionIntensity = 0;
             }
             var gold = Material(new Color(.84f, .66f, .32f));
-            outlineAccent = outlineColor = new Color(.40f, .85f, .73f);
-            var accent = outlineMaterial = Material(outlineAccent);
+            // Shown only under a move-away attack on the knight's own cell, so it is always the strong attack's colour.
+            var accent = Material(TelegraphHud.ResponseColor(AttackResponse.DodgeOnly, Color.white));
             if (art.boardPrefab != null)
             {
                 var model = Instantiate(art.boardPrefab, world.transform, false); model.name = "Board Model";
@@ -617,17 +623,21 @@ namespace StringAsASword.Presentation
         {
             BreakStage = Mathf.Clamp(stage, 0, 3);
             if (whiteWorld) return;
+            // The pose depends only on the stage and the burst (the camera only matters while the burst runs, when it
+            // changes every frame anyway), so most frames would write the same values again.
+            if (BreakStage == shownBreak && burst == shownBurst) return;
+            shownBreak = BreakStage; shownBurst = burst;
             float settle = Mathf.SmoothStep(0, 1, Mathf.Clamp01(BreakStage - 1));
             // 0..1 from the king's fall to the end of the song: the centre comes apart over the light below.
             float leak = Mathf.Clamp01(BreakStage - 2);
             float gap = Mathf.SmoothStep(0, 1, leak / .25f);
             if (crackMaterial != null)
             {
-                crackMaterial.SetFloat("_Crack", Mathf.Clamp01(BreakStage / 2));
-                crackMaterial.SetFloat("_Light", leak);
-                crackMaterial.SetFloat("_Hole", burst > 0 ? 1 : gap);
+                crackMaterial.SetFloat(CrackId, Mathf.Clamp01(BreakStage / 2));
+                crackMaterial.SetFloat(LightId, leak);
+                crackMaterial.SetFloat(HoleId, burst > 0 ? 1 : gap);
                 // Up to the burst only the pieces inside the border move; then the whole cut does.
-                crackMaterial.SetFloat("_HoleRadius", burst > 0 ? FragmentHalf * 1.45f : FragmentHalf - .3f);
+                crackMaterial.SetFloat(HoleRadiusId, burst > 0 ? FragmentHalf * 1.45f : FragmentHalf - .3f);
                 crackOverlay.SetActive(BreakStage > 0 || burst > 0);
                 bool lit = leak > 0 || burst > 0;
                 lightFloor.gameObject.SetActive(lit); lightGlow.gameObject.SetActive(lit); lightRays.gameObject.SetActive(burst > 0);
@@ -638,17 +648,17 @@ namespace StringAsASword.Presentation
                 {
                     lightBlades.SetActive(lit);
                     // The blades come up from the centre outward, grow to the end of the song, jump at the burst and are lost in its light.
-                    bladeMaterial.SetFloat("_Light", leak + burst);
-                    bladeMaterial.SetFloat("_Reach", .25f + .75f * Mathf.SmoothStep(0, 1, leak) + 1.4f * Mathf.Clamp01(burst * 3));
-                    bladeMaterial.SetColor("_LightColor", new Color(1, 1, 1, 1 - Mathf.InverseLerp(.45f, .85f, burst)));
+                    bladeMaterial.SetFloat(LightId, leak + burst);
+                    bladeMaterial.SetFloat(ReachId, .25f + .75f * Mathf.SmoothStep(0, 1, leak) + 1.4f * Mathf.Clamp01(burst * 3));
+                    bladeMaterial.SetColor(LightColorId, new Color(1, 1, 1, 1 - Mathf.InverseLerp(.45f, .85f, burst)));
                 }
                 // Until the burst the glow only marks the hole: the light belongs to the cracks.
                 float glow = (.7f + 1.1f * leak + 16 * burst * burst) / 8;
                 lightGlow.localScale = new Vector3(glow, 1, glow);
-                glowMaterial.SetFloat("_Light", Mathf.Clamp01(.28f * leak + 1.3f * burst));
+                glowMaterial.SetFloat(LightId, Mathf.Clamp01(.28f * leak + 1.3f * burst));
                 float rays = (5 + 20 * burst) / 8;
                 lightRays.localScale = new Vector3(rays, 1, rays);
-                rayMaterial.SetFloat("_Light", Mathf.Clamp01(burst * 2.5f));
+                rayMaterial.SetFloat(LightId, Mathf.Clamp01(burst * 2.5f));
             }
             bool broken = settle > 0 || burst > 0;
             if (boardShards != null) { boardShards.SetActive(broken); boardModel.gameObject.SetActive(!broken); }
@@ -735,7 +745,7 @@ namespace StringAsASword.Presentation
         public void EnterWhiteWorld(Vector3 noiseAt)
         {
             if (whiteWorld) return;
-            whiteWorld = true;
+            whiteWorld = true; EndingNoiseFade = 1;
             foreach (Transform child in world.transform)
             {
                 if (child == player || child.GetComponent<Camera>() != null || child.GetComponent<Light>() != null || !child.gameObject.activeSelf) continue;
@@ -748,8 +758,9 @@ namespace StringAsASword.Presentation
         private void LeaveWhiteWorld()
         {
             if (!whiteWorld) return;
-            whiteWorld = false;
+            whiteWorld = false; EndingNoiseFade = 1;
             foreach (var item in hiddenForWhite) if (item != null) item.SetActive(true);
+            shownBreak = shownBurst = -1;
             hiddenForWhite.Clear();
             endingNoise.gameObject.SetActive(false);
             ResetVoid();
@@ -757,6 +768,8 @@ namespace StringAsASword.Presentation
         private Transform BuildEndingNoise()
         {
             if (art.noisePrefab != null) { var made = Instantiate(art.noisePrefab, world.transform, false).transform; made.name = "Ending Noise"; return made; }
+            // The same picture the knight picks up in battle, floating and swaying the same way (the slot after the pickups).
+            if (noiseSprites != null) { var made = BuildNoiseSprite(EndingNoiseSlot); made.name = "Ending Noise"; return made; }
             // The battle's wave silhouette in near-black: the one thing left on the white.
             var ink = Material(new Color(.07f, .07f, .08f));
             var item = new GameObject("Ending Noise").transform; item.SetParent(world.transform, false);
@@ -773,11 +786,11 @@ namespace StringAsASword.Presentation
         {
             var chart = game.Battle.Settings.Chart;
             if (chart == null) return 0;
-            int level = 0, closed = game.Battle.LastClosedNote;
-            for (int chorus = 1; chorus <= 2; chorus++) { int end = chart.ChorusEnd(chorus); if (end >= 0 && closed >= end) level++; }
-            return level;
+            if (!ReferenceEquals(chart, breakChart)) { breakChart = chart; chorusEnd1 = chart.ChorusEnd(1); chorusEnd2 = chart.ChorusEnd(2); }
+            int closed = game.Battle.LastClosedNote;
+            return (chorusEnd1 >= 0 && closed >= chorusEnd1 ? 1 : 0) + (chorusEnd2 >= 0 && closed >= chorusEnd2 ? 1 : 0);
         }
-        /// <summary>0 = standing, 1 = fallen over. Delivered king prefabs also get the "Hurt" cue at the start.</summary>
+        /// <summary>0 = standing, 1 = fallen over.</summary>
         public void SetKingDown(float t)
         {
             if (king == null) return;
@@ -850,7 +863,6 @@ namespace StringAsASword.Presentation
         /// on its start cell). Without a change it lapses, so a later step is never slowed.
         /// </summary>
         public void LiftNextMove(float seconds) { liftNext = seconds; liftUntil = Time.unscaledTime + .25f; }
-        public void SetVoidColor(Color color) => BoardCamera.backgroundColor = color;
         /// <summary>Back to the battle's clear colour (transparent when background art is assigned).</summary>
         public void ResetVoid() => BoardCamera.backgroundColor = clearColor;
         public static Vector3 CellPosition(GridPosition cell) => new Vector3(cell.X - 3.5f, 0, cell.Y - 3.5f);
@@ -911,6 +923,7 @@ namespace StringAsASword.Presentation
             LeaveWhiteWorld();
             BreakLevel = 0; breakEased = 0; BreakOverride = -1; burst = 0; shakeAge = 1;
             ((RectTransform)transform).anchoredPosition = viewHome;
+            shownBreak = shownBurst = -1;
             SetBreak(0);
         }
         public void ShowAction(ActionResult result)
@@ -945,7 +958,7 @@ namespace StringAsASword.Presentation
         // a fixed size is shrunk without mipmaps (grain shimmers) or stretched (blurs) at any other resolution.
         private void MatchTargetToScreen()
         {
-            var canvas = GetComponentInParent<Canvas>();
+            if (canvas == null) canvas = GetComponentInParent<Canvas>();
             if (canvas == null) return;
             Vector2 size = ((RectTransform)transform).rect.size * canvas.rootCanvas.scaleFactor;
             int width = Mathf.Clamp(Mathf.RoundToInt(size.x), 256, 2560), height = Mathf.Clamp(Mathf.RoundToInt(size.y), 256, 2560);
@@ -1025,7 +1038,16 @@ namespace StringAsASword.Presentation
             slamAge += dt;
             float jolt = Mathf.Clamp01(1 - shakeAge / .25f) * 7 + Mathf.Clamp01(BreakStage - 2) * 2 + Mathf.Clamp01(1 - slamAge / .18f) * slamPower;
             ((RectTransform)transform).anchoredPosition = viewHome + new Vector2(Mathf.Sin(shakeAge * 95), Mathf.Cos(shakeAge * 71)) * jolt;
-            if (FreeRoam) { ShowOutline(false); return; }
+            if (FreeRoam)
+            {
+                ShowOutline(false);
+                if (whiteWorld && endingNoise != null)
+                {
+                    if (noiseSprites != null) RenderNoiseSprite(EndingNoiseSlot, false, EndingNoiseFade);
+                    else endingNoise.gameObject.SetActive(EndingNoiseFade > 0);
+                }
+                return;
+            }
             RenderTelegraphs(dt);
             Vector3 target = CellPosition(game.Session.Position);
             if (target != moveTarget)
@@ -1169,7 +1191,8 @@ namespace StringAsASword.Presentation
             if (noteClosed)
             {
                 lastClosedNote = battle.LastClosedNote; impactCells = 0;
-                foreach (var fired in battle.Patterns.LastFired) impactCells |= fired.Cells;
+                var lastFired = battle.Patterns.LastFired;
+                for (int i = 0; i < lastFired.Count; i++) impactCells |= lastFired[i].Cells;
                 impactAge = 0;
                 if (impactCells != 0)
                 {
@@ -1181,11 +1204,12 @@ namespace StringAsASword.Presentation
             }
             RenderSummons(battle);
             bool published = false;
-            foreach (var telegraph in battle.Patterns.Active)
-                if (telegraph.Id > lastTelegraphId) { lastTelegraphId = telegraph.Id; published = true; }
+            var active = battle.Patterns.Active;
+            for (int i = 0; i < active.Count; i++)
+                if (active[i].Id > lastTelegraphId) { lastTelegraphId = active[i].Id; published = true; }
             if (published) ArtCue.Trigger(king, "Telegraph");
             if (game.State != PrototypeState.Paused) impactAge += dt;
-            TelegraphHud.MapCells(battle.Patterns.Active, battle.LastClosedNote, cellCounts, cellSoonest, cellResponses);
+            TelegraphHud.MapCells(active, battle.LastClosedNote, cellCounts, cellSoonest, cellResponses);
             // A cell shows its mark whenever an attack is still coming at it, even in the moment another one just landed
             // there. (Cells used to blank for 0.3 s after an impact, from when an impact cross was drawn; with hits on the
             // same cell less than ~0.3 s apart, the next attack's mark then never showed while its number did.)
@@ -1201,12 +1225,6 @@ namespace StringAsASword.Presentation
             var position = game.Session.Position;
             int cell = position.Y * 8 + position.X;
             bool dodge = cellCounts[cell] > 0 && cellResponses[cell] == AttackResponse.DodgeOnly;
-            Color outline = dodge ? TelegraphHud.ResponseColor(AttackResponse.DodgeOnly, outlineAccent) : outlineAccent;
-            if (outlineColor != outline)
-            {
-                outlineMaterial.color = outlineColor = outline;
-                if (outlineMaterial.HasProperty("_BaseColor")) outlineMaterial.SetColor("_BaseColor", outline);
-            }
             ShowOutline(dodge);
         }
         /// <summary>Turns the cell outline's edges on or off. The prologue's SetActive on <see cref="CellOutline"/> still applies on top.</summary>
@@ -1254,12 +1272,12 @@ namespace StringAsASword.Presentation
             mesh.SetVertices(vertices); mesh.SetTriangles(underlay, 0); mesh.SetTriangles(markings, 1);
             mesh.RecalculateNormals(); mesh.RecalculateBounds(); return mesh;
         }
-        private bool BuildShards()
+        private void BuildShards()
         {
             var filters = boardModel.GetComponentsInChildren<MeshFilter>();
             foreach (var filter in filters)
-                if (filter.sharedMesh == null || !filter.sharedMesh.isReadable || filter.GetComponent<MeshRenderer>() == null) return false;
-            if (filters.Length == 0) return false;
+                if (filter.sharedMesh == null || !filter.sharedMesh.isReadable || filter.GetComponent<MeshRenderer>() == null) return;
+            if (filters.Length == 0) return;
             boardShards = new GameObject("Board Shards");
             boardShards.transform.SetParent(world.transform, false);
             // The outermost cells stay one shard each. The middle 6x6 is cut into angular fragments of uneven size instead.
@@ -1387,7 +1405,6 @@ namespace StringAsASword.Presentation
             foreach (var cell in cells) if (cell != null) cellPieces.Add(cell);
             cellPieces.AddRange(fragments); fragmentCount = fragments.Length;
             boardShards.SetActive(false);
-            return true;
         }
         /// <summary>Half the side of the middle square that is cut into fragments (board units).</summary>
         public const float FragmentHalf = 3;
@@ -1695,7 +1712,7 @@ namespace StringAsASword.Presentation
                 float lift = Mathf.Clamp01(height / (HoverHeight + EnterDrop));
                 actor.Shadow.gameObject.SetActive(t < 0);
                 actor.Shadow.transform.localPosition = ground + Vector3.up * .012f;
-                actor.Shadow.transform.localScale = Vector3.one * Mathf.Lerp(.7f, .95f, lift) / ShadowSpriteSize;
+                actor.Shadow.transform.localScale = Vector3.one * Mathf.Lerp(.7f, .95f, lift);
                 actor.Shadow.color = new Color(0, 0, 0, Mathf.Lerp(.75f, .35f, lift) * Mathf.Clamp01(enter * 2));
             }
             // The board view jolts once when the piece hits: hardest for a queen.
@@ -1740,7 +1757,7 @@ namespace StringAsASword.Presentation
         }
         private void BuildNoise()
         {
-            noiseMaterial = Material(new Color(.28f, .96f, .74f));
+            var noiseMaterial = Material(new Color(.28f, .96f, .74f));
             var dormantMaterial = art.noisePrefab != null ? art.noiseDormantMaterial : Material(new Color(.26f, .34f, .32f));
             pickups = new Transform[game.Stage.MaxActiveNoise]; pickupRenderers = new Renderer[pickups.Length][];
             pickupActive = new Material[pickups.Length][][]; pickupDormant = new Material[pickups.Length][][];
@@ -1800,8 +1817,10 @@ namespace StringAsASword.Presentation
         {
             if (noiseSprites == null)
             {
-                noiseSprites = new SpriteRenderer[pickups.Length]; noiseShadows = new SpriteRenderer[pickups.Length]; noiseFloats = new Transform[pickups.Length];
-                noiseBackings = new SpriteRenderer[pickups.Length]; noiseGlows = new SpriteRenderer[pickups.Length];
+                // One slot per pickup, plus the ending's noise in the white world.
+                int slots = pickups.Length + 1;
+                noiseSprites = new SpriteRenderer[slots]; noiseShadows = new SpriteRenderer[slots]; noiseFloats = new Transform[slots];
+                noiseBackings = new SpriteRenderer[slots]; noiseGlows = new SpriteRenderer[slots];
                 spriteMaterial = BoardSpriteMaterial();
                 noiseGlowSprite = GlowSprite(art.noiseSprite);
             }
@@ -1841,10 +1860,10 @@ namespace StringAsASword.Presentation
         // enough that it reads as on that cell rather than on the one behind it. The bob stays clear of the tile too.
         private const float NoiseWidth = .85f, NoiseHover = .26f, NoiseBob = .04f;
         public const string NoiseShader = "Universal Render Pipeline/2D/Sprite-Unlit-Default";
-        /// <summary>Height above its cell at which a noise pickup is drawn (where collected noise starts its flight).</summary>
-        public float NoiseHeight => noiseSprites != null ? NoiseHover : .12f;
+        /// <summary>1 = the ending's noise fully shown, 0 = gone. The finale fades it out when the knight touches it.</summary>
+        public float EndingNoiseFade { get; set; } = 1;
         public bool NoiseUsesSprite => noiseSprites != null;
-        private void RenderNoiseSprite(int index, bool dormant)
+        private void RenderNoiseSprite(int index, bool dormant, float fade = 1)
         {
             float time = Time.unscaledTime, wave = Mathf.Sin(time * 2.2f + index * 1.7f);
             float height = NoiseHover + NoiseBob * wave;
@@ -1855,13 +1874,14 @@ namespace StringAsASword.Presentation
             // Higher = wider, fainter shadow; lower = tighter, darker.
             float lift = Mathf.InverseLerp(NoiseHover - NoiseBob, NoiseHover + NoiseBob, height);
             // Most of the cell, so it reads on dark tiles as well as light ones.
-            noiseShadows[index].transform.localScale = new Vector3(.9f, .62f, 1) * Mathf.Lerp(.9f, 1.05f, lift) / ShadowSpriteSize;
-            noiseShadows[index].color = new Color(0, 0, 0, Mathf.Lerp(.85f, .65f, lift) * (dormant ? .55f : 1));
-            noiseSprites[index].color = dormant ? new Color(.42f, .42f, .42f, .7f) : Color.white;
-            noiseBackings[index].color = new Color(.03f, .03f, .035f, dormant ? .45f : .85f);
-            if (noiseGlows[index] != null) noiseGlows[index].color = new Color(1, 1, 1, dormant ? NoiseGlowDormant : NoiseGlowAlpha);
+            noiseShadows[index].transform.localScale = new Vector3(.9f, .62f, 1) * Mathf.Lerp(.9f, 1.05f, lift);
+            noiseShadows[index].color = new Color(0, 0, 0, Mathf.Lerp(.85f, .65f, lift) * (dormant ? .55f : 1) * fade);
+            noiseSprites[index].color = dormant ? new Color(.42f, .42f, .42f, .7f * fade) : new Color(1, 1, 1, fade);
+            noiseBackings[index].color = new Color(.03f, .03f, .035f, (dormant ? .45f : .85f) * fade);
+            if (noiseGlows[index] != null) noiseGlows[index].color = new Color(1, 1, 1, (dormant ? NoiseGlowDormant : NoiseGlowAlpha) * fade);
         }
         private SpriteRenderer[] noiseSprites, noiseShadows, noiseBackings, noiseGlows;
+        private int EndingNoiseSlot => pickups.Length;
         private Sprite noiseGlowSprite;
         // Outer glow: spread as a share of the picture's width, and its strength (dimmer while the noise is dormant).
         private const float NoiseGlowSpread = .14f, NoiseGlowAlpha = .9f, NoiseGlowDormant = .25f;
@@ -1920,7 +1940,6 @@ namespace StringAsASword.Presentation
         private Transform[] noiseFloats;
         private Material spriteMaterial;
         private static Sprite shadowSprite;
-        private const float ShadowSpriteSize = 1;
         // A soft round shadow: solid in the middle, fading to nothing over the outer part. One unit across.
         private static Sprite ShadowSprite()
         {

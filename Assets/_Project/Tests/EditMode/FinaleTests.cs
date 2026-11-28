@@ -1,7 +1,5 @@
 using NUnit.Framework;
-using StringAsASword.Board;
 using StringAsASword.Combat;
-using StringAsASword.Player;
 using StringAsASword.Simulation;
 
 namespace StringAsASword.Tests

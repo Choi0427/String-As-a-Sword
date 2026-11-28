@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using StringAsASword.Combat;
 using UnityEngine;
 
@@ -12,19 +11,10 @@ namespace StringAsASword.Presentation
         // A failed guard reads as a plain HIT, the same as any other hit.
         public const string Blocked = "BLOCK", Hit = "HIT";
 
-        public static string ResponseWord(AttackResponse response)
-            => response == AttackResponse.GuardOnly ? "GUARD" : response == AttackResponse.DodgeOnly ? "MOVE" : "EITHER";
-
         // Two kinds on screen: a strong attack (a guard does not protect) takes the gold of the attack edge;
         // a normal one, guard-only included, keeps the caller's own colour.
         public static Color ResponseColor(AttackResponse response, Color normal)
             => response == AttackResponse.DodgeOnly ? new Color(1f, .72f, .25f) : normal;
-
-        public static string ThreatText(AttackResponse response, int remaining, int hits)
-        {
-            string lead = response == AttackResponse.GuardOnly ? "GUARD IN " : response == AttackResponse.DodgeOnly ? "MOVE IN " : "DANGER IN ";
-            return hits > 1 ? lead + remaining + " x" + hits : lead + remaining;
-        }
 
         // A guard that was ignored is both a hit and a guard record, so it has to be read before the plain hit.
         public static string OutcomeText(NoteRecord record)
@@ -48,30 +38,6 @@ namespace StringAsASword.Presentation
                     { soonest[i] = remaining; responses[i] = attack.Response; }
                 }
             }
-        }
-
-
-        // Id - Hit is shared by every hit of a sequence, so one attack takes one line however many hits remain.
-        // Returns the number of lines wanted, which can exceed the limit; only lines under it are written.
-        public static int AppendPatternLines(StringBuilder text, IReadOnlyList<BossTelegraph> active, int lastClosed, int shown, int limit)
-        {
-            for (int i = 0; i < active.Count; i++)
-            {
-                var attack = active[i];
-                int sequence = attack.Id - attack.Hit, hits = 1, remaining = attack.Remaining(lastClosed);
-                bool repeated = false;
-                for (int j = 0; j < active.Count; j++)
-                {
-                    if (j == i || active[j].Id - active[j].Hit != sequence) continue;
-                    if (j < i) { repeated = true; break; }
-                    hits++; remaining = Math.Min(remaining, active[j].Remaining(lastClosed));
-                }
-                if (repeated || shown++ >= limit) continue;
-                text.Append("/// ").Append(ResponseWord(attack.Response)).Append("  ").Append(attack.Name).Append("  /  ").Append(remaining).Append(" NOTES");
-                if (hits > 1) text.Append("  x").Append(hits);
-                text.Append('\n');
-            }
-            return shown;
         }
 
     }

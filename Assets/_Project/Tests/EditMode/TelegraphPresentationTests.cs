@@ -1,5 +1,4 @@
 using System.Reflection;
-using System.Text;
 using NUnit.Framework;
 using StringAsASword.Combat;
 using StringAsASword.Presentation;
@@ -13,8 +12,8 @@ namespace StringAsASword.Tests
         [TestCase(true)]
         public void TelegraphGeometryStaysInsideCellAndFacesCamera(bool impact)
         {
-            var build = typeof(BoardWorldPresenter).GetMethod("TelegraphMesh", BindingFlags.Static | BindingFlags.NonPublic, null, new[] { typeof(bool) }, null);
-            AssertMeshInsideCellAndFacingCamera((Mesh)build.Invoke(null, new object[] { impact }));
+            var build = typeof(BoardWorldPresenter).GetMethod("TelegraphMesh", BindingFlags.Static | BindingFlags.NonPublic, null, new[] { typeof(bool), typeof(bool) }, null);
+            AssertMeshInsideCellAndFacingCamera((Mesh)build.Invoke(null, new object[] { impact, true }));
         }
 
         [Test]
@@ -81,13 +80,6 @@ namespace StringAsASword.Tests
         private static BossTelegraph Attack(int id, string name, ulong cells, int impact, AttackResponse response, int hit = 0)
             => new BossTelegraph(id, name, cells, impact, PatternKind.Row, response: response, hit: hit);
 
-        [TestCase(AttackResponse.GuardOnly, 2, 1, "GUARD IN 2")]
-        [TestCase(AttackResponse.DodgeOnly, 1, 1, "MOVE IN 1")]
-        [TestCase(AttackResponse.Either, 3, 1, "DANGER IN 3")]
-        [TestCase(AttackResponse.GuardOnly, 2, 3, "GUARD IN 2 x3")]
-        public void ThreatTextNamesTheRequiredResponse(AttackResponse response, int remaining, int hits, string expected)
-            => Assert.That(TelegraphHud.ThreatText(response, remaining, hits), Is.EqualTo(expected));
-
         [Test]
         public void ResponseColorTintsOnlyStrongAttacks()
         {
@@ -138,41 +130,9 @@ namespace StringAsASword.Tests
             var counts = new int[64]; var soonest = new int[64]; var responses = new AttackResponse[64];
             var checker = new[] { Attack(1, "Checker", 0b01UL, 6, AttackResponse.DodgeOnly), Attack(2, "Checker", 0b10UL, 7, AttackResponse.DodgeOnly, 1) };
             TelegraphHud.MapCells(checker, 4, counts, soonest, responses);
-            Assert.That(TelegraphHud.ThreatText(responses[1], soonest[1], counts[1]), Is.EqualTo("MOVE IN 3"));
-        }
-
-        [Test]
-        public void SequenceTakesOneLineWithSoonestHitAndRemainingCount()
-        {
-            var text = new StringBuilder();
-            var attacks = new[] {
-                Attack(5, "Tremolo", ulong.MaxValue, 6, AttackResponse.GuardOnly),
-                Attack(6, "Tremolo", ulong.MaxValue, 7, AttackResponse.GuardOnly, 1),
-                Attack(7, "Tremolo", ulong.MaxValue, 8, AttackResponse.GuardOnly, 2),
-                Attack(8, "Top Wipe", 1UL, 9, AttackResponse.DodgeOnly),
-                Attack(9, "ROW 4", 2UL, 9, AttackResponse.Either)
-            };
-            int shown = TelegraphHud.AppendPatternLines(text, attacks, 4, 0, 5);
-            Assert.That(shown, Is.EqualTo(3));
-            Assert.That(text.ToString(), Is.EqualTo("/// GUARD  Tremolo  /  2 NOTES  x3\n/// MOVE  Top Wipe  /  5 NOTES\n/// EITHER  ROW 4  /  5 NOTES\n"));
-        }
-
-        [Test]
-        public void SequenceWithItsFirstHitFiredStillGroupsTheRest()
-        {
-            var text = new StringBuilder();
-            var attacks = new[] { Attack(6, "Tremolo", ulong.MaxValue, 7, AttackResponse.GuardOnly, 1), Attack(7, "Tremolo", ulong.MaxValue, 8, AttackResponse.GuardOnly, 2) };
-            Assert.That(TelegraphHud.AppendPatternLines(text, attacks, 6, 0, 5), Is.EqualTo(1));
-            Assert.That(text.ToString(), Is.EqualTo("/// GUARD  Tremolo  /  1 NOTES  x2\n"));
-        }
-
-        [Test]
-        public void PatternLinesPastTheLimitAreCountedNotWritten()
-        {
-            var text = new StringBuilder();
-            var attacks = new[] { Attack(1, "A", 1UL, 6, AttackResponse.Either), Attack(2, "B", 2UL, 6, AttackResponse.Either) };
-            Assert.That(TelegraphHud.AppendPatternLines(text, attacks, 4, 4, 5), Is.EqualTo(6));
-            Assert.That(text.ToString(), Is.EqualTo("/// EITHER  A  /  2 NOTES\n"));
+            Assert.That(responses[1], Is.EqualTo(AttackResponse.DodgeOnly));
+            Assert.That(soonest[1], Is.EqualTo(3));
+            Assert.That(counts[1], Is.EqualTo(1));
         }
 
         [Test]

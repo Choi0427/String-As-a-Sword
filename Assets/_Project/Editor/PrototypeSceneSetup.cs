@@ -18,7 +18,6 @@ namespace StringAsASword.Editor
         public const string StagePath = "Assets/_Project/Data/Stages/FourPhasePrototype.asset";
         public const string BoardMaterialPath = "Assets/_Project/Art/Materials/PrototypeBoard.mat";
         public const string ArtSetPath = "Assets/_Project/Art/ArtSet.asset";
-        public const string CutoutMaterialPath = "Assets/_Project/Art/Materials/ArtCutout.mat";
         public static readonly string[] ArtFolders = { "Models/Knight", "Models/King", "Models/Board", "UI/Telegraph", "UI/HUD", "UI/Menu", "UI/Background", "VFX", "Fonts" };
 
         [MenuItem("String As a Sword/Art/Create Art Set and Folders")]
@@ -26,23 +25,12 @@ namespace StringAsASword.Editor
         {
             foreach (string folder in ArtFolders) Directory.CreateDirectory("Assets/_Project/Art/" + folder);
             AssetDatabase.Refresh();
-            EnsureCutoutMaterial();
             var art = AssetDatabase.LoadAssetAtPath<ArtSet>(ArtSetPath);
             if (art != null) return art;
             art = ScriptableObject.CreateInstance<ArtSet>();
             AssetDatabase.CreateAsset(art, ArtSetPath);
             return art;
         }
-        // Template for telegraph marks and other cut-out art: duplicate it, then set Base Map to the delivered PNG.
-        private static void EnsureCutoutMaterial()
-        {
-            if (AssetDatabase.LoadAssetAtPath<Material>(CutoutMaterialPath) != null) return;
-            var material = new Material(EnsureBoardMaterial().shader) { name = "ArtCutout" };
-            material.SetFloat("_AlphaClip", 1); material.SetFloat("_Cutoff", .5f); material.EnableKeyword("_ALPHATEST_ON");
-            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.AlphaTest;
-            AssetDatabase.CreateAsset(material, CutoutMaterialPath);
-        }
-
         public static Material EnsureBoardMaterial()
         {
             var material = AssetDatabase.LoadAssetAtPath<Material>(BoardMaterialPath);

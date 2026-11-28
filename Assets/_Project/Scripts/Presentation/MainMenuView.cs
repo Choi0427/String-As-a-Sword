@@ -1,4 +1,3 @@
-using System;
 using StringAsASword.Core;
 using TMPro;
 using UnityEngine;
@@ -42,7 +41,6 @@ namespace StringAsASword.Presentation
         public bool White { get; private set; }
         public int ItemCount => MenuLabels.Length;
         public bool SettingsOpen => settings != null && settings.IsOpen;
-        public int Selected => selected;
         /// <summary>Developer mode: picks an option of a settings row as if it were clicked (0 = first).</summary>
         public void ChooseSetting(string row, int option) => settings.Choose(row, option);
         public string LabelColorHex(int index) => ColorUtility.ToHtmlStringRGB(labels[index].color);
@@ -104,9 +102,30 @@ namespace StringAsASword.Presentation
             settings.TutorialRequested += () => Leave(prologue: false, tutorial: true);
             ApplyTheme();
             Select(-1);
+            if (GameFlow.ArrivingFromEnding)
+            {
+                // The ending left the screen white: the menu starts under the same white and clears into view.
+                GameFlow.ConsumeArrival();
+                arrivalCover = Image(Stretch(Rect(root, "Arrival White")), Color.white);
+                arrivalCover.raycastTarget = true; // no hover or click until the menu is visible
+            }
         }
+        /// <summary>Hold, then fade, of the white the menu starts under when it is opened from the ending.</summary>
+        public const float ArrivalHoldSeconds = .2f, ArrivalFadeSeconds = 1.4f;
+        private UnityEngine.UI.Image arrivalCover;
+        private float arrivalAge;
+        /// <summary>0..1: how much of the ending's white still covers the menu (0 once it has cleared).</summary>
+        public float ArrivalCover => arrivalCover != null ? arrivalCover.color.a : 0;
         private void Update()
         {
+            if (arrivalCover != null)
+            {
+                arrivalAge += Time.unscaledDeltaTime;
+                float clear = Mathf.SmoothStep(0, 1, (arrivalAge - ArrivalHoldSeconds) / ArrivalFadeSeconds);
+                arrivalCover.color = new Color(1, 1, 1, 1 - clear);
+                if (clear >= 1) { Destroy(arrivalCover.gameObject); arrivalCover = null; }
+                else return; // keys wait until the menu is in view
+            }
             var keyboard = Keyboard.current;
             if (keyboard == null || leaving) return;
             if (SettingsOpen) { if (keyboard.escapeKey.wasPressedThisFrame) settings.Close(); return; }
@@ -120,6 +139,7 @@ namespace StringAsASword.Presentation
 
         public void Select(int index)
         {
+            if (index >= 0 && index != selected) Sfx.UiMove(art);
             selected = index;
             Color text = White ? Invert(Menu) : Menu, hoverText = White ? Invert(HoverText) : HoverText;
             for (int i = 0; i < MenuLabels.Length; i++)
@@ -131,6 +151,7 @@ namespace StringAsASword.Presentation
         public void Activate(int index)
         {
             if (leaving) return;
+            Sfx.UiConfirm(art);
             // The story cards are retired: the prologue tells the same story every time 시작 is pressed.
             if (index == StartItem) Leave(prologue: true);
             else if (index == SettingsItem) settings.Open();

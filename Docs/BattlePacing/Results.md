@@ -20,8 +20,8 @@
 - `Scripts/Combat/BattleSettings.cs`, `BossPatternSystem.cs`: 설정·독립 난수·전역 예약·범위/회피/수집 경로 검증.
 - `Scripts/Combat/BattleSession.cs`, `BattleLog.cs`: 실행 연결, 패턴 메타데이터, 전체 이벤트를 포함한 재현 비교.
 - `Scripts/Stage/StageDefinition.cs`, `Data/Stages/FourPhasePrototype.asset`: Inspector 설정과 실제 저장값.
-- `Editor/BattlePacingComparison.cs`: 기존 실제 전투 세션을 사용하는 A/B/C 비교 및 원자료 출력.
-- `Tests/EditMode/RandomBossPatternTests.cs`, PlayMode 입력 테스트, `Editor/BattleVisualVerification.cs`: 경계·결정론·키보드 격리·실제 화면 fixture.
+- `Editor/BattlePacingComparison.cs`: 기존 실제 전투 세션을 사용하는 A/B/C 비교 및 원자료 출력(저장소 정리에서 삭제).
+- `Tests/EditMode/RandomBossPatternTests.cs`, PlayMode 입력 테스트, `Editor/BattleVisualVerification.cs`(저장소 정리에서 삭제): 경계·결정론·키보드 격리·실제 화면 fixture.
 
 위 경로의 기준은 `Assets/_Project/`이다.
 
@@ -124,7 +124,7 @@
 
 ## 실행·재현·원자료
 
-[실행 가이드](../BattlePacingComparison.md)의 `BattlePacingComparison.Run(settings, output, 1000)`으로 다시 실행한다. 설정 읽기는 Editor 메인 스레드에서, 계산은 복사한 설정으로 수행한다. 출력은 새 빈 폴더를 지정한다.
+저장소 정리(2026-11-25)에서 이 도구를 지웠다. 다시 돌리려면 커밋 `0b5a650`에서 가져온다. 당시에는 `BattlePacingComparison.Run(settings, output, 1000)`으로 실행했다. 원자료(로그·CSV)도 저장소 정리에서 지웠다. 설정 읽기는 Editor 메인 스레드에서, 계산은 복사한 설정으로 수행한다. 출력은 새 빈 폴더를 지정한다.
 
 ```csharp
 var result = StringAsASword.Combat.BattleLog.Replay(

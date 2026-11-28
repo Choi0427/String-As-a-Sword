@@ -17,6 +17,8 @@
 
 ## 파일
 
+저장소 정리(2026-11-25)에서 아래 검증용 채보·fixture·테스트와 보고서 파일을 지웠다. 커밋 `0b5a650`에 남아 있다.
+
 | 파일 | 내용 |
 |---|---|
 | `Assets/_Project/Data/Bosses/Phase1Verification.bosschart.txt` | 48개를 한 번씩 공격하는 검증용 채보. 스테이지 에셋에는 연결하지 않았어요 |
@@ -198,6 +200,8 @@ Play 모드에서 전투 씬을 열고 `Phase1PatternVerification.Show()`로 장
 - 공개 노트도 빠른 구간 노트에 두지 않았어요(검증기는 공개 노트 자체는 허용해요). 그래서 나이트-f3 이후 배치가 1노트씩 뒤로 밀렸어요.
 
 ## 8. 다시 실행하기
+
+저장소 정리(2026-11-25)에서 이 도구를 지웠다. 다시 돌리려면 커밋 `0b5a650`에서 가져온다.
 
 - 판정 전체: 에디터에서 `StringAsASword.Editor.Phase1PatternVerification.RunAll()` → `Docs/BossChart/phase1-ingame.txt`. 또는 Test Runner에서 `Phase1PatternTests`.
 - 화면: Play 모드 → `GameFlow.StartBattle()`(메뉴의 시작과 같음) → `Phase1PatternVerification.Show("핀강", "d4", 2)` → `capture_game_view(source="screen")` → `Restore()`. `remaining`은 화면 숫자이고 0은 발동 순간이에요.

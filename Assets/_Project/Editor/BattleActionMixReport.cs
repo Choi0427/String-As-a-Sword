@@ -22,14 +22,20 @@ namespace StringAsASword.Editor
         private static readonly string[] Responses = Enum.GetNames(typeof(AttackResponse));
 
         [Serializable] public sealed class NamedRate { public string name; public double mean; }
+        [Serializable] public sealed class Distribution
+        {
+            public string metric;
+            public int phase, count;
+            public double min, p10, p50, p90, max, mean;
+        }
         [Serializable] public sealed class GroupResult
         {
             public string group, strategy;
             public int runs, clears, deaths, timeouts, invariantFailures;
             public double clearRate, deathRate, attackShare, moveShare, guardShare;
-            public List<BattlePacingComparison.Distribution> distributions = new List<BattlePacingComparison.Distribution>();
+            public List<Distribution> distributions = new List<Distribution>();
             public List<NamedRate> patterns = new List<NamedRate>();
-            public BattlePacingComparison.Distribution Metric(string name) => distributions.First(d => d.metric == name);
+            public Distribution Metric(string name) => distributions.First(d => d.metric == name);
         }
         [Serializable] public sealed class Criterion { public string name, actual, target; public bool passed; }
         [Serializable] public sealed class Summary
@@ -159,7 +165,7 @@ namespace StringAsASword.Editor
             void Add(string metric, Func<Sample, int> value)
             {
                 var values = samples.Select(value).ToArray();
-                result.distributions.Add(new BattlePacingComparison.Distribution { metric = metric, count = values.Length,
+                result.distributions.Add(new Distribution { metric = metric, count = values.Length,
                     min = values.Min(), p10 = BattleCalibration.Percentile(values, .1), p50 = BattleCalibration.Percentile(values, .5),
                     p90 = BattleCalibration.Percentile(values, .9), max = values.Max(), mean = values.Average() });
             }

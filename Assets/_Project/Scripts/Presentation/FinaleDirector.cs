@@ -1,6 +1,4 @@
 using StringAsASword.Core;
-using StringAsASword.Player;
-using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -9,18 +7,27 @@ namespace StringAsASword.Presentation
     /// <summary>
     /// Everything after the boss HP is emptied: the stunned king, the finishing triplet with light breaking through the
     /// centre of the board, the centre bursting open when the song ends, the white world where the knight walks freely
-    /// toward one noise, the cutscene that touching it starts, and the return to the white menu.
+    /// toward one noise, the noise fading away at its touch, a short plain white, the ending picture cut in all at once,
+    /// and the return to the white menu.
     /// Rules stay in BattleSession; this only reads them.
     /// </summary>
     public sealed class FinaleDirector : MonoBehaviour
     {
-        public const float BurstSeconds = 2, RevealSeconds = .8f, ExitSeconds = .6f, TouchDistance = .6f;
+        public const float BurstSeconds = 2, RevealSeconds = .8f, TouchDistance = .6f;
+        // The end: the picture (and its boom) eases into white, the white holds a moment, then the menu opens under the
+        // same white and clears into view (MainMenuView.ArrivalFadeSeconds), so there is no cut anywhere.
+        public const float ExitSeconds = 1.4f, ExitHoldSeconds = .3f;
         // The part of the burst light's radius that is solid white.
         // The solid part of the burst light, as a share of its picture's half size. The rest is halo and rays.
         private const float BloomCore = .2f;
         private const float RoamSpeed = 2.6f, RoamBounds = 4.2f, NoiseCorner = 3.2f;
         // The song plays at 0.03, so the noise stays in the same quiet range.
         private const float NoiseFar = .002f, NoiseNear = .05f, NoiseRange = 7;
+        // After the touch: the noise (picture and sound) fades away, white covers everything (the knight too) and stays,
+        // then the ending picture cuts in at full size with no fade or zoom, holds, and the exit white takes it.
+        // Space, Enter or Esc moves on at once.
+        public const float NoiseVanishSeconds = .8f, WhiteInSeconds = .5f, WhiteHoldSeconds = 2, EndingShowSeconds = 5;
+        public const float EndingStart = NoiseVanishSeconds + WhiteInSeconds + WhiteHoldSeconds;
 
         private PrototypeGame game;
         private PrototypeView view;
@@ -30,7 +37,9 @@ namespace StringAsASword.Presentation
         private UnityEngine.UI.RawImage epilogueView, bloom;
         private Texture2D bloomTexture;
         private CutscenePlayer cutscene;
-        private AudioSource noiseSource;
+        private UnityEngine.UI.Image endingImage;
+        private float endingAge = -1;
+        private AudioSource noiseSource, boomSource;
         private AudioClip noiseClip;
         private float flashAge = 10, epilogueAge, exitAge = -1;
         private int lastFinishHit = -1, checkedSession = -1;
@@ -41,7 +50,12 @@ namespace StringAsASword.Presentation
         public Vector3 NoisePosition => noiseAt;
         public float NoiseVolume => noiseSource.volume;
         public bool InWhiteWorld => entered;
-        public bool CutscenePlaying => cutscene.Playing;
+        /// <summary>The ending picture (or, without one, the cutscene) is on screen and has not been skipped or finished.</summary>
+        public bool EndingPlaying => (endingAge >= 0 && exitAge < 0) || cutscene.Playing;
+        /// <summary>The ending picture is on screen (from EndingStart after the touch).</summary>
+        /// <summary>The white world (knight and board view) can be seen: on screen and not fully covered by the white.</summary>
+        public bool WhiteWorldVisible => epilogueView.gameObject.activeSelf && white.color.a < 1 && exitWhite.color.a < 1;
+        public bool EndingShown => endingImage != null && endingImage.gameObject.activeSelf;
 
         public void Initialize(PrototypeGame owner, PrototypeView prototypeView)
         {
@@ -94,6 +108,19 @@ namespace StringAsASword.Presentation
             var font = UiFonts.Korean(view.Art.menuFont, view.LatinFont);
             cutscene = layer.gameObject.AddComponent<CutscenePlayer>();
             cutscene.Initialize(layer, font, view.Art.endingCutscene);
+            if (view.Art.endingImage != null)
+            {
+                // Lettering on a transparent background, so the white under it is the game's own white. Centred, 80% of the
+                // screen height, its width following the picture's shape.
+                var rect = PrototypeView.MakeRect(layer, "Ending Image", Vector2.zero, Vector2.zero);
+                rect.anchorMin = new Vector2(.5f, .1f); rect.anchorMax = new Vector2(.5f, .9f);
+                rect.anchoredPosition = Vector2.zero; rect.sizeDelta = Vector2.zero;
+                endingImage = rect.gameObject.AddComponent<UnityEngine.UI.Image>();
+                endingImage.sprite = view.Art.endingImage; endingImage.raycastTarget = false;
+                var fitter = rect.gameObject.AddComponent<UnityEngine.UI.AspectRatioFitter>();
+                fitter.aspectMode = UnityEngine.UI.AspectRatioFitter.AspectMode.HeightControlsWidth;
+                fitter.aspectRatio = view.Art.endingImage.rect.width / view.Art.endingImage.rect.height;
+            }
             exitWhite = FullScreen("Exit White", Color.white);
             // One second of white noise, looped. Its volume is the only thing that tells how close the knight is.
             var samples = new float[44100]; var random = new System.Random(87);
@@ -101,6 +128,8 @@ namespace StringAsASword.Presentation
             noiseClip = AudioClip.Create("Ending Noise", samples.Length, 1, 44100, false); noiseClip.SetData(samples, 0);
             noiseSource = gameObject.AddComponent<AudioSource>();
             noiseSource.clip = noiseClip; noiseSource.loop = true; noiseSource.playOnAwake = false; noiseSource.volume = 0;
+            boomSource = gameObject.AddComponent<AudioSource>();
+            boomSource.playOnAwake = false; boomSource.loop = false; boomSource.spatialBlend = 0;
             game.FinaleTap += _ => view.Pulse();
             ResetVisuals();
         }
@@ -108,9 +137,10 @@ namespace StringAsASword.Presentation
         {
             SetAlpha(flash, 0); SetAlpha(whiteCover, 0); SetAlpha(white, 0); SetAlpha(exitWhite, 0);
             epilogueView.gameObject.SetActive(false); bloom.gameObject.SetActive(false);
-            flashAge = 10; epilogueAge = 0; exitAge = -1; lastFinishHit = -1;
+            flashAge = 10; epilogueAge = 0; exitAge = -1; endingAge = -1; lastFinishHit = -1;
+            if (endingImage != null) endingImage.gameObject.SetActive(false);
             placed = entered = touched = returned = false;
-            cutscene.Hide(); noiseSource.Stop(); noiseSource.volume = 0;
+            cutscene.Hide(); noiseSource.Stop(); noiseSource.volume = 0; boomSource.Stop();
             // The board puts itself back (pieces, white world) when the next session starts.
             board.FreeRoam = false; board.BreakOverride = -1; board.SetKingDown(0);
             game.Audio.SetMusicFade(1);
@@ -185,7 +215,9 @@ namespace StringAsASword.Presentation
                     game.Audio.SetMusicFade(0);
                     noiseSource.Play();
                 }
-                SetAlpha(white, 1 - Mathf.Clamp01((a - BurstSeconds) / RevealSeconds));
+                // Once the knight has touched the noise the ending owns this white (ShowEnding): it must stay up through
+                // the picture and the exit, or the white world (the knight) shows through the transparent lettering.
+                if (endingAge < 0) SetAlpha(white, 1 - Mathf.Clamp01((a - BurstSeconds) / RevealSeconds));
             }
             if (!touched)
             {
@@ -210,21 +242,55 @@ namespace StringAsASword.Presentation
                 float distance = new Vector2(roam.x - noiseAt.x, roam.z - noiseAt.z).magnitude;
                 float near = 1 - Mathf.Clamp01((distance - TouchDistance) / NoiseRange);
                 noiseSource.volume = Mathf.Lerp(NoiseFar, NoiseNear, near * near) * GameFlow.MusicVolume;
-                if (distance <= TouchDistance) { touched = true; cutscene.Play(() => exitAge = 0); }
+                if (distance <= TouchDistance)
+                {
+                    touched = true;
+                    if (endingImage != null) endingAge = 0;
+                    else cutscene.Play(() => exitAge = 0);
+                }
             }
-            else if (touched) noiseSource.volume = Mathf.MoveTowards(noiseSource.volume, 0, dt * NoiseNear / CutscenePlayer.BarSeconds);
+            else if (touched) noiseSource.volume = Mathf.MoveTowards(noiseSource.volume, 0, dt * NoiseNear / NoiseVanishSeconds);
+            if (endingAge >= 0 && exitAge < 0)
+            {
+                endingAge += dt;
+                ShowEnding();
+                var keyboard = Keyboard.current;
+                bool skip = keyboard != null && (keyboard.spaceKey.wasPressedThisFrame || keyboard.enterKey.wasPressedThisFrame || keyboard.escapeKey.wasPressedThisFrame);
+                if (skip || endingAge >= EndingStart + EndingShowSeconds) exitAge = 0;
+            }
             if (exitAge >= 0)
             {
-                // Cutscene over or skipped: white again, then the white menu.
+                // Ending over or skipped: white again, then the white menu.
                 exitAge += dt;
-                SetAlpha(exitWhite, Mathf.Clamp01(exitAge / ExitSeconds));
-                if (!returned && exitAge >= ExitSeconds)
+                SetAlpha(exitWhite, Mathf.SmoothStep(0, 1, exitAge / ExitSeconds));
+                // A skipped ending takes the boom down with the white instead of cutting it at the scene change.
+                boomSource.volume = Mathf.MoveTowards(boomSource.volume, 0, dt * view.Art.endingSoundVolume * GameFlow.MusicVolume / ExitSeconds);
+                if (!returned && exitAge >= ExitSeconds + ExitHoldSeconds)
                 {
                     returned = true;
                     GameFlow.MarkCleared();
                     noiseSource.Stop(); game.Audio.Stop();
-                    if (GameFlow.HasMenu) GameFlow.ReturnToMenu();
+                    if (GameFlow.HasMenu) GameFlow.ReturnToMenuFromEnding();
                 }
+            }
+        }
+        // Noise fades away -> white covers the screen -> white alone -> the picture cuts in. Runs after the white world's
+        // own reveal in the same frame, so its white wins.
+        private void ShowEnding()
+        {
+            board.EndingNoiseFade = 1 - Mathf.Clamp01(endingAge / NoiseVanishSeconds);
+            SetAlpha(white, Mathf.SmoothStep(0, 1, (endingAge - NoiseVanishSeconds) / WhiteInSeconds));
+            // Fully white: the white world (knight and board view) is no longer needed, so it goes away for good.
+            bool covered = endingAge >= NoiseVanishSeconds + WhiteInSeconds;
+            if (epilogueView.gameObject.activeSelf == covered) epilogueView.gameObject.SetActive(!covered);
+            bool shown = endingAge >= EndingStart;
+            if (endingImage.gameObject.activeSelf == shown) return;
+            endingImage.gameObject.SetActive(shown);
+            // The boom lands with the picture.
+            if (shown && view.Art.endingSound != null)
+            {
+                boomSource.volume = view.Art.endingSoundVolume * GameFlow.MusicVolume;
+                boomSource.clip = view.Art.endingSound; boomSource.Play();
             }
         }
         private UnityEngine.UI.Image FullScreen(string name, Color color)

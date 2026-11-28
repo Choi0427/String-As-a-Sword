@@ -74,7 +74,7 @@ Column은 Kind를 바꾸고 Coordinate로 열을 지정한다. 초기 패턴은 
 
 흰 선·테두리는 양쪽 바닥색에서 구분되고, 플레이어의 말 형태와 잡음 파형이 식별된다. 상단 HP는 후속 가독성 수정으로 `P1 현재/최대` 형식이 되었으며 최종 HP62/12/24/94의 숫자 폭도 `final-calibrated-hud.png`에서 다시 확인했다. 이전 캡처의 `1 / 6 HP`는 최종 표현이 아니다.
 
-재검증: Play Mode에서 `StringAsASword.Editor.BattleVisualVerification.Prepare()` → `Step()` 3회, `Show("moving")`, 마지막 `Restore()`를 호출한다. 실제 게임 화면을 `capture_game_view(source="screen")`로 캡처한다. `camera`만 캡처하면 Overlay HUD가 빠진다. 검증 종료 시 원래 세션은 Ready/Paused로 복구되며 Play 종료로도 fixture가 폐기된다.
+재검증(저장소 정리(2026-11-25)에서 이 도구를 지웠다. 다시 돌리려면 커밋 `0b5a650`에서 가져온다.): Play Mode에서 `StringAsASword.Editor.BattleVisualVerification.Prepare()` → `Step()` 3회, `Show("moving")`, 마지막 `Restore()`를 호출한다. 실제 게임 화면을 `capture_game_view(source="screen")`로 캡처한다. `camera`만 캡처하면 Overlay HUD가 빠진다. 검증 종료 시 원래 세션은 Ready/Paused로 복구되며 Play 종료로도 fixture가 폐기된다.
 
 ## 공정한 잡음 후보와 예산
 

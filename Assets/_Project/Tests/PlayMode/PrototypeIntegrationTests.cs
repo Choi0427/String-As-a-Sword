@@ -448,7 +448,7 @@ namespace StringAsASword.Tests
             LogAssert.NoUnexpectedReceived();
         }
         // One HP, one full-board hit with no guard: the last hit.
-        private IEnumerator UntilDying(BoardWorldPresenter board)
+        private IEnumerator UntilDying()
         {
             game.Battle.Settings.PlayerMaxHp = 1;
             yield return StartWith(RequiredGuard(), AttackResponse.GuardOnly);
@@ -462,7 +462,7 @@ namespace StringAsASword.Tests
         {
             var board = Object.FindAnyObjectByType<BoardWorldPresenter>();
             var screens = game.GetComponentInChildren<BattleScreens>(true);
-            yield return UntilDying(board);
+            yield return UntilDying();
             yield return null;
             Assert.That(screens.Showing, Is.EqualTo(BattleScreens.ScreenKind.None));
             Assert.That(game.Death.Covering);
@@ -494,7 +494,7 @@ namespace StringAsASword.Tests
         {
             var board = Object.FindAnyObjectByType<BoardWorldPresenter>();
             var screens = game.GetComponentInChildren<BattleScreens>(true);
-            yield return UntilDying(board);
+            yield return UntilDying();
             double timeout = Time.realtimeSinceStartupAsDouble + DeathDirector.TotalSeconds + 2;
             while (game.State == PrototypeState.Dying && Time.realtimeSinceStartupAsDouble < timeout) yield return null;
             yield return null;

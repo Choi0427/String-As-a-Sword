@@ -98,7 +98,12 @@ namespace StringAsASword.Core
         { AutoStartBattle = true; PlayPrologue = prologue; PlayTutorial = tutorial; SceneManager.LoadScene(BattleScene); }
         /// <summary>Called by the battle once it has consumed the request.</summary>
         public static void ConsumeAutoStart() { AutoStartBattle = false; PlayPrologue = false; PlayTutorial = false; }
-        public static void ReturnToMenu() { AutoStartBattle = false; PlayPrologue = false; PlayTutorial = false; SceneManager.LoadScene(MenuScene); }
+        public static void ReturnToMenu() { ArrivingFromEnding = false; AutoStartBattle = false; PlayPrologue = false; PlayTutorial = false; SceneManager.LoadScene(MenuScene); }
+        /// <summary>The menu is being opened from the ending's white: it starts covered in white and clears into view.</summary>
+        public static bool ArrivingFromEnding { get; private set; }
+        /// <summary>From the ending: the screen is already white, and the menu fades in out of that white.</summary>
+        public static void ReturnToMenuFromEnding() { ReturnToMenu(); ArrivingFromEnding = true; }
+        public static void ConsumeArrival() => ArrivingFromEnding = false;
         /// <summary>The menu scene is in the build (it is absent when only the battle scene is played).</summary>
         public static bool HasMenu => Application.CanStreamedLevelBeLoaded(MenuScene);
     }

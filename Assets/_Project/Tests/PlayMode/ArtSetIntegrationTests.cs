@@ -55,8 +55,10 @@ namespace StringAsASword.Tests
             Assert.That(player.Find("Knight Silhouette"), Is.Null, "The procedural knight must not be built under a delivered model.");
             Assert.That(GameObject.Find("King"), Is.Not.Null);
             // Telegraph cells start inactive, which GameObject.Find skips.
-            var impact = GameObject.Find("Board World").transform.Find("Impact_0_0");
-            Assert.That(impact.GetComponent<MeshRenderer>().sharedMaterial, Is.SameAs(mark));
+            // Impacts draw no mark (the boss's chess pieces show the hit); the warning marks use the delivered material.
+            Assert.That(GameObject.Find("Board World").transform.Find("Impact_0_0"), Is.Null);
+            var warning = GameObject.Find("Board World").transform.Find("NormalWarning_0_0");
+            Assert.That(warning.GetComponent<MeshRenderer>().sharedMaterial, Is.SameAs(mark));
             var boardWorld = GameObject.Find("Board World").transform;
             Assert.That(boardWorld.Find("Board Model"), Is.Not.Null);
             Assert.That(boardWorld.Find("Cell_0_0"), Is.Null, "Procedural cells must not be built under a delivered board.");

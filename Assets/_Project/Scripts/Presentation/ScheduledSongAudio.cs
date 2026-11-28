@@ -43,11 +43,11 @@ namespace StringAsASword.Presentation
         {
             if (definition != null && definition.Music != null) definition.Music.LoadAudioData();
         }
-        /// <param name="countInClicks">False after the prologue: its last downbeat is the song's start, with no clicks before it.</param>
-        public void Begin(SongDefinition definition, SongClock songClock, IBeatTimeline beatTimeline, bool countInClicks = true)
+        /// <summary>Schedules the song from its start. There are no count-in clicks: the song's own intro leads in.</summary>
+        public void Begin(SongDefinition definition, SongClock songClock, IBeatTimeline beatTimeline)
         {
             Stop(); song = definition; clock = songClock; timeline = beatTimeline;
-            nextClick = countInClicks ? -song.CountInBeats : 0;
+            nextClick = 0;
             musicSource.clip = song.Music;
             musicSource.volume = song.Volume * Core.GameFlow.MusicVolume;
             if (song.Music != null)
@@ -100,9 +100,9 @@ namespace StringAsASword.Presentation
             while (nextClick < song.NoteCount && clock.Origin + timeline.TimeOf(nextClick) <= now + .20)
             {
                 double target = clock.Origin + timeline.TimeOf(nextClick);
-                if (target >= now + .005 && (song.Music == null || nextClick < 0))
+                if (target >= now + .005 && song.Music == null)
                 {
-                    var source = clicks[(nextClick % clicks.Length + clicks.Length) % clicks.Length];
+                    var source = clicks[nextClick % clicks.Length];
                     source.volume = nextClick % 4 == 0 ? 1f : .65f;
                     source.PlayScheduled(target);
                 }

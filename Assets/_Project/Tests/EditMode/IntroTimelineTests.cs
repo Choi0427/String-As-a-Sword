@@ -26,8 +26,10 @@ namespace StringAsASword.Tests
         {
             Assert.That(IntroTimeline.StoryBeat(45, 45), Is.EqualTo(IntroTimeline.Tear));
             Assert.That(IntroTimeline.StoryBeat(45 + IntroTimeline.AfterTear, 45), Is.EqualTo(IntroTimeline.Handover));
-            Assert.That(IntroTimeline.Shot(IntroTimeline.Handover - .1), Is.EqualTo("7"));
-            Assert.That(IntroTimeline.Shot(0), Is.EqualTo("1"));
+            Assert.That(IntroTimeline.Shot(IntroTimeline.Handover - .1), Is.EqualTo("handover"));
+            Assert.That(IntroTimeline.Shot(0), Is.EqualTo("rule"));
+            Assert.That(IntroTimeline.Shot(IntroTimeline.LoopStart + 1), Is.EqualTo("wait"));
+            Assert.That(IntroTimeline.Shot(IntroTimeline.Tear), Is.EqualTo("string"));
         }
         [Test] public void TheHandoverIsOnTheNoteGridFourBeatsBeforeTheFirstNote()
         {

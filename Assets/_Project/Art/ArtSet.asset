@@ -35,6 +35,7 @@ MonoBehaviour:
   noiseMaterial: {fileID: 2100000, guid: 2046f6a485f00fa4cb59bed7da61a787, type: 2}
   boardPrefab: {fileID: 8618644286574060529, guid: 5fc99c1874e6d4449951e424dbe9d844, type: 3}
   boardCrack: {fileID: 2100000, guid: 7f6570593389c064aa8474d4594b4f56, type: 2}
+  endingImage: {fileID: 21300000, guid: 5a6d63d7f92c435da8d78c2c495492e1, type: 3}
   endingCutscene: {fileID: 0}
   lightTile: {fileID: 0}
   darkTile: {fileID: 0}
@@ -111,12 +112,6 @@ MonoBehaviour:
   settingsRoundedFill: {fileID: 21300000, guid: 94d7b009fd9691b44a2d084686d2e0af, type: 3}
   settingsRoundedPanelBorder: {fileID: 21300000, guid: 4c2b3ea422933f04a854a3aaed0bae56, type: 3}
   settingsRoundedButtonBorder: {fileID: 21300000, guid: 606828aec28b88c4889342d0d7e11f41, type: 3}
-  knightBadgeBox:
-    serializedVersion: 2
-    x: -26
-    y: 5
-    width: 52
-    height: 76
   playerHpBarOn: {fileID: 21300000, guid: 8100d0f6468c4e04b43bb825ba59e404, type: 3}
   playerHpBarOff: {fileID: 21300000, guid: 105bb1444b2d4547a66e4af635c93f64, type: 3}
   playerHpKnightOn: {fileID: 21300000, guid: 73982b22091846d38a027b39e8b7f7ff, type: 3}
@@ -136,3 +131,9 @@ MonoBehaviour:
   bossFireVfx: {fileID: 0}
   phaseVfx: {fileID: 0}
   knightFallSound: {fileID: 0}
+  uiMoveSound: {fileID: 8300000, guid: 1275806269c3f5e41b3e4f913723ed2a, type: 3}
+  uiMoveVolume: 0.036
+  uiConfirmSound: {fileID: 8300000, guid: d04499712ebfee94eb7e32039d21a59d, type: 3}
+  uiConfirmVolume: 0.12
+  endingSound: {fileID: 8300000, guid: dbd18f32c85c47e7b860bd9038171519, type: 3}
+  endingSoundVolume: 0.11

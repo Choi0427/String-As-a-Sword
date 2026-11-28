@@ -1,4 +1,0 @@
-VOTE: NOT GUILTY
-REASON: For a small project where every hour of the designer's time counts, this is the cheapest bet you can walk back from: text files cost little, the validator flags problems by note before anything ships, and the expensive editor window gets built only once it has earned its place, so a mistake here wastes days, not the project.
-DECIDING FACT: The record shows the method puts off the clickable editor window "only later, if needed," reuses the fairness checks and bot simulation the project already has, and reports problems by note ("note 212: no dodge route") while the chart is being written, all inside a "small project" where "implementation is done with Claude Code assisting."
-WOULD FLIP IF: The record showed that the existing fairness code cannot check hand-drawn shapes or authored timings, so the "reused" safety net would have to be rewritten before the first pattern could be trusted.

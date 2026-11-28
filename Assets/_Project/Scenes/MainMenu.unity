@@ -241,7 +241,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: StringAsASword.Runtime::StringAsASword.Presentation.MainMenuView
   art: {fileID: 11400000, guid: d6c6f5431dee30e47abd6b5a1f095526, type: 2}
-  story: {fileID: 0}
   invertMaterial: {fileID: 2100000, guid: f204a38bb0ce91e4b9aef0624874c83f, type: 2}
 --- !u!224 &1426171160
 RectTransform:
